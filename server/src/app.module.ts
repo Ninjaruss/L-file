@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SeriesModule } from './series/series.module';
-import { ArcsModule } from './arcs/arcs.module';
-import { CharactersModule } from './characters/characters.module';
-import { ChaptersModule } from './chapters/chapters.module';
-import { EventsModule } from './events/events.module';
-import { ChapterSpoilersModule } from './chapter_spoilers/chapter_spoilers.module'; // updated
-import { UsersModule } from './users/users.module';
-import { FactionsModule } from './factions/factions.module';
-import { TagsModule } from './tags/tags.module';
+import { SeriesModule } from './modules/series/series.module';
+import { ArcsModule } from './modules/arcs/arcs.module';
+import { CharactersModule } from './modules/characters/characters.module';
+import { ChaptersModule } from './modules/chapters/chapters.module';
+import { EventsModule } from './modules/events/events.module';
+import { ChapterSpoilersModule } from './modules/chapter_spoilers/chapter_spoilers.module'; // updated
+import { UsersModule } from './modules/users/users.module';
+import { FactionsModule } from './modules/factions/factions.module';
+import { TagsModule } from './modules/tags/tags.module';
 
 @Module({
   imports: [
