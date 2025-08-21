@@ -18,12 +18,12 @@ export class Media {
   description: string;
 
   // Relations
-  @ManyToOne(() => Arc, arc => arc.media, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Arc, arc => arc.media, { onDelete: 'CASCADE', nullable: true })
   arc: Arc;
 
-  @ManyToOne(() => Character, character => character.media, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Character, character => character.media, { onDelete: 'CASCADE', nullable: true })
   character: Character;
   
-  @ManyToOne(() => Event, event => event.media, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Event, event => event.media, { onDelete: 'CASCADE', nullable: true  })
   event: Event;
 }
