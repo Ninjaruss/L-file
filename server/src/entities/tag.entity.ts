@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
-import { Event } from '../events/event.entity';
+import { Event } from './event.entity';
 
 @Entity()
 export class Tag {

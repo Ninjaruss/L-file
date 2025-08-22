@@ -24,7 +24,7 @@ export class Character {
   @OneToMany(() => Media, media => media.character, {nullable: true, cascade: true })
   media: Media[];
 
-  @ManyToMany(() => Faction, faction => faction.characters, { nullable: true })
+  @ManyToMany(() => Faction, faction => faction.characters)
   factions: Faction[];
 
 }

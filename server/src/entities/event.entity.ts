@@ -39,6 +39,6 @@ export class Event {
   @ManyToOne(() => User, user => user.submittedEvents, { nullable: true })
   createdBy: User;
 
-  @ManyToMany(() => Tag, tag => tag.events, { nullable: true })
+  @ManyToMany(() => Tag, tag => tag.events)
   tags: Tag[];
 }
