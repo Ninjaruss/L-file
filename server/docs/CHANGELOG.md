@@ -6,6 +6,9 @@
 - Added additional character details (firstChapter, alternate names, roles, etc)
 - Included chapter spoiler for deaths 
 - OpenAPI decorators for all API routes
+- Email service hooked to Resend
+- URL validation for uploaded media including normalization of link url
+- For some reason, I thought I would put gambles into arcs or something; added gambles to database
 
 ### Notes
 - Translation setup for Japanese made; however, will need to manually input translations in the admin panel. Considering AI translation for any missing translations.
