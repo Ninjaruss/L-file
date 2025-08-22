@@ -7,7 +7,11 @@ import { Chapter } from '../../entities/chapter.entity';
 export class ChaptersService {
   constructor(@InjectRepository(Chapter) private repo: Repository<Chapter>) {}
 
-  findAll(filters: { title?: string; number?: string; arc?: string; series?: string }): Promise<Chapter[]> {
+  /**
+   * Pagination: page (default 1), limit (default 20)
+   */
+  async findAll(filters: { title?: string; number?: string; arc?: string; series?: string; page?: number; limit?: number; sort?: string; order?: 'ASC' | 'DESC' }) {
+    const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
     const query = this.repo.createQueryBuilder('chapter')
       .leftJoinAndSelect('chapter.arc', 'arc')
       .leftJoinAndSelect('chapter.series', 'series');
@@ -25,7 +29,27 @@ export class ChaptersService {
       query.andWhere('LOWER(series.name) LIKE LOWER(:series)', { series: `%${filters.series}%` });
     }
 
-    return query.getMany();
+    // Sorting: only allow certain fields for safety
+    const allowedSort = ['id', 'title', 'number'];
+    if (sort && allowedSort.includes(sort)) {
+      // If sorting by number, cast to integer for correct order
+      if (sort === 'number') {
+        query.orderBy('chapter.number', order);
+      } else {
+        query.orderBy(`chapter.${sort}`, order);
+      }
+    } else {
+      query.orderBy('chapter.id', 'ASC');
+    }
+
+    query.skip((page - 1) * limit).take(limit);
+    const [data, total] = await query.getManyAndCount();
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   findOne(id: number): Promise<Chapter | null> {

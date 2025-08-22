@@ -8,8 +8,13 @@ export class Arc {
   @PrimaryGeneratedColumn()
   id: number;
 
+
   @Column()
   name: string;
+
+  // Canonical order for arcs
+  @Column({ type: 'int', default: 0 })
+  order: number;
 
   @Column({ type: 'text', nullable: true })
   description: string;

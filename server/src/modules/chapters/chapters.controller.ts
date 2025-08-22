@@ -6,14 +6,21 @@ import { Chapter } from '../../entities/chapter.entity';
 export class ChaptersController {
   constructor(private readonly service: ChaptersService) {}
 
+  /**
+   * Pagination: page (default 1), limit (default 20)
+   */
   @Get()
-  getAll(
+  async getAll(
     @Query('title') title?: string,
     @Query('number') number?: string,
     @Query('arc') arc?: string,
-    @Query('series') series?: string
-  ): Promise<Chapter[]> {
-    return this.service.findAll({ title, number, arc, series });
+    @Query('series') series?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('sort') sort?: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<{ data: Chapter[]; total: number; page: number; totalPages: number }> {
+    return this.service.findAll({ title, number, arc, series, page: parseInt(page), limit: parseInt(limit), sort, order });
   }
 
   @Get(':id')

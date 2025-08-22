@@ -7,7 +7,11 @@ import { Event } from '../../entities/event.entity';
 export class EventsService {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {}
 
-  findAll(filters: { title?: string; arc?: string; series?: string; description?: string }): Promise<Event[]> {
+  /**
+   * Pagination: page (default 1), limit (default 20)
+   */
+  async findAll(filters: { title?: string; arc?: string; series?: string; description?: string; page?: number; limit?: number; sort?: string; order?: 'ASC' | 'DESC' }) {
+    const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
     const query = this.repo.createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
       .leftJoinAndSelect('event.series', 'series')
@@ -26,7 +30,22 @@ export class EventsService {
       query.andWhere('LOWER(event.description) LIKE LOWER(:description)', { description: `%${filters.description}%` });
     }
 
-    return query.getMany();
+    // Sorting: only allow certain fields for safety
+    const allowedSort = ['id', 'title', 'description'];
+    if (sort && allowedSort.includes(sort)) {
+      query.orderBy(`event.${sort}`, order);
+    } else {
+      query.orderBy('event.id', 'ASC');
+    }
+
+    query.skip((page - 1) * limit).take(limit);
+    const [data, total] = await query.getManyAndCount();
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   findOne(id: number): Promise<Event | null> {

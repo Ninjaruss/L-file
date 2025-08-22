@@ -6,13 +6,20 @@ import { Arc } from '../../entities/arc.entity';
 export class ArcsController {
   constructor(private readonly service: ArcsService) {}
 
+  /**
+   * Pagination: page (default 1), limit (default 20)
+   */
   @Get()
-  getAll(
+  async getAll(
     @Query('name') name?: string,
     @Query('series') series?: string,
-    @Query('description') description?: string
-  ): Promise<Arc[]> {
-    return this.service.findAll({ name, series, description });
+    @Query('description') description?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('sort') sort?: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<{ data: Arc[]; total: number; page: number; totalPages: number }> {
+    return this.service.findAll({ name, series, description, page: parseInt(page), limit: parseInt(limit), sort, order });
   }
 
   @Get(':id')

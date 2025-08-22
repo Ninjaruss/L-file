@@ -7,7 +7,11 @@ import { Arc } from '../../entities/arc.entity';
 export class ArcsService {
   constructor(@InjectRepository(Arc) private repo: Repository<Arc>) {}
 
-  findAll(filters: { name?: string; series?: string; description?: string }) {
+  /**
+   * Pagination: page (default 1), limit (default 20)
+   */
+  async findAll(filters: { name?: string; series?: string; description?: string; page?: number; limit?: number; sort?: string; order?: 'ASC' | 'DESC' }) {
+    const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
     const query = this.repo.createQueryBuilder('arc')
       .leftJoinAndSelect('arc.series', 'series')
       .leftJoinAndSelect('arc.characters', 'characters');
@@ -22,7 +26,22 @@ export class ArcsService {
       query.andWhere('LOWER(arc.description) LIKE LOWER(:description)', { description: `%${filters.description}%` });
     }
 
-    return query.getMany();
+    // Sorting: only allow certain fields for safety
+    const allowedSort = ['id', 'name', 'description', 'order'];
+    if (sort && allowedSort.includes(sort)) {
+      query.orderBy(`arc.${sort}`, order);
+    } else {
+      query.orderBy('arc.order', 'ASC'); // Default: canonical order
+    }
+
+    query.skip((page - 1) * limit).take(limit);
+    const [data, total] = await query.getManyAndCount();
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   findOne(id: number) {

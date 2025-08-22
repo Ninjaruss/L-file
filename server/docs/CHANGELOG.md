@@ -7,6 +7,8 @@
 - Confirmed all routes for register user, verify email, log in user, get user, request password request, confirm password request  via Postman testing
 - Added media module to handle saving of media urls
 - Added search/filter for characters, arcs, chapters, and events. As well as a filter to check desc
+- Implemented an additional "order" field to organize arcs and series canonically
+- Added sorting by number for chapters. Additional sorting for rest of data points for future tables to be made on the frontend
 
 ### Notes
 - Going to focus on implementing an admin dashboard rather than a linked spreadsheet to edit data. Google sheets seems useful, but will likely cause issues once hundreds of entries for chapter spoilers and events are added
