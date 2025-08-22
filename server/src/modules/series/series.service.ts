@@ -10,8 +10,29 @@ export class SeriesService {
     private seriesRepo: Repository<Series>,
   ) {}
 
-  findAll() {
-    return this.seriesRepo.find();
+  /**
+   * Pagination and sorting: page (default 1), limit (default 20), sort (id, name, order), order (ASC/DESC)
+   */
+  async findAll(filters: { page?: number; limit?: number; sort?: string; order?: 'ASC' | 'DESC' }) {
+    const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
+    const query = this.seriesRepo.createQueryBuilder('series');
+
+    // Sorting: only allow certain fields for safety
+    const allowedSort = ['id', 'name', 'order'];
+    if (sort && allowedSort.includes(sort)) {
+      query.orderBy(`series.${sort}`, order);
+    } else {
+      query.orderBy('series.order', 'ASC'); // Default: canonical order
+    }
+
+    query.skip((page - 1) * limit).take(limit);
+    const [data, total] = await query.getManyAndCount();
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   findOne(id: number) {

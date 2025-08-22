@@ -7,8 +7,19 @@ import { Faction } from '../../entities/faction.entity';
 export class FactionsService {
   constructor(@InjectRepository(Faction) private repo: Repository<Faction>) {}
 
-  findAll(): Promise<Faction[]> {
-    return this.repo.find({ relations: ['characters'] });
+  /**
+   * Sorting: sort (id, name), order (ASC/DESC)
+   */
+  async findAll(filters: { sort?: string; order?: 'ASC' | 'DESC' } = {}): Promise<Faction[]> {
+    const { sort, order = 'ASC' } = filters;
+    const query = this.repo.createQueryBuilder('faction').leftJoinAndSelect('faction.characters', 'characters');
+    const allowedSort = ['id', 'name'];
+    if (sort && allowedSort.includes(sort)) {
+      query.orderBy(`faction.${sort}`, order);
+    } else {
+      query.orderBy('faction.name', 'ASC');
+    }
+    return query.getMany();
   }
 
   async findOne(id: number): Promise<Faction> {

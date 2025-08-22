@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Put, Delete, Query } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { Tag } from '../../entities/tag.entity';
 
@@ -6,9 +6,15 @@ import { Tag } from '../../entities/tag.entity';
 export class TagsController {
   constructor(private service: TagsService) {}
 
+  /**
+   * Sorting: sort (id, name), order (ASC/DESC)
+   */
   @Get()
-  getAll(): Promise<Tag[]> {
-    return this.service.findAll();
+  async getAll(
+    @Query('sort') sort?: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<Tag[]> {
+    return this.service.findAll({ sort, order });
   }
 
   @Get(':id')

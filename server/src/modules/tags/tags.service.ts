@@ -7,8 +7,19 @@ import { Tag } from '../../entities/tag.entity';
 export class TagsService {
   constructor(@InjectRepository(Tag) private repo: Repository<Tag>) {}
 
-  findAll(): Promise<Tag[]> {
-    return this.repo.find({ relations: ['events'] });
+  /**
+   * Sorting: sort (id, name), order (ASC/DESC)
+   */
+  async findAll(filters: { sort?: string; order?: 'ASC' | 'DESC' } = {}): Promise<Tag[]> {
+    const { sort, order = 'ASC' } = filters;
+    const query = this.repo.createQueryBuilder('tag').leftJoinAndSelect('tag.events', 'events');
+    const allowedSort = ['id', 'name'];
+    if (sort && allowedSort.includes(sort)) {
+      query.orderBy(`tag.${sort}`, order);
+    } else {
+      query.orderBy('tag.name', 'ASC');
+    }
+    return query.getMany();
   }
 
   async findOne(id: number): Promise<Tag> {

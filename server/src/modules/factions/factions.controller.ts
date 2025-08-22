@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Put, Delete, Query } from '@nestjs/common';
 import { FactionsService } from './factions.service';
 import { Faction } from '../../entities/faction.entity';
 
@@ -6,9 +6,15 @@ import { Faction } from '../../entities/faction.entity';
 export class FactionsController {
   constructor(private service: FactionsService) {}
 
+  /**
+   * Sorting: sort (id, name), order (ASC/DESC)
+   */
   @Get()
-  getAll(): Promise<Faction[]> {
-    return this.service.findAll();
+  async getAll(
+    @Query('sort') sort?: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<Faction[]> {
+    return this.service.findAll({ sort, order });
   }
 
   @Get(':id')

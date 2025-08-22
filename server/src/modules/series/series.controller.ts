@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, Query } from '@nestjs/common';
 import { SeriesService } from './series.service';
 import { Series } from '../../entities/series.entity';
 
@@ -6,9 +6,17 @@ import { Series } from '../../entities/series.entity';
 export class SeriesController {
   constructor(private readonly service: SeriesService) {}
 
+  /**
+   * Pagination and sorting: page (default 1), limit (default 20), sort (id, name, order), order (ASC/DESC)
+   */
   @Get()
-  getAll(): Promise<Series[]> {
-    return this.service.findAll();
+  async getAll(
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('sort') sort?: string,
+    @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<{ data: Series[]; total: number; page: number; totalPages: number }> {
+    return this.service.findAll({ page: parseInt(page), limit: parseInt(limit), sort, order });
   }
 
   @Get(':id')
