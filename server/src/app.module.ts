@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import * as path from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { getDatabaseConfig } from './config/database.config';
 import { validate } from './config/env.validation';
 import { SeriesModule } from './modules/series/series.module';
 import { ArcsModule } from './modules/arcs/arcs.module';
@@ -27,22 +27,8 @@ import { TranslationsModule } from './modules/translations/translations.module';
     
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get('DATABASE_PORT'),
-        username: configService.get('DATABASE_USERNAME'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
-        entities: [
-          path.join(__dirname, 'entities', '**', '*.entity.{ts,js}'),
-          path.join(__dirname, 'entities', 'translations', '*.entity.{ts,js}')
-        ],
-        migrations: [path.join(__dirname, 'migrations', '**', '*{.ts,.js}')],
-        migrationsRun: false,
-        synchronize: false,
-        ssl: process.env.NODE_ENV === 'production',
-      }),
+      useFactory: (configService: ConfigService) => 
+        getDatabaseConfig(configService),
       inject: [ConfigService],
     }),
 

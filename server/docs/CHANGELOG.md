@@ -5,6 +5,9 @@
 - Added additional character details (firstChapter, alternate names, roles, etc)
 - Included chapter spoiler for deaths 
 
+### Notes
+- Translation setup for Japanese made; however, will need to manually input translations in the admin panel. Considering AI translation for any missing translations.
+
 
 ## 2025-08-21
 ### Changes
