@@ -64,13 +64,6 @@ export class ChapterSpoiler {
   @JoinTable({ name: 'chapter_spoiler_characters' })
   affectedCharacters: Character[];
 
-  // Character death information
-  @Column('boolean', { nullable: true })
-  isDeathSpoiler: boolean;
-
-  @Column('text', { nullable: true })
-  deathContext: string;
-
   // The minimum chapter number required to safely view this spoiler
   @Column({ type: 'int' })
   minimumChapter: number;

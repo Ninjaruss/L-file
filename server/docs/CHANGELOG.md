@@ -1,5 +1,11 @@
 # Changelog and notes
 
+## 2025-08-22
+### Changes
+- Added additional character details (firstChapter, alternate names, roles, etc)
+- Included chapter spoiler for deaths 
+
+
 ## 2025-08-21
 ### Changes
 - Added modules for auth including setup for authentication role guards

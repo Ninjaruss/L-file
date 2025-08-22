@@ -5,7 +5,6 @@ export class Series {
   @PrimaryGeneratedColumn()
   id: number;
 
-
   @Column()
   name: string;
 
