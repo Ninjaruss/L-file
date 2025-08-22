@@ -10,6 +10,7 @@
 - Implemented an additional "order" field to organize arcs and series canonically
 - Added sorting by number for chapters. Additional sorting for rest of data points for future tables to be made on the frontend
 - Added security including .env checking, global exception handling, rate limiting
+- Added chapter spoiler functionality 
 
 ### Notes
 - Going to focus on implementing an admin dashboard rather than a linked spreadsheet to edit data. Google sheets seems useful, but will likely cause issues once hundreds of entries for chapter spoilers and events are added
