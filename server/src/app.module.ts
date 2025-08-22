@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { validate } from './config/env.validation';
 import { SeriesModule } from './modules/series/series.module';
 import { ArcsModule } from './modules/arcs/arcs.module';
 import { CharactersModule } from './modules/characters/characters.module';
@@ -18,19 +18,21 @@ import { AuthModule } from './modules/auth/auth.module';
   imports: [
     
     ConfigModule.forRoot({
-      isGlobal: true,   // makes process.env values available everywhere
-      envFilePath: '.env', // make sure this path points to your .env
+      isGlobal: true,
+      envFilePath: '.env',
+      validate,
     }),
     
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'ninjaruss',      // your macOS/PostgreSQL user
-      password: 'your_password',
-      database: 'usogui_db',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      synchronize: process.env.NODE_ENV === 'development',
+      ssl: process.env.NODE_ENV === 'production',
     }),
 
     SeriesModule,
