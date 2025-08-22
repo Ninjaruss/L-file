@@ -1,5 +1,19 @@
 # Changelog and notes
 
+## 2025-08-21
+### Changes
+- Added modules for auth including setup for authentication role guards
+- Authentication reads both local and jwt tokens
+- Confirmed all routes for register user, verify email, log in user, get user, request password request, confirm password request  via Postman testing
+
+### Notes
+- Going to focus on implementing an admin dashboard rather than a linked spreadsheet to edit data. Google sheets seems useful, but will likely cause issues once hundreds of entries for chapter spoilers and events are added
+- Recently added DataTransferObjects for auth; although I'm familar with DTOs, it's hard to remember when to use one when entity already exists. It seems mainly used to quickly pass small data that won't be saved on the backend
+
+### TODO:
+- Add route protections depending on role (user, mod, admin)
+- Need a refresher on extending classes. I am not familar with strategies (choice for which auth method to use) and guards (block requests based on authenticated status)
+
 ## 2025-08-20
 ### Changes
 - Initialized data for multiple data points (characters, arcs, chapters, etc)
