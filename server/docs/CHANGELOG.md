@@ -9,11 +9,14 @@
 - Added search/filter for characters, arcs, chapters, and events. As well as a filter to check desc
 - Implemented an additional "order" field to organize arcs and series canonically
 - Added sorting by number for chapters. Additional sorting for rest of data points for future tables to be made on the frontend
+- Added security including .env checking, global exception handling, rate limiting
 
 ### Notes
 - Going to focus on implementing an admin dashboard rather than a linked spreadsheet to edit data. Google sheets seems useful, but will likely cause issues once hundreds of entries for chapter spoilers and events are added
 - Recently added DataTransferObjects for auth; although I'm familar with DTOs, it's hard to remember when to use one when entity already exists. It seems mainly used to quickly pass small data that won't be saved on the backend
 - Last min, I learned that GitHub Copilot was inbuilt into vscode (for some reason I never tried using it during these recent years). This is extremely useful as not only is it actually taking in the context of my project, it takes the time to explain all of its changes. I'm afraid I may be a little to reliant on this tool, but it's better than wasting a lot of time muddling with "basic" code that I would have to run around docs for. At the very least, I feel really comfortable with building large systems (from previous tinkering on Roblox and making a Linux file system a while ago)
+- .env should be made for local and cloud separately. .env example is useful as a template
+- Global exception handling is helpful to protect the application, but may not be as thorough in specifics
 
 
 ### TODO:
