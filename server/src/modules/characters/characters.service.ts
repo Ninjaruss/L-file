@@ -7,8 +7,25 @@ import { Character } from '../../entities/character.entity';
 export class CharactersService {
   constructor(@InjectRepository(Character) private repo: Repository<Character>) {}
 
-  findAll(): Promise<Character[]> {
-    return this.repo.find({ relations: ['arc', 'series'] });
+  findAll(filters: { name?: string; arc?: string; series?: string; description?: string }): Promise<Character[]> {
+    const query = this.repo.createQueryBuilder('character')
+      .leftJoinAndSelect('character.arc', 'arc')
+      .leftJoinAndSelect('character.series', 'series');
+
+    if (filters.name) {
+      query.andWhere('LOWER(character.name) LIKE LOWER(:name)', { name: `%${filters.name}%` });
+    }
+    if (filters.arc) {
+      query.andWhere('LOWER(arc.name) LIKE LOWER(:arc)', { arc: `%${filters.arc}%` });
+    }
+    if (filters.series) {
+      query.andWhere('LOWER(series.name) LIKE LOWER(:series)', { series: `%${filters.series}%` });
+    }
+    if (filters.description) {
+      query.andWhere('LOWER(character.description) LIKE LOWER(:description)', { description: `%${filters.description}%` });
+    }
+
+    return query.getMany();
   }
 
   findOne(id: number): Promise<Character | null> {

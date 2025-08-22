@@ -7,8 +7,25 @@ import { Chapter } from '../../entities/chapter.entity';
 export class ChaptersService {
   constructor(@InjectRepository(Chapter) private repo: Repository<Chapter>) {}
 
-  findAll(): Promise<Chapter[]> {
-    return this.repo.find({ relations: ['arc', 'series'] });
+  findAll(filters: { title?: string; number?: string; arc?: string; series?: string }): Promise<Chapter[]> {
+    const query = this.repo.createQueryBuilder('chapter')
+      .leftJoinAndSelect('chapter.arc', 'arc')
+      .leftJoinAndSelect('chapter.series', 'series');
+
+    if (filters.title) {
+      query.andWhere('LOWER(chapter.title) LIKE LOWER(:title)', { title: `%${filters.title}%` });
+    }
+    if (filters.number) {
+      query.andWhere('chapter.number = :number', { number: filters.number });
+    }
+    if (filters.arc) {
+      query.andWhere('LOWER(arc.name) LIKE LOWER(:arc)', { arc: `%${filters.arc}%` });
+    }
+    if (filters.series) {
+      query.andWhere('LOWER(series.name) LIKE LOWER(:series)', { series: `%${filters.series}%` });
+    }
+
+    return query.getMany();
   }
 
   findOne(id: number): Promise<Chapter | null> {

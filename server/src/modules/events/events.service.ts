@@ -7,8 +7,26 @@ import { Event } from '../../entities/event.entity';
 export class EventsService {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {}
 
-  findAll(): Promise<Event[]> {
-    return this.repo.find({ relations: ['arc', 'characters', 'series'] });
+  findAll(filters: { title?: string; arc?: string; series?: string; description?: string }): Promise<Event[]> {
+    const query = this.repo.createQueryBuilder('event')
+      .leftJoinAndSelect('event.arc', 'arc')
+      .leftJoinAndSelect('event.series', 'series')
+      .leftJoinAndSelect('event.characters', 'characters');
+
+    if (filters.title) {
+      query.andWhere('LOWER(event.title) LIKE LOWER(:title)', { title: `%${filters.title}%` });
+    }
+    if (filters.arc) {
+      query.andWhere('LOWER(arc.name) LIKE LOWER(:arc)', { arc: `%${filters.arc}%` });
+    }
+    if (filters.series) {
+      query.andWhere('LOWER(series.name) LIKE LOWER(:series)', { series: `%${filters.series}%` });
+    }
+    if (filters.description) {
+      query.andWhere('LOWER(event.description) LIKE LOWER(:description)', { description: `%${filters.description}%` });
+    }
+
+    return query.getMany();
   }
 
   findOne(id: number): Promise<Event | null> {

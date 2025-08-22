@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query } from '@nestjs/common';
 import { ArcsService } from './arcs.service';
 import { Arc } from '../../entities/arc.entity';
 
@@ -7,8 +7,12 @@ export class ArcsController {
   constructor(private readonly service: ArcsService) {}
 
   @Get()
-  getAll(): Promise<Arc[]> {
-    return this.service.findAll();
+  getAll(
+    @Query('name') name?: string,
+    @Query('series') series?: string,
+    @Query('description') description?: string
+  ): Promise<Arc[]> {
+    return this.service.findAll({ name, series, description });
   }
 
   @Get(':id')

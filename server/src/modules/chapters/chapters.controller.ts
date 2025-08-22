@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query } from '@nestjs/common';
 import { ChaptersService } from './chapters.service';
 import { Chapter } from '../../entities/chapter.entity';
 
@@ -7,8 +7,13 @@ export class ChaptersController {
   constructor(private readonly service: ChaptersService) {}
 
   @Get()
-  getAll(): Promise<Chapter[]> {
-    return this.service.findAll();
+  getAll(
+    @Query('title') title?: string,
+    @Query('number') number?: string,
+    @Query('arc') arc?: string,
+    @Query('series') series?: string
+  ): Promise<Chapter[]> {
+    return this.service.findAll({ title, number, arc, series });
   }
 
   @Get(':id')

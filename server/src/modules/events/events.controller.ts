@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { Event } from '../../entities/event.entity';
 
@@ -7,8 +7,13 @@ export class EventsController {
   constructor(private readonly service: EventsService) {}
 
   @Get()
-  getAll(): Promise<Event[]> {
-    return this.service.findAll();
+  getAll(
+    @Query('title') title?: string,
+    @Query('arc') arc?: string,
+    @Query('series') series?: string,
+    @Query('description') description?: string
+  ): Promise<Event[]> {
+    return this.service.findAll({ title, arc, series, description });
   }
 
   @Get(':id')
