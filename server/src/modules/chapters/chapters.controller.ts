@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+// ...existing code...
 import { ChaptersService } from './chapters.service';
 import { Chapter } from '../../entities/chapter.entity';
 
@@ -33,11 +34,13 @@ export class ChaptersController {
   }
 
   @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   create(@Body() data: Partial<Chapter>) {
     return this.service.create(data);
   }
 
   @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async update(@Param('id') id: number, @Body() data: Partial<Chapter>) {
     const result = await this.service.update(id, data);
     if (result.affected === 0) {

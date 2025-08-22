@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Post, Body, Put, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Put, Delete, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+// ...existing code...
 import { TagsService } from './tags.service';
 import { Tag } from '../../entities/tag.entity';
 
@@ -23,11 +24,13 @@ export class TagsController {
   }
 
   @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   create(@Body() data: Partial<Tag>): Promise<Tag> {
     return this.service.create(data);
   }
 
   @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   update(@Param('id') id: number, @Body() data: Partial<Tag>) {
     return this.service.update(id, data);
   }

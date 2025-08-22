@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+// ...existing code...
 import { ArcsService } from './arcs.service';
 import { Arc } from '../../entities/arc.entity';
 
@@ -32,11 +33,13 @@ export class ArcsController {
   }
 
   @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   create(@Body() data: Partial<Arc>) {
     return this.service.create(data);
   }
 
   @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async update(@Param('id') id: number, @Body() data: Partial<Arc>) {
     const result = await this.service.update(id, data);
     if (result.affected === 0) {
