@@ -1,9 +1,13 @@
-import { Controller, Get, Param, Post, Body, Put, Delete, Query, UsePipes, ValidationPipe } from '@nestjs/common';
-// ...existing code...
+import { Controller, Get, Param, Post, Body, Put, Delete, Query, UseGuards } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { Tag } from '../../entities/tag.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../../entities/user.entity';
 
 @Controller('tags')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class TagsController {
   constructor(private service: TagsService) {}
 
@@ -24,18 +28,19 @@ export class TagsController {
   }
 
   @Post()
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   create(@Body() data: Partial<Tag>): Promise<Tag> {
     return this.service.create(data);
   }
 
   @Put(':id')
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   update(@Param('id') id: number, @Body() data: Partial<Tag>) {
     return this.service.update(id, data);
   }
 
   @Delete(':id')
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   remove(@Param('id') id: number) {
     return this.service.remove(id);
   }
