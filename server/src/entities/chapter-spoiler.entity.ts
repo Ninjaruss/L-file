@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
 import { Event } from './event.entity';
-import { Chapter } from './chapter.entity';
 import { Character } from './character.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -29,6 +28,12 @@ export enum SpoilerCategory {
                            // Example: "The entire arc was orchestrated by..."
 }
 
+// Interface for chapter references with context
+export interface ChapterReference {
+  chapterNumber: number;
+  context: string;  // e.g., "Page 15 - Character introduction" or "Final scene - Important dialogue"
+}
+
 @Entity()
 export class ChapterSpoiler {
   @ApiProperty({ description: 'Unique identifier for the spoiler' })
@@ -36,12 +41,12 @@ export class ChapterSpoiler {
   id: number;
 
   @ApiPropertyOptional({ description: 'Associated event', type: () => Event })
-  @ManyToOne(() => Event, event => event.id)
+  @ManyToOne(() => Event, event => event.id, { nullable: true })
   event: Event;
 
-  @ApiProperty({ description: 'Chapter where this spoiler occurs', type: () => Chapter })
-  @ManyToOne(() => Chapter, chapter => chapter.id)
-  chapter: Chapter;
+  @ApiProperty({ description: 'Chapter number where this spoiler occurs', example: 15 })
+  @Column()
+  chapterNumber: number;
 
   @ApiProperty({ 
     description: 'Severity level of the spoiler',
@@ -69,28 +74,36 @@ export class ChapterSpoiler {
   })
   category: SpoilerCategory;
 
+  @ApiProperty({ 
+    description: 'Spoiler content description',
+    example: 'A major character revelation occurs during the final gamble'
+  })
   @Column('text')
-  description: string;
+  content: string;
 
+  @ApiProperty({ 
+    description: 'Whether this spoiler has been verified by moderators',
+    example: true
+  })
   @Column({ default: false })
   isVerified: boolean;
 
   // Characters affected by this spoiler
+  @ApiPropertyOptional({ description: 'Characters affected by this spoiler', type: () => [Character] })
   @ManyToMany(() => Character)
   @JoinTable({ name: 'chapter_spoiler_characters' })
   affectedCharacters: Character[];
 
-  // The minimum chapter number required to safely view this spoiler
-  @Column({ type: 'int' })
-  minimumChapter: number;
-
-  // Additional chapters that need to be read (for non-sequential dependencies)
-  @ManyToMany(() => Chapter)
-  @JoinTable({ name: 'chapter_spoiler_additional_requirements' })
-  additionalRequirements: Chapter[];
-
-  @Column('text', { nullable: true })
-  requirementExplanation: string;
+  // List of chapter references with context for additional reading
+  @ApiPropertyOptional({ 
+    description: 'List of chapter references with context for additional reading',
+    example: [
+      { chapterNumber: 10, context: "Page 8 - Character background revealed" },
+      { chapterNumber: 12, context: "Final scene - Important foreshadowing" }
+    ]
+  })
+  @Column('json', { nullable: true })
+  chapterReferences: ChapterReference[];
 
   @CreateDateColumn()
   createdAt: Date;

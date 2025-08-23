@@ -1,182 +1,95 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { ChapterSpoiler, SpoilerLevel } from '../../entities/chapter-spoiler.entity';
-import { Chapter } from '../../entities/chapter.entity';
-import { Event } from '../../entities/event.entity';
+import { Repository } from 'typeorm';
+import { ChapterSpoiler, SpoilerLevel, SpoilerCategory } from '../../entities/chapter-spoiler.entity';
 import { CreateChapterSpoilerDto } from './dto/create-chapter-spoiler.dto';
 
 @Injectable()
 export class ChapterSpoilersService {
   constructor(
-    @InjectRepository(ChapterSpoiler) private repo: Repository<ChapterSpoiler>,
-    @InjectRepository(Chapter) private chapterRepo: Repository<Chapter>,
-    @InjectRepository(Event) private eventRepo: Repository<Event>,
+    @InjectRepository(ChapterSpoiler) 
+    private repo: Repository<ChapterSpoiler>
   ) {}
 
-  async findAll(options?: { 
-    level?: SpoilerLevel, 
-    category?: string,
-    chapterId?: number,
-    isVerified?: boolean
-  }): Promise<ChapterSpoiler[]> {
-    const query = this.repo
-      .createQueryBuilder('spoiler')
-      .leftJoinAndSelect('spoiler.event', 'event')
-      .leftJoinAndSelect('spoiler.chapter', 'chapter')
-      .leftJoinAndSelect('spoiler.additionalRequirements', 'additionalRequirements');
+  /**
+   * Find all spoilers with optional filtering
+   * @param userChapterNumber - The highest chapter number the user has read (for validation)
+   */
+  async findAll(filters: { 
+    level?: SpoilerLevel; 
+    category?: SpoilerCategory; 
+    chapterNumber?: number; 
+    isVerified?: boolean;
+    userChapterNumber?: number; // For validation
+  }) {
+    const query = this.repo.createQueryBuilder('spoiler');
 
-    if (options?.level) {
-      query.andWhere('spoiler.level = :level', { level: options.level });
+    if (filters.level) {
+      query.andWhere('spoiler.level = :level', { level: filters.level });
     }
-    if (options?.category) {
-      query.andWhere('spoiler.category = :category', { category: options.category });
+    if (filters.category) {
+      query.andWhere('spoiler.category = :category', { category: filters.category });
     }
-    if (options?.chapterId) {
-      query.andWhere('chapter.id = :chapterId', { chapterId: options.chapterId });
+    if (filters.chapterNumber) {
+      query.andWhere('spoiler.chapterNumber = :chapterNumber', { chapterNumber: filters.chapterNumber });
     }
-    if (options?.isVerified !== undefined) {
-      query.andWhere('spoiler.isVerified = :isVerified', { isVerified: options.isVerified });
+    if (filters.isVerified !== undefined) {
+      query.andWhere('spoiler.isVerified = :isVerified', { isVerified: filters.isVerified });
+    }
+
+    // Filter out spoilers the user shouldn't see yet
+    if (filters.userChapterNumber !== undefined) {
+      query.andWhere('spoiler.chapterNumber <= :userChapterNumber', { 
+        userChapterNumber: filters.userChapterNumber 
+      });
     }
 
     return query.getMany();
   }
 
   async findOne(id: number): Promise<ChapterSpoiler> {
-    const spoiler = await this.repo.findOne({ 
-      where: { id }, 
-      relations: ['event', 'chapter', 'additionalRequirements'] 
-    });
-    
+    const spoiler = await this.repo.findOne({ where: { id } });
     if (!spoiler) {
       throw new NotFoundException(`Spoiler with ID ${id} not found`);
     }
-    
     return spoiler;
   }
 
-  async create(dto: CreateChapterSpoilerDto): Promise<ChapterSpoiler> {
-    // Verify chapter exists
-    const chapter = await this.chapterRepo.findOne({ where: { id: dto.chapterId }});
-    if (!chapter) {
-      throw new BadRequestException(`Chapter with ID ${dto.chapterId} not found`);
-    }
+  /**
+   * Check if user can view a specific spoiler based on their reading progress
+   */
+  async canViewSpoiler(spoilerId: number, userChapterNumber: number): Promise<boolean> {
+    const spoiler = await this.findOne(spoilerId);
+    return userChapterNumber >= spoiler.chapterNumber;
+  }
 
-    // Verify event exists
-    const event = await this.eventRepo.findOne({ where: { id: dto.eventId }});
-    if (!event) {
-      throw new BadRequestException(`Event with ID ${dto.eventId} not found`);
-    }
-
-    // Get additional requirements if provided
-    let additionalRequirements: Chapter[] = [];
-    if (dto.additionalRequirementIds?.length) {
-      additionalRequirements = await this.chapterRepo.find({
-        where: { id: In(dto.additionalRequirementIds) }
-      });
-      
-      if (additionalRequirements.length !== dto.additionalRequirementIds.length) {
-        throw new BadRequestException('Some additional requirement chapters were not found');
-      }
-    }
-
-    const spoiler = this.repo.create({
-      chapter,
-      event,
-      level: dto.level,
-      category: dto.category,
-      description: dto.description,
-      minimumChapter: dto.minimumChapter,
-      requirementExplanation: dto.requirementExplanation,
-      isVerified: dto.isVerified ?? false,
-      additionalRequirements
+  /**
+   * Get spoilers the user can safely view (up to their reading progress)
+   */
+  async findViewableSpoilers(userChapterNumber: number, filters?: {
+    level?: SpoilerLevel;
+    category?: SpoilerCategory;
+    isVerified?: boolean;
+  }): Promise<ChapterSpoiler[]> {
+    return this.findAll({
+      ...filters,
+      userChapterNumber
     });
+  }
 
+  async create(data: CreateChapterSpoilerDto): Promise<ChapterSpoiler> {
+    const spoiler = this.repo.create(data);
     return this.repo.save(spoiler);
   }
 
-  async update(id: number, data: Partial<CreateChapterSpoilerDto>) {
-    const spoiler = await this.repo.findOne({
-      where: { id },
-      relations: ['chapter', 'event', 'additionalRequirements']
-    });
-    
-    if (!spoiler) {
-      throw new NotFoundException('Chapter spoiler not found');
-    }
-
-    if (data.chapterId) {
-      const chapter = await this.chapterRepo.findOne({ where: { id: data.chapterId }});
-      if (!chapter) {
-        throw new BadRequestException(`Chapter with ID ${data.chapterId} not found`);
-      }
-      spoiler.chapter = chapter;
-    }
-
-    if (data.eventId) {
-      const event = await this.eventRepo.findOne({ where: { id: data.eventId }});
-      if (!event) {
-        throw new BadRequestException(`Event with ID ${data.eventId} not found`);
-      }
-      spoiler.event = event;
-    }
-
-    if (data.additionalRequirementIds?.length) {
-      const additionalRequirements = await this.chapterRepo.find({
-        where: { id: In(data.additionalRequirementIds) }
-      });
-      
-      if (additionalRequirements.length !== data.additionalRequirementIds.length) {
-        throw new BadRequestException('Some additional requirement chapters were not found');
-      }
-      
-      spoiler.additionalRequirements = additionalRequirements;
-    }
-
-    Object.assign(spoiler, {
-      level: data.level,
-      category: data.category,
-      description: data.description,
-      minimumChapter: data.minimumChapter,
-      requirementExplanation: data.requirementExplanation,
-      isVerified: data.isVerified
-    });
-
-    return this.repo.save(spoiler);
-  }
-
-  async remove(id: number) {
+  async update(id: number, data: Partial<CreateChapterSpoilerDto>): Promise<ChapterSpoiler> {
     const spoiler = await this.findOne(id);
-    return this.repo.remove(spoiler);
+    Object.assign(spoiler, data);
+    return this.repo.save(spoiler);
   }
 
-  // Check if a user can safely view a spoiler based on their read chapters
-  async canViewSpoiler(spoilerId: number, readChapterIds: number[]): Promise<boolean> {
-    const spoiler = await this.repo.findOne({
-      where: { id: spoilerId },
-      relations: ['additionalRequirements']
-    });
-
-    if (!spoiler) {
-      throw new NotFoundException('Chapter spoiler not found');
-    }
-    
-    // Check minimum chapter requirement
-    if (spoiler.minimumChapter && !readChapterIds.includes(spoiler.minimumChapter)) {
-      return false;
-    }
-    
-    // Check additional requirements if they exist
-    if (spoiler.additionalRequirements?.length) {
-      const unreadRequirements = spoiler.additionalRequirements.filter(
-        req => !readChapterIds.includes(req.id)
-      );
-
-      if (unreadRequirements.length > 0) {
-        return false;
-      }
-    }
-
-    return true;
+  async remove(id: number): Promise<void> {
+    const spoiler = await this.findOne(id);
+    await this.repo.remove(spoiler);
   }
 }

@@ -36,7 +36,6 @@ export class ChapterSeeder implements Seeder {
           number: 1,
           title: 'The Lie Eater',
           summary: 'Introduction to Baku Madarame and the world of underground gambling.',
-          releaseDate: new Date('2006-05-01'),
           series: { id: series.id },
           arc: { id: introArc.id }
         },
@@ -44,7 +43,6 @@ export class ChapterSeeder implements Seeder {
           number: 2,
           title: 'First Gamble',
           summary: 'Baku takes on his first opponent in a high-stakes match.',
-          releaseDate: new Date('2006-05-08'),
           series: { id: series.id },
           arc: { id: introArc.id }
         },
@@ -52,7 +50,6 @@ export class ChapterSeeder implements Seeder {
           number: 3,
           title: 'The Rules of Engagement',
           summary: 'The complex rules of underground gambling are revealed.',
-          releaseDate: new Date('2006-05-15'),
           series: { id: series.id },
           arc: { id: introArc.id }
         }

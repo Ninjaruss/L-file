@@ -30,8 +30,6 @@ export class FactionsController {
           id: { type: 'number', example: 1 },
           name: { type: 'string', example: 'Kakerou' },
           description: { type: 'string', example: 'The underground gambling organization that governs illegal gambling' },
-          influence: { type: 'string', example: 'Major' },
-          status: { type: 'string', example: 'Active' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' }
         }
@@ -61,8 +59,6 @@ export class FactionsController {
         id: { type: 'number', example: 1 },
         name: { type: 'string', example: 'Kakerou' },
         description: { type: 'string', example: 'The underground gambling organization that governs illegal gambling' },
-        influence: { type: 'string', example: 'Major' },
-        status: { type: 'string', example: 'Active' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }
@@ -88,8 +84,6 @@ export class FactionsController {
       properties: {
         name: { type: 'string', example: 'Ideal' },
         description: { type: 'string', example: 'A rival organization seeking to overthrow Kakerou' },
-        influence: { type: 'string', example: 'Growing' },
-        status: { type: 'string', example: 'Active' },
         seriesId: { type: 'number', example: 1 }
       },
       required: ['name', 'seriesId']
@@ -104,8 +98,6 @@ export class FactionsController {
         id: { type: 'number', example: 2 },
         name: { type: 'string', example: 'Ideal' },
         description: { type: 'string', example: 'A rival organization seeking to overthrow Kakerou' },
-        influence: { type: 'string', example: 'Growing' },
-        status: { type: 'string', example: 'Active' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }
@@ -132,9 +124,7 @@ export class FactionsController {
       type: 'object',
       properties: {
         name: { type: 'string', example: 'Kakerou' },
-        description: { type: 'string', example: 'Updated description of the underground gambling organization' },
-        influence: { type: 'string', example: 'Dominant' },
-        status: { type: 'string', example: 'Active' }
+        description: { type: 'string', example: 'Updated description of the underground gambling organization' }
       }
     }
   })
@@ -147,8 +137,6 @@ export class FactionsController {
         id: { type: 'number', example: 1 },
         name: { type: 'string', example: 'Kakerou' },
         description: { type: 'string', example: 'Updated description of the underground gambling organization' },
-        influence: { type: 'string', example: 'Dominant' },
-        status: { type: 'string', example: 'Active' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }

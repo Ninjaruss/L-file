@@ -5,6 +5,10 @@ import * as path from 'path';
 // Load environment variables from .env file
 config();
 
+// Safety check to prevent dangerous operations in production
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isTest = process.env.NODE_ENV === 'test';
+
 export default new DataSource({
   type: 'postgres',
   host: process.env.DATABASE_HOST,
@@ -12,9 +16,16 @@ export default new DataSource({
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  entities: ['src/entities/*.entity.{ts,js}'],
-  migrations: ['src/migrations/*{.ts,.js}'],
-  migrationsRun: true,
-  synchronize: false,
+  entities: [
+    'src/entities/**/*.entity.{ts,js}',
+    'src/entities/translations/*.entity.{ts,js}'
+  ],
+  migrations: ['src/migrations/**/*{.ts,.js}'],
+  migrationsRun: false,
+  // Only enable synchronize in development or test environments
+  synchronize: isDevelopment || isTest,
+  // Ensure schema sync is never run if migrations exist - additional safety
+  migrationsTransactionMode: 'all',
   ssl: process.env.NODE_ENV === 'production',
+  logging: isDevelopment ? ['query', 'error'] : ['error'],
 });

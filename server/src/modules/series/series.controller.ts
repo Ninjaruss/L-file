@@ -28,14 +28,9 @@ export class SeriesController {
         data: [
           {
             id: 1,
-            title: 'Usogui',
-            description: 'A manga about high-stakes gambling and psychological warfare',
-            author: 'Toshio Sako',
-            status: 'completed',
-            startDate: '2006-05-19',
-            endDate: '2017-12-19',
-            totalChapters: 541,
-            coverImage: 'https://example.com/usogui-cover.jpg',
+            name: 'Usogui',
+            order: 0,
+            description: 'In a world where gambling is life...',
             createdAt: '2024-01-15T10:30:00Z',
             updatedAt: '2024-01-15T10:30:00Z'
           }
@@ -69,16 +64,9 @@ export class SeriesController {
     schema: {
       example: {
         id: 1,
-        title: 'Usogui',
-        description: 'A manga about high-stakes gambling and psychological warfare between brilliant minds',
-        author: 'Toshio Sako',
-        status: 'completed',
-        startDate: '2006-05-19',
-        endDate: '2017-12-19',
-        totalChapters: 541,
-        coverImage: 'https://example.com/usogui-cover.jpg',
-        genres: ['psychological', 'thriller', 'gambling'],
-        rating: 9.2,
+        name: 'Usogui',
+        order: 0,
+        description: 'In a world where gambling is life...',
         createdAt: '2024-01-15T10:30:00Z',
         updatedAt: '2024-01-15T10:30:00Z'
       }

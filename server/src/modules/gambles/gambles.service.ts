@@ -5,7 +5,6 @@ import { Gamble } from '../../entities/gamble.entity';
 import { GambleTeam } from '../../entities/gamble-team.entity';
 import { GambleRound } from '../../entities/gamble-round.entity';
 import { Character } from '../../entities/character.entity';
-import { Chapter } from '../../entities/chapter.entity';
 import { CreateGambleDto, CreateGambleTeamDto, CreateGambleRoundDto } from './dtos/create-gamble.dto';
 
 @Injectable()
@@ -19,24 +18,15 @@ export class GamblesService {
     private gambleRoundsRepository: Repository<GambleRound>,
     @InjectRepository(Character)
     private charactersRepository: Repository<Character>,
-    @InjectRepository(Chapter)
-    private chaptersRepository: Repository<Chapter>,
   ) {}
 
   async create(createGambleDto: CreateGambleDto): Promise<Gamble> {
-    // Validate chapter exists
-    const chapter = await this.chaptersRepository.findOneByOrFail({ 
-      id: createGambleDto.chapterId 
-    }).catch(() => {
-      throw new NotFoundException(`Chapter with ID ${createGambleDto.chapterId} not found`);
-    });
-
     // Create new gamble
     const gamble = new Gamble();
     gamble.name = createGambleDto.name;
     gamble.rules = createGambleDto.rules;
     gamble.winCondition = createGambleDto.winCondition;
-    gamble.chapter = chapter;
+    gamble.chapterId = createGambleDto.chapterId;
 
     // Save gamble first to establish relationships
     await this.gamblesRepository.save(gamble);
@@ -149,8 +139,7 @@ export class GamblesService {
       .leftJoinAndSelect('gamble.rounds', 'rounds')
       .leftJoinAndSelect('rounds.winner', 'roundWinner')
       .leftJoinAndSelect('gamble.observers', 'observers')
-      .leftJoinAndSelect('gamble.chapter', 'chapter')
-      .where('chapter.id = :chapterId', { chapterId })
+      .where('gamble.chapterId = :chapterId', { chapterId })
       .orderBy('gamble.createdAt', 'DESC')
       .getMany();
   }

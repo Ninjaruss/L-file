@@ -38,9 +38,13 @@ export class CharactersController {
             properties: {
               id: { type: 'number', example: 1 },
               name: { type: 'string', example: 'Baku Madarame' },
+              alternateNames: { type: 'array', items: { type: 'string' }, example: ['The Emperor', 'Death God'] },
               description: { type: 'string', example: 'The main protagonist known for his extraordinary gambling skills' },
-              role: { type: 'string', example: 'Protagonist' },
-              significance: { type: 'string', example: 'Main character' },
+              firstAppearanceChapter: { type: 'number', example: 1 },
+              notableRoles: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company CEO', 'Professional Gambler'] },
+              notableGames: { type: 'array', items: { type: 'string' }, example: ['17 Steps', 'One-Card Poker'] },
+              occupation: { type: 'string', example: 'Professional Gambler' },
+              affiliations: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company', 'Tournament Committee'] },
               createdAt: { type: 'string', format: 'date-time' },
               updatedAt: { type: 'string', format: 'date-time' }
             }
@@ -80,9 +84,13 @@ export class CharactersController {
       properties: {
         id: { type: 'number', example: 1 },
         name: { type: 'string', example: 'Baku Madarame' },
+        alternateNames: { type: 'array', items: { type: 'string' }, example: ['The Emperor', 'Death God'] },
         description: { type: 'string', example: 'The main protagonist known for his extraordinary gambling skills' },
-        role: { type: 'string', example: 'Protagonist' },
-        significance: { type: 'string', example: 'Main character' },
+        firstAppearanceChapter: { type: 'number', example: 1 },
+        notableRoles: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company CEO', 'Professional Gambler'] },
+        notableGames: { type: 'array', items: { type: 'string' }, example: ['17 Steps', 'One-Card Poker'] },
+        occupation: { type: 'string', example: 'Professional Gambler' },
+        affiliations: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company', 'Tournament Committee'] },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }
@@ -111,9 +119,13 @@ export class CharactersController {
       type: 'object',
       properties: {
         name: { type: 'string', example: 'Souichi Kiruma' },
+        alternateNames: { type: 'array', items: { type: 'string' }, example: ['Zero', 'L-file'] },
         description: { type: 'string', example: 'A mysterious and intelligent gambler with a dark past' },
-        role: { type: 'string', example: 'Antagonist' },
-        significance: { type: 'string', example: 'Major character' },
+        firstAppearanceChapter: { type: 'number', example: 1 },
+        notableRoles: { type: 'array', items: { type: 'string' }, example: ['Kakerou Referee', 'L-file Leader'] },
+        notableGames: { type: 'array', items: { type: 'string' }, example: ['Doubt', 'Ban'] },
+        occupation: { type: 'string', example: 'Referee' },
+        affiliations: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company', 'L-file'] },
         seriesId: { type: 'number', example: 1 }
       },
       required: ['name', 'seriesId']
@@ -127,9 +139,13 @@ export class CharactersController {
       properties: {
         id: { type: 'number', example: 2 },
         name: { type: 'string', example: 'Souichi Kiruma' },
+        alternateNames: { type: 'array', items: { type: 'string' }, example: ['Zero', 'L-file'] },
         description: { type: 'string', example: 'A mysterious and intelligent gambler with a dark past' },
-        role: { type: 'string', example: 'Antagonist' },
-        significance: { type: 'string', example: 'Major character' },
+        firstAppearanceChapter: { type: 'number', example: 1 },
+        notableRoles: { type: 'array', items: { type: 'string' }, example: ['Kakerou Referee', 'L-file Leader'] },
+        notableGames: { type: 'array', items: { type: 'string' }, example: ['Doubt', 'Ban'] },
+        occupation: { type: 'string', example: 'Referee' },
+        affiliations: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company', 'L-file'] },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }
@@ -156,9 +172,13 @@ export class CharactersController {
       type: 'object',
       properties: {
         name: { type: 'string', example: 'Baku Madarame' },
+        alternateNames: { type: 'array', items: { type: 'string' }, example: ['The Emperor', 'Death God'] },
         description: { type: 'string', example: 'Updated description of the main protagonist' },
-        role: { type: 'string', example: 'Protagonist' },
-        significance: { type: 'string', example: 'Main character' }
+        firstAppearanceChapter: { type: 'number', example: 1 },
+        notableRoles: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company CEO', 'Professional Gambler'] },
+        notableGames: { type: 'array', items: { type: 'string' }, example: ['17 Steps', 'One-Card Poker'] },
+        occupation: { type: 'string', example: 'Professional Gambler' },
+        affiliations: { type: 'array', items: { type: 'string' }, example: ['Kakerou Company', 'Tournament Committee'] }
       }
     }
   })

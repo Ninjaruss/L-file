@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Arc } from '../../entities/arc.entity';
+import { CreateArcDto } from './dto/create-arc.dto';
 
 @Injectable()
 export class ArcsService {
-  constructor(@InjectRepository(Arc) private repo: Repository<Arc>) {}
+  constructor(
+    @InjectRepository(Arc) private repo: Repository<Arc>
+  ) {}
 
   /**
    * Pagination: page (default 1), limit (default 20)
@@ -45,11 +48,21 @@ export class ArcsService {
   }
 
   findOne(id: number) {
-    return this.repo.findOne({ where: { id }, relations: ['series', 'characters'] });
+    return this.repo.findOne({ 
+      where: { id }, 
+      relations: ['series', 'characters'] 
+    });
   }
 
-  create(data: Partial<Arc>) {
-    const arc = this.repo.create(data);
+  async create(data: CreateArcDto) {
+    const arc = this.repo.create({
+      name: data.name,
+      order: data.order,
+      description: data.description,
+      series: { id: data.seriesId } as any,
+      startChapter: data.startChapter,
+      endChapter: data.endChapter
+    });
     return this.repo.save(arc);
   }
 

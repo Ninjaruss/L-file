@@ -17,7 +17,13 @@ export class Tag {
   name: string;
 
   @ApiProperty({ 
-    description: 'Events associated with this tag',
+    description: 'Description of what this tag represents',
+    example: 'Content involving high-stakes gambling scenarios'
+  })
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @ApiProperty({ 
     type: () => [Event]
   })
   @ManyToMany(() => Event, event => event.tags)

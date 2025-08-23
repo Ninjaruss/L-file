@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './config/database.config';
@@ -11,11 +11,13 @@ import { EventsModule } from './modules/events/events.module';
 import { ChapterSpoilersModule } from './modules/chapter-spoilers/chapter-spoilers.module';
 import { FactionsModule } from './modules/factions/factions.module';
 import { TagsModule } from './modules/tags/tags.module';
+import { VolumesModule } from './modules/volumes/volumes.module';
 
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TranslationsModule } from './modules/translations/translations.module';
 import { GamblesModule } from './modules/gambles/gambles.module';
+import { Logger } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -28,8 +30,18 @@ import { GamblesModule } from './modules/gambles/gambles.module';
     
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => 
-        getDatabaseConfig(configService),
+      useFactory: (configService: ConfigService) => {
+        const dbConfig = getDatabaseConfig(configService);
+        
+        // Add safeguards for production
+        if (configService.get('NODE_ENV') === 'production' && configService.get('ENABLE_SCHEMA_SYNC') === 'true') {
+          const logger = new Logger('DatabaseConfig');
+          logger.warn('WARNING: Schema synchronization is enabled in production environment!');
+          logger.warn('This can cause data loss. Consider disabling ENABLE_SCHEMA_SYNC in production.');
+        }
+        
+        return dbConfig;
+      },
       inject: [ConfigService],
     }),
 
@@ -41,6 +53,7 @@ import { GamblesModule } from './modules/gambles/gambles.module';
     ChapterSpoilersModule,
     FactionsModule,
     TagsModule, 
+    VolumesModule,
 
     UsersModule, 
     AuthModule,

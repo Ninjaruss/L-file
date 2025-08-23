@@ -5,8 +5,12 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { performDatabaseSafetyChecks } from './utils/db-consistency-check';
 
 async function bootstrap() {
+  // Perform database safety checks before starting the application
+  await performDatabaseSafetyChecks();
+  
   const app = await NestFactory.create(AppModule);
   
   // Security

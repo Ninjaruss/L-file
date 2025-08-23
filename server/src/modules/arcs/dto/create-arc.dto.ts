@@ -39,4 +39,22 @@ export class CreateArcDto {
     example: 1
   })
   seriesId: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @ApiPropertyOptional({ 
+    description: 'Chapter number where this arc starts',
+    example: 1
+  })
+  startChapter?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @ApiPropertyOptional({ 
+    description: 'Chapter number where this arc ends',
+    example: 10
+  })
+  endChapter?: number;
 }

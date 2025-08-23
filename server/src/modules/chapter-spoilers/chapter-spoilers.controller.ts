@@ -14,32 +14,31 @@ export class ChapterSpoilersController {
   constructor(private readonly service: ChapterSpoilersService) {}
 
   @ApiOperation({
-    summary: 'Get all chapter spoilers with filtering',
-    description: 'Retrieves chapter spoilers with optional filtering by spoiler level, category, chapter, and verification status.'
+    summary: 'Get all chapter spoilers with filtering and user validation',
+    description: 'Retrieves chapter spoilers with optional filtering by spoiler level, category, chapter, and verification status. Use userChapterNumber to only show spoilers the user should see based on their reading progress.'
   })
-  @ApiQuery({ name: 'level', required: false, enum: SpoilerLevel, description: 'Filter by spoiler level', example: 'MAJOR' })
-  @ApiQuery({ name: 'category', required: false, enum: SpoilerCategory, description: 'Filter by spoiler category', example: 'CHARACTER_DEATH' })
-  @ApiQuery({ name: 'chapterId', required: false, description: 'Filter by chapter ID', example: 1 })
+  @ApiQuery({ name: 'level', required: false, enum: SpoilerLevel, description: 'Filter by spoiler level', example: 'REVEAL' })
+  @ApiQuery({ name: 'category', required: false, enum: SpoilerCategory, description: 'Filter by spoiler category', example: 'CHARACTER' })
+  @ApiQuery({ name: 'chapterNumber', required: false, description: 'Filter by chapter number', example: 15 })
   @ApiQuery({ name: 'isVerified', required: false, description: 'Filter by verification status', example: true })
+  @ApiQuery({ name: 'userChapterNumber', required: false, description: 'User\'s reading progress - only shows spoilers up to this chapter', example: 20 })
   @ApiOkResponse({
     description: 'Spoilers retrieved successfully',
     schema: {
       example: [
         {
           id: 1,
-          content: 'A major character revelation occurs in this chapter',
-          level: 'MAJOR',
-          category: 'CHARACTER_REVEAL',
-          chapterId: 1,
+          content: 'A major character revelation occurs during the final gamble',
+          level: 'REVEAL',
+          category: 'CHARACTER',
+          chapterNumber: 15,
           isVerified: true,
-          canViewAfterChapter: 1,
+          chapterReferences: [
+            { chapterNumber: 10, context: "Page 8 - Character background revealed" },
+            { chapterNumber: 12, context: "Final scene - Important foreshadowing" }
+          ],
           createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T10:30:00Z',
-          chapter: {
-            id: 1,
-            number: 1,
-            title: 'The Beginning of Fate'
-          }
+          updatedAt: '2024-01-15T10:30:00Z'
         }
       ]
     }
@@ -48,15 +47,39 @@ export class ChapterSpoilersController {
   getAll(
     @Query('level') level?: SpoilerLevel,
     @Query('category') category?: SpoilerCategory,
-    @Query('chapterId', ParseIntPipe) chapterId?: number,
+    @Query('chapterNumber', ParseIntPipe) chapterNumber?: number,
     @Query('isVerified') isVerified?: boolean,
+    @Query('userChapterNumber', ParseIntPipe) userChapterNumber?: number,
   ): Promise<ChapterSpoiler[]> {
-    return this.service.findAll({ level, category, chapterId, isVerified });
+    return this.service.findAll({ level, category, chapterNumber, isVerified, userChapterNumber });
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get a specific chapter spoiler',
+    description: 'Retrieve a single spoiler by its ID'
+  })
+  @ApiParam({ name: 'id', description: 'Spoiler ID', example: 1 })
   getOne(@Param('id', ParseIntPipe) id: number): Promise<ChapterSpoiler> {
     return this.service.findOne(id);
+  }
+
+  @Get('viewable/:userChapterNumber')
+  @ApiOperation({
+    summary: 'Get all spoilers viewable by user',
+    description: 'Get all spoilers that are safe for the user to view based on their reading progress'
+  })
+  @ApiParam({ name: 'userChapterNumber', description: 'Highest chapter number the user has read', example: 15 })
+  @ApiQuery({ name: 'level', required: false, enum: SpoilerLevel, description: 'Filter by spoiler level' })
+  @ApiQuery({ name: 'category', required: false, enum: SpoilerCategory, description: 'Filter by spoiler category' })
+  @ApiQuery({ name: 'isVerified', required: false, description: 'Filter by verification status' })
+  getViewableSpoilers(
+    @Param('userChapterNumber', ParseIntPipe) userChapterNumber: number,
+    @Query('level') level?: SpoilerLevel,
+    @Query('category') category?: SpoilerCategory,
+    @Query('isVerified') isVerified?: boolean,
+  ): Promise<ChapterSpoiler[]> {
+    return this.service.findViewableSpoilers(userChapterNumber, { level, category, isVerified });
   }
 
   @ApiOperation({
@@ -68,14 +91,13 @@ export class ChapterSpoilersController {
       type: 'object',
       properties: {
         spoilerId: { type: 'number', example: 1, description: 'ID of the spoiler to check' },
-        readChapterIds: { 
-          type: 'array', 
-          items: { type: 'number' }, 
-          example: [1, 2, 3, 4, 5], 
-          description: 'Array of chapter IDs the user has read' 
+        userChapterNumber: { 
+          type: 'number', 
+          example: 15, 
+          description: 'The highest chapter number the user has read' 
         }
       },
-      required: ['spoilerId', 'readChapterIds']
+      required: ['spoilerId', 'userChapterNumber']
     }
   })
   @ApiOkResponse({
@@ -102,9 +124,9 @@ export class ChapterSpoilersController {
   @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
   async checkSpoilerViewable(
     @Body('spoilerId', ParseIntPipe) spoilerId: number,
-    @Body('readChapterIds') readChapterIds: number[],
+    @Body('userChapterNumber', ParseIntPipe) userChapterNumber: number,
   ): Promise<{ viewable: boolean }> {
-    const viewable = await this.service.canViewSpoiler(spoilerId, readChapterIds);
+    const viewable = await this.service.canViewSpoiler(spoilerId, userChapterNumber);
     return { viewable };
   }
 
@@ -112,6 +134,29 @@ export class ChapterSpoilersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Create a new chapter spoiler',
+    description: 'Create a new spoiler with chapter number and optional chapter references with context (page numbers, etc.)'
+  })
+  @ApiCreatedResponse({
+    description: 'Spoiler created successfully',
+    schema: {
+      example: {
+        id: 1,
+        content: 'Major character revelation occurs',
+        level: 'MAJOR',
+        category: 'CHARACTER_REVEAL',
+        chapterNumber: 15,
+        isVerified: false,
+        chapterReferences: [
+          { chapterNumber: 12, context: 'Page 8 - Character background' },
+          { chapterNumber: 14, context: 'Final scene - Foreshadowing' }
+        ],
+        createdAt: '2024-01-15T10:30:00Z',
+        updatedAt: '2024-01-15T10:30:00Z'
+      }
+    }
+  })
   create(@Body() data: CreateChapterSpoilerDto): Promise<ChapterSpoiler> {
     return this.service.create(data);
   }
@@ -120,6 +165,11 @@ export class ChapterSpoilersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Verify a chapter spoiler',
+    description: 'Mark a spoiler as verified by moderators/admins'
+  })
+  @ApiParam({ name: 'id', description: 'Spoiler ID', example: 1 })
   async verify(@Param('id', ParseIntPipe) id: number): Promise<ChapterSpoiler> {
     return this.service.update(id, { isVerified: true });
   }
@@ -128,6 +178,11 @@ export class ChapterSpoilersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Update a chapter spoiler',
+    description: 'Update spoiler content, chapter number, chapter references, or other properties'
+  })
+  @ApiParam({ name: 'id', description: 'Spoiler ID', example: 1 })
   update(
     @Param('id', ParseIntPipe) id: number, 
     @Body() data: Partial<CreateChapterSpoilerDto>
@@ -139,6 +194,11 @@ export class ChapterSpoilersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Delete a chapter spoiler',
+    description: 'Permanently remove a spoiler from the database'
+  })
+  @ApiParam({ name: 'id', description: 'Spoiler ID', example: 1 })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.service.remove(id);
   }

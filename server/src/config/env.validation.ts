@@ -1,5 +1,5 @@
 import { plainToClass } from 'class-transformer';
-import { IsString, IsNumber, validateSync, IsIn, IsUrl } from 'class-validator';
+import { IsString, IsNumber, validateSync, IsIn, IsUrl, IsBoolean, IsOptional } from 'class-validator';
 
 class EnvironmentVariables {
   @IsString()
@@ -42,6 +42,16 @@ class EnvironmentVariables {
     protocols: ['http', 'https']
   })
   FRONTEND_URL: string;
+  
+  @IsString()
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  RUN_MIGRATIONS?: string;
+  
+  @IsString()
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  ENABLE_SCHEMA_SYNC?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

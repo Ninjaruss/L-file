@@ -23,21 +23,24 @@ export class ArcSeeder implements Seeder {
     const initialArcs = [
       {
         name: 'Introduction Arc',
+        order: 0,
         description: 'Introduction to the world of underground gambling...',
         startChapter: 1,
-        endChapter: 10,
+        endChapter: 3,
         series: { id: series.id } as Series
       },
       {
         name: 'Life or Death Game Arc',
+        order: 1,
         description: 'Baku faces his first serious challenge...',
-        startChapter: 11,
-        endChapter: 20,
+        startChapter: 4,
+        endChapter: 10,
         series: { id: series.id } as Series
       },
       // Add more arcs as needed
     ];
 
+    // Create arcs with chapter numbers
     for (const arcData of initialArcs) {
       const existingArc = await arcRepository.findOne({
         where: { 
@@ -47,7 +50,15 @@ export class ArcSeeder implements Seeder {
       });
 
       if (!existingArc) {
-        await arcRepository.save(arcData);
+        const arc = arcRepository.create({
+          name: arcData.name,
+          order: arcData.order,
+          description: arcData.description,
+          series: arcData.series,
+          startChapter: arcData.startChapter,
+          endChapter: arcData.endChapter
+        });
+        await arcRepository.save(arc);
       }
     }
   }

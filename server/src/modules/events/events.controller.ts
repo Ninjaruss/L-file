@@ -38,10 +38,10 @@ export class EventsController {
             type: 'object',
             properties: {
               id: { type: 'number', example: 1 },
-              title: { type: 'string', example: 'Tower of Karma Arc Begins' },
-              description: { type: 'string', example: 'The beginning of the deadly Tower of Karma gambling tournament' },
-              timeline: { type: 'string', example: 'Chapter 150-200' },
-              significance: { type: 'string', example: 'Major story arc' },
+              title: { type: 'string', example: 'The 17 Steps Tournament' },
+              description: { type: 'string', example: 'A high-stakes tournament where participants must climb 17 steps...' },
+              startChapter: { type: 'number', example: 45 },
+              endChapter: { type: 'number', example: 52 },
               createdAt: { type: 'string', format: 'date-time' },
               updatedAt: { type: 'string', format: 'date-time' }
             }
@@ -80,10 +80,10 @@ export class EventsController {
       type: 'object',
       properties: {
         id: { type: 'number', example: 1 },
-        title: { type: 'string', example: 'Tower of Karma Arc Begins' },
-        description: { type: 'string', example: 'The beginning of the deadly Tower of Karma gambling tournament' },
-        timeline: { type: 'string', example: 'Chapter 150-200' },
-        significance: { type: 'string', example: 'Major story arc' },
+        title: { type: 'string', example: 'The 17 Steps Tournament' },
+        description: { type: 'string', example: 'A high-stakes tournament where participants must climb 17 steps...' },
+        startChapter: { type: 'number', example: 45 },
+        endChapter: { type: 'number', example: 52 },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }
@@ -116,8 +116,8 @@ export class EventsController {
         id: { type: 'number', example: 2 },
         title: { type: 'string', example: 'Air Poker Tournament' },
         description: { type: 'string', example: 'A high-stakes poker game with deadly consequences' },
-        timeline: { type: 'string', example: 'Chapter 75-85' },
-        significance: { type: 'string', example: 'Important character development' },
+        startChapter: { type: 'number', example: 75 },
+        endChapter: { type: 'number', example: 85 },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' }
       }
@@ -145,8 +145,8 @@ export class EventsController {
       properties: {
         title: { type: 'string', example: 'Tower of Karma Arc Begins' },
         description: { type: 'string', example: 'Updated description of the Tower of Karma arc' },
-        timeline: { type: 'string', example: 'Chapter 150-210' },
-        significance: { type: 'string', example: 'Major story arc' }
+        startChapter: { type: 'number', example: 150 },
+        endChapter: { type: 'number', example: 210 }
       }
     }
   })

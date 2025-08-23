@@ -28,23 +28,14 @@ export class GamblesController {
       example: {
         id: 1,
         name: 'Protoporos',
-        description: 'A deadly gambling game involving life and death stakes',
-        gambleType: 'LIFE_OR_DEATH',
-        startChapterId: 1,
-        endChapterId: 15,
-        stakes: 'Lives of the participants',
-        outcome: 'TBD',
+        rules: 'A deadly gambling game involving stones...',
+        winCondition: 'The player who removes the last stone loses',
+        chapterId: 1,
+        teams: [],
+        rounds: [],
+        observers: [],
         createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T10:30:00Z',
-        teams: [
-          {
-            id: 1,
-            name: 'Baku Team',
-            members: ['Baku Madarame'],
-            isWinner: false
-          }
-        ],
-        rounds: []
+        updatedAt: '2024-01-15T10:30:00Z'
       }
     }
   })
@@ -61,7 +52,7 @@ export class GamblesController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Chapter or Character not found',
+    description: 'Chapter not found',
     schema: {
       example: {
         statusCode: 404,
@@ -100,8 +91,41 @@ export class GamblesController {
   })
   @ApiResponse({
     status: 200,
-    description: 'The found gamble',
-    type: Gamble
+    description: 'The gamble details',
+    schema: {
+      example: {
+        id: 1,
+        name: 'Protoporos',
+        rules: 'A deadly gambling game involving stones...',
+        winCondition: 'The player who removes the last stone loses',
+        chapterId: 1,
+        teams: [
+          {
+            id: 1,
+            name: 'Baku Team',
+            members: ['Baku Madarame'],
+            isWinner: false
+          },
+          {
+            id: 2,
+            name: 'Lalo Team',
+            members: ['Lalo'],
+            isWinner: true
+          }
+        ],
+        rounds: [
+          {
+            id: 1,
+            roundNumber: 1,
+            description: 'First round of Protoporos',
+            outcome: 'Lalo wins'
+          }
+        ],
+        observers: ['Referee Madarame'],
+        createdAt: '2024-01-15T10:30:00Z',
+        updatedAt: '2024-01-15T10:30:00Z'
+      }
+    }
   })
   @ApiResponse({
     status: 404,

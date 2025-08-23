@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, MaxLength, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, MinLength, MaxLength, Matches, IsOptional } from 'class-validator';
 
 export class CreateTagDto {
   @IsString()
@@ -17,4 +17,14 @@ export class CreateTagDto {
     pattern: '^[a-zA-Z0-9\\s-]+$'
   })
   name: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  @ApiPropertyOptional({ 
+    description: 'Description of what this tag represents',
+    example: 'Content involving high-stakes gambling scenarios',
+    maxLength: 500
+  })
+  description?: string;
 }

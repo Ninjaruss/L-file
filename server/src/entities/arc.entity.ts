@@ -44,6 +44,20 @@ export class Arc {
   })
   series: Series;
 
+  @ApiPropertyOptional({ 
+    description: 'Chapter number where this arc starts',
+    example: 1
+  })
+  @Column({ nullable: true })
+  startChapter: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Chapter number where this arc ends',
+    example: 10
+  })
+  @Column({ nullable: true })
+  endChapter: number;
+
   @ApiPropertyOptional({ description: 'Characters that appear in this arc', type: () => [Character] })
   @OneToMany(() => Character, character => character.arc)
   characters: Character[];
