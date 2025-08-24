@@ -11,7 +11,6 @@
 ### Notes
 - AdminJS was having issues with ESM support as the backend uses NestJS; will implement React Admin on the frontend for the dashboard
 - Figured out that migrations are necessary if we already have data on the server. This is definitiely something to look out for in places that involve user submitted data like user database and media
-- 
 
 ## 2025-08-22
 ### Changes
