@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, Index } from 'typeorm';
-import { Arc } from './arc.entity';
 import { Series } from './series.entity';
 import { Media } from './media.entity';
 import { Faction } from './faction.entity';
@@ -7,7 +6,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
 @Index(['series'])
-@Index(['arc'])
 @Index(['name'])
 export class Character {
   @ApiProperty({ description: 'Unique identifier' })
@@ -74,13 +72,6 @@ export class Character {
   @Column({ type: 'simple-array', nullable: true })
   affiliations: string[];
 
-  @ApiPropertyOptional({ 
-    description: 'First major story arc where the character appears',
-    type: () => Arc
-  })
-  @ManyToOne(() => Arc, arc => arc.characters, { nullable: true })
-  arc: Arc;
-
   @ApiProperty({ 
     description: 'Series the character belongs to',
     type: () => Series
@@ -101,5 +92,12 @@ export class Character {
   })
   @ManyToMany(() => Faction, faction => faction.characters)
   factions: Faction[];
+
+  @ApiPropertyOptional({ 
+    description: 'Quotes said by this character',
+    type: () => ['Quote']
+  })
+  @OneToMany('Quote', (quote: any) => quote.character, { nullable: true, cascade: true })
+  quotes: any[];
 
 }

@@ -7,9 +7,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
-import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiForbiddenResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiForbiddenResponse, ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
-@ApiTags('Chapters')
+@ApiTags('chapters')
 @Controller('chapters')
 export class ChaptersController {
   constructor(private readonly service: ChaptersService) {}
@@ -79,6 +79,11 @@ export class ChaptersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create chapter', description: 'Create a new chapter (requires moderator or admin role)' })
+  @ApiCreatedResponse({ description: 'Chapter created successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid chapter data' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden - requires moderator or admin role' })
   create(@Body() createChapterDto: CreateChapterDto) {
     return this.service.create(createChapterDto);
   }
@@ -87,6 +92,12 @@ export class ChaptersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update chapter', description: 'Update an existing chapter (requires moderator or admin role)' })
+  @ApiOkResponse({ description: 'Chapter updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid chapter data' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden - requires moderator or admin role' })
+  @ApiParam({ name: 'id', description: 'Chapter ID', example: 1 })
   async update(@Param('id') id: number, @Body() data: UpdateChapterDto) {
     const result = await this.service.update(id, data);
     if (result.affected === 0) {
@@ -99,6 +110,11 @@ export class ChaptersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete chapter', description: 'Delete a chapter (requires moderator or admin role)' })
+  @ApiOkResponse({ description: 'Chapter deleted successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden - requires moderator or admin role' })
+  @ApiParam({ name: 'id', description: 'Chapter ID', example: 1 })
   async remove(@Param('id') id: number) {
     const result = await this.service.remove(id);
     if (result.affected === 0) {

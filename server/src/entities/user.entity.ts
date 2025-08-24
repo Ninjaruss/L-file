@@ -3,11 +3,16 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   Index,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Event } from './event.entity';
+import { Quote } from './quote.entity';
+import { Gamble } from './gamble.entity';
+import { ProfileImage } from './profile-image.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum UserRole {
@@ -55,6 +60,51 @@ export class User {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
+
+  @ApiPropertyOptional({ 
+    description: 'ID of the user\'s profile image',
+    example: 'uuid-here'
+  })
+  @Column({ type: 'uuid', nullable: true })
+  profileImageId: string | null;
+
+  @ApiPropertyOptional({ 
+    description: 'ID of the user\'s favorite quote',
+    example: 1
+  })
+  @Column({ type: 'int', nullable: true })
+  favoriteQuoteId: number | null;
+
+  @ApiPropertyOptional({ 
+    description: 'ID of the user\'s favorite gamble',
+    example: 1
+  })
+  @Column({ type: 'int', nullable: true })
+  favoriteGambleId: number | null;
+
+  @ApiPropertyOptional({ 
+    description: 'User\'s profile image object',
+    type: () => ProfileImage
+  })
+  @ManyToOne(() => ProfileImage, (profileImage) => profileImage.users, { nullable: true })
+  @JoinColumn({ name: 'profileImageId' })
+  profileImage: ProfileImage | null;
+
+  @ApiPropertyOptional({ 
+    description: 'User\'s favorite quote object',
+    type: () => Quote
+  })
+  @ManyToOne(() => Quote, { nullable: true })
+  @JoinColumn({ name: 'favoriteQuoteId' })
+  favoriteQuote: Quote | null;
+
+  @ApiPropertyOptional({ 
+    description: 'User\'s favorite gamble object',
+    type: () => Gamble
+  })
+  @ManyToOne(() => Gamble, { nullable: true })
+  @JoinColumn({ name: 'favoriteGambleId' })
+  favoriteGamble: Gamble | null;
 
   @OneToMany(() => Event, (event) => event.createdBy)
   submittedEvents: Event[];

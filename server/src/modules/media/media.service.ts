@@ -28,9 +28,7 @@ export class MediaService {
         url: normalizedUrl,
         type: data.type,
         description: data.description,
-        arc: data.arcId ? { id: data.arcId } as any : null,
         character: data.characterId ? { id: data.characterId } as any : null,
-        event: data.eventId ? { id: data.eventId } as any : null,
         submittedBy: user,
         status: MediaStatus.PENDING
     });
@@ -40,7 +38,7 @@ export class MediaService {
 
   async findAll(): Promise<Media[]> {
     return this.mediaRepo.find({ 
-      relations: ['arc', 'character', 'event', 'submittedBy'],
+  relations: ['arc', 'character', 'submittedBy'],
       where: { status: MediaStatus.APPROVED }
     });
   }
@@ -48,7 +46,7 @@ export class MediaService {
   async findOne(id: number): Promise<Media | null> {
     const media = await this.mediaRepo.findOne({ 
       where: { id },
-      relations: ['arc', 'character', 'event', 'submittedBy']
+  relations: ['arc', 'character', 'submittedBy']
     });
     if (!media) {
       throw new NotFoundException(`Media with id ${id} not found`);
@@ -59,7 +57,7 @@ export class MediaService {
   async findPending(): Promise<Media[]> {
     return this.mediaRepo.find({
       where: { status: MediaStatus.PENDING },
-      relations: ['arc', 'character', 'event', 'submittedBy'],
+  relations: ['arc', 'character', 'submittedBy'],
       order: { createdAt: 'ASC' }
     });
   }
@@ -106,5 +104,75 @@ export class MediaService {
 
   async remove(id: number): Promise<void> {
     await this.mediaRepo.delete(id);
+  }
+
+  // PUBLIC METHODS - No authentication required
+
+  async findAllPublic(filters: { 
+    type?: string; 
+    characterId?: number; 
+    page?: number; 
+    limit?: number; 
+  } = {}) {
+    const { page = 1, limit = 20 } = filters;
+    const query = this.mediaRepo.createQueryBuilder('media')
+      .leftJoinAndSelect('media.character', 'character')
+      .leftJoinAndSelect('media.submittedBy', 'submittedBy')
+      .where('media.status = :status', { status: MediaStatus.APPROVED })
+      .select([
+        'media.id',
+        'media.url', 
+        'media.type',
+        'media.description',
+        'media.createdAt',
+        'character.id',
+        'character.name',
+        'submittedBy.id',
+        'submittedBy.username'
+      ]);
+
+    if (filters.type) {
+      query.andWhere('media.type = :type', { type: filters.type });
+    }
+    if (filters.characterId) {
+      query.andWhere('character.id = :characterId', { characterId: filters.characterId });
+    }
+
+    query.orderBy('media.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findOnePublic(id: number): Promise<Media | null> {
+    return this.mediaRepo.findOne({
+      where: { 
+        id,
+        status: MediaStatus.APPROVED 
+      },
+      relations: ['character', 'submittedBy'],
+      select: {
+        id: true,
+        url: true,
+        type: true,
+        description: true,
+        createdAt: true,
+        character: {
+          id: true,
+          name: true
+        },
+        submittedBy: {
+          id: true,
+          username: true
+        }
+      }
+    });
   }
 }

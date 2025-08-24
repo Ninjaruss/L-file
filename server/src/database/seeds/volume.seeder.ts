@@ -52,7 +52,6 @@ export class VolumeSeeder implements Seeder {
       if (!existingVolume) {
         const volume = volumeRepository.create({
           number: volumeData.number,
-          title: volumeData.title,
           description: volumeData.description,
           startChapter: volumeData.startChapter,
           endChapter: volumeData.endChapter,

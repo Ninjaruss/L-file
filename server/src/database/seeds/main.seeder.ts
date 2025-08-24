@@ -6,6 +6,12 @@ import { ChapterSeeder } from './chapter.seeder';
 import { CharacterSeeder } from './character.seeder';
 import { ArcSeeder } from './arc.seeder';
 import { VolumeSeeder } from './volume.seeder';
+import { QuoteSeeder } from './quote.seeder';
+import { EventSeeder } from './event.seeder';
+import { FactionSeeder } from './faction.seeder';
+import { TagSeeder } from './tag.seeder';
+import { MediaSeeder } from './media.seeder';
+import { GambleSeeder } from './gamble.seeder';
 import { Logger } from '@nestjs/common';
 import chalk from 'chalk';
 
@@ -15,15 +21,28 @@ export class MainSeeder {
   constructor(private readonly dataSource: DataSource) {}
 
   public async run(): Promise<boolean> {
-    this.logger.log(chalk.blue('🌱 Starting seeders execution...'));
+    this.logger.log(chalk.blue('🌱 Starting comprehensive seeders execution...'));
     
     const seeders: Seeder[] = [
-      new UserSeeder(this.dataSource),
-      new SeriesSeeder(this.dataSource),
-      new ArcSeeder(this.dataSource),      // Create arcs with chapter numbers
-      new VolumeSeeder(this.dataSource),   // Create volumes with chapter ranges
-      new ChapterSeeder(this.dataSource),  // Create chapters with arc references
-      new CharacterSeeder(this.dataSource),
+      // Core data - must be seeded first
+      new UserSeeder(this.dataSource),       // Users for content attribution
+      new SeriesSeeder(this.dataSource),     // Series information
+      
+      // Content structure
+      new ArcSeeder(this.dataSource),        // Story arcs with chapter ranges
+      new VolumeSeeder(this.dataSource),     // Volume organization
+      new ChapterSeeder(this.dataSource),    // Individual chapters
+      
+      // Characters and content
+      new CharacterSeeder(this.dataSource),  // Character profiles
+      new FactionSeeder(this.dataSource),    // Organizations and groups
+      new TagSeeder(this.dataSource),        // Content categorization tags
+      
+      // Interactive content
+      new EventSeeder(this.dataSource),      // Story events and plot points
+      new QuoteSeeder(this.dataSource),      // Character quotes
+      new GambleSeeder(this.dataSource),     // Gambling events and games
+      new MediaSeeder(this.dataSource),      // Community media submissions
     ];
 
     let success = true;
@@ -44,6 +63,15 @@ export class MainSeeder {
 
     if (success) {
       this.logger.log(chalk.green('✅ All seeders completed successfully!'));
+      this.logger.log(chalk.blue('📊 Database has been populated with comprehensive test data including:'));
+      this.logger.log(chalk.blue('   - User accounts (admin, moderator, regular users)'));
+      this.logger.log(chalk.blue('   - Complete Usogui series structure'));
+      this.logger.log(chalk.blue('   - Character profiles and relationships'));
+      this.logger.log(chalk.blue('   - Story events and plot points'));
+      this.logger.log(chalk.blue('   - Gambling events and tournaments'));
+      this.logger.log(chalk.blue('   - Character quotes and memorable lines'));
+      this.logger.log(chalk.blue('   - Community media submissions'));
+      this.logger.log(chalk.blue('   - Content tags and categorization'));
       return true;
     } else {
       this.logger.error(chalk.red('❌ One or more seeders failed to complete successfully'));

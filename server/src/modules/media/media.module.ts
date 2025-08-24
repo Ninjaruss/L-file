@@ -12,7 +12,7 @@ import { UrlNormalizerService } from './services/url-normalizer.service';
     TypeOrmModule.forFeature([Media]),
     EmailModule,
   ],
-  providers: [MediaService],
+  providers: [MediaService, UrlNormalizerService],
   controllers: [MediaController],
   exports: [MediaService],
 })

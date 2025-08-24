@@ -3,12 +3,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../../entities/user.entity';
+import { Quote } from '../../entities/quote.entity';
+import { Gamble } from '../../entities/gamble.entity';
+import { ProfileImage } from '../../entities/profile-image.entity';
 import { Media, MediaStatus } from '../../entities/media.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly repo: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly repo: Repository<User>,
+    @InjectRepository(Quote) private readonly quoteRepo: Repository<Quote>,
+    @InjectRepository(Gamble) private readonly gambleRepo: Repository<Gamble>,
+    @InjectRepository(ProfileImage) private readonly profileImageRepo: Repository<ProfileImage>,
+  ) {}
 
   // --- Find methods ---
   async findAll(): Promise<User[]> {
@@ -182,6 +191,206 @@ export class UsersService {
     }
     await this.repo.update(id, data);
     return this.findOne(id);
+  }
+
+  // --- Profile customization methods ---
+  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto): Promise<User> {
+    const user = await this.findOne(userId);
+
+    // Validate and update profile image if provided
+    if (updateProfileDto.profileImageId !== undefined) {
+      if (updateProfileDto.profileImageId === null) {
+        user.profileImageId = null;
+      } else {
+        const profileImage = await this.profileImageRepo.findOne({ 
+          where: { id: updateProfileDto.profileImageId, isActive: true } 
+        });
+        if (!profileImage) {
+          throw new NotFoundException(`Profile image with id ${updateProfileDto.profileImageId} not found or is inactive`);
+        }
+        user.profileImageId = updateProfileDto.profileImageId;
+      }
+    }
+
+    // Validate favorite quote exists if provided
+    if (updateProfileDto.favoriteQuoteId !== undefined) {
+      if (updateProfileDto.favoriteQuoteId === null) {
+        user.favoriteQuoteId = null;
+      } else {
+        const quote = await this.quoteRepo.findOne({ where: { id: updateProfileDto.favoriteQuoteId } });
+        if (!quote) {
+          throw new NotFoundException(`Quote with id ${updateProfileDto.favoriteQuoteId} not found`);
+        }
+        user.favoriteQuoteId = updateProfileDto.favoriteQuoteId;
+      }
+    }
+
+    // Validate favorite gamble exists if provided
+    if (updateProfileDto.favoriteGambleId !== undefined) {
+      if (updateProfileDto.favoriteGambleId === null) {
+        user.favoriteGambleId = null;
+      } else {
+        const gamble = await this.gambleRepo.findOne({ where: { id: updateProfileDto.favoriteGambleId } });
+        if (!gamble) {
+          throw new NotFoundException(`Gamble with id ${updateProfileDto.favoriteGambleId} not found`);
+        }
+        user.favoriteGambleId = updateProfileDto.favoriteGambleId;
+      }
+    }
+
+    await this.repo.save(user);
+    return this.getUserProfile(userId);
+  }
+
+  async getUserProfile(userId: number): Promise<User> {
+    const user = await this.repo.findOne({
+      where: { id: userId },
+      relations: [
+        'profileImage', 
+        'profileImage.character',
+        'favoriteQuote', 
+        'favoriteQuote.character', 
+        'favoriteQuote.series', 
+        'favoriteGamble', 
+        'favoriteGamble.chapter'
+      ]
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    return user;
+  }
+
+  async getAvailableProfileImages(): Promise<ProfileImage[]> {
+    return this.profileImageRepo.find({
+      where: { isActive: true },
+      relations: ['character'],
+      order: { 
+        characterId: 'ASC', 
+        sortOrder: 'ASC',
+        displayName: 'ASC'
+      }
+    });
+  }
+
+  async getQuotePopularityStats(): Promise<Array<{ quote: Quote; userCount: number }>> {
+    const stats = await this.repo
+      .createQueryBuilder('user')
+      .select('user.favoriteQuoteId', 'quoteId')
+      .addSelect('COUNT(*)', 'userCount')
+      .where('user.favoriteQuoteId IS NOT NULL')
+      .groupBy('user.favoriteQuoteId')
+      .orderBy('userCount', 'DESC')
+      .getRawMany();
+
+    const result: Array<{ quote: Quote; userCount: number }> = [];
+
+    for (const stat of stats) {
+      const quote = await this.quoteRepo.findOne({
+        where: { id: stat.quoteId },
+        relations: ['character', 'series']
+      });
+      
+      if (quote) {
+        result.push({
+          quote,
+          userCount: parseInt(stat.userCount)
+        });
+      }
+    }
+
+    return result;
+  }
+
+  async getGamblePopularityStats(): Promise<Array<{ gamble: Gamble; userCount: number }>> {
+    const stats = await this.repo
+      .createQueryBuilder('user')
+      .select('user.favoriteGambleId', 'gambleId')
+      .addSelect('COUNT(*)', 'userCount')
+      .where('user.favoriteGambleId IS NOT NULL')
+      .groupBy('user.favoriteGambleId')
+      .orderBy('userCount', 'DESC')
+      .getRawMany();
+
+    const result: Array<{ gamble: Gamble; userCount: number }> = [];
+
+    for (const stat of stats) {
+      const gamble = await this.gambleRepo.findOne({
+        where: { id: stat.gambleId },
+        relations: ['chapter']
+      });
+      
+      if (gamble) {
+        result.push({
+          gamble,
+          userCount: parseInt(stat.userCount)
+        });
+      }
+    }
+
+    return result;
+  }
+
+  async getProfileCustomizationStats(): Promise<{
+    profileImageStats: Array<{ profileImage: ProfileImage; userCount: number }>;
+    totalUsersWithCustomization: {
+      profileImage: number;
+      favoriteQuote: number;
+      favoriteGamble: number;
+    };
+  }> {
+    // Get profile image popularity
+    const profileImageStats = await this.repo
+      .createQueryBuilder('user')
+      .select('user.profileImageId', 'profileImageId')
+      .addSelect('COUNT(*)', 'userCount')
+      .where('user.profileImageId IS NOT NULL')
+      .groupBy('user.profileImageId')
+      .orderBy('userCount', 'DESC')
+      .getRawMany();
+
+    const imageStatsWithDetails: Array<{ profileImage: ProfileImage; userCount: number }> = [];
+
+    for (const stat of profileImageStats) {
+      const profileImage = await this.profileImageRepo.findOne({
+        where: { id: stat.profileImageId },
+        relations: ['character']
+      });
+      
+      if (profileImage) {
+        imageStatsWithDetails.push({
+          profileImage,
+          userCount: parseInt(stat.userCount)
+        });
+      }
+    }
+
+    // Get total counts for each customization type
+    const totalWithProfileImage = await this.repo
+      .createQueryBuilder('user')
+      .where('user.profileImageId IS NOT NULL')
+      .getCount();
+      
+    const totalWithFavoriteQuote = await this.repo
+      .createQueryBuilder('user')
+      .where('user.favoriteQuoteId IS NOT NULL')
+      .getCount();
+      
+    const totalWithFavoriteGamble = await this.repo
+      .createQueryBuilder('user')
+      .where('user.favoriteGambleId IS NOT NULL')
+      .getCount();
+
+    return {
+      profileImageStats: imageStatsWithDetails,
+      totalUsersWithCustomization: {
+        profileImage: totalWithProfileImage,
+        favoriteQuote: totalWithFavoriteQuote,
+        favoriteGamble: totalWithFavoriteGamble
+      }
+    };
   }
 
   // --- Delete user ---

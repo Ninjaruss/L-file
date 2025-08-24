@@ -1,7 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Index } from 'typeorm';
-import { Arc } from './arc.entity';
 import { Character } from './character.entity';
-import { Event } from './event.entity';
 import { User } from './user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -47,25 +45,12 @@ export class Media {
   description: string;
 
   @ApiProperty({
-    description: 'Story arc this media belongs to',
-    type: () => Arc
-  })
-  @ManyToOne(() => Arc, arc => arc.media, { onDelete: 'CASCADE', nullable: true })
-  arc: Arc;
-
-  @ApiProperty({
     description: 'Character this media belongs to',
     type: () => Character
   })
   @ManyToOne(() => Character, character => character.media, { onDelete: 'CASCADE', nullable: true })
   character: Character;
   
-  @ApiProperty({
-    description: 'Event this media belongs to',
-    type: () => Event
-  })
-  @ManyToOne(() => Event, event => event.media, { onDelete: 'CASCADE', nullable: true })
-  event: Event;
 
   @ApiProperty({ 
     description: 'Current status of the media',

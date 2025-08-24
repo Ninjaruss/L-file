@@ -7,7 +7,7 @@ import {
   ArcTranslation,
   FactionTranslation,
   TagTranslation,
-  ChapterSpoilerTranslation
+  GambleTranslation,
 } from './index';
 
 export { Language };
@@ -21,7 +21,7 @@ export const TRANSLATABLE_ENTITY_TYPES = [
   'arc',
   'faction',
   'tag',
-  'chapterSpoiler'
+  'gamble'
 ] as const;
 
 export type TranslatableEntityType = typeof TRANSLATABLE_ENTITY_TYPES[number];
@@ -35,7 +35,8 @@ export type TranslationEntity =
   | ArcTranslation
   | FactionTranslation
   | TagTranslation
-  | ChapterSpoilerTranslation;
+  | GambleTranslation
+;
 
 // Base interface for translation fields
 export interface BaseTranslationFields {

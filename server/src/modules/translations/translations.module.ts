@@ -10,7 +10,6 @@ import {
   ArcTranslation,
   FactionTranslation,
   TagTranslation,
-  ChapterSpoilerTranslation,
   GambleTranslation
 } from '../../entities/translations';
 
@@ -23,7 +22,6 @@ import {
     ArcTranslation,
     FactionTranslation,
     TagTranslation,
-    ChapterSpoilerTranslation,
     GambleTranslation
   ])],
   providers: [TranslationsService],

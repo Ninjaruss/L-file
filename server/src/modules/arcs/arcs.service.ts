@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Arc } from '../../entities/arc.entity';
+import { Chapter } from '../../entities/chapter.entity';
 import { CreateArcDto } from './dto/create-arc.dto';
 
 @Injectable()
 export class ArcsService {
   constructor(
-    @InjectRepository(Arc) private repo: Repository<Arc>
+    @InjectRepository(Arc) private repo: Repository<Arc>,
+    @InjectRepository(Chapter) private chapterRepo: Repository<Chapter>
   ) {}
 
   /**
@@ -16,8 +18,7 @@ export class ArcsService {
   async findAll(filters: { name?: string; series?: string; description?: string; page?: number; limit?: number; sort?: string; order?: 'ASC' | 'DESC' }) {
     const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
     const query = this.repo.createQueryBuilder('arc')
-      .leftJoinAndSelect('arc.series', 'series')
-      .leftJoinAndSelect('arc.characters', 'characters');
+      .leftJoinAndSelect('arc.series', 'series');
 
     if (filters.name) {
       query.andWhere('LOWER(arc.name) LIKE LOWER(:name)', { name: `%${filters.name}%` });
@@ -50,7 +51,7 @@ export class ArcsService {
   findOne(id: number) {
     return this.repo.findOne({ 
       where: { id }, 
-      relations: ['series', 'characters'] 
+      relations: ['series'] 
     });
   }
 
@@ -72,5 +73,29 @@ export class ArcsService {
 
   remove(id: number) {
     return this.repo.delete(id);
+  }
+
+  async getChaptersInArc(arcId: number): Promise<Chapter[]> {
+    const arc = await this.repo.findOne({ 
+      where: { id: arcId }, 
+      relations: ['series'] 
+    });
+    
+    if (!arc) {
+      throw new NotFoundException(`Arc with id ${arcId} not found`);
+    }
+
+    if (!arc.startChapter || !arc.endChapter) {
+      return [];
+    }
+    
+    return this.chapterRepo.find({
+      where: {
+        series: { id: arc.series.id },
+        number: Between(arc.startChapter, arc.endChapter)
+      },
+      order: { number: 'ASC' },
+      relations: ['series']
+    });
   }
 }

@@ -10,7 +10,7 @@ import {
   ArcTranslation,
   FactionTranslation,
   TagTranslation,
-  ChapterSpoilerTranslation
+  GambleTranslation
 } from '../../entities/translations';
 import type { 
   TranslatableEntityType,
@@ -30,7 +30,7 @@ export class TranslationsService {
     arcRepo: Repository<ArcTranslation>,
     factionRepo: Repository<FactionTranslation>,
     tagRepo: Repository<TagTranslation>,
-    chapterSpoilerRepo: Repository<ChapterSpoilerTranslation>
+    gambleRepo: Repository<GambleTranslation>
   ) {
     this.repositories = {
       series: seriesRepo,
@@ -40,7 +40,7 @@ export class TranslationsService {
       arc: arcRepo,
       faction: factionRepo,
       tag: tagRepo,
-      chapterSpoiler: chapterSpoilerRepo,
+      gamble: gambleRepo,
     } as Record<TranslatableEntityType, Repository<TranslationEntity>>;
   }
 
@@ -59,8 +59,8 @@ export class TranslationsService {
     factionTranslationRepo: Repository<FactionTranslation>,
     @InjectRepository(TagTranslation)
     tagTranslationRepo: Repository<TagTranslation>,
-    @InjectRepository(ChapterSpoilerTranslation)
-    chapterSpoilerTranslationRepo: Repository<ChapterSpoilerTranslation>,
+    @InjectRepository(GambleTranslation)
+    gambleTranslationRepo: Repository<GambleTranslation>,
   ) {
     this.initRepositories(
       seriesTranslationRepo,
@@ -70,7 +70,7 @@ export class TranslationsService {
       arcTranslationRepo,
       factionTranslationRepo,
       tagTranslationRepo,
-      chapterSpoilerTranslationRepo
+      gambleTranslationRepo
     );
   }
 
@@ -145,5 +145,64 @@ export class TranslationsService {
         referenceId,
       } as any,
     });
+  }
+
+  async getTranslationStats(): Promise<{
+    totalEntities: number;
+    translatedEntities: Record<string, number>;
+    coveragePercentage: Record<string, number>;
+    byEntityType: Record<string, any>;
+  }> {
+    const stats = {
+      totalEntities: 0,
+      translatedEntities: {} as Record<string, number>,
+      coveragePercentage: {} as Record<string, number>,
+      byEntityType: {} as Record<string, any>
+    };
+
+    // Initialize language counters
+    Object.values(Language).forEach(lang => {
+      stats.translatedEntities[lang] = 0;
+      stats.coveragePercentage[lang] = 0;
+    });
+
+    // Get stats for each entity type
+    for (const [entityType, repo] of Object.entries(this.repositories)) {
+      const totalTranslations = await repo.count();
+      stats.totalEntities += totalTranslations;
+
+      // Count translations by language for this entity type
+      const languageStats = await repo
+        .createQueryBuilder('translation')
+        .select('translation.language', 'language')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('translation.language')
+        .getRawMany();
+
+      const entityTypeStats = {
+        total: totalTranslations,
+        translated: {} as Record<string, number>
+      };
+
+      // Process language stats
+      languageStats.forEach(langStat => {
+        const count = parseInt(langStat.count);
+        entityTypeStats.translated[langStat.language] = count;
+        stats.translatedEntities[langStat.language] += count;
+      });
+
+      stats.byEntityType[entityType] = entityTypeStats;
+    }
+
+    // Calculate coverage percentages
+    Object.values(Language).forEach(lang => {
+      if (stats.totalEntities > 0) {
+        stats.coveragePercentage[lang] = Math.round(
+          (stats.translatedEntities[lang] / stats.totalEntities) * 100
+        );
+      }
+    });
+
+    return stats;
   }
 }

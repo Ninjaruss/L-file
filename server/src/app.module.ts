@@ -8,7 +8,6 @@ import { ArcsModule } from './modules/arcs/arcs.module';
 import { CharactersModule } from './modules/characters/characters.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
 import { EventsModule } from './modules/events/events.module';
-import { ChapterSpoilersModule } from './modules/chapter-spoilers/chapter-spoilers.module';
 import { FactionsModule } from './modules/factions/factions.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { VolumesModule } from './modules/volumes/volumes.module';
@@ -17,6 +16,8 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TranslationsModule } from './modules/translations/translations.module';
 import { GamblesModule } from './modules/gambles/gambles.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
+import { MediaModule } from './modules/media/media.module';
 import { Logger } from '@nestjs/common';
 
 @Module({
@@ -50,7 +51,6 @@ import { Logger } from '@nestjs/common';
     CharactersModule,
     ChaptersModule,
     EventsModule,
-    ChapterSpoilersModule,
     FactionsModule,
     TagsModule, 
     VolumesModule,
@@ -59,6 +59,8 @@ import { Logger } from '@nestjs/common';
     AuthModule,
     TranslationsModule,
     GamblesModule,
+    QuotesModule,
+    MediaModule,
   ],
 })
 export class AppModule {}

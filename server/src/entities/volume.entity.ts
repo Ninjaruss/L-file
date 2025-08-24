@@ -18,13 +18,6 @@ export class Volume {
   number: number;
 
   @ApiPropertyOptional({ 
-    description: 'Title of the volume',
-    example: 'The Beginning'
-  })
-  @Column({ nullable: true, length: 200 })
-  title: string;
-
-  @ApiPropertyOptional({ 
     description: 'URL to the volume cover image',
     example: 'https://example.com/covers/volume1.jpg'
   })

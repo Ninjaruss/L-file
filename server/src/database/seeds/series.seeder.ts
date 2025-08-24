@@ -16,14 +16,8 @@ export class SeriesSeeder implements Seeder {
     if (!existingSeries) {
       await seriesRepository.save({
         name: 'Usogui',
-        description: 'In a world where gambling is life...',
-        startYear: 2006,
-        endYear: 2017,
-        status: 'COMPLETED',
-        totalChapters: 539,
-        author: 'Toshio Sako',
-        publisher: 'Young Jump Comics',
-        demographic: 'Seinen'
+        order: 1,
+        description: 'In a world where gambling is life, Baku Madarame, known as "The Lie Eater," navigates the dangerous underground gambling world of Kakerou. With his supernatural ability to detect lies and his strategic mind, he faces off against the most cunning gamblers in high-stakes games where the consequences can be deadly. This psychological thriller explores themes of deception, strategy, and the price of ambition in a world where a single wrong move can cost everything.'
       });
     }
   }

@@ -1,7 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from 'typeorm';
 import { Series } from './series.entity';
-import { Character } from './character.entity';
-import { Media } from './media.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
@@ -57,12 +55,4 @@ export class Arc {
   })
   @Column({ nullable: true })
   endChapter: number;
-
-  @ApiPropertyOptional({ description: 'Characters that appear in this arc', type: () => [Character] })
-  @OneToMany(() => Character, character => character.arc)
-  characters: Character[];
-
-  @ApiPropertyOptional({ description: 'Media associated with this arc', type: () => [Media] })
-  @OneToMany(() => Media, media => media.arc, {nullable: true, cascade: true })
-  media: Media[];
 }

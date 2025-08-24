@@ -157,4 +157,61 @@ export class GamblesService {
       .orderBy('gamble.createdAt', 'DESC')
       .getMany();
   }
+
+  async search(options: {
+    gambleName?: string;
+    participantName?: string;
+    teamName?: string;
+    chapterId?: number;
+    characterId?: number;
+    limit?: number;
+  }): Promise<Gamble[]> {
+    const query = this.gamblesRepository.createQueryBuilder('gamble')
+      .leftJoinAndSelect('gamble.teams', 'teams')
+      .leftJoinAndSelect('teams.members', 'teamMembers')
+      .leftJoinAndSelect('gamble.rounds', 'rounds')
+      .leftJoinAndSelect('rounds.winner', 'roundWinner')
+      .leftJoinAndSelect('gamble.observers', 'observers')
+      .leftJoinAndSelect('gamble.chapter', 'chapter');
+
+    const conditions: string[] = [];
+    const parameters: any = {};
+
+    if (options.gambleName) {
+      conditions.push('gamble.name ILIKE :gambleName');
+      parameters.gambleName = `%${options.gambleName}%`;
+    }
+
+    if (options.participantName) {
+      conditions.push('(teamMembers.name ILIKE :participantName OR observers.name ILIKE :participantName)');
+      parameters.participantName = `%${options.participantName}%`;
+    }
+
+    if (options.teamName) {
+      conditions.push('teams.name ILIKE :teamName');
+      parameters.teamName = `%${options.teamName}%`;
+    }
+
+    if (options.chapterId) {
+      conditions.push('gamble.chapterId = :chapterId');
+      parameters.chapterId = options.chapterId;
+    }
+
+    if (options.characterId) {
+      conditions.push('(teamMembers.id = :characterId OR observers.id = :characterId)');
+      parameters.characterId = options.characterId;
+    }
+
+    if (conditions.length > 0) {
+      query.where(conditions.join(' AND '), parameters);
+    }
+
+    if (options.limit) {
+      query.limit(options.limit);
+    }
+
+    return query
+      .orderBy('gamble.createdAt', 'DESC')
+      .getMany();
+  }
 }

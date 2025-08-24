@@ -51,45 +51,50 @@ async function bootstrap() {
   // API Documentation
   const config = new DocumentBuilder()
     .setTitle('Usogui Fansite API')
-    .setDescription('API documentation for Usogui fansite')
+    .setDescription('Comprehensive API for managing Usogui manga content, user interactions, and community features')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('characters', 'Character management')
-    .addTag('chapters', 'Chapter management')
-    .addTag('chapter-spoilers', 'Chapter spoiler management')
-    .addTag('series', 'Series information')
-    .addTag('arcs', 'Story arc management')
-    .addTag('events', 'Event management')
-    .addTag('factions', 'Faction management')
-    .addTag('tags', 'Content tagging')
-    .addTag('gambles', 'Gambling event management')
-    .addTag('auth', 'Authentication')
-    .addTag('users', 'User management')
-    .addTag('translations', 'Content translations')
+    // Authentication & User Management
+    .addTag('auth', '🔐 Authentication - User registration, login, and verification')
+    .addTag('users', '👥 User Management - User profiles, statistics, and account management')
+    // Core Content Management
+    .addTag('series', '📚 Series - Manga series information and metadata')
+    .addTag('volumes', '📖 Volumes - Volume organization and chapter grouping')
+    .addTag('chapters', '📄 Chapters - Individual chapter management')
+    .addTag('arcs', '🎭 Story Arcs - Narrative arc organization')
+    // Character & Content
+    .addTag('characters', '👤 Characters - Character profiles and information')
+    .addTag('events', '⚡ Events - Story events and timeline management')
+    .addTag('factions', '🏛️ Factions - Groups and organizations')
+    .addTag('quotes', '💭 Quotes - Character quotes and memorable lines')
+    // Interactive Content
+    .addTag('gambles', '🎰 Gambles - Gambling events and game management')
+    .addTag('media', '🎨 Media - Community fanart, videos, and submissions')
+    // Content Organization
+    .addTag('tags', '🏷️ Tags - Content categorization and tagging system')
+    .addTag('translations', '🌐 Translations - Multi-language content support')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+      docExpansion: 'none',
+      defaultModelsExpandDepth: 2,
+      defaultModelExpandDepth: 2,
+      displayRequestDuration: true,
+      filter: true,
     },
+    customSiteTitle: 'Usogui Fansite API Documentation',
+    customfavIcon: '/favicon.ico',
+    customCss: `
+      .swagger-ui .topbar { display: none }
+      .swagger-ui .info { margin: 50px 0; }
+      .swagger-ui .info .title { color: #3b4151; }
+    `,
   });
-  // Special rate limit for auth routes
-  app.use('/auth', 
-    rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 15, // limit each IP to 15 login attempts per 15 minutes
-      message: 'Too many login attempts, please try again in 15 minutes',
-    }),
-  );
-
-  // Global pipes and filters
-  app.useGlobalPipes(new ValidationPipe({ 
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true,
-  }));
-  app.useGlobalFilters(new GlobalExceptionFilter());
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

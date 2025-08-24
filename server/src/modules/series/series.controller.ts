@@ -9,7 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiForbiddenResponse, ApiNotFoundResponse } from '@nestjs/swagger';
 
-@ApiTags('Series')
+@ApiTags('series')
 @Controller('series')
 export class SeriesController {
   constructor(private readonly service: SeriesService) {}

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, NotFoundExcepti
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ArcsService } from './arcs.service';
 import { Arc } from '../../entities/arc.entity';
+import { Chapter } from '../../entities/chapter.entity';
 import { CreateArcDto } from './dto/create-arc.dto';
 import { UpdateArcDto } from './dto/update-arc.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -96,6 +97,42 @@ export class ArcsController {
       throw new NotFoundException(`Arc with id ${id} not found`);
     }
     return arc;
+  }
+
+  @Get(':id/chapters')
+  @ApiOperation({
+    summary: 'Get chapters in arc',
+    description: 'Retrieve all chapters within the arc\'s chapter range (startChapter to endChapter)'
+  })
+  @ApiParam({ name: 'id', description: 'Arc ID', example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: 'Chapters in arc retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number', example: 150 },
+          number: { type: 'number', example: 150 },
+          title: { type: 'string', example: 'The Tower Begins' },
+          summary: { type: 'string', example: 'Introduction to the Tower of Karma tournament' },
+          series: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              name: { type: 'string', example: 'Usogui' }
+            }
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Arc not found' })
+  async getChapters(@Param('id') id: number): Promise<Chapter[]> {
+    return this.service.getChaptersInArc(id);
   }
 
   @Post()

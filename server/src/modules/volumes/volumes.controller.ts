@@ -17,11 +17,10 @@ export class VolumesController {
   @Get()
   @ApiOperation({
     summary: 'Get all volumes',
-    description: 'Retrieve a paginated list of volumes with optional filtering by series, number, and title'
+    description: 'Retrieve a paginated list of volumes with optional filtering by series and number'
   })
   @ApiQuery({ name: 'series', required: false, description: 'Filter by series name' })
   @ApiQuery({ name: 'number', required: false, description: 'Filter by volume number' })
-  @ApiQuery({ name: 'title', required: false, description: 'Filter by volume title' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 20)' })
   @ApiQuery({ name: 'sort', required: false, description: 'Field to sort by' })
@@ -50,13 +49,12 @@ export class VolumesController {
   async findAll(
     @Query('series') series?: string,
     @Query('number') number?: number,
-    @Query('title') title?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('sort') sort?: string,
     @Query('order') order?: 'ASC' | 'DESC'
   ) {
-    return this.service.findAll({ series, number, title, page, limit, sort, order });
+    return this.service.findAll({ series, number, page, limit, sort, order });
   }
 
   @Get(':id')

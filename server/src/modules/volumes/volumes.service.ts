@@ -17,7 +17,6 @@ export class VolumesService {
   async findAll(filters: { 
     series?: string; 
     number?: number;
-    title?: string;
     page?: number; 
     limit?: number; 
     sort?: string; 
@@ -33,12 +32,9 @@ export class VolumesService {
     if (filters.number) {
       query.andWhere('volume.number = :number', { number: filters.number });
     }
-    if (filters.title) {
-      query.andWhere('LOWER(volume.title) LIKE LOWER(:title)', { title: `%${filters.title}%` });
-    }
 
     // Sorting: only allow certain fields for safety
-    const allowedSort = ['id', 'number', 'title', 'startChapter', 'endChapter'];
+    const allowedSort = ['id', 'number', 'startChapter', 'endChapter'];
     if (sort && allowedSort.includes(sort)) {
       query.orderBy(`volume.${sort}`, order);
     } else {
@@ -68,7 +64,6 @@ export class VolumesService {
   async create(data: CreateVolumeDto) {
     const volume = this.repo.create({
       number: data.number,
-      title: data.title,
       coverUrl: data.coverUrl,
       startChapter: data.startChapter,
       endChapter: data.endChapter,

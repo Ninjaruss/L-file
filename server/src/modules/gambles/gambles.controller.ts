@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, UseGuards, ParseIntPipe, ValidationPipe, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { GamblesService } from './gambles.service';
 import { CreateGambleDto } from './dto/create-gamble.dto';
 import { Gamble } from '../../entities/gamble.entity';
@@ -8,7 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 
-@ApiTags('Gambles')
+@ApiTags('gambles')
 @Controller('gambles')
 export class GamblesController {
   constructor(private readonly gamblesService: GamblesService) {}
@@ -21,6 +21,8 @@ export class GamblesController {
     summary: 'Create a new gamble',
     description: 'Create a new gamble with teams, rounds, and observers. Represents high-stakes gambling events from the Usogui manga.'
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires moderator or admin role' })
   @ApiResponse({
     status: 201,
     description: 'The gamble has been successfully created',
@@ -67,15 +69,110 @@ export class GamblesController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get all gambles',
-    description: 'Retrieve all gambles with their teams, rounds, and observers'
+    summary: 'Get all gambles with optional filtering',
+    description: 'Retrieve all gambles with optional filtering by name, participant, team, chapter, or character. Supports pagination.'
+  })
+  @ApiQuery({
+    name: 'gambleName',
+    required: false,
+    description: 'Filter by gamble name (case-insensitive partial match)',
+    example: 'protoporos'
+  })
+  @ApiQuery({
+    name: 'participantName',
+    required: false,
+    description: 'Filter by participant name (searches team members and observers)',
+    example: 'baku'
+  })
+  @ApiQuery({
+    name: 'teamName',
+    required: false,
+    description: 'Filter by team name (case-insensitive partial match)',
+    example: 'team'
+  })
+  @ApiQuery({
+    name: 'chapterId',
+    required: false,
+    type: 'number',
+    description: 'Filter by chapter ID',
+    example: 1
+  })
+  @ApiQuery({
+    name: 'characterId',
+    required: false,
+    type: 'number',
+    description: 'Filter by character ID (searches team members and observers)',
+    example: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: 'number',
+    description: 'Limit the number of results',
+    example: 10
   })
   @ApiResponse({
     status: 200,
-    description: 'List of all gambles',
-    type: [Gamble]
+    description: 'List of gambles (filtered if parameters provided)',
+    type: [Gamble],
+    examples: {
+      'all-gambles': {
+        summary: 'All gambles',
+        value: [
+          {
+            id: 1,
+            name: 'Protoporos',
+            rules: 'A deadly gambling game involving stones...',
+            winCondition: 'The player who removes the last stone loses',
+            chapterId: 1,
+            teams: [],
+            rounds: [],
+            observers: [],
+            createdAt: '2024-01-15T10:30:00Z',
+            updatedAt: '2024-01-15T10:30:00Z'
+          }
+        ]
+      },
+      'filtered-by-name': {
+        summary: 'Filtered by gamble name',
+        value: [
+          {
+            id: 1,
+            name: 'Protoporos',
+            rules: 'A deadly gambling game involving stones...',
+            winCondition: 'The player who removes the last stone loses',
+            chapterId: 1,
+            teams: [],
+            rounds: [],
+            observers: [],
+            createdAt: '2024-01-15T10:30:00Z',
+            updatedAt: '2024-01-15T10:30:00Z'
+          }
+        ]
+      }
+    }
   })
-  findAll(): Promise<Gamble[]> {
+  findAll(
+    @Query('gambleName') gambleName?: string,
+    @Query('participantName') participantName?: string,
+    @Query('teamName') teamName?: string,
+    @Query('chapterId', new ParseIntPipe({ optional: true })) chapterId?: number,
+    @Query('characterId', new ParseIntPipe({ optional: true })) characterId?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ): Promise<Gamble[]> {
+    // If any filters are provided, use the search functionality
+    if (gambleName || participantName || teamName || chapterId || characterId || limit) {
+      return this.gamblesService.search({
+        gambleName,
+        participantName,
+        teamName,
+        chapterId,
+        characterId,
+        limit,
+      });
+    }
+    
+    // Otherwise return all gambles
     return this.gamblesService.findAll();
   }
 

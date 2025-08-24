@@ -13,16 +13,6 @@ export class CreateVolumeDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(1)
-  @MaxLength(200)
-  @ApiPropertyOptional({ 
-    description: 'Title of the volume',
-    example: 'The Beginning'
-  })
-  title?: string;
-
-  @IsString()
-  @IsOptional()
   @IsUrl()
   @MaxLength(500)
   @ApiPropertyOptional({ 
