@@ -30,7 +30,7 @@ Core Modules:
 - `media` - Media asset handling
 - `translations` - Content translation management
 - `gambles` - Game/gambling event tracking (specific to Usogui content)
-- `chapter-spoilers` - For managing spoiler content related to chapters
+- `guides` - User-generated guides and tutorials (markdown content)
 
 ### 2. Database Configuration
 - Uses TypeORM with PostgreSQL
@@ -63,6 +63,12 @@ yarn db:revert
 
 # Seed database with test data
 yarn db:seed
+
+# Reset database (development only)
+yarn db:reset
+
+# Check database consistency
+yarn db:check
 ```
 
 ### 2. Testing
@@ -75,6 +81,9 @@ yarn test:watch
 
 # E2E tests
 yarn test:e2e
+
+# Test coverage
+yarn test:cov
 ```
 
 ### 3. Content Translation Pattern
@@ -87,89 +96,147 @@ The application uses a specialized translation system:
 
 ## Special Conventions
 
-1. Test User Handling:
-   - The auth service has special handling for test users (auto-verification)
-   - See `isTestUser` check in `auth.service.ts`
+### 1. Route Ordering Patterns
+**CRITICAL**: Always place specific routes before parameterized routes
+```typescript
+@Get('pending')     // Specific route FIRST
+@Get(':id')        // Parameterized route AFTER
+```
+Example: In `media.controller.ts`, `/media/pending` must come before `/media/:id`
 
-2. Database Entity Structure:
-   - All entities include standard `createdAt` and `updatedAt` timestamps
-   - Main content entities (chapters, characters, etc.) link to a series
-   - Translation entities extend from `BaseTranslation`
+### 2. Authentication & Authorization Patterns
+```typescript
+// Public endpoints (no guards)
+@Get('public')
 
-3. Gambles Module:
-   - Specific to Usogui manga's gambling events
-   - Uses complex relationships between teams, rounds, and players
-   - See `gamble.entity.ts` for the unique structure
+// Authenticated endpoints (requires login)
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 
-4. DTOs Location:
-   - DTOs are stored in `dto/` folders within each module
-   - Follow consistent naming: `create-*.dto.ts`, `update-*.dto.ts`
+// Role-restricted endpoints
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR)
+@ApiBearerAuth()
+```
+
+### 3. Controller Structure Pattern
+Follow this consistent pattern across all controllers:
+1. Public endpoints first (if any)
+2. Authenticated endpoints second
+3. Admin/moderator-only endpoints last
+4. Use `@CurrentUser()` decorator to get authenticated user
+
+### 4. Entity Relationships Pattern
+- All entities include standard `createdAt` and `updatedAt` timestamps
+- Main content entities (chapters, characters, etc.) link to a series
+- Translation entities extend from `BaseTranslation`
+- Use proper indexes for performance-critical queries
+- User-related fields require `@Index(['userId'])` for performance
+
+### 5. OpenAPI Documentation Standards
+Follow comprehensive documentation patterns as seen in `guides.controller.ts`:
+```typescript
+@ApiOkResponse({
+  description: 'Success message',
+  schema: {
+    type: 'object',
+    properties: {
+      // Detailed property examples with types and sample data
+      id: { type: 'number', example: 1 },
+      title: { type: 'string', example: 'Sample Title' }
+    }
+  }
+})
+@ApiBadRequestResponse({ description: 'Invalid input', schema: { example: errorObj } })
+@ApiUnauthorizedResponse({ description: 'Auth required', schema: { example: errorObj } })
+```
+
+### 6. DTOs Location & Validation
+- DTOs are stored in `dto/` folders within each module
+- Follow consistent naming: `create-*.dto.ts`, `update-*.dto.ts`
+- Use `class-validator` decorators for validation
+- Import validation types properly to avoid unused imports
+
+### 7. Service-Level Authorization
+Implement authorization checks in services using UserRole enum:
+```typescript
+if (guide.authorId !== currentUser.id && 
+    currentUser.role !== UserRole.ADMIN && 
+    currentUser.role !== UserRole.MODERATOR) {
+  throw new ForbiddenException('You can only edit your own guides');
+}
+```
 
 ## Entity Relationships
 
-1. Series:
-   - Central entity containing metadata about the manga series
-   - Has many Chapters, Characters, Arcs, and Events
-   - Contains core properties like title, publication dates, and status
+1. **Series**: Central entity containing metadata about the manga series
+2. **Chapters**: Belongs to a Series and optionally to an Arc
+3. **Characters**: Belongs to a Series, may be associated with multiple Factions
+4. **Arcs**: Belongs to a Series, contains multiple Chapters
+5. **Events**: Belongs to a Series, may reference Characters and Chapters
+6. **Factions**: Belongs to a Series, contains multiple Characters
+7. **Tags**: Many-to-many relationships with content entities
+8. **Gambles**: Complex entity specific to Usogui's gambling events
+9. **Guides**: User-generated content with likes, view tracking, and tagging
+10. **Users**: Central to authentication, with profile customization and content creation
 
-2. Chapters:
-   - Belongs to a Series and optionally to an Arc
-   - Has many ChapterSpoilers
-   - Contains chapter number, title, and publication details
+## API Design Conventions
 
-3. Characters:
-   - Belongs to a Series
-   - May be associated with multiple Factions
-   - Contains character details, role, and significance in the story
+### 1. Pagination Pattern
+```typescript
+@Query('page') page = '1',
+@Query('limit') limit = '20',
+@Query('sort') sort?: string,
+@Query('order') order: 'ASC' | 'DESC' = 'ASC'
+```
 
-4. Arcs:
-   - Belongs to a Series
-   - Contains multiple Chapters
-   - Represents a story arc with start/end chapters and arc description
+### 2. Response Structure
+```typescript
+{ data: T[], total: number, page: number, totalPages: number }
+```
 
-5. Events:
-   - Belongs to a Series
-   - May reference Characters and Chapters
-   - Contains event details, timeline information, and significance
+### 3. Swagger Documentation
+- Always include `@ApiTags()` for controller grouping
+- Use `@ApiOperation()` for endpoint descriptions
+- Include specific response decorators: `@ApiOkResponse()`, `@ApiCreatedResponse()`, etc.
+- Use `@ApiBearerAuth()` for authenticated endpoints
+- Add detailed examples in schema properties
 
-6. Factions:
-   - Belongs to a Series
-   - Contains multiple Characters
-   - Represents groups or organizations within the story
+### 4. Tag Descriptions
+Tag descriptions are configured in `main.ts` with emojis and clear descriptions:
+```typescript
+.addTag('guides', '📝 Guides - User-generated tutorials, strategies, and educational content')
+```
 
-7. Tags:
-   - Many-to-many relationships with content entities
-   - Used for categorization and filtering
-   
-8. Gambles:
-   - Complex entity specific to Usogui's gambling events
-   - Contains GambleRounds and GambleTeams
-   - Represents the high-stakes games central to the manga
+## Database Safety & Migration Patterns
 
-9. ChapterSpoilers:
-   - Belongs to a Chapter
-   - Contains spoiler content with spoiler type classification
-   - Used to manage sensitive plot revelations
+### 1. Migration Safety
+- Always use the migration helper: `yarn db:generate` followed by `yarn db:migrate`
+- Database consistency checks run automatically on startup
+- Two configs must stay synchronized: `src/config/database.config.ts` and `typeorm.config.ts`
+
+### 2. Entity Changes
+When modifying entities:
+1. Update the entity file
+2. Generate migration: `yarn db:generate src/migrations/DescriptiveName`
+3. Review the generated migration
+4. Run migration: `yarn db:migrate`
+
+### 3. Circular Dependency Prevention
+Use string-based relationships for entities that reference each other:
+```typescript
+@OneToMany('GuideLike', 'guide')  // String reference instead of () => GuideLike
+likes: any[];
+```
 
 ## Common Gotchas
 
-1. Database:
-   - Always backup before migrations
-   - Test migrations thoroughly
-   - Watch for TypeORM relationship issues
-   - Monitor query performance
-
-2. Authentication:
-   - Check token expiration settings
-   - Verify role guards implementation
-   - Test password reset flow thoroughly
-   - Monitor rate limiting effectiveness
-
-3. API Design:
-   - Follow REST conventions
-   - Document API changes
-   - Version APIs when needed
-   - Consider backward compatibility
+1. **Route Ordering**: Specific routes (`/pending`) must come before parameterized routes (`/:id`)
+2. **Database**: Always backup before migrations, test thoroughly
+3. **Authentication**: Verify email verification is enabled for production users
+4. **Circular Dependencies**: Use string-based entity references when needed
+5. **Database Indexes**: Add indexes for foreign keys and frequently queried fields
+6. **OpenAPI Examples**: Include realistic examples in all schema definitions
 
 ## Resources
 
@@ -177,3 +244,4 @@ The application uses a specialized translation system:
 - TypeORM migration commands in package.json scripts
 - Environment validation in `src/config/env.validation.ts`
 - Database diagram at `docs/2025-08-21 Database Diagram.png`
+- Migration helper with backup capabilities in `scripts/migration-helper.js`
