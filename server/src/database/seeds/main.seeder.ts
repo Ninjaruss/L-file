@@ -12,6 +12,7 @@ import { FactionSeeder } from './faction.seeder';
 import { TagSeeder } from './tag.seeder';
 import { MediaSeeder } from './media.seeder';
 import { GambleSeeder } from './gamble.seeder';
+import { GuideSeeder } from './guide.seeder';
 import { Logger } from '@nestjs/common';
 import chalk from 'chalk';
 
@@ -43,6 +44,7 @@ export class MainSeeder {
       new QuoteSeeder(this.dataSource),      // Character quotes
       new GambleSeeder(this.dataSource),     // Gambling events and games
       new MediaSeeder(this.dataSource),      // Community media submissions
+      new GuideSeeder(this.dataSource),      // User-generated guides and tutorials
     ];
 
     let success = true;
@@ -71,6 +73,7 @@ export class MainSeeder {
       this.logger.log(chalk.blue('   - Gambling events and tournaments'));
       this.logger.log(chalk.blue('   - Character quotes and memorable lines'));
       this.logger.log(chalk.blue('   - Community media submissions'));
+      this.logger.log(chalk.blue('   - User-generated guides and tutorials'));
       this.logger.log(chalk.blue('   - Content tags and categorization'));
       return true;
     } else {

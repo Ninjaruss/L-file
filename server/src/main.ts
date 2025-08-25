@@ -55,24 +55,25 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     // Authentication & User Management
-    .addTag('auth', '🔐 Authentication - User registration, login, and verification')
-    .addTag('users', '👥 User Management - User profiles, statistics, and account management')
+    .addTag('auth', 'Authentication - User registration, login, and verification')
+    .addTag('users', 'User Management - User profiles, statistics, and account management')
     // Core Content Management
-    .addTag('series', '📚 Series - Manga series information and metadata')
-    .addTag('volumes', '📖 Volumes - Volume organization and chapter grouping')
-    .addTag('chapters', '📄 Chapters - Individual chapter management')
-    .addTag('arcs', '🎭 Story Arcs - Narrative arc organization')
+    .addTag('series', 'Series - Manga series information and metadata')
+    .addTag('volumes', 'Volumes - Volume organization and chapter grouping')
+    .addTag('chapters', 'Chapters - Individual chapter management')
+    .addTag('arcs', 'Story Arcs - Narrative arc organization')
     // Character & Content
-    .addTag('characters', '👤 Characters - Character profiles and information')
-    .addTag('events', '⚡ Events - Story events and timeline management')
-    .addTag('factions', '🏛️ Factions - Groups and organizations')
-    .addTag('quotes', '💭 Quotes - Character quotes and memorable lines')
+    .addTag('characters', 'Characters - Character profiles and information')
+    .addTag('events', 'Events - Story events and timeline management')
+    .addTag('factions', 'Factions - Groups and organizations')
+    .addTag('quotes', 'Quotes - Character quotes and memorable lines')
     // Interactive Content
-    .addTag('gambles', '🎰 Gambles - Gambling events and game management')
-    .addTag('media', '🎨 Media - Community fanart, videos, and submissions')
+    .addTag('gambles', 'Gambles - Gambling events and game management')
+    .addTag('guides', 'Guides - User-generated tutorials, strategies, and educational content')
+    .addTag('media', 'Media - Community fanart, videos, and submissions')
     // Content Organization
-    .addTag('tags', '🏷️ Tags - Content categorization and tagging system')
-    .addTag('translations', '🌐 Translations - Multi-language content support')
+    .addTag('tags', 'Tags - Content categorization and tagging system')
+    .addTag('translations', 'Translations - Multi-language content support')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

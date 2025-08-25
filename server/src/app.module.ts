@@ -18,6 +18,7 @@ import { TranslationsModule } from './modules/translations/translations.module';
 import { GamblesModule } from './modules/gambles/gambles.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { MediaModule } from './modules/media/media.module';
+import { GuidesModule } from './modules/guides/guides.module';
 import { Logger } from '@nestjs/common';
 
 @Module({
@@ -61,6 +62,7 @@ import { Logger } from '@nestjs/common';
     GamblesModule,
     QuotesModule,
     MediaModule,
+    GuidesModule,
   ],
 })
 export class AppModule {}

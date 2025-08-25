@@ -8,6 +8,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 @Index(['character'])
 @Index(['series'])
 @Index(['chapterNumber'])
+@Index(['submittedBy'])
 export class Quote {
   @ApiProperty({ description: 'Unique identifier of the quote' })
   @PrimaryGeneratedColumn()

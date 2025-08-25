@@ -1,4 +1,10 @@
 # Changelog and notes
+## 2025-08-25
+- Added guides module for users to write out guides in markdown
+
+### Notes
+- API documentation is simple and straightforward. Although I could spend the time writing out the info by myself, the LLM gives enough relevant info to get started.
+
 ## 2025-08-23
 ### Changes
 - Removed chapter-spoilers and consolidated it into events module
@@ -10,7 +16,7 @@
 
 ### Notes
 - AdminJS was having issues with ESM support as the backend uses NestJS; will implement React Admin on the frontend for the dashboard
-- Figured out that migrations are necessary if we already have data on the server. This is definitiely something to look out for in places that involve user submitted data like user database and media
+- Figured out that migrations are necessary if we already have data on the server and need to change the data structure. This is definitiely something to look out for in places that involve user submitted data like user database and media
 
 ## 2025-08-22
 ### Changes

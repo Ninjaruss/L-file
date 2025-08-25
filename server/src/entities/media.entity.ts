@@ -17,6 +17,7 @@ export enum MediaStatus {
 
 @Entity()
 @Index(['url'], { unique: true })
+@Index(['submittedBy'])
 export class Media {
   @ApiProperty({ description: 'Unique identifier of the media' })
   @PrimaryGeneratedColumn()

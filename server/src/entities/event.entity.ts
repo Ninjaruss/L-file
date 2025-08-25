@@ -29,6 +29,7 @@ export interface ChapterReference {
 @Index(['title'])
 @Index(['type'])
 @Index(['spoilerChapter'])
+@Index(['createdBy'])
 export class Event {
   @ApiProperty({ description: 'Unique identifier of the event' })
   @PrimaryGeneratedColumn()
