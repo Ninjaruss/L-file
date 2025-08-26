@@ -88,6 +88,11 @@ yarn db:check
    - Implement proper foreign key constraints and cascades
    - Validate input data before persisting to database
 
+   ## API notes (developer)
+
+   - List endpoints in the API return a canonical paginated JSON envelope: `{ data: T[], total: number, page: number, perPage?: number, totalPages?: number }`.
+   - The backend also sets an `X-Total-Count` header for list endpoints to support clients (like react-admin) that prefer reading totals from headers. Ensure `Access-Control-Expose-Headers` includes `X-Total-Count` when calling APIs from browsers.
+
 ## Troubleshooting
 
 If you encounter database issues:

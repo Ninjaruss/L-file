@@ -87,14 +87,14 @@ export class QuotesController {
     schema: {
       type: 'object',
       properties: {
-        quotes: {
+        data: {
           type: 'array',
           items: { $ref: '#/components/schemas/Quote' }
         },
-        total: {
-          type: 'number',
-          description: 'Total number of quotes matching the criteria'
-        }
+        total: { type: 'number' },
+        page: { type: 'number' },
+        perPage: { type: 'number' },
+        totalPages: { type: 'number' }
       }
     }
   })
@@ -108,7 +108,7 @@ export class QuotesController {
     @Query('submittedById', new ParseIntPipe({ optional: true })) submittedById?: number,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-  ): Promise<{ quotes: Quote[]; total: number }> {
+  ): Promise<{ data: Quote[]; total: number; page?: number; perPage?: number; totalPages?: number }> {
     const chapterRange = chapterStart && chapterEnd ? { start: chapterStart, end: chapterEnd } : undefined;
     
     return this.quotesService.findAll({

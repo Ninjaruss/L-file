@@ -105,7 +105,7 @@ export class GamblesService {
     return this.gambleRoundsRepository.save(round);
   }
 
-  async findAll(options: { page?: number; limit?: number } = {}): Promise<{ data: Gamble[]; total: number; page: number; totalPages: number }> {
+  async findAll(options: { page?: number; limit?: number } = {}): Promise<{ data: Gamble[]; total: number; page: number; perPage: number; totalPages: number }> {
     const { page = 1, limit = 100 } = options;
     const qb = this.gamblesRepository.createQueryBuilder('gamble')
       .leftJoinAndSelect('gamble.teams', 'teams')
@@ -119,8 +119,8 @@ export class GamblesService {
     qb.skip(skip).take(limit);
 
     const [data, total] = await qb.getManyAndCount();
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    return { data, total, page, totalPages };
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  return { data, total, page, perPage: limit, totalPages };
   }
 
   async findOne(id: number): Promise<Gamble> {
@@ -179,7 +179,7 @@ export class GamblesService {
     characterId?: number;
     limit?: number;
     page?: number;
-  }): Promise<{ data: Gamble[]; total: number; page: number; totalPages: number }> {
+  }): Promise<{ data: Gamble[]; total: number; page: number; perPage: number; totalPages: number }> {
     const { page = 1, limit = 100 } = options;
     const query = this.gamblesRepository.createQueryBuilder('gamble')
       .leftJoinAndSelect('gamble.teams', 'teams')
@@ -209,7 +209,7 @@ export class GamblesService {
     if (options.chapterId) {
   // Treat options.chapterId as a chapter number. Resolve to chapter IDs before filtering.
   const chapters = await this.chaptersRepository.find({ where: { number: options.chapterId } });
-        if (!chapters.length) return { data: [], total: 0, page: 1, totalPages: 1 };
+  if (!chapters.length) return { data: [], total: 0, page: 1, perPage: limit, totalPages: 1 };
   const chapterIds = chapters.map(c => c.id);
   conditions.push('gamble.chapterId IN (:...chapterIds)');
   parameters.chapterIds = chapterIds;
@@ -232,6 +232,6 @@ export class GamblesService {
       .getManyAndCount();
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
-      return { data, total, page, totalPages };
+      return { data, total, page, perPage: limit, totalPages };
   }
 }

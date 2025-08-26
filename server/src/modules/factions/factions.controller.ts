@@ -27,8 +27,11 @@ export class FactionsController {
           schema: {
             type: 'object',
             properties: {
-              data: { type: 'array', items: { $ref: '#/components/schemas/Faction' } },
-              meta: { type: 'object', properties: { total: { type: 'number' }, page: { type: 'number' }, perPage: { type: 'number' }, totalPages: { type: 'number' } } }
+        data: { type: 'array', items: { $ref: '#/components/schemas/Faction' } },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        perPage: { type: 'number' },
+        totalPages: { type: 'number' }
             }
           }
   })
@@ -38,23 +41,13 @@ export class FactionsController {
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
     @Query('page') page = '1',
     @Query('limit') limit = '1000',
-    @Query('legacy') legacy?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 1000;
     const result = await this.service.findAll({ sort, order, page: pageNum, limit: limitNum });
 
-    const response = {
-      data: result.data,
-      meta: { total: result.total, page: result.page, perPage: limitNum, totalPages: result.totalPages },
-    } as const;
-
-    // If legacy query param set, also include the old top-level array for backward compatibility
-    if (legacy === 'true') {
-      return { factions: result.data, ...response };
-    }
-
-    return response;
+  // Canonical top-level paginated response
+  return { data: result.data, total: result.total, page: result.page, perPage: limitNum, totalPages: result.totalPages };
   }
 
   @Get(':id')

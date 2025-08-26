@@ -30,19 +30,14 @@ export class VolumesController {
     description: 'Volumes retrieved successfully',
     schema: {
       properties: {
-        items: {
+        data: {
           type: 'array',
           items: { $ref: '#/components/schemas/Volume' }
         },
-        meta: {
-          type: 'object',
-          properties: {
-            totalItems: { type: 'number' },
-            itemsPerPage: { type: 'number' },
-            totalPages: { type: 'number' },
-            currentPage: { type: 'number' }
-          }
-        }
+        total: { type: 'number' },
+        page: { type: 'number' },
+        perPage: { type: 'number' },
+        totalPages: { type: 'number' }
       }
     }
   })
@@ -57,8 +52,8 @@ export class VolumesController {
   const pageNum = page || 1;
   const limitNum = limit || 20;
   const result = await this.service.findAll({ series, number, page: pageNum, limit: limitNum, sort, order });
-  // Keep compatibility: return items/meta if client expects legacy structure via query param
-  return { data: result.data, meta: result.meta };
+  // Return canonical paginated shape
+  return result;
   }
 
   @Get(':id')

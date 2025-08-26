@@ -4,10 +4,14 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 /**
- * Transform responses to ensure a consistent shape for the frontend.
- * - Preserve already-shaped responses (auth tokens, explicit `quotes`/`data` objects).
- * - Normalize arrays into `{ data: [...] }` and set `X-Total-Count` header.
- * - Normalize paginated responses that include `data` + `total`.
+ * Transform responses to ensure a single, consistent shape for the frontend.
+ * - Preserve explicit shapes (auth tokens, other non-list payloads).
+ * - Normalize raw arrays into `{ data: [...] }` and set `X-Total-Count` header.
+ * - Normalize existing canonical paginated responses `{ data: [...], total }` and expose `X-Total-Count`.
+ *
+ * Note: resource-keyed envelopes (e.g. `{ gambles: [...], meta: { total } }`) and
+ * `{ data, meta }` shaped responses are not supported by default. Controllers must
+ * return the canonical paginated shape `{ data, total, page, perPage, totalPages }`.
  */
 @Injectable()
 export class TransformResponseInterceptor<T> implements NestInterceptor<T, any> {
@@ -24,43 +28,24 @@ export class TransformResponseInterceptor<T> implements NestInterceptor<T, any> 
           return response;
         }
 
-        // If the service already returns a paginated shape expected by the client
-        // e.g. { data: [...], total: number } or { data: [...], meta: { total } } or { gambles: [...], meta: { total } }
+        // If the service already returns the canonical paginated shape expected by the client
+        // e.g. { data: [...], total: number }
         if (typeof response === 'object' && response !== null) {
           // Primary: { data: [...], total }
           const topData = (response as any).data;
           const topTotal = (response as any).total;
-          const metaTotal = (response as any).meta?.total;
 
-          if (Array.isArray(topData) && (typeof topTotal === 'number' || typeof metaTotal === 'number')) {
-            const totalValue = typeof topTotal === 'number' ? topTotal : metaTotal;
+          if (Array.isArray(topData) && typeof topTotal === 'number') {
+            const totalValue = topTotal;
             httpResponse.setHeader('X-Total-Count', String(totalValue));
             // Ensure browsers can read the header when CORS is enabled
             httpResponse.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
             return {
               data: topData,
               total: totalValue,
-              page: (response as any).page ?? (response as any).meta?.page ?? 1,
-              limit: (response as any).limit ?? (response as any).meta?.perPage ?? null,
-              totalPages: (response as any).totalPages ?? (response as any).meta?.totalPages ?? Math.ceil(totalValue / ((response as any).limit || (response as any).meta?.perPage || topData.length || 1)),
-            };
-          }
-
-          // Resource-keyed shape: { gambles: [...], meta: { total } }
-          const firstArrayKey = Object.keys(response).find(k => Array.isArray((response as any)[k]));
-          if (firstArrayKey && typeof (response as any).meta?.total === 'number') {
-            const arr = (response as any)[firstArrayKey];
-            const totalValue = (response as any).meta.total;
-            httpResponse.setHeader('X-Total-Count', String(totalValue));
-            // Ensure browsers can read the header when CORS is enabled
-            httpResponse.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
-            // Return normalized response with `data` and keep meta for compatibility
-            return {
-              data: arr,
-              total: totalValue,
-              page: (response as any).meta?.page ?? 1,
-              limit: (response as any).meta?.perPage ?? null,
-              totalPages: (response as any).meta?.totalPages ?? Math.ceil(totalValue / ((response as any).meta?.perPage || arr.length || 1)),
+              page: (response as any).page ?? 1,
+              perPage: (response as any).perPage ?? (response as any).limit ?? null,
+              totalPages: (response as any).totalPages ?? Math.ceil(totalValue / ((response as any).perPage || (response as any).limit || topData.length || 1)),
             };
           }
         }

@@ -57,10 +57,11 @@ export class MediaController {
               createdAt: { type: 'string', format: 'date-time' }
             }
           }
-        },
-        total: { type: 'number', example: 50 },
-        page: { type: 'number', example: 1 },
-        totalPages: { type: 'number', example: 3 }
+  },
+  total: { type: 'number', example: 50 },
+  page: { type: 'number', example: 1 },
+  perPage: { type: 'number', example: 20 },
+  totalPages: { type: 'number', example: 3 }
       }
     }
   })
@@ -196,21 +197,22 @@ export class MediaController {
         type: 'object',
         properties: {
           data: { type: 'array', items: { type: 'object', properties: { id: { type: 'number', example: 1 }, url: { type: 'string', example: 'https://www.youtube.com/watch?v=example' }, type: { type: 'string', example: 'video' }, description: { type: 'string', example: 'Character analysis video' }, status: { type: 'string', example: 'approved' }, character: { type: 'object', nullable: true, properties: { id: { type: 'number', example: 1 }, name: { type: 'string', example: 'Baku Madarame' } } }, submittedBy: { type: 'object', properties: { id: { type: 'number', example: 1 }, username: { type: 'string', example: 'fan123' } } }, createdAt: { type: 'string', format: 'date-time' }, updatedAt: { type: 'string', format: 'date-time' } } } },
-          meta: { type: 'object', properties: { total: { type: 'number' }, page: { type: 'number' }, perPage: { type: 'number' }, totalPages: { type: 'number' } } }
+          total: { type: 'number', example: 50 },
+          page: { type: 'number', example: 1 },
+          perPage: { type: 'number', example: 20 },
+          totalPages: { type: 'number', example: 3 }
         }
     }
   })
   async findAll(
     @Query('page') page = '1',
     @Query('limit') limit = '20',
-    @Query('legacy') legacy?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
     const result = await this.mediaService.findAll({ page: pageNum, limit: limitNum });
-    const response = { data: result.data, meta: { total: result.total, page: result.page, perPage: limitNum, totalPages: result.totalPages } };
-    if (legacy === 'true') return { media: result.data, ...response };
-    return response;
+    // Return canonical top-level paginated shape used across the API
+    return { data: result.data, total: result.total, page: result.page, perPage: limitNum, totalPages: result.totalPages } as const;
   }
 
   @Get('pending')

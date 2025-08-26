@@ -75,6 +75,45 @@ const convertKeysToCamelCase = (obj: unknown): unknown => {
   }, {});
 };
 
+const unwrapData = (input: unknown): unknown => {
+  if (input && typeof input === 'object') {
+    const o = input as Record<string, unknown>;
+    if ('data' in o) return o.data as unknown;
+  }
+  return input;
+};
+
+// Ensure a returned record has an `id` property. Try common fallback keys.
+const ensureRecordHasId = (rec: unknown, resource?: string): Record<string, unknown> => {
+  if (!rec || typeof rec !== 'object') return rec as Record<string, unknown>;
+  const obj = rec as Record<string, unknown>;
+  if ('id' in obj && obj.id !== undefined) return obj;
+
+  // Look for common id-like keys (camelCase, snake_case, and variants)
+  const keys = Object.keys(obj);
+  const candidate = keys.find(k => {
+    const lower = k.toLowerCase();
+    if (lower === 'id' || lower === '_id' || lower === 'uuid') return true;
+    if (lower.endsWith('_id') || lower.endsWith('id')) return true;
+    return false;
+  });
+  if (candidate) {
+    obj.id = obj[candidate];
+    return obj;
+  }
+
+  // Try resource-based fallback (singularized)
+  if (resource) {
+    const singular = resource.replace(/s$/i, '');
+    const camel = `${singular}Id`;
+    const snake = `${singular}_id`;
+    if (camel in obj) { obj.id = obj[camel]; return obj; }
+    if (snake in obj) { obj.id = obj[snake]; return obj; }
+  }
+
+  return obj;
+};
+
 const customDataProvider: DataProvider = {
   ...baseDataProvider,
 
@@ -159,7 +198,7 @@ const customDataProvider: DataProvider = {
           // If retry failed, fall through to reject with its status
           throw new Error(`Failed to fetch ${resource}: ${retryResp.status}`);
         }
-      } catch (_refreshErr) {
+      } catch {
         // swallow and fall through to reject as unauthorized
       }
     }
@@ -172,36 +211,75 @@ const customDataProvider: DataProvider = {
   
   getOne: <R extends RaRecord = RaRecord>(resource: string, params: GetOneParams<R>): Promise<GetOneResult<R>> =>
     baseDataProvider.getOne<R>(resource, params).then(response => {
-      let data = convertKeysToCamelCase(response.data) as unknown as Record<string, unknown> | null;
-      if (!data) data = {};
-      // Ensure there's an `id` property; some endpoints return `<resource>_id` or `user_id` etc.
-      if (!('id' in data)) {
-        const fallbackKey = Object.keys(data).find(k => k.toLowerCase().endsWith('_id') || k.toLowerCase().endsWith('id'));
-        if (fallbackKey) {
-          const record = data as Record<string, unknown>;
-          const val = record[fallbackKey];
-          if (val !== undefined) {
-            // react-admin Identifier is string | number; cast to Identifier for typing
-            data.id = val as Identifier;
+      // Some endpoints return the canonical envelope { data: {...} }, or nested envelopes
+      let raw: unknown = (response as unknown as Record<string, unknown>).data;
+
+      // If raw is an envelope itself ({ data: ... }), unwrap it
+      if (raw && typeof raw === 'object' && 'data' in (raw as Record<string, unknown>)) {
+        raw = (raw as Record<string, unknown>).data;
+      }
+
+      // If raw is an array (some endpoints return [item]), pick first
+      if (Array.isArray(raw)) raw = raw.length > 0 ? raw[0] : null;
+
+      // If raw is an object with a single nested key matching the resource (e.g., { guide: {...} }), unwrap it
+      if (raw && typeof raw === 'object') {
+        const obj = raw as Record<string, unknown>;
+        const keys = Object.keys(obj);
+        if (keys.length === 1) {
+          const only = keys[0];
+          // common convention: singular resource key
+          if (only.toLowerCase().includes(resource.replace(/s$/i, '').toLowerCase())) {
+            raw = obj[only];
           }
         }
       }
-      return ({ data: data as unknown as R } as GetOneResult<R>);
+
+      let dataObj = convertKeysToCamelCase(raw) as unknown as Record<string, unknown> | null;
+      if (!dataObj) dataObj = {};
+
+      // Ensure there's an `id` property. Try common fallbacks, resource-based fallbacks, then params.id
+      const withId = ensureRecordHasId(dataObj, resource);
+      if (!withId.id) {
+        // final fallback: use requested id
+        (withId as Record<string, unknown>).id = params.id as Identifier;
+      }
+
+      return ({ data: withId as unknown as R } as GetOneResult<R>);
     }),
 
   getMany: <R extends RaRecord = RaRecord>(resource: string, params: GetManyParams<R>): Promise<GetManyResult<R>> =>
-  baseDataProvider.getMany<R>(resource, params).then(response => ({ data: (response.data as unknown[]).map((d: unknown) => convertKeysToCamelCase(d) as unknown as R) } as GetManyResult<R>)),
+  baseDataProvider.getMany<R>(resource, params).then(response => {
+    // response.data may be the canonical envelope { data: [...] }
+  const raw = unwrapData((response as unknown as Record<string, unknown>).data);
+    const arr = Array.isArray(raw) ? (raw as unknown[]).map((d: unknown) => convertKeysToCamelCase(d) as unknown as R) : [];
+    return { data: arr } as GetManyResult<R>;
+  }),
 
   getManyReference: <R extends RaRecord = RaRecord>(resource: string, params: GetManyReferenceParams): Promise<GetManyReferenceResult<R>> =>
-    baseDataProvider.getManyReference<R>(resource, params).then(response => ({
-      data: (response.data as unknown[]).map((d: unknown) => convertKeysToCamelCase(d) as unknown as R),
-      total: response.total as number,
-    } as GetManyReferenceResult<R>)),
+    baseDataProvider.getManyReference<R>(resource, params).then(response => {
+  const raw = unwrapData((response as unknown as Record<string, unknown>).data);
+      if (raw && typeof raw === 'object' && 'data' in (raw as Record<string, unknown>)) {
+        const obj = raw as Record<string, unknown>;
+        const arr = Array.isArray(obj.data) ? (obj.data as unknown[]).map((d: unknown) => convertKeysToCamelCase(d) as unknown as R) : [];
+        const total = typeof obj.total === 'number' ? obj.total : (response.total as number) || arr.length;
+        return { data: arr, total } as GetManyReferenceResult<R>;
+      }
+      const arr = Array.isArray(raw) ? (raw as unknown[]).map((d: unknown) => convertKeysToCamelCase(d) as unknown as R) : [];
+      const total = (response.total as number) || arr.length;
+      return { data: arr, total } as GetManyReferenceResult<R>;
+    }),
 
   update: <R extends RaRecord = RaRecord>(resource: string, params: UpdateParams<R>): Promise<UpdateResult<R>> => {
     const data = convertKeysToSnakeCase(params.data) as unknown as Partial<R>;
     return baseDataProvider.update<R>(resource, { ...params, data } as UpdateParams<R>)
-      .then(response => ({ data: convertKeysToCamelCase(response.data) as unknown as R } as UpdateResult<R>));
+      .then(response => {
+        const raw = unwrapData((response as unknown as Record<string, unknown>).data);
+        let record = convertKeysToCamelCase(raw) as unknown as Record<string, unknown> | null;
+        if (!record) record = {};
+        const withId = ensureRecordHasId(record, resource) as unknown as R;
+        return ({ data: withId } as UpdateResult<R>);
+      });
   },
 
   updateMany: <R extends RaRecord = RaRecord>(resource: string, params: UpdateManyParams<R>): Promise<UpdateManyResult<R>> => {
@@ -209,20 +287,49 @@ const customDataProvider: DataProvider = {
     const data = params.data ? (convertKeysToSnakeCase(params.data) as unknown as Partial<R>) : undefined;
     const safeParams = { ids, data } as UpdateManyParams<R>;
     return baseDataProvider.updateMany<R>(resource, safeParams)
-      .then(response => ({ data: (response.data || []) as unknown as R['id'][] } as UpdateManyResult<R>));
+      .then(response => {
+        const raw = unwrapData((response as unknown as Record<string, unknown>).data) as unknown || [];
+        if (Array.isArray(raw)) {
+          // If array of ids
+          if (raw.every(r => typeof r === 'string' || typeof r === 'number')) return ({ data: raw as unknown as R['id'][] } as UpdateManyResult<R>);
+          // If array of records, extract ids
+          const idsArr = (raw as unknown[]).map(item => ensureRecordHasId(convertKeysToCamelCase(item) as unknown as Record<string, unknown>, resource).id) as R['id'][];
+          return ({ data: idsArr } as UpdateManyResult<R>);
+        }
+        return ({ data: [] } as UpdateManyResult<R>);
+      });
   },
 
   create: <R extends Omit<RaRecord, 'id'> = Omit<RaRecord, 'id'>, T extends RaRecord = R & { id: Identifier }>(resource: string, params: CreateParams<R>): Promise<CreateResult<T>> => {
     const data = convertKeysToSnakeCase(params.data) as unknown as R;
     return baseDataProvider.create<T>(resource, { ...params, data } as CreateParams<R>)
-      .then(response => ({ data: convertKeysToCamelCase(response.data) as unknown as T } as CreateResult<T>));
+      .then(response => {
+        const raw = unwrapData((response as unknown as Record<string, unknown>).data);
+        let record = convertKeysToCamelCase(raw) as unknown as Record<string, unknown> | null;
+        if (!record) record = {};
+        const withId = ensureRecordHasId(record, resource) as unknown as T;
+        return ({ data: withId } as CreateResult<T>);
+      });
   },
 
   delete: <R extends RaRecord = RaRecord>(resource: string, params: DeleteParams<R>): Promise<DeleteResult<R>> =>
-    baseDataProvider.delete<R>(resource, params).then(response => ({ data: convertKeysToCamelCase(response.data) as unknown as R } as DeleteResult<R>)),
+    baseDataProvider.delete<R>(resource, params).then(response => {
+  const raw = unwrapData((response as unknown as Record<string, unknown>).data);
+      return ({ data: convertKeysToCamelCase(raw) as unknown as R } as DeleteResult<R>);
+    }),
 
   deleteMany: <R extends RaRecord = RaRecord>(resource: string, params: DeleteManyParams<R>): Promise<DeleteManyResult<R>> =>
-    baseDataProvider.deleteMany<R>(resource, params).then(response => ({ data: (response.data || []).map((d: unknown) => convertKeysToCamelCase(d) as unknown as R['id']) } as DeleteManyResult<R>)),
+    baseDataProvider.deleteMany<R>(resource, params).then(response => {
+  const raw = (unwrapData((response as unknown as Record<string, unknown>).data) as unknown) || [];
+      if (Array.isArray(raw)) {
+        // if array of ids
+        if (raw.every(r => typeof r === 'string' || typeof r === 'number')) return { data: raw as unknown as R['id'][] } as DeleteManyResult<R>;
+        // otherwise map records to ids
+        const ids = (raw as unknown[]).map((d: unknown) => ensureRecordHasId(convertKeysToCamelCase(d) as unknown as Record<string, unknown>, resource).id) as R['id'][];
+        return { data: ids } as DeleteManyResult<R>;
+      }
+      return { data: [] } as DeleteManyResult<R>;
+    }),
 };
 
 export default customDataProvider;

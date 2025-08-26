@@ -10,7 +10,7 @@ export class FactionsService {
   /**
    * Sorting: sort (id, name), order (ASC/DESC)
    */
-  async findAll(filters: { sort?: string; order?: 'ASC' | 'DESC'; page?: number; limit?: number } = {}): Promise<{ data: Faction[]; total: number; page: number; totalPages: number }> {
+  async findAll(filters: { sort?: string; order?: 'ASC' | 'DESC'; page?: number; limit?: number } = {}): Promise<{ data: Faction[]; total: number; page: number; perPage: number; totalPages: number }> {
     const { sort, order = 'ASC', page = 1, limit = 1000 } = filters;
     const query = this.repo.createQueryBuilder('faction').leftJoinAndSelect('faction.characters', 'characters');
     const allowedSort = ['id', 'name'];
@@ -24,8 +24,8 @@ export class FactionsService {
     query.skip(skip).take(limit);
 
     const [data, total] = await query.getManyAndCount();
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    return { data, total, page, totalPages };
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  return { data, total, page, perPage: limit, totalPages };
   }
 
   async findOne(id: number): Promise<Faction> {

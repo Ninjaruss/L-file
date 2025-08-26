@@ -1,18 +1,14 @@
 export interface PaginatedResponse<T> {
-  items: T[];
-  meta: {
-    totalItems: number;
-    currentPage: number;
-    totalPages: number;
-    itemsPerPage: number;
-  };
+  data: T[];
+  total: number;
+  page: number;
+  perPage?: number;
+  totalPages?: number;
 }
 
 export interface ApiResponse<T> {
   data: T;
-  meta?: {
-    count?: number;
-    page?: number;
-    totalPages?: number;
-  };
+  // Optional non-pagination metadata for specific endpoints (e.g., helper fields).
+  // Pagination MUST use the top-level fields defined in PaginatedResponse<T>.
+  meta?: Record<string, any>;
 }

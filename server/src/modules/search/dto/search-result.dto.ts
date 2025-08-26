@@ -98,7 +98,7 @@ export class SearchResultDto {
     description: 'Number of results per page',
     example: 20,
   })
-  limit: number;
+  perPage: number;
 
   @ApiProperty({
     description: 'Total number of pages',

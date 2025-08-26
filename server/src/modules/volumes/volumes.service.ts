@@ -45,12 +45,10 @@ export class VolumesService {
     const [items, totalItems] = await query.getManyAndCount();
     return {
       data: items,
-      meta: {
-        total: totalItems,
-        perPage: limit,
-        totalPages: Math.ceil(totalItems / limit),
-        page
-      }
+      total: totalItems,
+      page,
+      perPage: limit,
+      totalPages: Math.ceil(totalItems / limit),
     };
   }
 

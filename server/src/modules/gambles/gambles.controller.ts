@@ -158,9 +158,8 @@ export class GamblesController {
     @Query('teamName') teamName?: string,
     @Query('chapterId', new ParseIntPipe({ optional: true })) chapterId?: number,
     @Query('characterId', new ParseIntPipe({ optional: true })) characterId?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('page') page = '1',
-    @Query('legacy') legacy?: string,
+  @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  @Query('page') page = '1',
   ) {
     // If any filters are provided, use the search functionality
     if (gambleName || participantName || teamName || chapterId || characterId || limit) {

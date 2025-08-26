@@ -63,7 +63,7 @@ export class SearchService {
       results,
       total,
       page,
-      limit,
+      perPage: limit,
       totalPages,
     };
   }

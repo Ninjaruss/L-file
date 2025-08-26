@@ -36,7 +36,7 @@ export class MediaService {
     }
 
 
-  async findAll(filters: { page?: number; limit?: number } = {}): Promise<{ data: Media[]; total: number; page: number; totalPages: number }> {
+  async findAll(filters: { page?: number; limit?: number } = {}): Promise<{ data: Media[]; total: number; page: number; perPage: number; totalPages: number }> {
     const { page = 1, limit = 20 } = filters;
     const query = this.mediaRepo.createQueryBuilder('media')
       .leftJoinAndSelect('media.character', 'character')
@@ -48,8 +48,8 @@ export class MediaService {
       .take(limit);
 
     const [data, total] = await query.getManyAndCount();
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    return { data, total, page, totalPages };
+  const totalPages = Math.ceil(total / limit);
+  return { data, total, page, perPage: limit, totalPages };
   }
 
   async findOne(id: number): Promise<Media | null> {
@@ -156,6 +156,7 @@ export class MediaService {
       data,
       total,
       page,
+      perPage: limit,
       totalPages: Math.ceil(total / limit),
     };
   }

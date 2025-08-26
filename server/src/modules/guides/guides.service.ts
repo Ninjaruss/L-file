@@ -39,7 +39,7 @@ export class GuidesService {
     return await this.guideRepository.save(guide);
   }
 
-  async findAll(query: GuideQueryDto): Promise<{ data: Guide[], total: number, page: number, totalPages: number }> {
+  async findAll(query: GuideQueryDto): Promise<{ data: Guide[], total: number, page: number, perPage: number, totalPages: number }> {
     const {
       search,
       status,
@@ -103,12 +103,12 @@ export class GuidesService {
     queryBuilder.skip(skip).take(limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(total / limit);
 
-    return { data, total, page, totalPages };
+  return { data, total, page, perPage: limit, totalPages };
   }
 
-  async findPublished(query: GuideQueryDto): Promise<{ data: Guide[], total: number, page: number, totalPages: number }> {
+  async findPublished(query: GuideQueryDto): Promise<{ data: Guide[], total: number, page: number, perPage: number, totalPages: number }> {
     return this.findAll({ ...query, status: GuideStatus.PUBLISHED });
   }
 
@@ -240,7 +240,7 @@ export class GuidesService {
     }
   }
 
-  async getUserLikedGuides(userId: number, query: GuideQueryDto): Promise<{ data: Guide[], total: number, page: number, totalPages: number }> {
+  async getUserLikedGuides(userId: number, query: GuideQueryDto): Promise<{ data: Guide[], total: number, page: number, perPage: number, totalPages: number }> {
     const { page = 1, limit = 20 } = query;
 
     const queryBuilder = this.guideRepository.createQueryBuilder('guide')
@@ -256,7 +256,7 @@ export class GuidesService {
     const [data, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
 
-    return { data, total, page, totalPages };
+  return { data, total, page, perPage: limit, totalPages };
   }
 
   private async findOrCreateTags(tagNames: string[]): Promise<Tag[]> {

@@ -71,10 +71,10 @@ export class SearchController {
             }
           }
         },
-        total: { type: 'number', example: 42 },
-        page: { type: 'number', example: 1 },
-        limit: { type: 'number', example: 20 },
-        totalPages: { type: 'number', example: 3 }
+  total: { type: 'number', example: 42 },
+  page: { type: 'number', example: 1 },
+  perPage: { type: 'number', example: 20 },
+  totalPages: { type: 'number', example: 3 }
       }
     }
   })

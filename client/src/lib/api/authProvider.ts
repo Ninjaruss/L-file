@@ -32,7 +32,6 @@ const authProvider: AuthProvider = {
       // body may be an object with message/error fields
       let parsedMsg: string | null = null;
       if (body && typeof body === 'object') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const b = body as Record<string, unknown>;
         const m = b.message ?? b.error ?? null;
         if (typeof m === 'string') parsedMsg = m;

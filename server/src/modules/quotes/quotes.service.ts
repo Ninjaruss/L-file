@@ -55,7 +55,7 @@ export class QuotesService {
     submittedById?: number;
     page?: number;
     limit?: number;
-  }): Promise<{ quotes: Quote[]; total: number }> {
+  }): Promise<{ data: Quote[]; total: number; page?: number; perPage?: number; totalPages?: number }> {
     const queryBuilder = this.quotesRepository.createQueryBuilder('quote')
       .leftJoinAndSelect('quote.character', 'character')
       .leftJoinAndSelect('quote.series', 'series')
@@ -99,9 +99,12 @@ export class QuotesService {
       queryBuilder.skip(skip).take(options.limit);
     }
 
-    const quotes = await queryBuilder.getMany();
+  const quotes = await queryBuilder.getMany();
+  const page = options?.page ?? 1;
+  const perPage = options?.limit ?? quotes.length;
+  const totalPages = perPage ? Math.ceil(total / perPage) : 1;
 
-    return { quotes, total };
+  return { data: quotes, total, page, perPage, totalPages };
   }
 
   async findOne(id: number): Promise<Quote> {

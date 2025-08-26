@@ -9,12 +9,15 @@
 - Implemented react-admin for all datapoints
 - Adding cookies and cookie-parser to allow for signed logins
 - Basic admin page almost completed. Working on fixing react-admin (guides and selecting data) and cleaning up structure.
+- Standardized all list endpoints to return the canonical paginated response `{ data, total, page, perPage, totalPages }` and ensured `X-Total-Count` is exposed for clients that read headers.
+- Fixed issues with getOne and added handling to ensure an id exists; if it doesn't, id = params.id
 
 ### Notes
 - Working with Gemini's Agent Mode seems to be decent, but fails to have as much consistency as using a premium model with Github Copilot. It feels like the generated code often breaks quickly or the coding structure is very flawed (probably due to not reading files in a logical manner?). I will stick to GPT-5 mini preview with Github Copilot as it seems to consistently identify and solve issues. If I continue using Pro, I will use Claude Sonnet 4.0 for premium requests.
 - NextJS requires building the frontend to deploy changes
 - I will need to practice identifying and coding state changes on the frontend. Even though I've worked with frontend here and there, I am not familar enough to let the LLM generate a bunch of code for me to try and fix. This is partly due to the errors being a lot more vague to me on the frontend.
 - It's been a little bit of an issue making sure to clean up files. Mainly, it's making sure if I change an entitiy and its relations, that I reflect that change throughout its module (i.e. entity changes may require change to typeorm relationships).
+- I realize that I would have saved myself a lot of headaches if I knew about making instruction documents for the LLM. For example, defining use of OpenAPI documents/decorators or specifying structure for response. Even though I would prompt the LLM to scan through files and find any discrepancies, it would not realize the file's data structure was not the same as the rest of the project.
 
 ## 2025-08-25
 ### Changes
