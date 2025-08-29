@@ -1,134 +1,130 @@
-"use client";
+'use client'
 
-import { Admin, Resource } from 'react-admin';
-import { customDataProvider } from '@/lib/api/customDataProvider';
-import { authProvider } from '@/lib/api/authProvider';
+import React from 'react'
+import { Admin, Resource } from 'react-admin'
+import { AdminDataProvider } from '../../components/admin/AdminDataProvider'
+import { AdminAuthProvider } from '../../components/admin/AdminAuthProvider'
+import { AdminLayout } from '../../components/admin/AdminLayout'
+import { Dashboard } from '../../components/admin/Dashboard'
 
-// Import resource components
-import { SeriesList, SeriesEdit, SeriesCreate } from '@/components/admin/Series';
-import { VolumeList, VolumeEdit, VolumeCreate } from '@/components/admin/Volume';
-import { ChapterList, ChapterEdit, ChapterCreate } from '@/components/admin/Chapter';
-import { ArcList, ArcEdit, ArcCreate } from '@/components/admin/Arc';
-import { CharacterList, CharacterEdit, CharacterCreate } from '@/components/admin/Character';
-import { FactionList, FactionEdit, FactionCreate } from '@/components/admin/Faction';
-import { EventList, EventEdit, EventCreate } from '@/components/admin/Event';
-import { TagList, TagEdit, TagCreate } from '@/components/admin/Tag';
-import { QuoteList, QuoteEdit, QuoteCreate } from '@/components/admin/Quote';
-import { GuideList, GuideEdit, GuideCreate } from '@/components/admin/Guide';
-import { MediaList, MediaEdit, MediaCreate } from '@/components/admin/Media';
-import { GambleList, GambleEdit, GambleCreate } from '@/components/admin/Gamble';
-import { UserList, UserEdit, UserCreate } from '@/components/admin/User';
+// Resource components
+import { CharacterList, CharacterEdit, CharacterCreate, CharacterShow } from '../../components/admin/Characters'
+import { ArcList, ArcEdit, ArcCreate, ArcShow } from '../../components/admin/Arcs'
+import { GambleList, GambleEdit, GambleCreate, GambleShow } from '../../components/admin/Gambles'
+import { EventList, EventEdit, EventCreate, EventShow } from '../../components/admin/Events'
+import { GuideList, GuideEdit, GuideShow } from '../../components/admin/Guides'
+import { MediaList, MediaEdit, MediaShow } from '../../components/admin/Media'
+import { UserList, UserEdit, UserShow } from '../../components/admin/Users'
+import { QuoteList, QuoteEdit, QuoteCreate, QuoteShow } from '../../components/admin/Quotes'
+import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
+import { SeriesList, SeriesEdit, SeriesCreate } from '../../components/admin/Series'
+import { FactionList, FactionEdit, FactionCreate } from '../../components/admin/Factions'
+
+// Icons
+import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Book, Shield } from 'lucide-react'
+
+// Convert icons to components
+const UsersIcon = () => <Users />
+const BookOpenIcon = () => <BookOpen />
+const CrownIcon = () => <Crown />
+const ZapIcon = () => <Zap />
+const FileTextIcon = () => <FileText />
+const ImageIcon = () => <Image />
+const QuoteIcon = () => <Quote />
+const TagIcon = () => <Tag />
+const BookIcon = () => <Book />
+const ShieldIcon = () => <Shield />
 
 export default function AdminApp() {
   return (
     <Admin
-      dataProvider={customDataProvider}
-      authProvider={authProvider}
-      requireAuth
+      dataProvider={AdminDataProvider}
+      authProvider={AdminAuthProvider}
+      layout={AdminLayout}
+      dashboard={Dashboard}
     >
-      {/* Series Management */}
       <Resource
-        name="series"
-        list={SeriesList}
-        edit={SeriesEdit}
-        create={SeriesCreate}
+        name="users"
+        list={UserList}
+        edit={UserEdit}
+        show={UserShow}
+        icon={UsersIcon}
       />
-
-      {/* Volume Management */}
-      <Resource
-        name="volumes"
-        list={VolumeList}
-        edit={VolumeEdit}
-        create={VolumeCreate}
-      />
-
-      {/* Chapter Management */}
-      <Resource
-        name="chapters"
-        list={ChapterList}
-        edit={ChapterEdit}
-        create={ChapterCreate}
-      />
-
-      {/* Arc Management */}
-      <Resource
-        name="arcs"
-        list={ArcList}
-        edit={ArcEdit}
-        create={ArcCreate}
-      />
-
-      {/* Character Management */}
       <Resource
         name="characters"
         list={CharacterList}
         edit={CharacterEdit}
         create={CharacterCreate}
+        show={CharacterShow}
+        icon={UsersIcon}
       />
-
-      {/* Faction Management */}
       <Resource
-        name="factions"
-        list={FactionList}
-        edit={FactionEdit}
-        create={FactionCreate}
+        name="arcs"
+        list={ArcList}
+        edit={ArcEdit}
+        create={ArcCreate}
+        show={ArcShow}
+        icon={BookOpenIcon}
       />
-
-      {/* Event Management */}
-      <Resource
-        name="events"
-        list={EventList}
-        edit={EventEdit}
-        create={EventCreate}
-      />
-
-      {/* Tag Management */}
-      <Resource
-        name="tags"
-        list={TagList}
-        edit={TagEdit}
-        create={TagCreate}
-      />
-
-      {/* Quote Management */}
-      <Resource
-        name="quotes"
-        list={QuoteList}
-        edit={QuoteEdit}
-        create={QuoteCreate}
-      />
-
-      {/* Guide Management */}
-      <Resource
-        name="guides"
-        list={GuideList}
-        edit={GuideEdit}
-        create={GuideCreate}
-      />
-
-      {/* Media Management */}
-      <Resource
-        name="media"
-        list={MediaList}
-        edit={MediaEdit}
-        create={MediaCreate}
-      />
-
-      {/* Gamble Management */}
       <Resource
         name="gambles"
         list={GambleList}
         edit={GambleEdit}
         create={GambleCreate}
+        show={GambleShow}
+        icon={CrownIcon}
       />
-
-      {/* User Management - Only for admins */}
       <Resource
-        name="users"
-        list={UserList}
-        edit={UserEdit}
-        create={UserCreate}
+        name="events"
+        list={EventList}
+        edit={EventEdit}
+        create={EventCreate}
+        show={EventShow}
+        icon={ZapIcon}
+      />
+      <Resource
+        name="guides"
+        list={GuideList}
+        edit={GuideEdit}
+        show={GuideShow}
+        icon={FileTextIcon}
+      />
+      <Resource
+        name="media"
+        list={MediaList}
+        edit={MediaEdit}
+        show={MediaShow}
+        icon={ImageIcon}
+      />
+      <Resource
+        name="quotes"
+        list={QuoteList}
+        edit={QuoteEdit}
+        create={QuoteCreate}
+        show={QuoteShow}
+        icon={QuoteIcon}
+      />
+      <Resource
+        name="tags"
+        list={TagList}
+        edit={TagEdit}
+        create={TagCreate}
+        icon={TagIcon}
+      />
+      <Resource
+        name="series"
+        list={SeriesList}
+        edit={SeriesEdit}
+        create={SeriesCreate}
+        icon={BookIcon}
+      />
+      <Resource
+        name="factions"
+        list={FactionList}
+        edit={FactionEdit}
+        create={FactionCreate}
+        icon={ShieldIcon}
       />
     </Admin>
-  );
+  )
 }

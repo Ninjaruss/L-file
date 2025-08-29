@@ -1,112 +1,227 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Character } from '@/types/resources';
+import React, { useState, useEffect } from 'react'
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Box,
+  TextField,
+  InputAdornment,
+  Pagination,
+  Chip,
+  CircularProgress,
+  Alert
+} from '@mui/material'
+import { Search, Users, Eye } from 'lucide-react'
+import Link from 'next/link'
+import { api } from '../../lib/api'
+import { motion } from 'motion/react'
+
+interface Character {
+  id: number
+  name: string
+  alternateNames: string[]
+  description: string
+  firstAppearanceChapter: number
+  notableRoles: string[]
+  notableGames: string[]
+  occupation: string
+  affiliations: string[]
+}
 
 export default function CharactersPage() {
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [characters, setCharacters] = useState<Character[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  const fetchCharacters = async (page = 1, search = '') => {
+    setLoading(true)
+    try {
+      const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
+      if (search) params.name = search
+      
+      const response = await api.getCharacters(params)
+      setCharacters(response.data)
+      setTotalPages(response.totalPages)
+      setTotal(response.total)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to fetch characters')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    fetchCharacters();
-  }, []);
+    fetchCharacters(currentPage, searchQuery)
+  }, [currentPage, searchQuery])
 
-  const fetchCharacters = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/characters`);
-      if (response.ok) {
-        const data = await response.json();
-        setCharacters(data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch characters:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value)
+    setCurrentPage(1)
+  }
 
-  const filteredCharacters = characters.filter(character =>
-    character.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (character.description && character.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Characters</h1>
-        <div className="flex space-x-4">
-          <input
-            type="text"
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Users size={48} color="#1976d2" />
+          </Box>
+          <Typography variant="h3" component="h1" gutterBottom>
+            Characters
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
+            Discover the complex cast of Usogui
+          </Typography>
+        </Box>
+
+        <Box sx={{ mb: 4 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
             placeholder="Search characters..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={20} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
           />
-          <Link
-            href="/characters/submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Submit Character
-          </Link>
-        </div>
-      </div>
+        </Box>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCharacters.map((character) => (
-          <div key={character.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div className="flex items-start space-x-4">
-              {character.profileImage && (
-                <Image
-                  src={character.profileImage}
-                  alt={character.name}
-                  width={64}
-                  height={64}
-                  className="w-16 h-16 rounded-full object-cover"
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress size={50} />
+          </Box>
+        ) : (
+          <>
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              {total} character{total !== 1 ? 's' : ''} found
+            </Typography>
+
+            <Grid container spacing={4}>
+              {characters.map((character, index) => (
+                <Grid item xs={12} sm={6} md={4} key={character.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  >
+                    <Card
+                      className="gambling-card h-full"
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'transform 0.2s',
+                        '&:hover': { transform: 'translateY(-4px)' }
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Typography variant="h6" component="h2" gutterBottom>
+                          {character.name}
+                        </Typography>
+                        
+                        {character.alternateNames?.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            {character.alternateNames.slice(0, 2).map((name) => (
+                              <Chip
+                                key={name}
+                                label={name}
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                sx={{ mr: 0.5, mb: 0.5 }}
+                              />
+                            ))}
+                          </Box>
+                        )}
+
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            mb: 2,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 3,
+                          }}
+                        >
+                          {character.description}
+                        </Typography>
+
+                        {character.occupation && (
+                          <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
+                            <strong>Occupation:</strong> {character.occupation}
+                          </Typography>
+                        )}
+
+                        {character.firstAppearanceChapter && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>First Appearance:</strong> Chapter {character.firstAppearanceChapter}
+                          </Typography>
+                        )}
+                      </CardContent>
+
+                      <CardActions>
+                        <Button
+                          component={Link}
+                          href={`/characters/${character.id}`}
+                          variant="outlined"
+                          startIcon={<Eye size={16} />}
+                          fullWidth
+                        >
+                          View Details
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </motion.div>
+                </Grid>
+              ))}
+            </Grid>
+
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
                 />
-              )}
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">{character.name}</h2>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                  {character.description || 'No description available.'}
-                </p>
-                <div className="flex space-x-2">
-                  <Link
-                    href={`/characters/${character.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    View Details
-                  </Link>
-                  <Link
-                    href={`/media?characterId=${character.id}`}
-                    className="text-green-600 hover:text-green-800 text-sm font-medium"
-                  >
-                    View Media
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredCharacters.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            {searchTerm ? 'No characters found matching your search.' : 'No characters available.'}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+              </Box>
+            )}
+          </>
+        )}
+      </motion.div>
+    </Container>
+  )
 }

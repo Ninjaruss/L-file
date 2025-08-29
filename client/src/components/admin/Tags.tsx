@@ -9,7 +9,7 @@ import {
   TextInput
 } from 'react-admin'
 
-export const SeriesList = () => (
+export const TagList = () => (
   <List>
     <Datagrid rowClick="edit">
       <TextField source="id" />
@@ -19,20 +19,20 @@ export const SeriesList = () => (
   </List>
 )
 
-export const SeriesEdit = () => (
+export const TagEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="name" required />
-      <TextInput source="description" multiline rows={4} />
+      <TextInput source="description" multiline rows={2} />
     </SimpleForm>
   </Edit>
 )
 
-export const SeriesCreate = () => (
+export const TagCreate = () => (
   <Create>
     <SimpleForm>
       <TextInput source="name" required />
-      <TextInput source="description" multiline rows={4} />
+      <TextInput source="description" multiline rows={2} />
     </SimpleForm>
   </Create>
 )

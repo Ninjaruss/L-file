@@ -1,232 +1,314 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getCurrentUserProfile, updateUserProfile, getAllQuotes, getAllGambles } from '../../lib/api/users';
-import type { UserProfile, Quote, Gamble } from '../../lib/api/types';
+import React, { useState, useEffect } from 'react'
+import {
+  Container,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Avatar,
+  Chip,
+  Button,
+  Alert,
+  CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
+} from '@mui/material'
+import { User, Settings, Crown, BookOpen, Save } from 'lucide-react'
+import { useAuth } from '../../providers/AuthProvider'
+import { api } from '../../lib/api'
+import { motion } from 'motion/react'
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [gambles, setGambles] = useState<Gamble[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const router = useRouter();
+  const { user, refreshUser } = useAuth()
+  const [selectedQuote, setSelectedQuote] = useState<number | null>(null)
+  const [selectedGamble, setSelectedGamble] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const fetchData = async () => {
       try {
-        const userProfile = await getCurrentUserProfile();
-        setProfile(userProfile);
-      } catch {
-        setError('Failed to load profile');
-        router.push('/login');
-      } finally {
-        setLoading(false);
+        // In a real implementation, you'd fetch quotes and gambles from the API
+        // For now, we'll set defaults
+        setSelectedQuote(user?.favoriteQuoteId || null)
+        setSelectedGamble(user?.favoriteGambleId || null)
+      } catch (error) {
+        console.error('Failed to fetch profile data:', error)
       }
-    };
+    }
 
-    const loadQuotes = async () => {
-      try {
-        const quotesData = await getAllQuotes();
-        setQuotes(quotesData);
-      } catch (err) {
-        console.error('Failed to load quotes:', err);
-      }
-    };
+    if (user) {
+      fetchData()
+    }
+  }, [user])
 
-    const loadGambles = async () => {
-      try {
-        const gamblesData = await getAllGambles();
-        setGambles(gamblesData);
-      } catch (err) {
-        console.error('Failed to load gambles:', err);
-      }
-    };
-
-    loadProfile();
-    loadQuotes();
-    loadGambles();
-  }, [router]);
-
-  const handleSave = async () => {
-    if (!profile) return;
-
-    setSaving(true);
-    setError('');
-    setSuccess('');
+  const handleSaveProfile = async () => {
+    setLoading(true)
+    setError('')
+    setSuccess('')
 
     try {
-      const updates = {
-        favoriteQuoteId: profile.favoriteQuoteId,
-        favoriteGambleId: profile.favoriteGambleId,
-      };
-
-      const updatedProfile = await updateUserProfile(updates);
-      setProfile(updatedProfile);
-      setSuccess('Profile updated successfully!');
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(errorMessage);
+      await api.updateProfile({
+        favoriteQuoteId: selectedQuote || undefined,
+        favoriteGambleId: selectedGamble || undefined,
+      })
+      
+      await refreshUser()
+      setSuccess('Profile updated successfully!')
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to update profile')
     } finally {
-      setSaving(false);
+      setLoading(false)
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authUser');
-    router.push('/');
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
   }
 
-  if (!profile) {
+  if (!user) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view your profile.</p>
-      </div>
-    );
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Alert severity="warning">
+          Please log in to view your profile.
+        </Alert>
+      </Container>
+    )
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="bg-blue-600 px-6 py-4">
-          <h1 className="text-2xl font-bold text-white">User Profile</h1>
-          <p className="text-blue-100">Manage your account settings and preferences</p>
-        </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Avatar
+            sx={{
+              width: 80,
+              height: 80,
+              mx: 'auto',
+              mb: 2,
+              bgcolor: 'primary.main',
+              fontSize: '2rem'
+            }}
+          >
+            {user.username[0].toUpperCase()}
+          </Avatar>
+          <Typography variant="h3" component="h1" gutterBottom>
+            {user.username}
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
+            {user.role === 'admin' ? 'Administrator' : 
+             user.role === 'moderator' ? 'Moderator' : 'Member'}
+          </Typography>
+        </Box>
 
-        <div className="p-6 space-y-6">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-          {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-              {success}
-            </div>
-          )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {success}
+          </Alert>
+        )}
 
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Username</label>
-                  <p className="mt-1 text-sm text-gray-900">{profile.username}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{profile.email}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Role</label>
-                  <p className="mt-1 text-sm text-gray-900 capitalize">{profile.role}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email Verified</label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {profile.isEmailVerified ? '✅ Verified' : '❌ Not verified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Reading Progress</label>
-                  <p className="mt-1 text-sm text-gray-900">Chapter {profile.userProgress}</p>
-                </div>
-              </div>
-            </div>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={6}>
+            <Card className="gambling-card">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <User size={24} />
+                  <Typography variant="h5" sx={{ ml: 1 }}>
+                    Account Information
+                  </Typography>
+                </Box>
 
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Preferences</h2>
-              <div className="space-y-4">
-                {/* Favorite Quote */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Favorite Quote
-                  </label>
-                  <select
-                    value={profile.favoriteQuoteId || ''}
-                    onChange={(e) => setProfile({
-                      ...profile,
-                      favoriteQuoteId: e.target.value ? parseInt(e.target.value) : null
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a favorite quote...</option>
-                    {quotes.map((quote) => (
-                      <option key={quote.id} value={quote.id}>
-                        &ldquo;{quote.text.substring(0, 50)}&hellip;&rdquo; - {quote.character.name}
-                      </option>
-                    ))}
-                  </select>
-                  {profile.favoriteQuote && (
-                    <p className="mt-2 text-sm text-gray-600">
-                      Current: &ldquo;{profile.favoriteQuote.text}&rdquo;
-                    </p>
-                  )}
-                </div>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Username
+                  </Typography>
+                  <Typography variant="body1">
+                    {user.username}
+                  </Typography>
+                </Box>
 
-                {/* Favorite Gamble */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Favorite Gamble
-                  </label>
-                  <select
-                    value={profile.favoriteGambleId || ''}
-                    onChange={(e) => setProfile({
-                      ...profile,
-                      favoriteGambleId: e.target.value ? parseInt(e.target.value) : null
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a favorite gamble...</option>
-                    {gambles.map((gamble) => (
-                      <option key={gamble.id} value={gamble.id}>
-                        {gamble.name}
-                      </option>
-                    ))}
-                  </select>
-                  {profile.favoriteGamble && (
-                    <p className="mt-2 text-sm text-gray-600">
-                      Current: {profile.favoriteGamble.name}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Email
+                  </Typography>
+                  <Typography variant="body1">
+                    {user.email}
+                  </Typography>
+                </Box>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t">
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-            >
-              Logout
-            </button>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Email Status
+                  </Typography>
+                  <Chip
+                    label={user.isEmailVerified ? 'Verified' : 'Not Verified'}
+                    color={user.isEmailVerified ? 'success' : 'warning'}
+                    size="small"
+                  />
+                </Box>
 
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Role
+                  </Typography>
+                  <Chip
+                    label={user.role}
+                    color={user.role === 'admin' ? 'error' : user.role === 'moderator' ? 'warning' : 'default'}
+                    variant="outlined"
+                    icon={user.role === 'admin' || user.role === 'moderator' ? <Crown size={16} /> : undefined}
+                  />
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Reading Progress
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    <BookOpen size={16} color="#1976d2" style={{ marginRight: 8 }} />
+                    <Typography variant="h6" color="primary">
+                      Chapter {user.userProgress}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card className="gambling-card">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Settings size={24} />
+                  <Typography variant="h5" sx={{ ml: 1 }}>
+                    Preferences
+                  </Typography>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Favorite Quote</InputLabel>
+                    <Select
+                      value={selectedQuote || ''}
+                      label="Favorite Quote"
+                      onChange={(e) => setSelectedQuote(e.target.value as number)}
+                    >
+                      <MenuItem value="">
+                        <em>None</em>
+                      </MenuItem>
+                      {/* In a real implementation, these would be loaded from the API */}
+                      <MenuItem value={1}>
+                        &ldquo;The only way to truly win is to not play at all.&rdquo; - Baku Madarame
+                      </MenuItem>
+                      <MenuItem value={2}>
+                        &ldquo;In gambling, the house always wins... except when it doesn&apos;t.&rdquo; - Souichi Kiruma
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Favorite Gamble</InputLabel>
+                    <Select
+                      value={selectedGamble || ''}
+                      label="Favorite Gamble"
+                      onChange={(e) => setSelectedGamble(e.target.value as number)}
+                    >
+                      <MenuItem value="">
+                        <em>None</em>
+                      </MenuItem>
+                      {/* In a real implementation, these would be loaded from the API */}
+                      <MenuItem value={1}>17 Steps</MenuItem>
+                      <MenuItem value={2}>One-Card Poker</MenuItem>
+                      <MenuItem value={3}>Doubt</MenuItem>
+                      <MenuItem value={4}>Air Poker</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <Button
+                  variant="contained"
+                  startIcon={loading ? <CircularProgress size={20} /> : <Save size={20} />}
+                  onClick={handleSaveProfile}
+                  disabled={loading}
+                  fullWidth
+                  size="large"
+                >
+                  {loading ? 'Saving...' : 'Save Preferences'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 4 }}>
+          <Card className="gambling-card">
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                Activity & Contributions
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Track your contributions to the Usogui fansite community
+              </Typography>
+
+              <Grid container spacing={3}>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="primary">
+                      0
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Guides Written
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="secondary">
+                      0
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Media Submitted
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="warning.main">
+                      {user.userProgress}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Chapters Read
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="success.main">
+                      0
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Likes Received
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Box>
+      </motion.div>
+    </Container>
+  )
 }

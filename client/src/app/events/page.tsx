@@ -10,69 +10,85 @@ import {
   CardActions,
   Button,
   Box,
-  TextField,
-  InputAdornment,
   Pagination,
   CircularProgress,
   Alert,
   Chip
 } from '@mui/material'
-import { Search, BookOpen, Eye } from 'lucide-react'
+import { Zap, Eye, Calendar, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 
-interface Arc {
+interface Event {
   id: number
   name: string
   description: string
-  startChapter: number
-  endChapter: number
+  eventType: string
+  chapter: number
+  significance: string
+  participants: string[]
+  outcome: string
   createdAt: string
   updatedAt: string
 }
 
-export default function ArcsPage() {
-  const [arcs, setArcs] = useState<Arc[]>([])
+export default function EventsPage() {
+  const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  const fetchArcs = async (page = 1, search = '') => {
+  const fetchEvents = async (page = 1) => {
     setLoading(true)
     try {
-      const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
-      if (search) params.name = search
-      
-      const response = await api.getArcs(params)
-      setArcs(response.data)
+      const response = await api.getEvents({ page, limit: 12 })
+      setEvents(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to fetch arcs')
+    } catch (error: any) {
+      setError(error.message)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchArcs(currentPage, searchQuery)
-  }, [currentPage, searchQuery])
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value)
-    setCurrentPage(1)
-  }
+    fetchEvents(currentPage)
+  }, [currentPage])
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page)
   }
 
-  const getChapterCount = (arc: Arc) => {
-    return arc.endChapter - arc.startChapter + 1
+  const getEventTypeColor = (eventType: string) => {
+    switch (eventType?.toLowerCase()) {
+      case 'gamble':
+        return 'error'
+      case 'character introduction':
+        return 'primary'
+      case 'plot development':
+        return 'secondary'
+      case 'revelation':
+        return 'warning'
+      default:
+        return 'default'
+    }
+  }
+
+  const getSignificanceColor = (significance: string) => {
+    switch (significance?.toLowerCase()) {
+      case 'major':
+        return 'error'
+      case 'moderate':
+        return 'warning'
+      case 'minor':
+        return 'info'
+      default:
+        return 'default'
+    }
   }
 
   return (
@@ -84,32 +100,14 @@ export default function ArcsPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <BookOpen size={48} color="#dc004e" />
+            <Zap size={48} color="#f57c00" />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
-            Story Arcs
+            Events
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Explore the major storylines and arcs of Usogui
+            Key moments and turning points in the Usogui story
           </Typography>
-        </Box>
-
-        <Box sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search arcs..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
-          />
         </Box>
 
         {error && (
@@ -125,12 +123,12 @@ export default function ArcsPage() {
         ) : (
           <>
             <Typography variant="h6" sx={{ mb: 3 }}>
-              {total} arc{total !== 1 ? 's' : ''} found
+              {total} event{total !== 1 ? 's' : ''} documented
             </Typography>
 
             <Grid container spacing={4}>
-              {arcs.map((arc, index) => (
-                <Grid item xs={12} sm={6} md={4} key={arc.id}>
+              {events.map((event, index) => (
+                <Grid item xs={12} sm={6} md={4} key={event.id}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -148,43 +146,67 @@ export default function ArcsPage() {
                     >
                       <CardContent sx={{ flexGrow: 1 }}>
                         <Typography variant="h6" component="h2" gutterBottom>
-                          {arc.name}
+                          {event.name}
                         </Typography>
                         
                         <Box sx={{ mb: 2 }}>
-                          <Chip
-                            label={`Chapters ${arc.startChapter}-${arc.endChapter}`}
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                          <Chip
-                            label={`${getChapterCount(arc)} chapters`}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
+                          {event.chapter && (
+                            <Chip
+                              label={`Chapter ${event.chapter}`}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              icon={<Calendar size={14} />}
+                              sx={{ mr: 1, mb: 1 }}
+                            />
+                          )}
+                          {event.eventType && (
+                            <Chip
+                              label={event.eventType}
+                              size="small"
+                              color={getEventTypeColor(event.eventType) as any}
+                              variant="outlined"
+                              sx={{ mr: 1, mb: 1 }}
+                            />
+                          )}
+                          {event.significance && (
+                            <Chip
+                              label={`${event.significance} Impact`}
+                              size="small"
+                              color={getSignificanceColor(event.significance) as any}
+                              variant="filled"
+                              icon={<AlertTriangle size={14} />}
+                              sx={{ mb: 1 }}
+                            />
+                          )}
                         </Box>
 
                         <Typography
                           variant="body2"
                           color="text.secondary"
                           sx={{
+                            mb: 2,
                             overflow: 'hidden',
                             display: '-webkit-box',
                             WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 4,
+                            WebkitLineClamp: 3,
                           }}
                         >
-                          {arc.description}
+                          {event.description}
                         </Typography>
+
+                        {event.participants?.length > 0 && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Key Participants:</strong> {event.participants.slice(0, 2).join(', ')}
+                            {event.participants.length > 2 && ` +${event.participants.length - 2} more`}
+                          </Typography>
+                        )}
                       </CardContent>
 
                       <CardActions>
                         <Button
                           component={Link}
-                          href={`/arcs/${arc.id}`}
+                          href={`/events/${event.id}`}
                           variant="outlined"
                           startIcon={<Eye size={16} />}
                           fullWidth

@@ -1,93 +1,220 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Gamble } from '@/types/resources';
+import React, { useState, useEffect } from 'react'
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Box,
+  Pagination,
+  CircularProgress,
+  Alert,
+  Chip
+} from '@mui/material'
+import { Crown, Eye, Users, Trophy } from 'lucide-react'
+import Link from 'next/link'
+import { api } from '../../lib/api'
+import { motion } from 'motion/react'
+
+interface Gamble {
+  id: number
+  name: string
+  description: string
+  rules: string
+  difficulty: string
+  winConditions: string[]
+  loseConditions: string[]
+  participants: string[]
+  outcome: string
+  createdAt: string
+  updatedAt: string
+}
 
 export default function GamblesPage() {
-  const [gambles, setGambles] = useState<Gamble[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [gambles, setGambles] = useState<Gamble[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  const fetchGambles = async (page = 1) => {
+    setLoading(true)
+    try {
+      const response = await api.getGambles({ page, limit: 12 })
+      setGambles(response.data)
+      setTotalPages(response.totalPages)
+      setTotal(response.total)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to fetch gambles')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    fetchGambles();
-  }, []);
+    fetchGambles(currentPage)
+  }, [currentPage])
 
-  const fetchGambles = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/gambles`);
-      if (response.ok) {
-        const data = await response.json();
-        setGambles(data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch gambles:', error);
-    } finally {
-      setLoading(false);
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page)
+  }
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'easy':
+        return 'success'
+      case 'medium':
+        return 'warning'
+      case 'hard':
+        return 'error'
+      default:
+        return 'default'
     }
-  };
-
-  const filteredGambles = gambles.filter(gamble =>
-    gamble.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (gamble.description && gamble.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Gamble Information</h1>
-        <div className="flex space-x-4">
-          <input
-            type="text"
-            placeholder="Search gambles..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-          />
-        </div>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Crown size={48} color="#d32f2f" />
+          </Box>
+          <Typography variant="h3" component="h1" gutterBottom>
+            Gambles
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
+            Discover the high-stakes games and competitions of Usogui
+          </Typography>
+        </Box>
 
-      <div className="space-y-4">
-        {filteredGambles.map((gamble) => (
-          <div key={gamble.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">{gamble.title}</h2>
-                <p className="text-gray-600 mb-4">
-                  {gamble.description || 'No description available.'}
-                </p>
-                <div className="flex space-x-4">
-                  <Link
-                    href={`/gambles/${gamble.id}`}
-                    className="text-red-600 hover:text-red-800 font-medium"
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress size={50} />
+          </Box>
+        ) : (
+          <>
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              {total} gamble{total !== 1 ? 's' : ''} documented
+            </Typography>
+
+            <Grid container spacing={4}>
+              {gambles.map((gamble, index) => (
+                <Grid item xs={12} sm={6} md={4} key={gamble.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-              <div className="text-right text-sm text-gray-500">
-                <p>Created: {new Date(gamble.createdAt).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+                    <Card
+                      className="gambling-card h-full"
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'transform 0.2s',
+                        '&:hover': { transform: 'translateY(-4px)' }
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Typography variant="h6" component="h2" gutterBottom>
+                          {gamble.name}
+                        </Typography>
+                        
+                        <Box sx={{ mb: 2 }}>
+                          {gamble.difficulty && (
+                            <Chip
+                              label={`${gamble.difficulty} Difficulty`}
+                              size="small"
+                              color={getDifficultyColor(gamble.difficulty) as any}
+                              variant="outlined"
+                              sx={{ mr: 1, mb: 1 }}
+                            />
+                          )}
+                          {gamble.participants?.length > 0 && (
+                            <Chip
+                              label={`${gamble.participants.length} Participants`}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              icon={<Users size={14} />}
+                              sx={{ mb: 1 }}
+                            />
+                          )}
+                        </Box>
 
-      {filteredGambles.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            {searchTerm ? 'No gambles found matching your search.' : 'No gamble information available.'}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            mb: 2,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 3,
+                          }}
+                        >
+                          {gamble.description}
+                        </Typography>
+
+                        {gamble.outcome && (
+                          <Box sx={{ mt: 'auto' }}>
+                            <Chip
+                              label="Completed"
+                              size="small"
+                              color="success"
+                              variant="filled"
+                              icon={<Trophy size={14} />}
+                            />
+                          </Box>
+                        )}
+                      </CardContent>
+
+                      <CardActions>
+                        <Button
+                          component={Link}
+                          href={`/gambles/${gamble.id}`}
+                          variant="outlined"
+                          startIcon={<Eye size={16} />}
+                          fullWidth
+                        >
+                          View Details
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </motion.div>
+                </Grid>
+              ))}
+            </Grid>
+
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </motion.div>
+    </Container>
+  )
 }
