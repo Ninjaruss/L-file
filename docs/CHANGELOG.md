@@ -1,5 +1,12 @@
 # Changelog and notes
 
+## 2025-08-28
+### Changes
+- Reset everything to regenerate code from scratch with Claude 3.7
+
+### Notes
+- After a long amount of frustrations with Gemini 2.5 and basic models for Github Copilot, I am trying out Claude Code. It seems to be just as good as using it as the model for Copilot so far. Definitely a lot better in terms of initial impressions as auth was immediately working from generated code. Still has mistakes, but this will actually solve the issues is what I noticed compared to other models. 
+
 ## 2025-08-27
 ### Changes
 - Reset everything for the frontend; rebuilt basic frontend with Grok Code Fast 1 (preview)
