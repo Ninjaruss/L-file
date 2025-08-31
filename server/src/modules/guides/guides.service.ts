@@ -128,14 +128,96 @@ export class GuidesService {
     return { data, total, page, perPage: limit, totalPages };
   }
 
-  async findPublished(query: GuideQueryDto): Promise<{
-    data: Guide[];
+  async findPublished(query: GuideQueryDto, currentUser?: User): Promise<{
+    data: (Guide & { userHasLiked?: boolean })[];
     total: number;
     page: number;
     perPage: number;
     totalPages: number;
   }> {
-    return this.findAll({ ...query, status: GuideStatus.PUBLISHED });
+    const {
+      search,
+      tag,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      page = 1,
+      limit = 20,
+    } = query;
+
+    const queryBuilder = this.guideRepository
+      .createQueryBuilder('guide')
+      .leftJoinAndSelect('guide.author', 'author')
+      .leftJoinAndSelect('guide.tags', 'tags')
+      .select([
+        'guide.id',
+        'guide.authorId',
+        'guide.title',
+        'guide.description',
+        'guide.status',
+        'guide.viewCount',
+        'guide.likeCount',
+        'guide.createdAt',
+        'guide.updatedAt',
+        'author.id',
+        'author.username',
+        'tags.id',
+        'tags.name',
+      ])
+      .where('guide.status = :status', { status: GuideStatus.PUBLISHED });
+
+    // Apply filters
+    if (search) {
+      queryBuilder.andWhere(
+        '(guide.title ILIKE :search OR guide.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (tag) {
+      queryBuilder.andWhere('tags.name = :tag', { tag });
+    }
+
+    // Apply sorting
+    const validSortFields = [
+      'createdAt',
+      'updatedAt',
+      'viewCount',
+      'likeCount',
+      'title',
+    ];
+    if (validSortFields.includes(sortBy)) {
+      queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
+    } else {
+      queryBuilder.orderBy('guide.createdAt', 'DESC');
+    }
+
+    // Apply pagination
+    const skip = (page - 1) * limit;
+    queryBuilder.skip(skip).take(limit);
+
+    const [guides, total] = await queryBuilder.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+
+    // Add user like status if user is authenticated
+    let guidesWithLikeStatus: (Guide & { userHasLiked?: boolean })[] = guides;
+    if (currentUser && guides.length > 0) {
+      const guideIds = guides.map(guide => guide.id);
+      const userLikes = await this.guideLikeRepository.find({
+        where: { 
+          guideId: In(guideIds),
+          userId: currentUser.id 
+        },
+      });
+      
+      const likedGuideIds = new Set(userLikes.map(like => like.guideId));
+      
+      guidesWithLikeStatus = guides.map(guide => ({
+        ...guide,
+        userHasLiked: likedGuideIds.has(guide.id)
+      }));
+    }
+
+    return { data: guidesWithLikeStatus, total, page, perPage: limit, totalPages };
   }
 
   async findOne(id: number, currentUser?: User): Promise<Guide> {
@@ -163,7 +245,7 @@ export class GuidesService {
     return guide;
   }
 
-  async findOnePublic(id: number): Promise<Guide> {
+  async findOnePublic(id: number, currentUser?: User): Promise<Guide & { userHasLiked?: boolean }> {
     const guide = await this.guideRepository.findOne({
       where: { id, status: GuideStatus.PUBLISHED },
       relations: ['author', 'tags'],
@@ -192,7 +274,16 @@ export class GuidesService {
       throw new NotFoundException('Guide not found');
     }
 
-    return guide;
+    // If user is authenticated, check if they have liked this guide
+    let userHasLiked = false;
+    if (currentUser) {
+      const existingLike = await this.guideLikeRepository.findOne({
+        where: { guideId: id, userId: currentUser.id },
+      });
+      userHasLiked = !!existingLike;
+    }
+
+    return { ...guide, userHasLiked };
   }
 
   async update(

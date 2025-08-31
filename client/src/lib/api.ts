@@ -303,10 +303,22 @@ class ApiClient {
 
   async createGuide(data: {
     title: string
+    description: string
     content: string
     tags?: string[]
   }) {
-    return this.post<any>('/guides', data)
+    const { tags, ...rest } = data
+    return this.post<any>('/guides', {
+      ...rest,
+      tagNames: tags
+    })
+  }
+
+  async toggleGuideLike(id: number) {
+    return this.post<{
+      liked: boolean
+      likeCount: number
+    }>(`/guides/${id}/like`, {})
   }
 
   async submitMedia(data: {

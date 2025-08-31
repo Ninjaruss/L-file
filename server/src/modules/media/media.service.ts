@@ -39,19 +39,41 @@ export class MediaService {
     return this.mediaRepo.save(media);
   }
 
-  async findAll(filters: { page?: number; limit?: number } = {}): Promise<{
+  async findAll(
+    filters: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      type?: string;
+      characterId?: number;
+    } = {},
+  ): Promise<{
     data: Media[];
     total: number;
     page: number;
     perPage: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 20 } = filters;
+    const { page = 1, limit = 20, status, type, characterId } = filters;
     const query = this.mediaRepo
       .createQueryBuilder('media')
       .leftJoinAndSelect('media.character', 'character')
-      .leftJoinAndSelect('media.submittedBy', 'submittedBy')
-      .where('media.status = :status', { status: MediaStatus.APPROVED });
+      .leftJoinAndSelect('media.submittedBy', 'submittedBy');
+
+    // Only filter by approved status if no status filter is provided
+    if (status) {
+      query.where('media.status = :status', { status });
+    } else {
+      query.where('media.status = :status', { status: MediaStatus.APPROVED });
+    }
+
+    if (type) {
+      query.andWhere('media.type = :type', { type });
+    }
+
+    if (characterId) {
+      query.andWhere('character.id = :characterId', { characterId });
+    }
 
     query
       .orderBy('media.createdAt', 'DESC')

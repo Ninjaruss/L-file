@@ -10,12 +10,14 @@ import {
   CardActions,
   Button,
   Box,
+  TextField,
+  InputAdornment,
   Pagination,
   CircularProgress,
   Alert,
   Chip
 } from '@mui/material'
-import { Crown, Eye, Users, Trophy } from 'lucide-react'
+import { Crown, Eye, Users, Trophy, Search } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -38,14 +40,18 @@ export default function GamblesPage() {
   const [gambles, setGambles] = useState<Gamble[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  const fetchGambles = async (page = 1) => {
+  const fetchGambles = async (page = 1, search = '') => {
     setLoading(true)
     try {
-      const response = await api.getGambles({ page, limit: 12 })
+      const params: { page: number; limit: number; gambleName?: string } = { page, limit: 12 }
+      if (search) params.gambleName = search
+      
+      const response = await api.getGambles(params)
       setGambles(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
@@ -57,8 +63,13 @@ export default function GamblesPage() {
   }
 
   useEffect(() => {
-    fetchGambles(currentPage)
-  }, [currentPage])
+    fetchGambles(currentPage, searchQuery)
+  }, [currentPage, searchQuery])
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value)
+    setCurrentPage(1)
+  }
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page)
@@ -96,6 +107,24 @@ export default function GamblesPage() {
           </Typography>
         </Box>
 
+        <Box sx={{ mb: 4 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search gambles..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={20} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
+          />
+        </Box>
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -109,7 +138,7 @@ export default function GamblesPage() {
         ) : (
           <>
             <Typography variant="h6" sx={{ mb: 3 }}>
-              {total} gamble{total !== 1 ? 's' : ''} documented
+              {total} gamble{total !== 1 ? 's' : ''} found
             </Typography>
 
             <Grid container spacing={4}>

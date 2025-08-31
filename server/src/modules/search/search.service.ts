@@ -5,6 +5,7 @@ import { Chapter } from '../../entities/chapter.entity';
 import { Character } from '../../entities/character.entity';
 import { Event } from '../../entities/event.entity';
 import { Arc } from '../../entities/arc.entity';
+import { Gamble } from '../../entities/gamble.entity';
 import { SearchQueryDto, SearchType } from './dto/search-query.dto';
 import { SearchResultDto, SearchResultItemDto } from './dto/search-result.dto';
 
@@ -19,6 +20,8 @@ export class SearchService {
     private eventRepository: Repository<Event>,
     @InjectRepository(Arc)
     private arcRepository: Repository<Arc>,
+    @InjectRepository(Gamble)
+    private gambleRepository: Repository<Gamble>,
   ) {}
 
   async search(searchQuery: SearchQueryDto): Promise<SearchResultDto> {
@@ -69,6 +72,11 @@ export class SearchService {
         results = arcResults.results;
         total = arcResults.total;
         break;
+      case SearchType.GAMBLES:
+        const gambleResults = await this.searchGambles(query, offset, limit);
+        results = gambleResults.results;
+        total = gambleResults.total;
+        break;
       case SearchType.ALL:
       default:
         const allResults = await this.searchAll(
@@ -112,19 +120,21 @@ export class SearchService {
   }
 
   async getContentTypes(): Promise<{ type: string; count: number }[]> {
-    const [chapterCount, characterCount, eventCount, arcCount] =
+    const [chapterCount, characterCount, eventCount, arcCount, gambleCount] =
       await Promise.all([
         this.chapterRepository.count(),
         this.characterRepository.count(),
         this.eventRepository.count(),
         this.arcRepository.count(),
+        this.gambleRepository.count(),
       ]);
 
     return [
-      { type: 'chapters', count: chapterCount },
       { type: 'characters', count: characterCount },
-      { type: 'events', count: eventCount },
       { type: 'arcs', count: arcCount },
+      { type: 'gambles', count: gambleCount },
+      { type: 'chapters', count: chapterCount },
+      { type: 'events', count: eventCount },
     ];
   }
 
@@ -291,38 +301,88 @@ export class SearchService {
     return { results, total };
   }
 
+  private async searchGambles(query: string, offset: number, limit: number) {
+    const [gambles, total] = await this.gambleRepository
+      .createQueryBuilder('gamble')
+      .leftJoinAndSelect('gamble.participants', 'participants')
+      .leftJoinAndSelect('participants.character', 'character')
+      .where(
+        `(
+          to_tsvector('english', gamble.name) @@ plainto_tsquery('english', :query) OR
+          to_tsvector('english', gamble.rules) @@ plainto_tsquery('english', :query) OR
+          to_tsvector('english', character.name) @@ plainto_tsquery('english', :query)
+        )`,
+        { query },
+      )
+      .orderBy(
+        `ts_rank(
+          to_tsvector('english', gamble.name || ' ' || gamble.rules || ' ' || character.name),
+          plainto_tsquery('english', :query)
+        )`,
+        'DESC',
+      )
+      .offset(offset)
+      .limit(limit)
+      .getManyAndCount();
+
+    const results: SearchResultItemDto[] = gambles.map((gamble) => ({
+      id: gamble.id,
+      type: 'gamble',
+      title: gamble.name || 'Unknown Gamble',
+      description: gamble.rules,
+      score: 1.0,
+      hasSpoilers: false, // Gambles don't typically have spoiler flags
+      slug: `gamble-${gamble.id}`,
+      metadata: {
+        winCondition: gamble.winCondition,
+        chapterId: gamble.chapterId,
+        participants: gamble.participants?.length || 0,
+      },
+    }));
+
+    return { results, total };
+  }
+
   private async searchAll(
     query: string,
     userProgress?: number,
     offset: number = 0,
     limit: number = 20,
   ) {
-    // Simple approach: get results from each type and combine them
-    const resultsPerType = Math.ceil(limit / 4); // Distribute results across 4 types
+    // Get results from each type with prioritization: character -> arc -> gambles -> chapters -> events
+    const resultsPerType = Math.ceil(limit / 5); // Distribute results across 5 types
 
-    const [chapterResults, characterResults, eventResults, arcResults] =
-      await Promise.all([
-        this.searchChapters(query, userProgress, 0, resultsPerType),
-        this.searchCharacters(query, 0, resultsPerType),
-        this.searchEvents(query, userProgress, 0, resultsPerType),
-        this.searchArcs(query, 0, resultsPerType),
-      ]);
+    const [
+      characterResults,
+      arcResults,
+      gambleResults,
+      chapterResults,
+      eventResults,
+    ] = await Promise.all([
+      this.searchCharacters(query, 0, resultsPerType),
+      this.searchArcs(query, 0, resultsPerType),
+      this.searchGambles(query, 0, resultsPerType),
+      this.searchChapters(query, userProgress, 0, resultsPerType),
+      this.searchEvents(query, userProgress, 0, resultsPerType),
+    ]);
 
-    // Combine all results
+    // Combine all results in priority order
     const allResults = [
-      ...chapterResults.results,
       ...characterResults.results,
-      ...eventResults.results,
       ...arcResults.results,
+      ...gambleResults.results,
+      ...chapterResults.results,
+      ...eventResults.results,
     ];
 
     // Apply pagination to combined results
     const results = allResults.slice(offset, offset + limit);
     const total =
-      chapterResults.total +
       characterResults.total +
-      eventResults.total +
-      arcResults.total;
+      arcResults.total +
+      gambleResults.total +
+      chapterResults.total +
+      eventResults.total;
 
     return { results, total };
   }

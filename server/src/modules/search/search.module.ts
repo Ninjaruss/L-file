@@ -6,9 +6,10 @@ import { Chapter } from '../../entities/chapter.entity';
 import { Character } from '../../entities/character.entity';
 import { Event } from '../../entities/event.entity';
 import { Arc } from '../../entities/arc.entity';
+import { Gamble } from '../../entities/gamble.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Chapter, Character, Event, Arc])],
+  imports: [TypeOrmModule.forFeature([Chapter, Character, Event, Arc, Gamble])],
   controllers: [SearchController],
   providers: [SearchService],
   exports: [SearchService],

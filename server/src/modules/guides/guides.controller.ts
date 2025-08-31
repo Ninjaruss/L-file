@@ -33,6 +33,7 @@ import { CreateGuideDto } from './dto/create-guide.dto';
 import { UpdateGuideDto } from './dto/update-guide.dto';
 import { GuideQueryDto } from './dto/guide-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -47,10 +48,11 @@ export class GuidesController {
   // PUBLIC ENDPOINTS
 
   @Get('public')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Get published guides (public)',
     description:
-      'Retrieves a paginated list of all published guides accessible to everyone. Supports searching, filtering, and sorting options.',
+      'Retrieves a paginated list of all published guides accessible to everyone. Supports searching, filtering, and sorting options. If authenticated, includes user-specific data like like status.',
   })
   @ApiQuery({
     name: 'search',
@@ -123,6 +125,11 @@ export class GuidesController {
               },
               viewCount: { type: 'number', example: 190 },
               likeCount: { type: 'number', example: 5 },
+              userHasLiked: { 
+                type: 'boolean', 
+                example: true, 
+                description: 'Whether the current user has liked this guide (only present if authenticated)' 
+              },
               author: {
                 type: 'object',
                 properties: {
@@ -159,15 +166,16 @@ export class GuidesController {
       },
     },
   })
-  findPublicGuides(@Query() query: GuideQueryDto) {
-    return this.guidesService.findPublished(query);
+  findPublicGuides(@Query() query: GuideQueryDto, @CurrentUser() user?: User) {
+    return this.guidesService.findPublished(query, user);
   }
 
   @Get('public/:id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Get published guide by ID (public)',
     description:
-      'Retrieves a specific published guide by its ID and automatically increments the view count. Only published guides are accessible through this endpoint.',
+      'Retrieves a specific published guide by its ID and automatically increments the view count. Only published guides are accessible through this endpoint. If authenticated, includes user-specific data like like status.',
   })
   @ApiParam({
     name: 'id',
@@ -193,11 +201,16 @@ export class GuidesController {
         content: {
           type: 'string',
           example:
-            '# Mastering Poker Psychology in Usogui\n\n## Introduction...',
+            '# Mastering Poker Psychology in Usogui\\n\\n## Introduction...',
         },
         status: { type: 'string', enum: ['published'], example: 'published' },
         viewCount: { type: 'number', example: 191 },
         likeCount: { type: 'number', example: 5 },
+        userHasLiked: { 
+          type: 'boolean', 
+          example: true, 
+          description: 'Whether the current user has liked this guide (only present if authenticated)' 
+        },
         author: {
           type: 'object',
           properties: {
@@ -238,10 +251,10 @@ export class GuidesController {
       },
     },
   })
-  async findOnePublic(@Param('id', ParseIntPipe) id: number) {
+  async findOnePublic(@Param('id', ParseIntPipe) id: number, @CurrentUser() user?: User) {
     // Increment view count when someone views the guide
     await this.guidesService.incrementViewCount(id);
-    return this.guidesService.findOnePublic(id);
+    return this.guidesService.findOnePublic(id, user);
   }
 
   // AUTHENTICATED ENDPOINTS

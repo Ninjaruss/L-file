@@ -1,22 +1,33 @@
 # Changelog and notes
 
-## 2025-08-29
+## 2025-08-31
+### Changes
+- Show titles for events in events page
+- Added likes to guides
+
+
+### Notes
+
+
+## 2025-08-30
 ### Changes
 - Adjusting fields for admin pages to edit data
 - Fixed updating data of most fields; need more work on complex fields like gambles
-- Fixed views of gambles, events, and guides on the home page
+- Fixed views of gambles, events, and guides on the home page; also added search by title for gambles/events
 - Updated routes to use /api/* endpoint
 - Replaced foreign key settings on the frontend with selection from data tables
 - Approval/reject works for media approval queue (need to add rejected search to media)
+- User profile page improved to update chapter progress and select favorite quote/gamble
 
 
 ### Notes
 - There's been minor issues with ensuring code is consistent; primarily with trying to keep context concise. The "5-hour limit" for Claude Pro runs out very quickly when it comes to making sweeping changes. Clearing the context seems to help, but still feels limiting. For reference, I spent maybe 2 hours last night and little above 3 hours this morning before I hit each session's limits.
 - Fixing code tends to not fix the issue if there are missing endpoints or functions that are assumed. This is apparent for something like requesting a media approval queue as it sends a query to the backend with additional params that don't exist on the backend. 
+- Added Serena MCP to improve Claude code. So far, it has saved a bit more on the usage limit and seems to be more understanding of the code. I need to look into adjusting Serena because it is clear Claude misses a bit of the memories it store. Not sure if this is a config issue. Despite this, I will look into more MCP implementations as adding Serena has improved the quality of the responses overall while not costing additional usage.
 
 ### TODO
-- Add recognition of existing characters in gambles, quotes, etc. any reference to a character; also for setting/changing user on data tables
-- Add hidden spoilers if user chapter progress does not meet chapter requirement for event and hide results for gambles
+- Add hidden spoilers if user chapter progress does not meet chapter requirement for event and hide winner result for gambles
+- Update admin dashboard to show accurate number of data entries
 
 ## 2025-08-28
 ### Changes

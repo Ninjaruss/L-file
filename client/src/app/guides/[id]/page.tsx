@@ -14,13 +14,14 @@ import {
   Avatar,
   Divider
 } from '@mui/material'
-import { ArrowLeft, FileText, Calendar, ThumbsUp, User } from 'lucide-react'
+import { ArrowLeft, FileText, Calendar, ThumbsUp, User, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useAuth } from '../../../providers/AuthProvider'
 
 interface Guide {
   id: number
@@ -30,6 +31,7 @@ interface Guide {
   status: string
   viewCount: number
   likeCount: number
+  userHasLiked?: boolean
   author: {
     id: number
     username: string
@@ -44,9 +46,12 @@ interface Guide {
 
 export default function GuideDetailsPage() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [guide, setGuide] = useState<Guide | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [liking, setLiking] = useState(false)
+  const [userHasLiked, setUserHasLiked] = useState(false)
 
   useEffect(() => {
     const fetchGuide = async () => {
@@ -54,6 +59,10 @@ export default function GuideDetailsPage() {
         setLoading(true)
         const response = await api.getGuide(Number(id))
         setGuide(response)
+        // Set user like status if it's provided by the API
+        if (response.userHasLiked !== undefined) {
+          setUserHasLiked(response.userHasLiked)
+        }
       } catch (error: unknown) {
         setError(error instanceof Error ? error.message : 'Failed to fetch guide')
       } finally {
@@ -65,6 +74,26 @@ export default function GuideDetailsPage() {
       fetchGuide()
     }
   }, [id])
+
+  const handleLikeToggle = async () => {
+    if (!user || liking) return
+    
+    setLiking(true)
+    try {
+      const response = await api.toggleGuideLike(Number(id))
+      setUserHasLiked(response.liked)
+      if (guide) {
+        setGuide({
+          ...guide,
+          likeCount: response.likeCount
+        })
+      }
+    } catch (error: unknown) {
+      console.error('Error toggling like:', error)
+    } finally {
+      setLiking(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -143,11 +172,24 @@ export default function GuideDetailsPage() {
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <ThumbsUp size={16} />
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
                     {guide.likeCount || 0} likes
                   </Typography>
+                  {user && (
+                    <Button
+                      size="small"
+                      variant={userHasLiked ? "contained" : "outlined"}
+                      color="primary"
+                      startIcon={<Heart size={16} />}
+                      onClick={handleLikeToggle}
+                      disabled={liking}
+                      sx={{ ml: 1 }}
+                    >
+                      {liking ? '...' : userHasLiked ? 'Liked' : 'Like'}
+                    </Button>
+                  )}
                 </Box>
               </Box>
 

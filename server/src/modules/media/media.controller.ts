@@ -241,13 +241,38 @@ export class MediaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get all approved media (authenticated)',
+    summary: 'Get all media with filtering (authenticated)',
     description:
-      'Retrieve all approved media content with full details (requires authentication)',
+      'Retrieve media content with optional filtering by status, type, and character (requires authentication)',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by status (pending, approved, rejected)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by media type (image, video, audio)',
+  })
+  @ApiQuery({
+    name: 'characterId',
+    required: false,
+    description: 'Filter by character ID',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 20)',
   })
   @ApiResponse({
     status: 200,
-    description: 'Approved media retrieved successfully',
+    description: 'Media retrieved successfully',
     schema: {
       type: 'object',
       properties: {
@@ -294,13 +319,25 @@ export class MediaController {
       },
     },
   })
-  async findAll(@Query('page') page = '1', @Query('limit') limit = '20') {
+  async findAll(
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+    @Query('characterId') characterId?: string,
+  ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
+    const characterIdNum = characterId ? parseInt(characterId) : undefined;
+
     const result = await this.mediaService.findAll({
       page: pageNum,
       limit: limitNum,
+      status,
+      type,
+      characterId: characterIdNum,
     });
+
     // Return canonical top-level paginated shape used across the API
     return {
       data: result.data,

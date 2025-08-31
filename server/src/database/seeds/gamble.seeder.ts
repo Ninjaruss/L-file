@@ -29,8 +29,12 @@ export class GambleSeeder implements Seeder {
     // Get chapter references by chapter number (not ID)
     const chapter1 = await chapterRepository.findOne({ where: { number: 1 } });
     const chapter5 = await chapterRepository.findOne({ where: { number: 5 } });
-    const chapter10 = await chapterRepository.findOne({ where: { number: 10 } });
-    const chapter15 = await chapterRepository.findOne({ where: { number: 15 } });
+    const chapter10 = await chapterRepository.findOne({
+      where: { number: 10 },
+    });
+    const chapter15 = await chapterRepository.findOne({
+      where: { number: 15 },
+    });
 
     // Create gambles with proper chapter ID references
     const gambles = [

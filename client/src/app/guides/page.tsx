@@ -18,10 +18,11 @@ import {
   Chip,
   Avatar
 } from '@mui/material'
-import { Search, FileText, Eye, Calendar, ThumbsUp } from 'lucide-react'
+import { Search, FileText, Eye, Calendar, ThumbsUp, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
+import { useAuth } from '../../providers/AuthProvider'
 
 interface Guide {
   id: number
@@ -32,12 +33,14 @@ interface Guide {
     id: number
     username: string
   }
-  likes: number
+  likeCount: number
+  userHasLiked?: boolean
   createdAt: string
   updatedAt: string
 }
 
 export default function GuidesPage() {
+  const { user } = useAuth()
   const [guides, setGuides] = useState<Guide[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -45,6 +48,7 @@ export default function GuidesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [liking, setLiking] = useState<number | null>(null)
 
   const fetchGuides = async (page = 1, search = '') => {
     setLoading(true)
@@ -80,6 +84,24 @@ export default function GuidesPage() {
     if (!content) return 'No content available'
     if (content.length <= maxLength) return content
     return content.slice(0, maxLength).replace(/\s+\S*$/, '') + '...'
+  }
+
+  const handleLikeToggle = async (guideId: number) => {
+    if (!user || liking === guideId) return
+    
+    setLiking(guideId)
+    try {
+      const response = await api.toggleGuideLike(guideId)
+      setGuides(guides.map(guide => 
+        guide.id === guideId 
+          ? { ...guide, likeCount: response.likeCount, userHasLiked: response.liked }
+          : guide
+      ))
+    } catch (error: unknown) {
+      console.error('Error toggling like:', error)
+    } finally {
+      setLiking(null)
+    }
   }
 
   return (
@@ -213,11 +235,29 @@ export default function GuidesPage() {
                           {getContentPreview(guide.content)}
                         </Typography>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <ThumbsUp size={16} />
-                          <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                            {guide.likes || 0} likes
-                          </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <ThumbsUp size={16} />
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+                              {guide.likeCount || 0} likes
+                            </Typography>
+                          </Box>
+                          {user && (
+                            <Button
+                              size="small"
+                              variant={guide.userHasLiked ? "contained" : "outlined"}
+                              color="primary"
+                              startIcon={<Heart size={14} />}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                handleLikeToggle(guide.id)
+                              }}
+                              disabled={liking === guide.id}
+                              sx={{ minWidth: 'auto', px: 1 }}
+                            >
+                              {liking === guide.id ? '...' : guide.userHasLiked ? 'Liked' : 'Like'}
+                            </Button>
+                          )}
                         </Box>
                       </CardContent>
 

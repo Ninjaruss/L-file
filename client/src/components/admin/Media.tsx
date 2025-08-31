@@ -61,8 +61,10 @@ const ApproveButton = () => {
       await api.put(`/media/${record.id}/approve`, {})
       notify('Media approved successfully')
       refresh()
-    } catch {
-      notify('Error approving media', { type: 'error' })
+    } catch (error: any) {
+      console.error('Error approving media:', error)
+      const errorMessage = error?.details?.message || error?.message || 'Error approving media'
+      notify(errorMessage, { type: 'error' })
     }
   }
   
@@ -93,8 +95,10 @@ const RejectButton = () => {
       await api.put(`/media/${record.id}/reject`, { reason })
       notify('Media rejected successfully')
       refresh()
-    } catch {
-      notify('Error rejecting media', { type: 'error' })
+    } catch (error: any) {
+      console.error('Error rejecting media:', error)
+      const errorMessage = error?.details?.message || error?.message || 'Error rejecting media'
+      notify(errorMessage, { type: 'error' })
     }
   }
   

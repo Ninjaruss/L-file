@@ -10,18 +10,21 @@ import {
   CardActions,
   Button,
   Box,
+  TextField,
+  InputAdornment,
   Pagination,
   CircularProgress,
   Alert,
   Chip
 } from '@mui/material'
-import { Zap, Eye, Calendar, AlertTriangle } from 'lucide-react'
+import { Zap, Eye, Calendar, AlertTriangle, Search } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 
 interface Event {
   id: number
+  title: string
   name: string
   description: string
   eventType: string
@@ -37,14 +40,18 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  const fetchEvents = async (page = 1) => {
+  const fetchEvents = async (page = 1, search = '') => {
     setLoading(true)
     try {
-      const response = await api.getEvents({ page, limit: 12 })
+      const params: { page: number; limit: number; title?: string } = { page, limit: 12 }
+      if (search) params.title = search
+      
+      const response = await api.getEvents(params)
       setEvents(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
@@ -56,8 +63,13 @@ export default function EventsPage() {
   }
 
   useEffect(() => {
-    fetchEvents(currentPage)
-  }, [currentPage])
+    fetchEvents(currentPage, searchQuery)
+  }, [currentPage, searchQuery])
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value)
+    setCurrentPage(1)
+  }
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page)
@@ -110,6 +122,24 @@ export default function EventsPage() {
           </Typography>
         </Box>
 
+        <Box sx={{ mb: 4 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search events..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={20} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
+          />
+        </Box>
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -123,7 +153,7 @@ export default function EventsPage() {
         ) : (
           <>
             <Typography variant="h6" sx={{ mb: 3 }}>
-              {total} event{total !== 1 ? 's' : ''} documented
+              {total} event{total !== 1 ? 's' : ''} found
             </Typography>
 
             <Grid container spacing={4}>
@@ -146,7 +176,7 @@ export default function EventsPage() {
                     >
                       <CardContent sx={{ flexGrow: 1 }}>
                         <Typography variant="h6" component="h2" gutterBottom>
-                          {event.name}
+                          {event.title}
                         </Typography>
                         
                         <Box sx={{ mb: 2 }}>

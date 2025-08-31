@@ -23,6 +23,7 @@ export default function SubmitGuidePage() {
   const { user } = useAuth()
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     content: '',
     tags: [] as string[]
   })
@@ -62,10 +63,16 @@ export default function SubmitGuidePage() {
     setLoading(true)
 
     try {
-      await api.createGuide(formData)
+      await api.createGuide({
+        title: formData.title,
+        description: formData.description,
+        content: formData.content,
+        tags: formData.tags
+      })
       setSuccess('Guide submitted successfully! It will be reviewed by moderators before being published.')
       setFormData({
         title: '',
+        description: '',
         content: '',
         tags: []
       })
@@ -144,6 +151,20 @@ export default function SubmitGuidePage() {
                   <TextField
                     fullWidth
                     multiline
+                    rows={3}
+                    label="Guide Description"
+                    placeholder="Provide a brief summary of what your guide covers. This will be shown in guide listings to help readers understand what they'll learn."
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    required
+                    helperText="Write a compelling description (10-1000 characters) that summarizes your guide"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
                     rows={12}
                     label="Guide Content"
                     placeholder="Write your guide here. You can include:
@@ -158,7 +179,7 @@ Be detailed and informative. Use clear headings and structure your content well.
                     value={formData.content}
                     onChange={(e) => handleInputChange('content', e.target.value)}
                     required
-                    helperText="Minimum 200 characters. Use line breaks to structure your content."
+                    helperText="Minimum 50 characters. Use line breaks to structure your content."
                   />
                 </Grid>
 
@@ -210,7 +231,7 @@ Be detailed and informative. Use clear headings and structure your content well.
                     variant="contained"
                     size="large"
                     fullWidth
-                    disabled={loading || !formData.title || !formData.content || formData.content.length < 200}
+                    disabled={loading || !formData.title || !formData.description || !formData.content || formData.description.length < 10 || formData.content.length < 50}
                     startIcon={loading ? <CircularProgress size={20} /> : <Send size={20} />}
                   >
                     {loading ? 'Submitting...' : 'Submit Guide'}
