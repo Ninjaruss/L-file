@@ -31,6 +31,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
+import { CreateCharacterDto } from './dto/create-character.dto';
+import { UpdateCharacterDto } from './dto/update-character.dto';
 import { BackblazeB2Service } from '../../services/backblaze-b2.service';
 
 @ApiTags('characters')
@@ -53,7 +55,7 @@ export class CharactersController {
     description: 'Filter by character name',
   })
   @ApiQuery({ name: 'arc', required: false, description: 'Filter by arc name' })
-  // series removed
+  @ApiQuery({ name: 'arcId', required: false, description: 'Filter by arc ID' })
   @ApiQuery({
     name: 'description',
     required: false,
@@ -131,6 +133,7 @@ export class CharactersController {
   async getAll(
     @Query('name') name?: string,
     @Query('arc') arc?: string,
+    @Query('arcId') arcIdStr?: string,
     @Query('description') description?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
@@ -142,9 +145,11 @@ export class CharactersController {
     page: number;
     totalPages: number;
   }> {
+    const arcId = arcIdStr ? parseInt(arcIdStr) : undefined;
     return this.service.findAll({
       name,
       arc,
+      arcId,
       description,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -298,7 +303,7 @@ export class CharactersController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  create(@Body() data: Partial<Character>) {
+  create(@Body() data: CreateCharacterDto) {
     return this.service.create(data);
   }
 
@@ -363,9 +368,9 @@ export class CharactersController {
   })
   @ApiResponse({ status: 404, description: 'Character not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async update(@Param('id') id: number, @Body() data: Partial<Character>) {
+  async update(@Param('id') id: number, @Body() data: UpdateCharacterDto) {
     const result = await this.service.update(id, data);
-    if (result.affected === 0) {
+    if (!result) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
     return { message: 'Updated successfully' };

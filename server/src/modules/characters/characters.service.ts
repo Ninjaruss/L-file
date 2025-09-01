@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from '../../entities/character.entity';
+import { CreateCharacterDto } from './dto/create-character.dto';
+import { UpdateCharacterDto } from './dto/update-character.dto';
 import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
 
 @Injectable()
@@ -16,6 +18,8 @@ export class CharactersService {
   async findAll(filters: {
     name?: string;
     arc?: string;
+    arcId?: number;
+    faction?: string;
     description?: string;
     page?: number;
     limit?: number;
@@ -23,23 +27,50 @@ export class CharactersService {
     order?: 'ASC' | 'DESC';
   }) {
     const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
-    const query = this.repo.createQueryBuilder('character');
+    const query = this.repo
+      .createQueryBuilder('character')
+      .leftJoinAndSelect('character.factions', 'factions');
+
+    // Join with events and arcs for arc filtering
+    if (filters.arc || filters.arcId) {
+      query
+        .leftJoin('character.events', 'events')
+        .leftJoin('events.arc', 'arc');
+    }
 
     if (filters.name) {
       query.andWhere('LOWER(character.name) LIKE LOWER(:name)', {
         name: `%${filters.name}%`,
       });
     }
-    // `arc` relation does not exist on Character entity; skip arc filtering
-    // series removed
+    if (filters.arc) {
+      query.andWhere('LOWER(arc.name) LIKE LOWER(:arc)', {
+        arc: `%${filters.arc}%`,
+      });
+    }
+    if (filters.arcId) {
+      query.andWhere('arc.id = :arcId', {
+        arcId: filters.arcId,
+      });
+    }
+    if (filters.faction) {
+      query.andWhere('LOWER(factions.name) LIKE LOWER(:faction)', {
+        faction: `%${filters.faction}%`,
+      });
+    }
     if (filters.description) {
       query.andWhere('LOWER(character.description) LIKE LOWER(:description)', {
         description: `%${filters.description}%`,
       });
     }
 
+    // Group by character to avoid duplicates from joins
+    if (filters.arc || filters.arcId) {
+      query.groupBy('character.id, factions.id');
+    }
+
     // Sorting: only allow certain fields for safety
-    const allowedSort = ['id', 'name', 'description'];
+    const allowedSort = ['id', 'name', 'description', 'firstAppearanceChapter'];
     if (sort && allowedSort.includes(sort)) {
       query.orderBy(`character.${sort}`, order);
     } else {
@@ -57,16 +88,72 @@ export class CharactersService {
   }
 
   findOne(id: number): Promise<Character | null> {
-    return this.repo.findOne({ where: { id } });
+    return this.repo.findOne({ 
+      where: { id },
+      relations: ['factions', 'media', 'quotes']
+    });
   }
 
-  create(data: Partial<Character>): Promise<Character> {
-    const character = this.repo.create(data);
+  async create(data: CreateCharacterDto): Promise<Character> {
+    const { factionIds, ...characterData } = data;
+    
+    // Clean up numeric fields to handle NaN values
+    const cleanedData = {
+      ...characterData,
+      firstAppearanceChapter: characterData.firstAppearanceChapter && !isNaN(Number(characterData.firstAppearanceChapter)) 
+        ? Number(characterData.firstAppearanceChapter) 
+        : null,
+    };
+    
+    const character = this.repo.create(cleanedData);
+
+    // If faction IDs are provided, set up the relationship
+    if (factionIds && factionIds.length > 0) {
+      const validFactionIds = factionIds.filter(id => !isNaN(Number(id)));
+      character.factions = validFactionIds.map(id => ({ id: Number(id) } as any));
+    }
+
     return this.repo.save(character);
   }
 
-  update(id: number, data: Partial<Character>) {
-    return this.repo.update(id, data);
+  async update(id: number, data: UpdateCharacterDto): Promise<Character> {
+    const { factionIds, ...updateData } = data;
+    
+    // Clean up numeric fields to handle NaN values
+    const cleanedUpdateData = { ...updateData };
+    if (cleanedUpdateData.firstAppearanceChapter !== undefined) {
+      cleanedUpdateData.firstAppearanceChapter = cleanedUpdateData.firstAppearanceChapter && !isNaN(Number(cleanedUpdateData.firstAppearanceChapter))
+        ? Number(cleanedUpdateData.firstAppearanceChapter)
+        : undefined;
+    }
+    
+    // First update the basic character data
+    if (Object.keys(cleanedUpdateData).length > 0) {
+      await this.repo.update(id, cleanedUpdateData);
+    }
+    
+    // Get the character with current relationships
+    const character = await this.repo.findOne({
+      where: { id },
+      relations: ['factions'],
+    });
+    
+    if (!character) {
+      throw new NotFoundException(`Character with ID ${id} not found`);
+    }
+    
+    // Update faction relationships if provided
+    if (factionIds !== undefined) {
+      const validFactionIds = factionIds.filter(factionId => !isNaN(Number(factionId)));
+      character.factions = validFactionIds.map(factionId => ({ id: Number(factionId) } as any));
+      await this.repo.save(character);
+    }
+    
+    const result = await this.findOne(id);
+    if (!result) {
+      throw new NotFoundException(`Character with ID ${id} not found after update`);
+    }
+    return result;
   }
 
   remove(id: number) {
@@ -179,7 +266,7 @@ export class CharactersService {
       FROM event e
       WHERE LOWER(e.title) LIKE LOWER($1) 
          OR LOWER(e.description) LIKE LOWER($1)
-      ORDER BY e."startChapter" ASC, e.id ASC
+      ORDER BY e."chapterNumber" ASC, e.id ASC
       LIMIT $2 OFFSET $3
     `;
     

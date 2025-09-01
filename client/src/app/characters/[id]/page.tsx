@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
+import SpoilerWrapper from '../../../components/SpoilerWrapper'
 
 interface Character {
   id: number
@@ -146,9 +147,15 @@ export default function CharacterDetailPage() {
                 <Typography variant="h5" gutterBottom>
                   About
                 </Typography>
-                <Typography variant="body1" paragraph>
-                  {character.description}
-                </Typography>
+                <SpoilerWrapper 
+                  chapterNumber={character.firstAppearanceChapter}
+                  spoilerType="minor"
+                  description="Character background and story role"
+                >
+                  <Typography variant="body1" paragraph>
+                    {character.description}
+                  </Typography>
+                </SpoilerWrapper>
 
                 {character.occupation && (
                   <>
@@ -168,13 +175,19 @@ export default function CharacterDetailPage() {
                     <Typography variant="h6" gutterBottom>
                       Notable Roles
                     </Typography>
-                    <List dense>
-                      {character.notableRoles.map((role, index) => (
-                        <ListItem key={index} sx={{ pl: 0 }}>
-                          <ListItemText primary={role} />
-                        </ListItem>
-                      ))}
-                    </List>
+                    <SpoilerWrapper 
+                      chapterNumber={character.firstAppearanceChapter}
+                      spoilerType="major"
+                      description="Character's story roles and significance"
+                    >
+                      <List dense>
+                        {character.notableRoles.map((role, index) => (
+                          <ListItem key={index} sx={{ pl: 0 }}>
+                            <ListItemText primary={role} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </SpoilerWrapper>
                   </>
                 )}
 
@@ -204,17 +217,23 @@ export default function CharacterDetailPage() {
                     <Typography variant="h6" gutterBottom>
                       Affiliations
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {character.affiliations.map((affiliation) => (
-                        <Chip
-                          key={affiliation}
-                          label={affiliation}
-                          color="secondary"
-                          variant="filled"
-                          icon={<UsersIcon size={16} />}
-                        />
-                      ))}
-                    </Box>
+                    <SpoilerWrapper 
+                      chapterNumber={character.firstAppearanceChapter}
+                      spoilerType="major"
+                      description="Character's group affiliations and alliances"
+                    >
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {character.affiliations.map((affiliation) => (
+                          <Chip
+                            key={affiliation}
+                            label={affiliation}
+                            color="secondary"
+                            variant="filled"
+                            icon={<UsersIcon size={16} />}
+                          />
+                        ))}
+                      </Box>
+                    </SpoilerWrapper>
                   </>
                 )}
               </CardContent>

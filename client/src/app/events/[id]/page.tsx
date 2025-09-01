@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
+import SpoilerWrapper from '../../../components/SpoilerWrapper'
 
 interface Event {
   id: number
@@ -151,9 +152,15 @@ export default function EventDetailsPage() {
                 <Typography variant="h5" gutterBottom>
                   Description
                 </Typography>
-                <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
-                  {event.description}
-                </Typography>
+                <SpoilerWrapper 
+                  chapterNumber={event.chapterNumber} 
+                  spoilerType="major"
+                  description="Event outcome and plot details"
+                >
+                  <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
+                    {event.description}
+                  </Typography>
+                </SpoilerWrapper>
 
                 {event.chapterReferences && event.chapterReferences.length > 0 && (
                   <>
@@ -162,9 +169,16 @@ export default function EventDetailsPage() {
                     </Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {event.chapterReferences.map((ref, index) => (
-                        <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
-                          <strong>Chapter {ref.chapterNumber}:</strong> {ref.context}
-                        </Typography>
+                        <SpoilerWrapper 
+                          key={index}
+                          chapterNumber={ref.chapterNumber}
+                          spoilerType="minor"
+                          description={`Cross-reference to Chapter ${ref.chapterNumber}`}
+                        >
+                          <Typography variant="body2" sx={{ mb: 0.5 }}>
+                            <strong>Chapter {ref.chapterNumber}:</strong> {ref.context}
+                          </Typography>
+                        </SpoilerWrapper>
                       ))}
                     </Box>
                   </>

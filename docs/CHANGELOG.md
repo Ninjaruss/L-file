@@ -52,7 +52,7 @@
 ### Notes
 - After a long amount of frustrations with Gemini 2.5 and basic models for Github Copilot, I am trying out Claude Code. It seems to be just as good as using it as the model for Copilot so far. Definitely a lot better in terms of initial impressions as auth was immediately working from generated code. Still has mistakes, but this will actually solve the issues is what I noticed compared to other models. 
 - Looking over the code, it seems a good way to avoid issues is to clearly define the relationships in your data. A lot of bugs I am finding are from the LLM not realizing that it needs to expect a more complex object that a simple string or number.
-- 
+- Fixed character relation for events (still need to update for character/event pages)
 
 ## 2025-08-27
 ### Changes

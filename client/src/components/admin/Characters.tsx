@@ -15,7 +15,10 @@ import {
   SimpleFormIterator,
   SimpleShowLayout,
   NumberInput,
-  NumberField
+  NumberField,
+  ReferenceArrayInput,
+  AutocompleteArrayInput,
+  ReferenceArrayField
 } from 'react-admin'
 
 export const CharacterList = () => (
@@ -26,8 +29,13 @@ export const CharacterList = () => (
       <TextField source="occupation" />
       <NumberField source="firstAppearanceChapter" label="First Chapter" />
       <ArrayField source="alternateNames">
-        <SingleFieldList>
+        <SingleFieldList linkType={false}>
           <ChipField source="" size="small" />
+        </SingleFieldList>
+      </ArrayField>
+      <ArrayField source="factions" label="Factions">
+        <SingleFieldList linkType={false}>
+          <ChipField source="name" size="small" />
         </SingleFieldList>
       </ArrayField>
     </Datagrid>
@@ -43,23 +51,28 @@ export const CharacterShow = () => (
       <TextField source="occupation" />
       <NumberField source="firstAppearanceChapter" />
       <ArrayField source="alternateNames">
-        <SingleFieldList>
+        <SingleFieldList linkType={false}>
           <ChipField source="" />
         </SingleFieldList>
       </ArrayField>
       <ArrayField source="notableRoles">
-        <SingleFieldList>
+        <SingleFieldList linkType={false}>
           <ChipField source="" />
         </SingleFieldList>
       </ArrayField>
       <ArrayField source="notableGames">
-        <SingleFieldList>
+        <SingleFieldList linkType={false}>
           <ChipField source="" />
         </SingleFieldList>
       </ArrayField>
       <ArrayField source="affiliations">
-        <SingleFieldList>
+        <SingleFieldList linkType={false}>
           <ChipField source="" />
+        </SingleFieldList>
+      </ArrayField>
+      <ArrayField source="factions" label="Factions">
+        <SingleFieldList linkType={false}>
+          <ChipField source="name" />
         </SingleFieldList>
       </ArrayField>
     </SimpleShowLayout>
@@ -72,7 +85,7 @@ export const CharacterEdit = () => (
       <TextInput source="name" required />
       <TextInput source="description" multiline rows={4} />
       <TextInput source="occupation" />
-      <NumberInput source="firstAppearanceChapter" max={539} />
+      <NumberInput source="firstAppearanceChapter" max={539} min={1} />
       <ArrayInput source="alternateNames">
         <SimpleFormIterator>
           <TextInput source="" label="Alternate Name" />
@@ -93,6 +106,9 @@ export const CharacterEdit = () => (
           <TextInput source="" label="Affiliation" />
         </SimpleFormIterator>
       </ArrayInput>
+      <ReferenceArrayInput source="factions" reference="factions" label="Factions">
+        <AutocompleteArrayInput optionText="name" />
+      </ReferenceArrayInput>
     </SimpleForm>
   </Edit>
 )
@@ -103,7 +119,7 @@ export const CharacterCreate = () => (
       <TextInput source="name" required />
       <TextInput source="description" multiline rows={4} />
       <TextInput source="occupation" />
-      <NumberInput source="firstAppearanceChapter" max={539} />
+      <NumberInput source="firstAppearanceChapter" max={539} min={1} />
       <ArrayInput source="alternateNames">
         <SimpleFormIterator>
           <TextInput source="" label="Alternate Name" />
@@ -124,6 +140,9 @@ export const CharacterCreate = () => (
           <TextInput source="" label="Affiliation" />
         </SimpleFormIterator>
       </ArrayInput>
+      <ReferenceArrayInput source="factions" reference="factions" label="Factions">
+        <AutocompleteArrayInput optionText="name" />
+      </ReferenceArrayInput>
     </SimpleForm>
   </Create>
 )

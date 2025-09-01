@@ -19,9 +19,9 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { useAuth } from '../../../providers/AuthProvider'
+import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
 
 interface Guide {
   id: number
@@ -276,11 +276,14 @@ export default function GuideDetailsPage() {
                 }
               }
             }}>
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
+              <SpoilerWrapper
+                spoilerType="minor"
+                description="Guide content may contain story spoilers"
               >
-                {guide.content}
-              </ReactMarkdown>
+                <SpoilerMarkdown 
+                  content={guide.content}
+                />
+              </SpoilerWrapper>
             </Box>
           </CardContent>
         </Card>

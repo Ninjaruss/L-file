@@ -52,11 +52,56 @@ export class CreateCharacterDto {
   @Min(1)
   firstAppearanceChapter?: number;
 
-  @ApiPropertyOptional({ description: "Character's roles" })
+  @ApiPropertyOptional({
+    description: 'Notable roles or positions',
+    example: ['Kakerou Company CEO', 'Professional Gambler'],
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
+  @ArrayMaxSize(20)
+  @MaxLength(200, { each: true })
   notableRoles?: string[];
 
-  // series removed
+  @ApiPropertyOptional({
+    description: 'Notable games participated in',
+    example: ['17 Steps', 'One-Card Poker'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  @ArrayMaxSize(30)
+  @MaxLength(200, { each: true })
+  notableGames?: string[];
+
+  @ApiPropertyOptional({
+    description: "Character's occupation or profession",
+    example: 'Professional Gambler',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  occupation?: string;
+
+  @ApiPropertyOptional({
+    description: 'Organizations or groups the character is affiliated with',
+    example: ['Kakerou Company', 'Tournament Committee'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  @ArrayMaxSize(15)
+  @MaxLength(200, { each: true })
+  affiliations?: string[];
+
+  @ApiPropertyOptional({
+    description: 'IDs of factions the character belongs to',
+    type: [Number],
+    example: [1, 3],
+  })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @IsOptional()
+  @ArrayMaxSize(10)
+  factionIds?: number[];
 }

@@ -136,7 +136,7 @@ export class EventsController {
   }> {
     const isVerified =
       isVerifiedStr !== undefined ? isVerifiedStr === 'true' : undefined;
-    return this.service.findAll({
+    const result = await this.service.findAll({
       title,
       arc,
       description,
@@ -148,6 +148,17 @@ export class EventsController {
       sort,
       order,
     });
+
+    // Transform data for react-admin compatibility
+    const transformedData = result.data.map(event => ({
+      ...event,
+      characterIds: event.characters ? event.characters.map(char => char.id) : []
+    }));
+
+    return {
+      ...result,
+      data: transformedData as Event[]
+    };
   }
 
   @Get('grouped/by-arc')
@@ -439,7 +450,14 @@ export class EventsController {
     if (!event) {
       throw new NotFoundException(`Event with id ${id} not found`);
     }
-    return event;
+    
+    // Transform for react-admin compatibility
+    const transformedEvent = {
+      ...event,
+      characterIds: event.characters ? event.characters.map(char => char.id) : []
+    };
+    
+    return transformedEvent as Event;
   }
 
   @Post()
@@ -461,8 +479,22 @@ export class EventsController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  create(@Body(ValidationPipe) createEventDto: CreateEventDto): Promise<Event> {
-    return this.service.create(createEventDto);
+  async create(@Body(ValidationPipe) createEventDto: CreateEventDto): Promise<Event> {
+    const createdEvent = await this.service.create(createEventDto);
+    
+    // Load the event with relations for proper transformation
+    const eventWithRelations = await this.service.findOne(createdEvent.id);
+    if (!eventWithRelations) {
+      throw new NotFoundException(`Created event with id ${createdEvent.id} not found`);
+    }
+    
+    // Transform for react-admin compatibility
+    const transformedEvent = {
+      ...eventWithRelations,
+      characterIds: eventWithRelations.characters ? eventWithRelations.characters.map(char => char.id) : []
+    };
+    
+    return transformedEvent as Event;
   }
 
   @Put(':id/verify')
@@ -488,10 +520,7 @@ export class EventsController {
   async verify(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ message: string }> {
-    const result = await this.service.update(id, { isVerified: true });
-    if (result.affected === 0) {
-      throw new NotFoundException(`Event with id ${id} not found`);
-    }
+    await this.service.update(id, { isVerified: true });
     return { message: 'Event verified successfully' };
   }
 
@@ -507,12 +536,7 @@ export class EventsController {
   @ApiResponse({
     status: 200,
     description: 'Event updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Updated successfully' },
-      },
-    },
+    type: Event,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({
@@ -524,12 +548,16 @@ export class EventsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) data: UpdateEventDto,
-  ) {
-    const result = await this.service.update(id, data);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Event with id ${id} not found`);
-    }
-    return { message: 'Updated successfully' };
+  ): Promise<Event> {
+    const updatedEvent = await this.service.update(id, data);
+    
+    // Transform for react-admin compatibility
+    const transformedEvent = {
+      ...updatedEvent,
+      characterIds: updatedEvent.characters ? updatedEvent.characters.map(char => char.id) : []
+    };
+    
+    return transformedEvent as Event;
   }
 
   @Delete(':id')

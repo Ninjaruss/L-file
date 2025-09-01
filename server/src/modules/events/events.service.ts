@@ -2,12 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event, EventType } from '../../entities/event.entity';
+import { Character } from '../../entities/character.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 @Injectable()
 export class EventsService {
-  constructor(@InjectRepository(Event) private repo: Repository<Event>) {}
+  constructor(
+    @InjectRepository(Event) private repo: Repository<Event>,
+    @InjectRepository(Character) private characterRepo: Repository<Character>,
+  ) {}
 
   /**
    * Find all events with filtering and spoiler protection
@@ -158,16 +162,84 @@ export class EventsService {
   }
 
   async create(data: CreateEventDto): Promise<Event> {
-    const event = this.repo.create({
-      ...data,
+    const { characterIds, ...eventData } = data;
+    
+    // Clean up numeric fields to handle NaN values
+    const cleanedData = {
+      ...eventData,
       type: data.type || EventType.OTHER,
       isVerified: data.isVerified || false,
-    });
+      chapterNumber: Number(eventData.chapterNumber) || 1,
+      spoilerChapter: eventData.spoilerChapter && !isNaN(Number(eventData.spoilerChapter)) ? Number(eventData.spoilerChapter) : undefined,
+      arcId: eventData.arcId && !isNaN(Number(eventData.arcId)) ? Number(eventData.arcId) : undefined,
+    };
+    
+    const event = this.repo.create(cleanedData);
+
+    // If character IDs are provided, set up the relationship
+    if (characterIds && characterIds.length > 0) {
+      const validCharacterIds = characterIds.filter(id => !isNaN(Number(id)));
+      if (validCharacterIds.length > 0) {
+        // Load actual Character entities
+        const characters = await this.characterRepo.findByIds(validCharacterIds.map(id => Number(id)));
+        event.characters = characters;
+      }
+    }
+
     return this.repo.save(event);
   }
 
-  update(id: number, data: UpdateEventDto) {
-    return this.repo.update(id, data);
+  async update(id: number, data: UpdateEventDto): Promise<Event> {
+    const { characterIds, ...updateData } = data;
+    
+    // Clean up numeric fields to handle NaN values
+    const cleanedUpdateData = { ...updateData };
+    if (cleanedUpdateData.chapterNumber !== undefined) {
+      cleanedUpdateData.chapterNumber = Number(cleanedUpdateData.chapterNumber) || 1;
+    }
+    if (cleanedUpdateData.spoilerChapter !== undefined) {
+      cleanedUpdateData.spoilerChapter = cleanedUpdateData.spoilerChapter && !isNaN(Number(cleanedUpdateData.spoilerChapter)) ? Number(cleanedUpdateData.spoilerChapter) : undefined;
+    }
+    if (cleanedUpdateData.arcId !== undefined) {
+      cleanedUpdateData.arcId = cleanedUpdateData.arcId && !isNaN(Number(cleanedUpdateData.arcId)) ? Number(cleanedUpdateData.arcId) : undefined;
+    }
+    
+    // First update the basic event data
+    if (Object.keys(cleanedUpdateData).length > 0) {
+      await this.repo.update(id, cleanedUpdateData);
+    }
+    
+    // Get the event with current relationships
+    const event = await this.repo.findOne({
+      where: { id },
+      relations: ['characters'],
+    });
+    
+    if (!event) {
+      throw new NotFoundException(`Event with ID ${id} not found`);
+    }
+    
+    // Update character relationships if provided
+    if (characterIds !== undefined) {
+      const validCharacterIds = characterIds.filter(charId => !isNaN(Number(charId)));
+      
+      if (validCharacterIds.length > 0) {
+        // Load actual Character entities
+        const characters = await this.characterRepo.findByIds(validCharacterIds.map(id => Number(id)));
+        event.characters = characters;
+      } else {
+        // Clear all character relationships
+        event.characters = [];
+      }
+      
+      await this.repo.save(event);
+    }
+    
+    const result = await this.findOne(id);
+    if (!result) {
+      throw new NotFoundException(`Event with ID ${id} not found after update`);
+    }
+    return result;
   }
 
   remove(id: number) {

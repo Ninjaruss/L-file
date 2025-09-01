@@ -109,6 +109,17 @@ export class CreateEventDto {
   })
   chapterReferences?: ChapterReference[];
 
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @IsOptional()
+  @ArrayMaxSize(20)
+  @ApiPropertyOptional({
+    description: 'IDs of characters involved in this event',
+    type: [Number],
+    example: [1, 3, 5],
+  })
+  characterIds?: number[];
+
   @IsBoolean()
   @IsOptional()
   @ApiPropertyOptional({

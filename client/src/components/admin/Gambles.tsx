@@ -37,7 +37,7 @@ export const GambleList = () => (
       <BooleanField source="hasTeams" label="Team Game" />
       <ArrayField source="participants" label="Participants">
         <SingleFieldList>
-          <ReferenceField source="characterId" reference="characters">
+          <ReferenceField source="characterId" reference="characters" link={false}>
             <ChipField source="name" size="small" />
           </ReferenceField>
         </SingleFieldList>
@@ -90,7 +90,7 @@ export const GambleShow = () => (
         <Divider sx={{ mb: 2 }} />
         <ArrayField source="observers" label="Observers">
           <SingleFieldList>
-            <ReferenceField source="id" reference="characters">
+            <ReferenceField source="id" reference="characters" link={false}>
               <ChipField source="name" />
             </ReferenceField>
           </SingleFieldList>

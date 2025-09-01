@@ -29,7 +29,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>): Recor
     const allowedFields = [
       'title', 'description', 'type', 'arcId', 'chapterIds', 
       'chapterNumber', 'spoilerChapter', 'pageNumbers',
-      'chapterReferences', 'isVerified'
+      'chapterReferences', 'isVerified', 'characterIds'
     ]
     
     const eventCleaned: Record<string, unknown> = {}
