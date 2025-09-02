@@ -464,4 +464,35 @@ export class CharactersService {
       totalPages: Math.ceil(total / limit),
     };
   }
+
+  async getCharacterArcs(characterId: number) {
+    const character = await this.repo.findOne({ where: { id: characterId } });
+    if (!character) {
+      throw new NotFoundException(`Character with id ${characterId} not found`);
+    }
+
+    // Query arcs where the character appears through events
+    const query = `
+      SELECT DISTINCT a.id, a.name, a."order", a.description,
+             COUNT(*) OVER() as total_count
+      FROM arc a
+      INNER JOIN event e ON e."arcId" = a.id
+      INNER JOIN event_characters_character ecc ON ecc."eventId" = e.id
+      WHERE ecc."characterId" = $1
+      ORDER BY a."order" ASC, a.name ASC
+    `;
+
+    const result = await this.repo.query(query, [characterId]);
+
+    const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
+    const data = result.map((row) => {
+      const { total_count, ...arc } = row;
+      return arc;
+    });
+
+    return {
+      data,
+      total,
+    };
+  }
 }

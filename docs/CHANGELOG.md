@@ -1,4 +1,11 @@
 # Changelog and notes
+## 2025-09-02
+### Changes
+- Arc and gamble appearances added to character detail page
+
+### Notes
+-
+
 ## 2025-09-01
 ### Changes
 - Updated character page with further details and show events/gambles
@@ -17,7 +24,6 @@
 
 ### TODO
 - Add spoilers to gamble results
-- Characters detail page to include gambles character has participated in
 
 
 ## 2025-08-31

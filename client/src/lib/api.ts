@@ -257,6 +257,18 @@ class ApiClient {
     }>(`/characters/${characterId}/quotes${query ? `?${query}` : ''}`)
   }
 
+  async getCharacterArcs(characterId: number) {
+    return this.get<{
+      data: Array<{
+        id: number
+        name: string
+        order: number
+        description?: string
+      }>
+      total: number
+    }>(`/characters/${characterId}/arcs`)
+  }
+
   async getArcs(params?: {
     page?: number
     limit?: number
