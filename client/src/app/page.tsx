@@ -6,6 +6,7 @@ import { Users, BookOpen, Dices, CalendarSearch, TrendingUp } from 'lucide-react
 import Link from 'next/link'
 import { SearchBar } from '../components/SearchBar'
 import { TrendingSection } from '../components/TrendingSection'
+import { VolumeCoverSection } from '../components/VolumeCoverSection'
 import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
 
@@ -74,6 +75,9 @@ export default function HomePage() {
             <SearchBar />
           </Box>
         </Box>
+
+        {/* Featured Volume Covers Section */}
+        <VolumeCoverSection />
 
         <Grid container spacing={4}>
           {features.map((feature, index) => (

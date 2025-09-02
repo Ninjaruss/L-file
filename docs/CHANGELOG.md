@@ -7,6 +7,7 @@
 - Updated theming of website to use red, purple, white and black color palette 
 - Font for headers updated to use LTC Goudy Text (https://fontmeme.com/fonts/goudy-text-font/)
 - Added proper view counting for pages as well as trending section
+- Updated consistency of Lucide icons use (themeing)
 
 ### Notes
 - Cloister Black was a close contender for font, but I wanted to prioritize legibility of the uppercase.
