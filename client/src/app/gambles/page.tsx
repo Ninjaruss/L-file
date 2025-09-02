@@ -17,7 +17,8 @@ import {
   Alert,
   Chip
 } from '@mui/material'
-import { Crown, Eye, Users, Trophy, Search } from 'lucide-react'
+import { Eye, Users, Dices, Trophy, Search } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -38,6 +39,7 @@ interface Gamble {
 }
 
 export default function GamblesPage() {
+  const theme = useTheme()
   const [gambles, setGambles] = useState<Gamble[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -98,8 +100,9 @@ export default function GamblesPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Crown size={48} color="#d32f2f" />
+            <Dices size={48} color={theme.palette.usogui.gamble} />
           </Box>
+          
           <Typography variant="h3" component="h1" gutterBottom>
             Gambles
           </Typography>

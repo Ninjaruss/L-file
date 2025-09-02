@@ -318,7 +318,6 @@ This guide will cover advanced bluffing techniques... (work in progress)
           content: data.content,
           status: data.status,
           authorId: author.id,
-          viewCount: Math.floor(Math.random() * 500) + 10, // Random view count
           likeCount: 0, // Will be set by likes
           tags: guideTags,
         });

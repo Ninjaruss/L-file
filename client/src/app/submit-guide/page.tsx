@@ -15,11 +15,13 @@ import {
   Chip
 } from '@mui/material'
 import { FileText, Send, Plus, X } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 
 export default function SubmitGuidePage() {
+  const theme = useTheme()
   const { user, loading: authLoading } = useAuth()
   const [formData, setFormData] = useState({
     title: '',
@@ -119,7 +121,7 @@ export default function SubmitGuidePage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <FileText size={48} color="#dc004e" />
+            <FileText size={48} color={theme.palette.usogui.guide} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             Write a Guide

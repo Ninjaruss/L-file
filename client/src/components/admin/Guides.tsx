@@ -23,8 +23,7 @@ import {
   Filter
 } from 'react-admin'
 import { Box, Chip } from '@mui/material'
-import CheckIcon from '@mui/icons-material/Check'
-import CloseIcon from '@mui/icons-material/Close'
+import { Check, X } from 'lucide-react'
 import { api } from '../../lib/api'
 
 const GuideStatusField = ({ source }: { source: string }) => {
@@ -78,7 +77,7 @@ const ApproveGuideButton = () => {
       label="Approve" 
       onClick={handleApprove}
       color="primary"
-      startIcon={<CheckIcon />}
+      startIcon={<Check size={20} />}
     />
   )
 }
@@ -112,7 +111,7 @@ const RejectGuideButton = () => {
       label="Reject" 
       onClick={handleReject}
       color="secondary"
-      startIcon={<CloseIcon />}
+      startIcon={<X size={20} />}
     />
   )
 }

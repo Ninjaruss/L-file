@@ -17,7 +17,8 @@ import {
   Alert,
   Chip
 } from '@mui/material'
-import { Zap, Eye, Calendar, AlertTriangle, Search } from 'lucide-react'
+import { CalendarSearch, Eye, Calendar, Search } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -37,6 +38,7 @@ interface Event {
 }
 
 export default function EventsPage() {
+  const theme = useTheme()
   const [groupedEvents, setGroupedEvents] = useState<{
     arcs: Array<{ arc: any; events: any[] }>
     noArc: any[]
@@ -231,7 +233,7 @@ export default function EventsPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Zap size={48} color="#f57c00" />
+            <CalendarSearch size={48} color={theme.palette.usogui.event} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             Events

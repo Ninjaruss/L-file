@@ -25,6 +25,7 @@ import {
   Snackbar
 } from '@mui/material'
 import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import Image from 'next/image'
 import { api } from '../../lib/api'
@@ -45,6 +46,7 @@ interface Arc {
 
 export default function ArcsPage() {
   const { user } = useAuth()
+  const theme = useTheme()
   const [arcs, setArcs] = useState<Arc[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -182,7 +184,7 @@ export default function ArcsPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <BookOpen size={48} color="#dc004e" />
+            <BookOpen size={48} color={theme.palette.usogui.arc} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             Story Arcs

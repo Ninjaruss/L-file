@@ -12,7 +12,9 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -256,10 +258,13 @@ export class GuidesController {
   })
   async findOnePublic(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
     @CurrentUser() user?: User,
   ) {
-    // Increment view count when someone views the guide
-    await this.guidesService.incrementViewCount(id);
+    // Record page view when someone views the guide
+    const ipAddress = request.ip;
+    const userAgent = request.get('User-Agent');
+    await this.guidesService.recordView(id, ipAddress, userAgent);
     return this.guidesService.findOnePublic(id, user);
   }
 

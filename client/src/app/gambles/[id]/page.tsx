@@ -15,10 +15,12 @@ import {
   Divider
 } from '@mui/material'
 import { ArrowLeft, Crown, Users, Trophy } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
+import { usePageView } from '../../../hooks/usePageView'
 
 interface Gamble {
   id: number
@@ -67,10 +69,15 @@ interface Gamble {
 }
 
 export default function GambleDetailsPage() {
+  const theme = useTheme()
   const { id } = useParams()
   const [gamble, setGamble] = useState<Gamble | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Track page view
+  const gambleId = Array.isArray(id) ? id[0] : id
+  usePageView('gamble', gambleId || '', !!gambleId)
 
   useEffect(() => {
     const fetchGamble = async () => {
@@ -147,7 +154,7 @@ export default function GambleDetailsPage() {
 
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Crown size={48} color="#d32f2f" />
+            <Crown size={48} color={theme.palette.usogui.gamble} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             {gamble.name}

@@ -1,15 +1,21 @@
 'use client'
 
-import { Box, Container, Typography, Grid, Card, CardContent, Button } from '@mui/material'
-import { Users, BookOpen, Crown, Zap } from 'lucide-react'
+import { Box, Container, Typography, Grid, Card, CardContent, Button, Skeleton, Alert } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import { Users, BookOpen, Dices, CalendarSearch, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { SearchBar } from '../components/SearchBar'
+import { TrendingSection } from '../components/TrendingSection'
+import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
 
 export default function HomePage() {
+  const theme = useTheme()
+  const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
+  
   const features = [
     {
-      icon: <Users className="w-8 h-8" />,
+      icon: <Users className="w-8 h-8" color={theme.palette.usogui.character} />,
       title: 'Characters',
       description: 'Explore detailed profiles of all Usogui characters',
       href: '/characters',
@@ -23,14 +29,14 @@ export default function HomePage() {
       color: 'secondary'
     },
     {
-      icon: <Crown className="w-8 h-8" />,
+      icon: <Dices className="w-8 h-8" />,
       title: 'Gambles',
       description: 'Details on every gambling game and competition',
       href: '/gambles',
       color: 'error'
     },
     {
-      icon: <Zap className="w-8 h-8" />,
+      icon: <CalendarSearch className="w-8 h-8" />,
       title: 'Events',
       description: 'Key events and plot points throughout the series',
       href: '/events',
@@ -52,7 +58,7 @@ export default function HomePage() {
             gutterBottom
             sx={{
               fontWeight: 'bold',
-              background: 'linear-gradient(45deg, #1976d2, #dc004e)',
+              background: `linear-gradient(45deg, ${theme.palette.usogui.character}, ${theme.palette.usogui.arc})`,
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               color: 'transparent'
@@ -119,6 +125,135 @@ export default function HomePage() {
             </Grid>
           ))}
         </Grid>
+
+        {/* Trending Section */}
+        <Box mt={6}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <Box textAlign="center" mb={4}>
+              <Box display="flex" alignItems="center" justifyContent="center" gap={1} mb={2}>
+                <TrendingUp className="w-6 h-6" color={theme.palette.primary.main} />
+                <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold' }}>
+                  What's Trending
+                </Typography>
+              </Box>
+              <Typography variant="body1" color="text.secondary">
+                Discover the most popular content from the past week
+              </Typography>
+            </Box>
+
+            {landingError ? (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Unable to load trending content. Please check your connection and try again.
+              </Alert>
+            ) : landingLoading ? (
+              <Box>
+                {[1, 2, 3, 4].map((i) => (
+                  <Box key={i} mb={3}>
+                    <Skeleton variant="text" width={200} height={32} sx={{ mb: 1 }} />
+                    <Grid container spacing={2}>
+                      {[1, 2, 3].map((j) => (
+                        <Grid item xs={12} md={4} key={j}>
+                          <Card>
+                            <CardContent>
+                              <Skeleton variant="text" width="80%" height={24} />
+                              <Skeleton variant="text" width="100%" height={40} sx={{ mt: 1 }} />
+                              <Skeleton variant="text" width="60%" height={20} sx={{ mt: 1 }} />
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+                ))}
+              </Box>
+            ) : landingData ? (
+              <Box>
+                {landingData.trending.guides.length > 0 && (
+                  <TrendingSection
+                    title="Trending Guides"
+                    items={landingData.trending.guides}
+                    type="guides"
+                    maxItems={3}
+                  />
+                )}
+                
+                {landingData.trending.characters.length > 0 && (
+                  <TrendingSection
+                    title="Popular Characters"
+                    items={landingData.trending.characters}
+                    type="characters"
+                    maxItems={3}
+                  />
+                )}
+                
+                {landingData.trending.events.length > 0 && (
+                  <TrendingSection
+                    title="Hot Events"
+                    items={landingData.trending.events}
+                    type="events"
+                    maxItems={3}
+                  />
+                )}
+                
+                {landingData.trending.gambles.length > 0 && (
+                  <TrendingSection
+                    title="Featured Gambles"
+                    items={landingData.trending.gambles}
+                    type="gambles"
+                    maxItems={3}
+                  />
+                )}
+
+                {/* Site Stats */}
+                {landingData.stats && (
+                  <Box mt={4} textAlign="center">
+                    <Typography variant="h6" gutterBottom>
+                      Community Stats
+                    </Typography>
+                    <Grid container spacing={2} justifyContent="center">
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                          {landingData.stats.totalGuides.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Guides
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="h4" color="secondary.main" sx={{ fontWeight: 'bold' }}>
+                          {landingData.stats.totalCharacters.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Characters
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
+                          {landingData.stats.totalEvents.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Events
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="h4" color="error.main" sx={{ fontWeight: 'bold' }}>
+                          {landingData.stats.totalGambles.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Gambles
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </Box>
+            ) : null}
+          </motion.div>
+        </Box>
 
         <Box textAlign="center" mt={6}>
           <Typography variant="h4" gutterBottom>

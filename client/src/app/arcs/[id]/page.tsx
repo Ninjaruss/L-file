@@ -15,10 +15,12 @@ import {
   Chip
 } from '@mui/material'
 import { ArrowLeft, BookOpen, Hash } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
+import { usePageView } from '../../../hooks/usePageView'
 
 interface Arc {
   id: number
@@ -31,10 +33,15 @@ interface Arc {
 }
 
 export default function ArcDetailPage() {
+  const theme = useTheme()
   const [arc, setArc] = useState<Arc | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const params = useParams()
+
+  // Track page view
+  const arcId = Array.isArray(params.id) ? params.id[0] : params.id
+  usePageView('arc', arcId || '', !!arcId)
 
   useEffect(() => {
     const fetchArc = async () => {
@@ -99,7 +106,7 @@ export default function ArcDetailPage() {
 
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <BookOpen size={48} color="#dc004e" />
+            <BookOpen size={48} color={theme.palette.usogui.arc} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             {arc.name}

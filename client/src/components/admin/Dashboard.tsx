@@ -1,5 +1,6 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, Grid, Box, Typography } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { useGetList, usePermissions } from 'react-admin'
 import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Shield } from 'lucide-react'
 
@@ -23,6 +24,7 @@ const StatCard = ({ title, count, icon: Icon, color }: any) => (
 
 export const Dashboard = () => {
   const { permissions } = usePermissions()
+  const theme = useTheme()
   
   const { total: charactersCount } = useGetList('characters', { pagination: { page: 1, perPage: 1 } })
   const { total: arcsCount } = useGetList('arcs', { pagination: { page: 1, perPage: 1 } })
@@ -48,7 +50,7 @@ export const Dashboard = () => {
             title="Characters"
             count={charactersCount}
             icon={Users}
-            color="#1976d2"
+            color={theme.palette.usogui.character}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -56,7 +58,7 @@ export const Dashboard = () => {
             title="Story Arcs"
             count={arcsCount}
             icon={BookOpen}
-            color="#dc004e"
+            color={theme.palette.usogui.arc}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -64,7 +66,7 @@ export const Dashboard = () => {
             title="Gambles"
             count={gamblesCount}
             icon={Crown}
-            color="#d32f2f"
+            color={theme.palette.usogui.gamble}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -72,7 +74,7 @@ export const Dashboard = () => {
             title="Events"
             count={eventsCount}
             icon={Zap}
-            color="#f57c00"
+            color={theme.palette.usogui.event}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -80,7 +82,7 @@ export const Dashboard = () => {
             title="Community Guides"
             count={guidesCount}
             icon={FileText}
-            color="#388e3c"
+            color={theme.palette.usogui.guide}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -88,7 +90,7 @@ export const Dashboard = () => {
             title="Media Submissions"
             count={mediaCount}
             icon={Image}
-            color="#7b1fa2"
+            color={theme.palette.usogui.media}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -96,7 +98,7 @@ export const Dashboard = () => {
             title="Quotes"
             count={quotesCount}
             icon={Quote}
-            color="#00796b"
+            color={theme.palette.usogui.quote}
           />
         </Grid>
         {permissions === 'admin' && (
@@ -105,7 +107,7 @@ export const Dashboard = () => {
               title="Users"
               count={usersCount}
               icon={Shield}
-              color="#5d4037"
+              color={theme.palette.text.secondary}
             />
           </Grid>
         )}

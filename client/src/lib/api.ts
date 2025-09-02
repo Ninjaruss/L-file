@@ -872,6 +872,83 @@ class ApiClient {
   async rejectGuide(id: number, rejectionReason: string) {
     return this.post<any>(`/guides/${id}/reject`, { rejectionReason })
   }
+
+  // Page Views and Trending methods
+  async getLandingPageData(params?: { limit?: number; daysBack?: number }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      trending: {
+        guides: Array<{
+          id: number
+          title: string
+          description: string
+          viewCount: number
+          recentViewCount: number
+          author: { id: number; username: string }
+          createdAt: string
+        }>
+        characters: Array<{
+          id: number
+          name: string
+          description?: string
+          viewCount: number
+          recentViewCount: number
+        }>
+        events: Array<{
+          id: number
+          title: string
+          description: string
+          viewCount: number
+          recentViewCount: number
+        }>
+        gambles: Array<{
+          id: number
+          name: string
+          rules: string
+          viewCount: number
+          recentViewCount: number
+        }>
+      }
+      stats: {
+        totalGuides: number
+        totalCharacters: number
+        totalEvents: number
+        totalGambles: number
+      }
+    }>(`/${query ? `?${query}` : ''}`)
+  }
+
+  async getTrendingPages(params?: { limit?: number; daysBack?: number }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<Array<{
+      pageId: number
+      pageType: 'guide' | 'character' | 'event' | 'gamble' | 'arc' | 'volume' | 'chapter' | 'quote'
+      viewCount: number
+      recentViewCount: number
+      title: string
+      description: string
+    }>>(`/trending${query ? `?${query}` : ''}`)
+  }
+
+  async recordPageView(pageType: string, pageId: number) {
+    return this.post<void>(`/page-views/${pageType}/${pageId}/view`, {})
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)

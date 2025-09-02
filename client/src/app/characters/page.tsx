@@ -25,6 +25,7 @@ import {
   Snackbar
 } from '@mui/material'
 import { Search, Users, Eye, Edit, Upload, X } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import Image from 'next/image'
 import { api } from '../../lib/api'
@@ -47,6 +48,7 @@ interface Character {
 
 export default function CharactersPage() {
   const { user } = useAuth()
+  const theme = useTheme()
   const [characters, setCharacters] = useState<Character[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -180,7 +182,7 @@ export default function CharactersPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Users size={48} color="#1976d2" />
+            <Users size={48} color={theme.palette.usogui.character} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             Characters

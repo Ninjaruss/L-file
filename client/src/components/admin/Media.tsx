@@ -21,8 +21,7 @@ import {
   useRefresh
 } from 'react-admin'
 import { Box, Chip } from '@mui/material'
-import CheckIcon from '@mui/icons-material/Check'
-import CloseIcon from '@mui/icons-material/Close'
+import { Check, X } from 'lucide-react'
 import { api } from '../../lib/api'
 
 const MediaStatusField = ({ source }: { source: string }) => {
@@ -75,7 +74,7 @@ const ApproveButton = () => {
       label="Approve" 
       onClick={handleApprove}
       color="primary"
-      startIcon={<CheckIcon />}
+      startIcon={<Check size={20} />}
     />
   )
 }
@@ -109,7 +108,7 @@ const RejectButton = () => {
       label="Reject" 
       onClick={handleReject}
       color="secondary"
-      startIcon={<CloseIcon />}
+      startIcon={<X size={20} />}
     />
   )
 }

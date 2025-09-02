@@ -1,5 +1,39 @@
 import { createTheme } from '@mui/material/styles'
 
+declare module '@mui/material/styles' {
+  interface Palette {
+    usogui: {
+      red: string
+      purple: string
+      black: string
+      white: string
+      gamble: string
+      character: string
+      arc: string
+      event: string
+      guide: string
+      media: string
+      quote: string
+    }
+  }
+
+  interface PaletteOptions {
+    usogui?: {
+      red?: string
+      purple?: string
+      black?: string
+      white?: string
+      gamble?: string
+      character?: string
+      arc?: string
+      event?: string
+      guide?: string
+      media?: string
+      quote?: string
+    }
+  }
+}
+
 export const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -17,7 +51,13 @@ export const theme = createTheme({
       main: '#e11d48', // Use Usogui red for errors too
     },
     warning: {
-      main: '#e11d48',
+      main: '#f57c00', // Orange for warnings
+    },
+    success: {
+      main: '#388e3c', // Green for success
+    },
+    info: {
+      main: '#1976d2', // Blue for info
     },
     background: {
       default: '#0a0a0a', // Usogui Black
@@ -26,6 +66,19 @@ export const theme = createTheme({
     text: {
       primary: '#ffffff', // Pure White
       secondary: 'rgba(255, 255, 255, 0.7)'
+    },
+    usogui: {
+      red: '#e11d48',
+      purple: '#7c3aed',
+      black: '#0a0a0a',
+      white: '#ffffff',
+      gamble: '#d32f2f', // Red variant for gambles
+      character: '#1976d2', // Blue for characters
+      arc: '#dc004e', // Pink for arcs
+      event: '#f57c00', // Orange for events
+      guide: '#388e3c', // Green for guides
+      media: '#7b1fa2', // Purple for media
+      quote: '#00796b' // Teal for quotes
     }
   },
   typography: {

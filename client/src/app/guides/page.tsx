@@ -19,6 +19,7 @@ import {
   Avatar
 } from '@mui/material'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -41,6 +42,7 @@ interface Guide {
 
 export default function GuidesPage() {
   const { user } = useAuth()
+  const theme = useTheme()
   const [guides, setGuides] = useState<Guide[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -113,7 +115,7 @@ export default function GuidesPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <FileText size={48} color="#dc004e" />
+            <FileText size={48} color={theme.palette.usogui.guide} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             Community Guides
@@ -280,7 +282,7 @@ export default function GuidesPage() {
 
             {guides.length === 0 && !loading && (
               <Box sx={{ textAlign: 'center', py: 8 }}>
-                <FileText size={64} color="#ccc" />
+                <FileText size={64} color={theme.palette.text.secondary} />
                 <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
                   No guides found
                 </Typography>

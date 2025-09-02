@@ -21,6 +21,7 @@ import {
   Divider
 } from '@mui/material'
 import { Upload, Link as LinkIcon, Image, Video } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -38,6 +39,7 @@ interface Arc {
 
 export default function SubmitMediaPage() {
   const { user, loading: authLoading } = useAuth()
+  const theme = useTheme()
   const [formData, setFormData] = useState({
     url: '',
     characterId: null as number | null,
@@ -176,7 +178,7 @@ export default function SubmitMediaPage() {
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Upload size={48} color="#1976d2" />
+            <Upload size={48} color={theme.palette.info.main} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             Submit Media

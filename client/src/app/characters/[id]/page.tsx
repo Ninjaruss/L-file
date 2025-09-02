@@ -18,11 +18,13 @@ import {
   ListItemText
 } from '@mui/material'
 import { ArrowLeft, User, Crown, Users as UsersIcon } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import { usePageView } from '../../../hooks/usePageView'
 
 interface Character {
   id: number
@@ -44,6 +46,7 @@ interface Character {
 }
 
 export default function CharacterDetailPage() {
+  const theme = useTheme()
   const [character, setCharacter] = useState<Character | null>(null)
   const [gambles, setGambles] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
@@ -53,6 +56,10 @@ export default function CharacterDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const params = useParams()
+
+  // Track page view
+  const characterId = Array.isArray(params.id) ? params.id[0] : params.id
+  usePageView('character', characterId || '', !!characterId)
 
   useEffect(() => {
     const fetchCharacterData = async () => {
@@ -149,7 +156,7 @@ export default function CharacterDetailPage() {
             </Box>
           ) : (
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <User size={48} color="#1976d2" />
+              <User size={48} color={theme.palette.usogui.character} />
             </Box>
           )}
           

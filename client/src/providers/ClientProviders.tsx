@@ -29,7 +29,7 @@ export function ClientProviders({ children }: ClientProvidersProps) {
       <CssBaseline />
       <AuthProvider>
         <ConditionalNavigation />
-        <main className="min-h-screen">
+        <main className="min-h-screen bg-usogui-black">
           {children}
         </main>
       </AuthProvider>

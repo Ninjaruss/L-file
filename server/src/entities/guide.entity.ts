@@ -26,7 +26,6 @@ export enum GuideStatus {
 @Index(['status'])
 @Index(['authorId'])
 @Index(['createdAt'])
-@Index(['viewCount'])
 @Index(['likeCount'])
 export class Guide {
   @ApiProperty({ description: 'Unique identifier of the guide' })
@@ -50,7 +49,7 @@ export class Guide {
 
   @ApiProperty({
     description: 'Main content of the guide in markdown format',
-    example: '# Introduction\n\nThis guide covers...',
+    example: '# Introduction\\n\\nThis guide covers...',
   })
   @Column({ type: 'text' })
   content: string;
@@ -66,10 +65,6 @@ export class Guide {
     default: GuideStatus.DRAFT,
   })
   status: GuideStatus;
-
-  @ApiProperty({ description: 'Number of times this guide has been viewed' })
-  @Column({ type: 'int', default: 0 })
-  viewCount: number;
 
   @ApiProperty({ description: 'Number of likes this guide has received' })
   @Column({ type: 'int', default: 0 })

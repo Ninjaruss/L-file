@@ -13,12 +13,14 @@ import {
   CircularProgress
 } from '@mui/material'
 import { LogIn } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../providers/AuthProvider'
 import { motion } from 'motion/react'
 
 export default function LoginPage() {
+  const theme = useTheme()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -58,7 +60,7 @@ export default function LoginPage() {
         <Paper elevation={8} sx={{ p: 4, borderRadius: 3 }}>
           <Box textAlign="center" mb={4}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <LogIn size={48} color="#1976d2" />
+              <LogIn size={48} color={theme.palette.info.main} />
             </Box>
             <Typography variant="h4" component="h1" gutterBottom>
               Welcome Back

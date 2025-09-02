@@ -16,11 +16,25 @@
   --font-opti-goudy-text: 'OPTI Goudy Text', serif;
   --font-noto-sans: 'Noto Sans', system-ui, sans-serif;
   
-  /* Usogui Theme Colors */
+  /* Usogui Theme Colors - Main Palette */
   --usogui-red: #e11d48;
   --usogui-black: #0a0a0a;
   --usogui-purple: #7c3aed;
   --usogui-white: #ffffff;
+  
+  /* Semantic Colors for Content Types */
+  --color-gamble: #d32f2f;
+  --color-character: #1976d2;
+  --color-arc: #dc004e;
+  --color-event: #f57c00;
+  --color-guide: #388e3c;
+  --color-media: #7b1fa2;
+  --color-quote: #00796b;
+  
+  /* Alpha variants for backgrounds and borders */
+  --usogui-red-alpha-10: rgba(225, 29, 72, 0.1);
+  --usogui-red-alpha-20: rgba(225, 29, 72, 0.2);
+  --usogui-red-alpha-30: rgba(225, 29, 72, 0.3);
   
   /* Legacy variables updated to Usogui theme */
   --foreground-rgb: 255, 255, 255;
@@ -40,21 +54,21 @@ body {
 
 .gambling-card {
   background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(225, 29, 72, 0.2);
+  border: 1px solid var(--usogui-red-alpha-20);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(225, 29, 72, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 15px -3px var(--usogui-red-alpha-10), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
 
 .gambling-card:hover {
   border-color: var(--usogui-red);
-  box-shadow: 0 20px 25px -5px rgba(225, 29, 72, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 25px -5px var(--usogui-red-alpha-30), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
 }
 
 .spoiler-warning {
-  background-color: rgba(225, 29, 72, 0.1);
+  background-color: var(--usogui-red-alpha-10);
   border: 1px solid var(--usogui-red);
   color: var(--usogui-red);
   padding: 0.5rem 1rem;
@@ -66,6 +80,7 @@ body {
   font-family: var(--font-opti-goudy-text);
 }
 
+/* Color utilities - Main theme */
 .text-usogui-red {
   color: var(--usogui-red);
 }
@@ -81,3 +96,20 @@ body {
 .border-usogui-red {
   border-color: var(--usogui-red);
 }
+
+/* Semantic color utilities */
+.text-gamble { color: var(--color-gamble); }
+.text-character { color: var(--color-character); }
+.text-arc { color: var(--color-arc); }
+.text-event { color: var(--color-event); }
+.text-guide { color: var(--color-guide); }
+.text-media { color: var(--color-media); }
+.text-quote { color: var(--color-quote); }
+
+.bg-gamble { background-color: var(--color-gamble); }
+.bg-character { background-color: var(--color-character); }
+.bg-arc { background-color: var(--color-arc); }
+.bg-event { background-color: var(--color-event); }
+.bg-guide { background-color: var(--color-guide); }
+.bg-media { background-color: var(--color-media); }
+.bg-quote { background-color: var(--color-quote); }

@@ -13,6 +13,8 @@ import { User, UserRole } from '../../entities/user.entity';
 import { CreateGuideDto } from './dto/create-guide.dto';
 import { UpdateGuideDto } from './dto/update-guide.dto';
 import { GuideQueryDto } from './dto/guide-query.dto';
+import { PageViewsService } from '../page-views/page-views.service';
+import { PageType } from '../../entities/page-view.entity';
 
 @Injectable()
 export class GuidesService {
@@ -25,6 +27,7 @@ export class GuidesService {
     private readonly tagRepository: Repository<Tag>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly pageViewsService: PageViewsService,
   ) {}
 
   async create(createGuideDto: CreateGuideDto, author: User): Promise<Guide> {
@@ -47,7 +50,7 @@ export class GuidesService {
   }
 
   async findAll(query: GuideQueryDto): Promise<{
-    data: Guide[];
+    data: (Guide & { viewCount?: number })[];
     total: number;
     page: number;
     perPage: number;
@@ -74,7 +77,6 @@ export class GuidesService {
         'guide.title',
         'guide.description',
         'guide.status',
-        'guide.viewCount',
         'guide.likeCount',
         'guide.createdAt',
         'guide.updatedAt',
@@ -104,35 +106,62 @@ export class GuidesService {
       queryBuilder.andWhere('tags.name = :tag', { tag });
     }
 
-    // Apply sorting
-    const validSortFields = [
-      'createdAt',
-      'updatedAt',
-      'viewCount',
-      'likeCount',
-      'title',
-    ];
-    if (validSortFields.includes(sortBy)) {
-      queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
+    // For sorting by viewCount, we need a different approach since it's not in the entity anymore
+    if (sortBy === 'viewCount') {
+      // We'll sort by createdAt for now and handle viewCount sorting later
+      queryBuilder.orderBy('guide.createdAt', sortOrder);
     } else {
-      queryBuilder.orderBy('guide.createdAt', 'DESC');
+      // Apply sorting for other valid fields
+      const validSortFields = ['createdAt', 'updatedAt', 'likeCount', 'title'];
+      if (validSortFields.includes(sortBy)) {
+        queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
+      } else {
+        queryBuilder.orderBy('guide.createdAt', 'DESC');
+      }
     }
 
     // Apply pagination
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    const [guides, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
 
-    return { data, total, page, perPage: limit, totalPages };
+    // Get view counts for all guides
+    const guideIds = guides.map((guide) => guide.id);
+    const viewCounts =
+      guideIds.length > 0
+        ? await this.pageViewsService.getViewCounts(PageType.GUIDE, guideIds)
+        : new Map<number, number>();
+
+    // Add view counts to guides
+    const guidesWithViewCounts = guides.map((guide) => ({
+      ...guide,
+      viewCount: viewCounts.get(guide.id) || 0,
+    }));
+
+    // Sort by viewCount if requested
+    if (sortBy === 'viewCount') {
+      guidesWithViewCounts.sort((a, b) => {
+        const comparison = (a.viewCount || 0) - (b.viewCount || 0);
+        return sortOrder === 'ASC' ? comparison : -comparison;
+      });
+    }
+
+    return {
+      data: guidesWithViewCounts,
+      total,
+      page,
+      perPage: limit,
+      totalPages,
+    };
   }
 
   async findPublished(
     query: GuideQueryDto,
     currentUser?: User,
   ): Promise<{
-    data: (Guide & { userHasLiked?: boolean })[];
+    data: (Guide & { userHasLiked?: boolean; viewCount?: number })[];
     total: number;
     page: number;
     perPage: number;
@@ -157,7 +186,6 @@ export class GuidesService {
         'guide.title',
         'guide.description',
         'guide.status',
-        'guide.viewCount',
         'guide.likeCount',
         'guide.createdAt',
         'guide.updatedAt',
@@ -180,18 +208,18 @@ export class GuidesService {
       queryBuilder.andWhere('tags.name = :tag', { tag });
     }
 
-    // Apply sorting
-    const validSortFields = [
-      'createdAt',
-      'updatedAt',
-      'viewCount',
-      'likeCount',
-      'title',
-    ];
-    if (validSortFields.includes(sortBy)) {
-      queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
+    // For sorting by viewCount, we need a different approach since it's not in the entity anymore
+    if (sortBy === 'viewCount') {
+      // We'll sort by createdAt for now and handle viewCount sorting later
+      queryBuilder.orderBy('guide.createdAt', sortOrder);
     } else {
-      queryBuilder.orderBy('guide.createdAt', 'DESC');
+      // Apply sorting for other valid fields
+      const validSortFields = ['createdAt', 'updatedAt', 'likeCount', 'title'];
+      if (validSortFields.includes(sortBy)) {
+        queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
+      } else {
+        queryBuilder.orderBy('guide.createdAt', 'DESC');
+      }
     }
 
     // Apply pagination
@@ -201,10 +229,23 @@ export class GuidesService {
     const [guides, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
 
+    // Get view counts for all guides
+    const guideIds = guides.map((guide) => guide.id);
+    const viewCounts =
+      guideIds.length > 0
+        ? await this.pageViewsService.getViewCounts(PageType.GUIDE, guideIds)
+        : new Map<number, number>();
+
     // Add user like status if user is authenticated
-    let guidesWithLikeStatus: (Guide & { userHasLiked?: boolean })[] = guides;
+    let guidesWithLikeStatus: (Guide & {
+      userHasLiked?: boolean;
+      viewCount?: number;
+    })[] = guides.map((guide) => ({
+      ...guide,
+      viewCount: viewCounts.get(guide.id) || 0,
+    }));
+
     if (currentUser && guides.length > 0) {
-      const guideIds = guides.map((guide) => guide.id);
       const userLikes = await this.guideLikeRepository.find({
         where: {
           guideId: In(guideIds),
@@ -214,10 +255,18 @@ export class GuidesService {
 
       const likedGuideIds = new Set(userLikes.map((like) => like.guideId));
 
-      guidesWithLikeStatus = guides.map((guide) => ({
+      guidesWithLikeStatus = guidesWithLikeStatus.map((guide) => ({
         ...guide,
         userHasLiked: likedGuideIds.has(guide.id),
       }));
+    }
+
+    // Sort by viewCount if requested
+    if (sortBy === 'viewCount') {
+      guidesWithLikeStatus.sort((a, b) => {
+        const comparison = (a.viewCount || 0) - (b.viewCount || 0);
+        return sortOrder === 'ASC' ? comparison : -comparison;
+      });
     }
 
     return {
@@ -257,7 +306,7 @@ export class GuidesService {
   async findOnePublic(
     id: number,
     currentUser?: User,
-  ): Promise<Guide & { userHasLiked?: boolean }> {
+  ): Promise<Guide & { userHasLiked?: boolean; viewCount?: number }> {
     const guide = await this.guideRepository.findOne({
       where: { id, status: GuideStatus.PUBLISHED },
       relations: ['author', 'tags'],
@@ -267,7 +316,6 @@ export class GuidesService {
         title: true,
         description: true,
         content: true,
-        viewCount: true,
         likeCount: true,
         createdAt: true,
         updatedAt: true,
@@ -286,6 +334,12 @@ export class GuidesService {
       throw new NotFoundException('Guide not found');
     }
 
+    // Get view count from page views service
+    const viewCount = await this.pageViewsService.getViewCount(
+      PageType.GUIDE,
+      id,
+    );
+
     // If user is authenticated, check if they have liked this guide
     let userHasLiked = false;
     if (currentUser) {
@@ -295,7 +349,7 @@ export class GuidesService {
       userHasLiked = !!existingLike;
     }
 
-    return { ...guide, userHasLiked };
+    return { ...guide, userHasLiked, viewCount };
   }
 
   async update(
@@ -478,8 +532,17 @@ export class GuidesService {
     return { data, total, page, perPage: limit, totalPages };
   }
 
-  async incrementViewCount(id: number): Promise<void> {
-    await this.guideRepository.increment({ id }, 'viewCount', 1);
+  async recordView(
+    id: number,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    await this.pageViewsService.recordView(
+      PageType.GUIDE,
+      id,
+      ipAddress,
+      userAgent,
+    );
   }
 
   async toggleLike(

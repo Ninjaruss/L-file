@@ -19,6 +19,12 @@ import { GamblesModule } from './modules/gambles/gambles.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { MediaModule } from './modules/media/media.module';
 import { GuidesModule } from './modules/guides/guides.module';
+import { PageViewsModule } from './modules/page-views/page-views.module';
+import { AppController } from './app.controller';
+import { Guide } from './entities/guide.entity';
+import { Character } from './entities/character.entity';
+import { Event } from './entities/event.entity';
+import { Gamble } from './entities/gamble.entity';
 import { Logger } from '@nestjs/common';
 
 @Module({
@@ -53,6 +59,8 @@ import { Logger } from '@nestjs/common';
       inject: [ConfigService],
     }),
 
+    TypeOrmModule.forFeature([Guide, Character, Event, Gamble]),
+
     ArcsModule,
     CharactersModule,
     ChaptersModule,
@@ -69,6 +77,8 @@ import { Logger } from '@nestjs/common';
     QuotesModule,
     MediaModule,
     GuidesModule,
+    PageViewsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

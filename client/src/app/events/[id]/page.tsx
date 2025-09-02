@@ -13,12 +13,14 @@ import {
   Chip,
   Grid
 } from '@mui/material'
-import { ArrowLeft, Zap, Calendar, Users, BookOpen } from 'lucide-react'
+import { ArrowLeft, CalendarSearch, Calendar, Users, BookOpen } from 'lucide-react'
+import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import { usePageView } from '../../../hooks/usePageView'
 
 interface Event {
   id: number
@@ -44,10 +46,15 @@ interface Event {
 }
 
 export default function EventDetailsPage() {
+  const theme = useTheme()
   const { id } = useParams()
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Track page view
+  const eventId = Array.isArray(id) ? id[0] : id
+  usePageView('event', eventId || '', !!eventId)
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -122,7 +129,7 @@ export default function EventDetailsPage() {
 
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Zap size={48} color="#ff9800" />
+            <CalendarSearch size={48} color={theme.palette.usogui.event} />
           </Box>
           <Typography variant="h3" component="h1" gutterBottom>
             {event.title}

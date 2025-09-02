@@ -22,6 +22,7 @@ import { motion } from 'motion/react'
 import { useAuth } from '../../../providers/AuthProvider'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
 import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import { usePageView } from '../../../hooks/usePageView'
 
 interface Guide {
   id: number
@@ -52,6 +53,10 @@ export default function GuideDetailsPage() {
   const [error, setError] = useState('')
   const [liking, setLiking] = useState(false)
   const [userHasLiked, setUserHasLiked] = useState(false)
+
+  // Track page view
+  const guideId = Array.isArray(id) ? id[0] : id
+  usePageView('guide', guideId || '', !!guideId)
 
   useEffect(() => {
     const fetchGuide = async () => {
@@ -158,7 +163,7 @@ export default function GuideDetailsPage() {
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ width: 32, height: 32, mr: 1 }}>
-                    <User size={18} />
+                    <User size={16} />
                   </Avatar>
                   <Typography variant="body1" color="text.secondary">
                     by {guide.author.username}
