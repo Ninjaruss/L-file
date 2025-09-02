@@ -6,7 +6,7 @@ import {
   JoinTable,
 } from 'typeorm';
 import { Character } from './character.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Faction {
@@ -28,10 +28,7 @@ export class Faction {
   @Column({ nullable: true })
   description: string;
 
-  @ApiProperty({
-    description: 'Characters that belong to this faction',
-    type: () => [Character],
-  })
+  @ApiHideProperty()
   @ManyToMany(() => Character, (character) => character.factions)
   @JoinTable()
   characters: Character[];

@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { MediaType } from '../../../entities/media.entity';
 import { Transform } from 'class-transformer';
 
@@ -27,7 +34,7 @@ export class UploadMediaDto {
     example: 1,
   })
   @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   characterId?: number;
 
@@ -36,7 +43,7 @@ export class UploadMediaDto {
     example: 1,
   })
   @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   arcId?: number;
 
@@ -45,7 +52,7 @@ export class UploadMediaDto {
     example: 1,
   })
   @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsNumber()
   eventId?: number;
 }

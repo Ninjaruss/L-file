@@ -14,7 +14,7 @@ import { Character } from './character.entity';
 import { Chapter } from './chapter.entity';
 import { GambleCharacter } from './gamble-character.entity';
 import { GambleRound } from './gamble-round.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Gamble {
@@ -63,10 +63,7 @@ export class Gamble {
   })
   rounds?: GambleRound[];
 
-  @ApiPropertyOptional({
-    description: 'Characters observing this gamble',
-    type: () => [Character],
-  })
+  @ApiHideProperty()
   @ManyToMany(() => Character)
   @JoinTable({ name: 'gamble_observers' })
   observers: Character[];

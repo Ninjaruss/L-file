@@ -9,12 +9,16 @@
 - Added proper references to admin pages (i.e. click on character to go to character page)
 - Fixed arc relation for admin dashboard
 - Added guide view count tracking
+- Finished spoiler detection for characters
+- Included quotes (need to add gambles as well) to character detail page
 
 ### Notes
-- 
+- As stated previously, there are ongoing issues with Claude and it's hard for me to know if my Serena MCP is working as intended or Claude's code quality really is poorer at the moment. I am finding more issues with the code it generates, so I need to try refining my prompting a lot more to mitigate the issues.
 
 ### TODO
-- Add hiding spoilers for events, gamble results, 
+- Add spoilers to gamble results
+- Characters detail page to include gambles character has participated in
+
 
 ## 2025-08-31
 ### Changes

@@ -126,10 +126,11 @@ export class GuidesController {
               },
               viewCount: { type: 'number', example: 190 },
               likeCount: { type: 'number', example: 5 },
-              userHasLiked: { 
-                type: 'boolean', 
-                example: true, 
-                description: 'Whether the current user has liked this guide (only present if authenticated)' 
+              userHasLiked: {
+                type: 'boolean',
+                example: true,
+                description:
+                  'Whether the current user has liked this guide (only present if authenticated)',
               },
               author: {
                 type: 'object',
@@ -207,10 +208,11 @@ export class GuidesController {
         status: { type: 'string', enum: ['published'], example: 'published' },
         viewCount: { type: 'number', example: 191 },
         likeCount: { type: 'number', example: 5 },
-        userHasLiked: { 
-          type: 'boolean', 
-          example: true, 
-          description: 'Whether the current user has liked this guide (only present if authenticated)' 
+        userHasLiked: {
+          type: 'boolean',
+          example: true,
+          description:
+            'Whether the current user has liked this guide (only present if authenticated)',
         },
         author: {
           type: 'object',
@@ -252,7 +254,10 @@ export class GuidesController {
       },
     },
   })
-  async findOnePublic(@Param('id', ParseIntPipe) id: number, @CurrentUser() user?: User) {
+  async findOnePublic(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user?: User,
+  ) {
     // Increment view count when someone views the guide
     await this.guidesService.incrementViewCount(id);
     return this.guidesService.findOnePublic(id, user);
@@ -861,7 +866,8 @@ export class GuidesController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get pending guides for moderation',
-    description: 'Retrieves guides awaiting approval. Only accessible to moderators and admins.',
+    description:
+      'Retrieves guides awaiting approval. Only accessible to moderators and admins.',
   })
   @ApiQuery({
     name: 'page',
@@ -887,7 +893,10 @@ export class GuidesController {
             properties: {
               id: { type: 'number', example: 5 },
               title: { type: 'string', example: 'New Guide Awaiting Approval' },
-              description: { type: 'string', example: 'This guide needs review...' },
+              description: {
+                type: 'string',
+                example: 'This guide needs review...',
+              },
               status: { type: 'string', enum: ['pending'], example: 'pending' },
               author: {
                 type: 'object',
@@ -916,7 +925,8 @@ export class GuidesController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Approve a pending guide',
-    description: 'Approves a guide and makes it publicly visible. Only accessible to moderators and admins.',
+    description:
+      'Approves a guide and makes it publicly visible. Only accessible to moderators and admins.',
   })
   @ApiParam({ name: 'id', description: 'Guide ID', example: 1 })
   @ApiOkResponse({
@@ -942,7 +952,10 @@ export class GuidesController {
   @ApiBadRequestResponse({
     description: 'Only pending guides can be approved',
   })
-  async approveGuide(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
+  async approveGuide(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
     return this.guidesService.approve(id, user);
   }
 
@@ -952,7 +965,8 @@ export class GuidesController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Reject a pending guide',
-    description: 'Rejects a guide with a reason. Only accessible to moderators and admins.',
+    description:
+      'Rejects a guide with a reason. Only accessible to moderators and admins.',
   })
   @ApiParam({ name: 'id', description: 'Guide ID', example: 1 })
   @ApiBody({
@@ -976,7 +990,10 @@ export class GuidesController {
         id: { type: 'number', example: 1 },
         title: { type: 'string', example: 'Rejected Guide Title' },
         status: { type: 'string', enum: ['rejected'], example: 'rejected' },
-        rejectionReason: { type: 'string', example: 'Guide content does not meet quality standards' },
+        rejectionReason: {
+          type: 'string',
+          example: 'Guide content does not meet quality standards',
+        },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },

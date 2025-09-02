@@ -150,14 +150,16 @@ export class EventsController {
     });
 
     // Transform data for react-admin compatibility
-    const transformedData = result.data.map(event => ({
+    const transformedData = result.data.map((event) => ({
       ...event,
-      characterIds: event.characters ? event.characters.map(char => char.id) : []
+      characterIds: event.characters
+        ? event.characters.map((char) => char.id)
+        : [],
     }));
 
     return {
       ...result,
-      data: transformedData as Event[]
+      data: transformedData as Event[],
     };
   }
 
@@ -165,7 +167,7 @@ export class EventsController {
   @ApiOperation({
     summary: 'Get events grouped by arc',
     description:
-      'Retrieve events grouped by arc chapter ranges, separated by main and mini arcs, with events that have no arc',
+      'Retrieve events grouped by arc chapter ranges, with events that have no arc',
   })
   @ApiQuery({
     name: 'userProgress',
@@ -189,7 +191,7 @@ export class EventsController {
     schema: {
       type: 'object',
       properties: {
-        mainArcs: {
+        arcs: {
           type: 'array',
           items: {
             type: 'object',
@@ -199,33 +201,9 @@ export class EventsController {
                 properties: {
                   id: { type: 'number', example: 1 },
                   name: { type: 'string', example: '17 Steps Tournament Arc' },
-                  type: { type: 'string', enum: ['main', 'mini'], example: 'main' },
                   order: { type: 'number', example: 1 },
                   startChapter: { type: 'number', example: 45 },
                   endChapter: { type: 'number', example: 52 },
-                },
-              },
-              events: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/Event' },
-              },
-            },
-          },
-        },
-        miniArcs: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              arc: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 2 },
-                  name: { type: 'string', example: 'Side Story Arc' },
-                  type: { type: 'string', enum: ['main', 'mini'], example: 'mini' },
-                  order: { type: 'number', example: 2 },
-                  startChapter: { type: 'number', example: 10 },
-                  endChapter: { type: 'number', example: 15 },
                 },
               },
               events: {
@@ -450,13 +428,15 @@ export class EventsController {
     if (!event) {
       throw new NotFoundException(`Event with id ${id} not found`);
     }
-    
+
     // Transform for react-admin compatibility
     const transformedEvent = {
       ...event,
-      characterIds: event.characters ? event.characters.map(char => char.id) : []
+      characterIds: event.characters
+        ? event.characters.map((char) => char.id)
+        : [],
     };
-    
+
     return transformedEvent as Event;
   }
 
@@ -479,21 +459,27 @@ export class EventsController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async create(@Body(ValidationPipe) createEventDto: CreateEventDto): Promise<Event> {
+  async create(
+    @Body(ValidationPipe) createEventDto: CreateEventDto,
+  ): Promise<Event> {
     const createdEvent = await this.service.create(createEventDto);
-    
+
     // Load the event with relations for proper transformation
     const eventWithRelations = await this.service.findOne(createdEvent.id);
     if (!eventWithRelations) {
-      throw new NotFoundException(`Created event with id ${createdEvent.id} not found`);
+      throw new NotFoundException(
+        `Created event with id ${createdEvent.id} not found`,
+      );
     }
-    
+
     // Transform for react-admin compatibility
     const transformedEvent = {
       ...eventWithRelations,
-      characterIds: eventWithRelations.characters ? eventWithRelations.characters.map(char => char.id) : []
+      characterIds: eventWithRelations.characters
+        ? eventWithRelations.characters.map((char) => char.id)
+        : [],
     };
-    
+
     return transformedEvent as Event;
   }
 
@@ -550,13 +536,15 @@ export class EventsController {
     @Body(ValidationPipe) data: UpdateEventDto,
   ): Promise<Event> {
     const updatedEvent = await this.service.update(id, data);
-    
+
     // Transform for react-admin compatibility
     const transformedEvent = {
       ...updatedEvent,
-      characterIds: updatedEvent.characters ? updatedEvent.characters.map(char => char.id) : []
+      characterIds: updatedEvent.characters
+        ? updatedEvent.characters.map((char) => char.id)
+        : [],
     };
-    
+
     return transformedEvent as Event;
   }
 

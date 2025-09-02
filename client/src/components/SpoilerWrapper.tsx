@@ -33,7 +33,21 @@ export default function SpoilerWrapper({
   }, [])
 
   const shouldHideSpoiler = () => {
-    if (!chapterNumber) return spoilerType === 'major'
+    if (!chapterNumber) {
+      // For minor spoilers without chapter info, only hide if user tolerance is very low (0 or default)
+      // For major spoilers without chapter info, always hide by default
+      return spoilerType === 'major' || userTolerance === 0
+    }
+    
+    // If chapter number exists, consider spoiler type in the comparison
+    if (spoilerType === 'minor') {
+      // For minor spoilers (like character descriptions), be more lenient
+      // Only hide if user is very early in the series or hasn't started reading
+      // This allows basic character info to be shown to users who have made some progress
+      return userTolerance === 0 && chapterNumber > 1
+    }
+    
+    // For major and outcome spoilers, use strict comparison
     return chapterNumber > userTolerance
   }
 
@@ -50,7 +64,7 @@ export default function SpoilerWrapper({
                       spoilerType === 'outcome' ? 'OUTCOME SPOILER' : 'SPOILER'
     
     if (chapterNumber) {
-      return `${baseLabel} - Chapter ${chapterNumber}`
+      return `${baseLabel} - Read up to Chapter ${chapterNumber}`
     }
     return baseLabel
   }
@@ -96,6 +110,11 @@ export default function SpoilerWrapper({
                 {description && (
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
                     {description}
+                  </Typography>
+                )}
+                {chapterNumber && chapterNumber > userTolerance && (
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
+                    You need to read up to Chapter {chapterNumber} to view this content
                   </Typography>
                 )}
               </Box>

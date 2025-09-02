@@ -270,7 +270,8 @@ export class MediaController {
         type: {
           type: 'string',
           enum: ['image', 'video', 'audio'],
-          description: 'Type of media content (currently only image supported for uploads)',
+          description:
+            'Type of media content (currently only image supported for uploads)',
         },
         description: {
           type: 'string',
@@ -300,7 +301,10 @@ export class MediaController {
       type: 'object',
       properties: {
         id: { type: 'number', example: 1 },
-        url: { type: 'string', example: 'https://your-custom-domain.com/media/123456_character.jpg' },
+        url: {
+          type: 'string',
+          example: 'https://your-custom-domain.com/media/123456_character.jpg',
+        },
         fileName: { type: 'string', example: 'media/123456_character.jpg' },
         isUploaded: { type: 'boolean', example: true },
         type: { type: 'string', example: 'image' },
@@ -317,8 +321,14 @@ export class MediaController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Bad request - invalid file or data' })
-  @ApiResponse({ status: 403, description: 'Forbidden - requires moderator or admin role' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid file or data',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - requires moderator or admin role',
+  })
   @ApiResponse({ status: 413, description: 'File too large - max 10MB' })
   async uploadMedia(
     @UploadedFile() file: Express.Multer.File,
@@ -335,9 +345,16 @@ export class MediaController {
     }
 
     // Validate file type
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Only image files (JPEG, PNG, WebP, GIF) are allowed');
+      throw new BadRequestException(
+        'Only image files (JPEG, PNG, WebP, GIF) are allowed',
+      );
     }
 
     return this.mediaService.createUpload(

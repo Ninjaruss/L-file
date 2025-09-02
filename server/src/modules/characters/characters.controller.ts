@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -34,6 +35,10 @@ import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { BackblazeB2Service } from '../../services/backblaze-b2.service';
+
+import { User } from '../../entities/user.entity';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('characters')
 @Controller('characters')
@@ -414,7 +419,8 @@ export class CharactersController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update character image',
-    description: 'Update character image (moderators/admins only, automatically approved)',
+    description:
+      'Update character image (moderators/admins only, automatically approved)',
   })
   @ApiParam({ name: 'id', description: 'Character ID', example: 1 })
   @ApiBody({
@@ -426,10 +432,16 @@ export class CharactersController {
     description: 'Character image updated successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - moderator/admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - moderator/admin role required',
+  })
   @ApiResponse({ status: 404, description: 'Character not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  updateImage(@Param('id') id: number, @Body() imageData: UpdateCharacterImageDto) {
+  updateImage(
+    @Param('id') id: number,
+    @Body() imageData: UpdateCharacterImageDto,
+  ) {
     return this.service.updateImage(id, imageData);
   }
 
@@ -439,7 +451,8 @@ export class CharactersController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Upload character image',
-    description: 'Upload image file for character (moderators/admins only, automatically approved)',
+    description:
+      'Upload image file for character (moderators/admins only, automatically approved)',
   })
   @ApiParam({ name: 'id', description: 'Character ID', example: 1 })
   @ApiConsumes('multipart/form-data')
@@ -466,9 +479,15 @@ export class CharactersController {
     status: 201,
     description: 'Character image uploaded successfully',
   })
-  @ApiResponse({ status: 400, description: 'Bad request - invalid file or missing file' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid file or missing file',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - moderator/admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - moderator/admin role required',
+  })
   @ApiResponse({ status: 404, description: 'Character not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   async uploadCharacterImage(
@@ -481,9 +500,16 @@ export class CharactersController {
     }
 
     // Validate file type
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Only image files (JPEG, PNG, WebP, GIF) are allowed');
+      throw new BadRequestException(
+        'Only image files (JPEG, PNG, WebP, GIF) are allowed',
+      );
     }
 
     // Get existing character to check for old image
@@ -502,7 +528,7 @@ export class CharactersController {
       file.buffer,
       uniqueFileName,
       file.mimetype,
-      'characters'
+      'characters',
     );
 
     // Delete old image if it exists
@@ -514,7 +540,10 @@ export class CharactersController {
           const urlParts = oldFileName.split('/');
           oldFileName = urlParts[urlParts.length - 1];
           // If it includes the folder path, keep it
-          if (urlParts.length > 1 && urlParts[urlParts.length - 2] === 'characters') {
+          if (
+            urlParts.length > 1 &&
+            urlParts[urlParts.length - 2] === 'characters'
+          ) {
             oldFileName = `characters/${oldFileName}`;
           }
         }
@@ -547,7 +576,10 @@ export class CharactersController {
     description: 'Character image removed successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - moderator/admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - moderator/admin role required',
+  })
   @ApiResponse({ status: 404, description: 'Character not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   async removeImage(@Param('id') id: number) {
@@ -566,7 +598,10 @@ export class CharactersController {
           const urlParts = fileName.split('/');
           fileName = urlParts[urlParts.length - 1];
           // If it includes the folder path, keep it
-          if (urlParts.length > 1 && urlParts[urlParts.length - 2] === 'characters') {
+          if (
+            urlParts.length > 1 &&
+            urlParts[urlParts.length - 2] === 'characters'
+          ) {
             fileName = `characters/${fileName}`;
           }
         }
@@ -617,9 +652,11 @@ export class CharactersController {
   }
 
   @Get(':id/events')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Get events related to character',
-    description: 'Retrieve events that mention or involve this character, ordered chronologically',
+    description:
+      'Retrieve events that mention or involve this character, ordered chronologically. Spoiler content is hidden based on user reading progress.',
   })
   @ApiParam({ name: 'id', description: 'Character ID', example: 1 })
   @ApiQuery({
@@ -641,15 +678,20 @@ export class CharactersController {
     @Param('id') id: number,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
+    @CurrentUser() user?: User,
   ) {
     const character = await this.service.findOne(id);
     if (!character) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
-    return this.service.getCharacterEvents(id, {
-      page: parseInt(page),
-      limit: parseInt(limit),
-    });
+    return this.service.getCharacterEvents(
+      id,
+      {
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      user?.userProgress,
+    );
   }
 
   @Get(':id/guides')
@@ -686,5 +728,53 @@ export class CharactersController {
       page: parseInt(page),
       limit: parseInt(limit),
     });
+  }
+
+  @Get(':id/quotes')
+  @ApiOperation({
+    summary: 'Get quotes by character',
+    description: 'Retrieve quotes said by a specific character with pagination',
+  })
+  @ApiParam({ name: 'id', description: 'Character ID', type: 'number' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of quotes per page',
+    type: 'number',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Character quotes retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Quote' },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Character not found',
+  })
+  async getCharacterQuotes(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+  ) {
+    return this.service.getCharacterQuotes(id, { page, limit });
   }
 }

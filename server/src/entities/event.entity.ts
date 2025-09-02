@@ -15,7 +15,7 @@ import { Arc } from './arc.entity';
 import { Character } from './character.entity';
 import { User } from './user.entity';
 import { Tag } from './tag.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 export enum EventType {
   ARC = 'arc',
@@ -128,10 +128,7 @@ export class Event {
   @Column({ nullable: true })
   arcId: number;
 
-  @ApiProperty({
-    description: 'Characters involved in this event',
-    type: () => [Character],
-  })
+  @ApiHideProperty()
   @ManyToMany(() => Character)
   @JoinTable()
   characters: Character[];

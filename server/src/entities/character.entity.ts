@@ -9,7 +9,9 @@ import {
 } from 'typeorm';
 import { Media } from './media.entity';
 import { Faction } from './faction.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { GambleCharacter } from './gamble-character.entity';
+import { Quote } from './quote.entity';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 @Index(['name'])
@@ -111,12 +113,19 @@ export class Character {
   factions: Faction[];
 
   @ApiPropertyOptional({
-    description: 'Quotes said by this character',
-    type: () => ['Quote'],
+    description: 'Gambles this character participated in',
+    type: () => [GambleCharacter],
   })
-  @OneToMany('Quote', (quote: any) => quote.character, {
+  @OneToMany(() => GambleCharacter, (gambleCharacter) => gambleCharacter.character, {
     nullable: true,
     cascade: true,
   })
-  quotes: any[];
+  gambleParticipations: GambleCharacter[];
+  
+  @ApiHideProperty()
+  @OneToMany(() => Quote, (quote) => quote.character, {
+    nullable: true,
+    cascade: true,
+  })
+  quotes: Quote[];
 }

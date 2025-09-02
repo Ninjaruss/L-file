@@ -239,6 +239,24 @@ class ApiClient {
     }>(`/characters/${characterId}/guides${query ? `?${query}` : ''}`)
   }
 
+  async getCharacterQuotes(characterId: number, params?: { page?: number; limit?: number }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      totalPages: number
+    }>(`/characters/${characterId}/quotes${query ? `?${query}` : ''}`)
+  }
+
   async getArcs(params?: {
     page?: number
     limit?: number
@@ -320,11 +338,7 @@ class ApiClient {
     }
     const query = searchParams.toString()
     return this.get<{
-      mainArcs: Array<{
-        arc: any
-        events: any[]
-      }>
-      miniArcs: Array<{
+      arcs: Array<{
         arc: any
         events: any[]
       }>

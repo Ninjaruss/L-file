@@ -163,25 +163,33 @@ export class EventsService {
 
   async create(data: CreateEventDto): Promise<Event> {
     const { characterIds, ...eventData } = data;
-    
+
     // Clean up numeric fields to handle NaN values
     const cleanedData = {
       ...eventData,
       type: data.type || EventType.OTHER,
       isVerified: data.isVerified || false,
       chapterNumber: Number(eventData.chapterNumber) || 1,
-      spoilerChapter: eventData.spoilerChapter && !isNaN(Number(eventData.spoilerChapter)) ? Number(eventData.spoilerChapter) : undefined,
-      arcId: eventData.arcId && !isNaN(Number(eventData.arcId)) ? Number(eventData.arcId) : undefined,
+      spoilerChapter:
+        eventData.spoilerChapter && !isNaN(Number(eventData.spoilerChapter))
+          ? Number(eventData.spoilerChapter)
+          : undefined,
+      arcId:
+        eventData.arcId && !isNaN(Number(eventData.arcId))
+          ? Number(eventData.arcId)
+          : undefined,
     };
-    
+
     const event = this.repo.create(cleanedData);
 
     // If character IDs are provided, set up the relationship
     if (characterIds && characterIds.length > 0) {
-      const validCharacterIds = characterIds.filter(id => !isNaN(Number(id)));
+      const validCharacterIds = characterIds.filter((id) => !isNaN(Number(id)));
       if (validCharacterIds.length > 0) {
         // Load actual Character entities
-        const characters = await this.characterRepo.findByIds(validCharacterIds.map(id => Number(id)));
+        const characters = await this.characterRepo.findByIds(
+          validCharacterIds.map((id) => Number(id)),
+        );
         event.characters = characters;
       }
     }
@@ -191,50 +199,62 @@ export class EventsService {
 
   async update(id: number, data: UpdateEventDto): Promise<Event> {
     const { characterIds, ...updateData } = data;
-    
+
     // Clean up numeric fields to handle NaN values
     const cleanedUpdateData = { ...updateData };
     if (cleanedUpdateData.chapterNumber !== undefined) {
-      cleanedUpdateData.chapterNumber = Number(cleanedUpdateData.chapterNumber) || 1;
+      cleanedUpdateData.chapterNumber =
+        Number(cleanedUpdateData.chapterNumber) || 1;
     }
     if (cleanedUpdateData.spoilerChapter !== undefined) {
-      cleanedUpdateData.spoilerChapter = cleanedUpdateData.spoilerChapter && !isNaN(Number(cleanedUpdateData.spoilerChapter)) ? Number(cleanedUpdateData.spoilerChapter) : undefined;
+      cleanedUpdateData.spoilerChapter =
+        cleanedUpdateData.spoilerChapter &&
+        !isNaN(Number(cleanedUpdateData.spoilerChapter))
+          ? Number(cleanedUpdateData.spoilerChapter)
+          : undefined;
     }
     if (cleanedUpdateData.arcId !== undefined) {
-      cleanedUpdateData.arcId = cleanedUpdateData.arcId && !isNaN(Number(cleanedUpdateData.arcId)) ? Number(cleanedUpdateData.arcId) : undefined;
+      cleanedUpdateData.arcId =
+        cleanedUpdateData.arcId && !isNaN(Number(cleanedUpdateData.arcId))
+          ? Number(cleanedUpdateData.arcId)
+          : undefined;
     }
-    
+
     // First update the basic event data
     if (Object.keys(cleanedUpdateData).length > 0) {
       await this.repo.update(id, cleanedUpdateData);
     }
-    
+
     // Get the event with current relationships
     const event = await this.repo.findOne({
       where: { id },
       relations: ['characters'],
     });
-    
+
     if (!event) {
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
-    
+
     // Update character relationships if provided
     if (characterIds !== undefined) {
-      const validCharacterIds = characterIds.filter(charId => !isNaN(Number(charId)));
-      
+      const validCharacterIds = characterIds.filter(
+        (charId) => !isNaN(Number(charId)),
+      );
+
       if (validCharacterIds.length > 0) {
         // Load actual Character entities
-        const characters = await this.characterRepo.findByIds(validCharacterIds.map(id => Number(id)));
+        const characters = await this.characterRepo.findByIds(
+          validCharacterIds.map((id) => Number(id)),
+        );
         event.characters = characters;
       } else {
         // Clear all character relationships
         event.characters = [];
       }
-      
+
       await this.repo.save(event);
     }
-    
+
     const result = await this.findOne(id);
     if (!result) {
       throw new NotFoundException(`Event with ID ${id} not found after update`);
@@ -311,11 +331,7 @@ export class EventsService {
       isVerified?: boolean;
     },
   ): Promise<{
-    mainArcs: Array<{
-      arc: any;
-      events: Event[];
-    }>;
-    miniArcs: Array<{
+    arcs: Array<{
       arc: any;
       events: Event[];
     }>;
@@ -362,28 +378,20 @@ export class EventsService {
       }
     });
 
-    // Get arc details and separate by type
-    const mainArcs: Array<{ arc: any; events: Event[] }> = [];
-    const miniArcs: Array<{ arc: any; events: Event[] }> = [];
+    // Create arc groups
+    const arcs: Array<{ arc: any; events: Event[] }> = [];
 
     for (const [arcId, arcEvents] of Object.entries(arcGroups)) {
       const arc = arcEvents[0].arc; // Arc is already loaded via leftJoinAndSelect
       const arcGroup = { arc, events: arcEvents };
-      
-      if (arc.type === 'mini') {
-        miniArcs.push(arcGroup);
-      } else {
-        mainArcs.push(arcGroup);
-      }
+      arcs.push(arcGroup);
     }
 
     // Sort arc groups by arc order
-    mainArcs.sort((a, b) => (a.arc.order || 0) - (b.arc.order || 0));
-    miniArcs.sort((a, b) => (a.arc.order || 0) - (b.arc.order || 0));
+    arcs.sort((a, b) => (a.arc.order || 0) - (b.arc.order || 0));
 
     return {
-      mainArcs,
-      miniArcs,
+      arcs,
       noArc: noArcEvents,
     };
   }

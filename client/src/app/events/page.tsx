@@ -38,10 +38,9 @@ interface Event {
 
 export default function EventsPage() {
   const [groupedEvents, setGroupedEvents] = useState<{
-    mainArcs: Array<{ arc: any; events: any[] }>
-    miniArcs: Array<{ arc: any; events: any[] }>
+    arcs: Array<{ arc: any; events: any[] }>
     noArc: any[]
-  }>({ mainArcs: [], miniArcs: [], noArc: [] })
+  }>({ arcs: [], noArc: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -53,8 +52,7 @@ export default function EventsPage() {
         // Fall back to regular search when searching
         const response = await api.getEvents({ page: 1, limit: 100, title: search })
         setGroupedEvents({
-          mainArcs: [],
-          miniArcs: [],
+          arcs: [],
           noArc: response.data
         })
       } else {
@@ -221,8 +219,7 @@ export default function EventsPage() {
     )
   )
 
-  const totalEvents = groupedEvents.mainArcs.reduce((sum, arc) => sum + arc.events.length, 0) +
-                     groupedEvents.miniArcs.reduce((sum, arc) => sum + arc.events.length, 0) +
+  const totalEvents = groupedEvents.arcs.reduce((sum, arc) => sum + arc.events.length, 0) +
                      groupedEvents.noArc.length
 
   return (
@@ -286,8 +283,7 @@ export default function EventsPage() {
             ) : (
               // Show grouped structure when not searching
               <>
-                {renderArcSection('Main Arcs', groupedEvents.mainArcs, '#1976d2')}
-                {renderArcSection('Mini Arcs', groupedEvents.miniArcs, '#9c27b0')}
+                {renderArcSection('Story Arcs', groupedEvents.arcs, '#1976d2')}
                 
                 {groupedEvents.noArc.length > 0 && (
                   <Box sx={{ mb: 4 }}>

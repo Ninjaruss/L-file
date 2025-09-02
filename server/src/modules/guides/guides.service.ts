@@ -128,7 +128,10 @@ export class GuidesService {
     return { data, total, page, perPage: limit, totalPages };
   }
 
-  async findPublished(query: GuideQueryDto, currentUser?: User): Promise<{
+  async findPublished(
+    query: GuideQueryDto,
+    currentUser?: User,
+  ): Promise<{
     data: (Guide & { userHasLiked?: boolean })[];
     total: number;
     page: number;
@@ -201,23 +204,29 @@ export class GuidesService {
     // Add user like status if user is authenticated
     let guidesWithLikeStatus: (Guide & { userHasLiked?: boolean })[] = guides;
     if (currentUser && guides.length > 0) {
-      const guideIds = guides.map(guide => guide.id);
+      const guideIds = guides.map((guide) => guide.id);
       const userLikes = await this.guideLikeRepository.find({
-        where: { 
+        where: {
           guideId: In(guideIds),
-          userId: currentUser.id 
+          userId: currentUser.id,
         },
       });
-      
-      const likedGuideIds = new Set(userLikes.map(like => like.guideId));
-      
-      guidesWithLikeStatus = guides.map(guide => ({
+
+      const likedGuideIds = new Set(userLikes.map((like) => like.guideId));
+
+      guidesWithLikeStatus = guides.map((guide) => ({
         ...guide,
-        userHasLiked: likedGuideIds.has(guide.id)
+        userHasLiked: likedGuideIds.has(guide.id),
       }));
     }
 
-    return { data: guidesWithLikeStatus, total, page, perPage: limit, totalPages };
+    return {
+      data: guidesWithLikeStatus,
+      total,
+      page,
+      perPage: limit,
+      totalPages,
+    };
   }
 
   async findOne(id: number, currentUser?: User): Promise<Guide> {
@@ -245,7 +254,10 @@ export class GuidesService {
     return guide;
   }
 
-  async findOnePublic(id: number, currentUser?: User): Promise<Guide & { userHasLiked?: boolean }> {
+  async findOnePublic(
+    id: number,
+    currentUser?: User,
+  ): Promise<Guide & { userHasLiked?: boolean }> {
     const guide = await this.guideRepository.findOne({
       where: { id, status: GuideStatus.PUBLISHED },
       relations: ['author', 'tags'],
@@ -366,8 +378,13 @@ export class GuidesService {
 
   async approve(id: number, moderator: User): Promise<Guide> {
     // Only admins and moderators can approve guides
-    if (moderator.role !== UserRole.ADMIN && moderator.role !== UserRole.MODERATOR) {
-      throw new ForbiddenException('Only moderators and admins can approve guides');
+    if (
+      moderator.role !== UserRole.ADMIN &&
+      moderator.role !== UserRole.MODERATOR
+    ) {
+      throw new ForbiddenException(
+        'Only moderators and admins can approve guides',
+      );
     }
 
     const guide = await this.guideRepository.findOne({
@@ -389,10 +406,19 @@ export class GuidesService {
     return await this.guideRepository.save(guide);
   }
 
-  async reject(id: number, rejectionReason: string, moderator: User): Promise<Guide> {
+  async reject(
+    id: number,
+    rejectionReason: string,
+    moderator: User,
+  ): Promise<Guide> {
     // Only admins and moderators can reject guides
-    if (moderator.role !== UserRole.ADMIN && moderator.role !== UserRole.MODERATOR) {
-      throw new ForbiddenException('Only moderators and admins can reject guides');
+    if (
+      moderator.role !== UserRole.ADMIN &&
+      moderator.role !== UserRole.MODERATOR
+    ) {
+      throw new ForbiddenException(
+        'Only moderators and admins can reject guides',
+      );
     }
 
     const guide = await this.guideRepository.findOne({
@@ -435,11 +461,7 @@ export class GuidesService {
       .where('guide.status = :status', { status: GuideStatus.PENDING });
 
     // Apply sorting
-    const validSortFields = [
-      'createdAt',
-      'updatedAt',
-      'title',
-    ];
+    const validSortFields = ['createdAt', 'updatedAt', 'title'];
     if (validSortFields.includes(sortBy)) {
       queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
     } else {

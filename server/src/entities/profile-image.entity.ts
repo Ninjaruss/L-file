@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { Character } from './character.entity';
 import { User } from './user.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 @Index(['isActive'])
@@ -71,10 +71,7 @@ export class ProfileImage {
   @Column({ type: 'simple-array', nullable: true })
   tags: string[] | null;
 
-  @ApiProperty({
-    description: 'Character this image represents',
-    type: () => Character,
-  })
+  @ApiHideProperty()
   @ManyToOne(() => Character, { nullable: false })
   @JoinColumn({ name: 'characterId' })
   character: Character;

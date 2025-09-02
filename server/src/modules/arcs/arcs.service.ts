@@ -119,7 +119,7 @@ export class ArcsService {
         .createQueryBuilder()
         .update(Arc)
         .set(updateData)
-        .where("id = :id", { id })
+        .where('id = :id', { id })
         .execute();
     }
 
@@ -144,7 +144,7 @@ export class ArcsService {
         imageFileName: null,
         imageDisplayName: null,
       })
-      .where("id = :id", { id })
+      .where('id = :id', { id })
       .execute();
 
     const updatedArc = await this.repo.findOne({ where: { id } });

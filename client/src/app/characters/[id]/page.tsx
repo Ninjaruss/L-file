@@ -41,6 +41,7 @@ export default function CharacterDetailPage() {
   const [gambles, setGambles] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [guides, setGuides] = useState<any[]>([])
+  const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const params = useParams()
@@ -52,17 +53,19 @@ export default function CharacterDetailPage() {
         const characterId = Number(id)
         
         // Fetch character and related data in parallel
-        const [characterData, gamblesData, eventsData, guidesData] = await Promise.all([
+        const [characterData, gamblesData, eventsData, guidesData, quotesData] = await Promise.all([
           api.getCharacter(characterId),
           api.getCharacterGambles(characterId, { limit: 5 }),
           api.getCharacterEvents(characterId, { limit: 5 }),
-          api.getCharacterGuides(characterId, { limit: 5 })
+          api.getCharacterGuides(characterId, { limit: 5 }),
+          api.getCharacterQuotes(characterId, { limit: 10 })
         ])
         
         setCharacter(characterData)
         setGambles(gamblesData.data || [])
         setEvents(eventsData.data || [])
         setGuides(guidesData.data || [])
+        setQuotes(quotesData.data || [])
       } catch (error: any) {
         setError(error.message)
       } finally {
@@ -239,6 +242,60 @@ export default function CharacterDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Quotes Section */}
+            {quotes.length > 0 && (
+              <Card className="gambling-card" sx={{ mt: 4 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h5" gutterBottom>
+                      Memorable Quotes
+                    </Typography>
+                    <Button
+                      component={Link}
+                      href={`/quotes?character=${character.name}`}
+                      size="small"
+                      color="primary"
+                    >
+                      View All
+                    </Button>
+                  </Box>
+                  {quotes.map((quote) => (
+                    <Card key={quote.id} variant="outlined" sx={{ mb: 2 }}>
+                      <CardContent>
+                        <SpoilerWrapper 
+                          chapterNumber={quote.chapterNumber}
+                          spoilerType="minor"
+                          description="Character quote and context"
+                        >
+                          <Typography variant="body1" sx={{ fontStyle: 'italic', mb: 2 }}>
+                            "{quote.text}"
+                          </Typography>
+                          {quote.description && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                              {quote.description}
+                            </Typography>
+                          )}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Chip 
+                              label={`Chapter ${quote.chapterNumber}`} 
+                              size="small" 
+                              color="secondary" 
+                              variant="outlined"
+                            />
+                            {quote.pageNumber && (
+                              <Typography variant="caption" color="text.secondary">
+                                Page {quote.pageNumber}
+                              </Typography>
+                            )}
+                          </Box>
+                        </SpoilerWrapper>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Gambles Section */}
             {gambles.length > 0 && (
               <Card className="gambling-card" sx={{ mt: 4 }}>
@@ -300,25 +357,48 @@ export default function CharacterDetailPage() {
                       <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <Box sx={{ flex: 1 }}>
-                            <Typography variant="h6" component={Link} href={`/events/${event.id}`}
-                                      sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                              {event.title}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                              {event.description}
-                            </Typography>
-                            {event.outcome && (
-                              <Typography variant="body2" sx={{ mt: 1 }}>
-                                <strong>Outcome:</strong> {event.outcome}
-                              </Typography>
+                            {event.isSpoiler ? (
+                              <SpoilerWrapper 
+                                chapterNumber={event.spoilerChapter || event.chapterNumber}
+                                spoilerType="major"
+                                description="Event details and outcome"
+                              >
+                                <Typography variant="h6" component={Link} href={`/events/${event.id}`}
+                                          sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
+                                  {event.title}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                  {event.description}
+                                </Typography>
+                                {event.outcome && (
+                                  <Typography variant="body2" sx={{ mt: 1 }}>
+                                    <strong>Outcome:</strong> {event.outcome}
+                                  </Typography>
+                                )}
+                              </SpoilerWrapper>
+                            ) : (
+                              <>
+                                <Typography variant="h6" component={Link} href={`/events/${event.id}`}
+                                          sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
+                                  {event.title}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                  {event.description}
+                                </Typography>
+                                {event.outcome && (
+                                  <Typography variant="body2" sx={{ mt: 1 }}>
+                                    <strong>Outcome:</strong> {event.outcome}
+                                  </Typography>
+                                )}
+                              </>
                             )}
                           </Box>
-                          {event.chapter_number && (
+                          {(event.chapterNumber || event.chapter_number) && (
                             <Chip 
-                              label={`Ch. ${event.chapter_number}`} 
+                              label={`Ch. ${event.chapterNumber || event.chapter_number}`} 
                               size="small" 
-                              color="secondary" 
-                              variant="outlined" 
+                              color={event.isSpoiler ? "error" : "secondary"} 
+                              variant={event.isSpoiler ? "filled" : "outlined"}
                             />
                           )}
                         </Box>
@@ -362,10 +442,10 @@ export default function CharacterDetailPage() {
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <Typography variant="caption" color="text.secondary">
-                              {guide.like_count} likes
+                              {guide.likeCount || 0} likes
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {guide.view_count} views
+                              {guide.viewCount || 0} views
                             </Typography>
                           </Box>
                         </Box>
@@ -427,6 +507,9 @@ export default function CharacterDetailPage() {
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
                     Related Content
+                  </Typography>
+                  <Typography variant="body1">
+                    {quotes.length} Quotes
                   </Typography>
                   <Typography variant="body1">
                     {gambles.length} Gambles

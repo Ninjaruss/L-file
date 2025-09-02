@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Character } from './character.entity';
 import { User } from './user.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 @Index(['character'])
@@ -50,13 +50,8 @@ export class Quote {
   @Column({ nullable: true })
   pageNumber: number;
 
-  @ApiProperty({
-    description: 'Character who said this quote',
-    type: () => Character,
-  })
-  @ManyToOne(() => Character, (character) => character.quotes, {
-    onDelete: 'CASCADE',
-  })
+  @ApiHideProperty()
+  @ManyToOne(() => Character, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'characterId' })
   character: Character;
 

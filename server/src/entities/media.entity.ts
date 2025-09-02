@@ -11,7 +11,7 @@ import { Character } from './character.entity';
 import { User } from './user.entity';
 import { Event } from './event.entity';
 import { Arc } from './arc.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 export enum MediaType {
   IMAGE = 'image',
@@ -42,21 +42,25 @@ export class Media {
   url: string;
 
   @ApiPropertyOptional({
-    description: 'Original filename for uploaded files. Null for external URLs.',
+    description:
+      'Original filename for uploaded files. Null for external URLs.',
     example: 'character-portrait.jpg',
   })
   @Column({ type: 'varchar', length: 255, nullable: true })
   fileName: string;
 
   @ApiPropertyOptional({
-    description: 'Backblaze B2 file ID for uploaded files. Null for external URLs.',
-    example: '4_z27c88f1d182b150646ff0b16_f200ec6f9c314f68a_d20230101_m120000_c000_v0001_t0005',
+    description:
+      'Backblaze B2 file ID for uploaded files. Null for external URLs.',
+    example:
+      '4_z27c88f1d182b150646ff0b16_f200ec6f9c314f68a_d20230101_m120000_c000_v0001_t0005',
   })
   @Column({ type: 'varchar', length: 255, nullable: true })
   b2FileId: string;
 
   @ApiPropertyOptional({
-    description: 'Whether this media was uploaded directly (true) or submitted as external URL (false)',
+    description:
+      'Whether this media was uploaded directly (true) or submitted as external URL (false)',
     default: false,
   })
   @Column({ type: 'boolean', default: false })
@@ -77,10 +81,7 @@ export class Media {
   @Column({ type: 'varchar', nullable: true, length: 500 })
   description: string;
 
-  @ApiPropertyOptional({
-    description: 'Character this media belongs to',
-    type: () => Character,
-  })
+  @ApiHideProperty()
   @ManyToOne(() => Character, (character) => character.media, {
     onDelete: 'CASCADE',
     nullable: true,

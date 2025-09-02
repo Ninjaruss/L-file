@@ -323,7 +323,8 @@ export class ArcsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update arc image',
-    description: 'Update arc image (moderators/admins only, automatically approved)',
+    description:
+      'Update arc image (moderators/admins only, automatically approved)',
   })
   @ApiParam({ name: 'id', description: 'Arc ID', example: 1 })
   @ApiBody({
@@ -335,7 +336,10 @@ export class ArcsController {
     description: 'Arc image updated successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - moderator/admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - moderator/admin role required',
+  })
   @ApiResponse({ status: 404, description: 'Arc not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   updateImage(@Param('id') id: number, @Body() imageData: UpdateArcImageDto) {
@@ -348,7 +352,8 @@ export class ArcsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Upload arc image',
-    description: 'Upload image file for arc (moderators/admins only, automatically approved)',
+    description:
+      'Upload image file for arc (moderators/admins only, automatically approved)',
   })
   @ApiParam({ name: 'id', description: 'Arc ID', example: 1 })
   @ApiConsumes('multipart/form-data')
@@ -375,9 +380,15 @@ export class ArcsController {
     status: 201,
     description: 'Arc image uploaded successfully',
   })
-  @ApiResponse({ status: 400, description: 'Bad request - invalid file or missing file' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid file or missing file',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - moderator/admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - moderator/admin role required',
+  })
   @ApiResponse({ status: 404, description: 'Arc not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   async uploadArcImage(
@@ -390,9 +401,16 @@ export class ArcsController {
     }
 
     // Validate file type
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Only image files (JPEG, PNG, WebP, GIF) are allowed');
+      throw new BadRequestException(
+        'Only image files (JPEG, PNG, WebP, GIF) are allowed',
+      );
     }
 
     // Get existing arc to check for old image
@@ -411,7 +429,7 @@ export class ArcsController {
       file.buffer,
       uniqueFileName,
       file.mimetype,
-      'arcs'
+      'arcs',
     );
 
     // Delete old image if it exists
@@ -459,7 +477,10 @@ export class ArcsController {
     description: 'Arc image removed successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - moderator/admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - moderator/admin role required',
+  })
   @ApiResponse({ status: 404, description: 'Arc not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   async removeImage(@Param('id') id: number) {

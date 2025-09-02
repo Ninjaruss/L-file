@@ -65,7 +65,7 @@ export class MediaService {
       file,
       uniqueFileName,
       contentType,
-      'media'
+      'media',
     );
 
     const media = this.mediaRepo.create({
@@ -230,9 +230,7 @@ export class MediaService {
 
     // If arc ID is provided, update the arc relation
     if ('arcId' in updateData) {
-      media.arc = updateData.arcId
-        ? ({ id: updateData.arcId } as any)
-        : null;
+      media.arc = updateData.arcId ? ({ id: updateData.arcId } as any) : null;
     }
 
     return this.mediaRepo.save(media);

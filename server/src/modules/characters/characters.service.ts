@@ -88,29 +88,33 @@ export class CharactersService {
   }
 
   findOne(id: number): Promise<Character | null> {
-    return this.repo.findOne({ 
+    return this.repo.findOne({
       where: { id },
-      relations: ['factions', 'media', 'quotes']
+      relations: ['factions', 'media', 'quotes'],
     });
   }
 
   async create(data: CreateCharacterDto): Promise<Character> {
     const { factionIds, ...characterData } = data;
-    
+
     // Clean up numeric fields to handle NaN values
     const cleanedData = {
       ...characterData,
-      firstAppearanceChapter: characterData.firstAppearanceChapter && !isNaN(Number(characterData.firstAppearanceChapter)) 
-        ? Number(characterData.firstAppearanceChapter) 
-        : null,
+      firstAppearanceChapter:
+        characterData.firstAppearanceChapter &&
+        !isNaN(Number(characterData.firstAppearanceChapter))
+          ? Number(characterData.firstAppearanceChapter)
+          : null,
     };
-    
+
     const character = this.repo.create(cleanedData);
 
     // If faction IDs are provided, set up the relationship
     if (factionIds && factionIds.length > 0) {
-      const validFactionIds = factionIds.filter(id => !isNaN(Number(id)));
-      character.factions = validFactionIds.map(id => ({ id: Number(id) } as any));
+      const validFactionIds = factionIds.filter((id) => !isNaN(Number(id)));
+      character.factions = validFactionIds.map(
+        (id) => ({ id: Number(id) }) as any,
+      );
     }
 
     return this.repo.save(character);
@@ -118,40 +122,48 @@ export class CharactersService {
 
   async update(id: number, data: UpdateCharacterDto): Promise<Character> {
     const { factionIds, ...updateData } = data;
-    
+
     // Clean up numeric fields to handle NaN values
     const cleanedUpdateData = { ...updateData };
     if (cleanedUpdateData.firstAppearanceChapter !== undefined) {
-      cleanedUpdateData.firstAppearanceChapter = cleanedUpdateData.firstAppearanceChapter && !isNaN(Number(cleanedUpdateData.firstAppearanceChapter))
-        ? Number(cleanedUpdateData.firstAppearanceChapter)
-        : undefined;
+      cleanedUpdateData.firstAppearanceChapter =
+        cleanedUpdateData.firstAppearanceChapter &&
+        !isNaN(Number(cleanedUpdateData.firstAppearanceChapter))
+          ? Number(cleanedUpdateData.firstAppearanceChapter)
+          : undefined;
     }
-    
+
     // First update the basic character data
     if (Object.keys(cleanedUpdateData).length > 0) {
       await this.repo.update(id, cleanedUpdateData);
     }
-    
+
     // Get the character with current relationships
     const character = await this.repo.findOne({
       where: { id },
       relations: ['factions'],
     });
-    
+
     if (!character) {
       throw new NotFoundException(`Character with ID ${id} not found`);
     }
-    
+
     // Update faction relationships if provided
     if (factionIds !== undefined) {
-      const validFactionIds = factionIds.filter(factionId => !isNaN(Number(factionId)));
-      character.factions = validFactionIds.map(factionId => ({ id: Number(factionId) } as any));
+      const validFactionIds = factionIds.filter(
+        (factionId) => !isNaN(Number(factionId)),
+      );
+      character.factions = validFactionIds.map(
+        (factionId) => ({ id: Number(factionId) }) as any,
+      );
       await this.repo.save(character);
     }
-    
+
     const result = await this.findOne(id);
     if (!result) {
-      throw new NotFoundException(`Character with ID ${id} not found after update`);
+      throw new NotFoundException(
+        `Character with ID ${id} not found after update`,
+      );
     }
     return result;
   }
@@ -160,7 +172,10 @@ export class CharactersService {
     return this.repo.delete(id);
   }
 
-  async updateImage(id: number, imageData: UpdateCharacterImageDto): Promise<Character> {
+  async updateImage(
+    id: number,
+    imageData: UpdateCharacterImageDto,
+  ): Promise<Character> {
     const character = await this.repo.findOne({ where: { id } });
     if (!character) {
       throw new NotFoundException(`Character with id ${id} not found`);
@@ -180,13 +195,15 @@ export class CharactersService {
         .createQueryBuilder()
         .update(Character)
         .set(updateData)
-        .where("id = :id", { id })
+        .where('id = :id', { id })
         .execute();
     }
 
     const updatedCharacter = await this.repo.findOne({ where: { id } });
     if (!updatedCharacter) {
-      throw new NotFoundException(`Character with id ${id} not found after update`);
+      throw new NotFoundException(
+        `Character with id ${id} not found after update`,
+      );
     }
     return updatedCharacter;
   }
@@ -205,17 +222,22 @@ export class CharactersService {
         imageFileName: null,
         imageDisplayName: null,
       })
-      .where("id = :id", { id })
+      .where('id = :id', { id })
       .execute();
 
     const updatedCharacter = await this.repo.findOne({ where: { id } });
     if (!updatedCharacter) {
-      throw new NotFoundException(`Character with id ${id} not found after update`);
+      throw new NotFoundException(
+        `Character with id ${id} not found after update`,
+      );
     }
     return updatedCharacter;
   }
 
-  async getCharacterGambles(characterId: number, options: { page: number; limit: number }) {
+  async getCharacterGambles(
+    characterId: number,
+    options: { page: number; limit: number },
+  ) {
     const { page, limit } = options;
     const character = await this.repo.findOne({ where: { id: characterId } });
     if (!character) {
@@ -233,18 +255,18 @@ export class CharactersService {
       ORDER BY g.id ASC
       LIMIT $2 OFFSET $3
     `;
-    
+
     const searchTerm = `%${character.name}%`;
     const offset = (page - 1) * limit;
-    
+
     const result = await this.repo.query(query, [searchTerm, limit, offset]);
-    
+
     const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
-    const data = result.map(row => {
+    const data = result.map((row) => {
       const { total_count, ...gamble } = row;
       return gamble;
     });
-    
+
     return {
       data,
       total,
@@ -253,32 +275,97 @@ export class CharactersService {
     };
   }
 
-  async getCharacterEvents(characterId: number, options: { page: number; limit: number }) {
+  async getCharacterEvents(
+    characterId: number, 
+    options: { page: number; limit: number },
+    userProgress?: number
+  ) {
     const { page, limit } = options;
     const character = await this.repo.findOne({ where: { id: characterId } });
     if (!character) {
       throw new NotFoundException(`Character with id ${characterId} not found`);
     }
 
-    // Search for events that mention the character, ordered chronologically
-    const query = `
-      SELECT e.*, COUNT(*) OVER() as total_count
-      FROM event e
-      WHERE LOWER(e.title) LIKE LOWER($1) 
-         OR LOWER(e.description) LIKE LOWER($1)
-      ORDER BY e."chapterNumber" ASC, e.id ASC
-      LIMIT $2 OFFSET $3
+    const offset = (page - 1) * limit;
+    
+    // Use a subquery with UNION to avoid duplicates without DISTINCT
+    // Fix JSON column handling by explicitly casting them to JSONB
+    const dataQuery = `
+      WITH character_events AS (
+        SELECT e.id,
+               e.title,
+               e.description,
+               e.type,
+               e."chapterNumber",
+               e."spoilerChapter",
+               e."pageNumbers"::jsonb as "pageNumbers",
+               e."isVerified",
+               e."chapterReferences"::jsonb as "chapterReferences",
+               e."arcId",
+               e."createdAt",
+               e."updatedAt",
+               CASE 
+                 WHEN $2::int IS NOT NULL AND (
+                   (e."spoilerChapter" IS NOT NULL AND e."spoilerChapter" > $2) OR
+                   (e."spoilerChapter" IS NULL AND e."chapterNumber" > $2)
+                 ) THEN true 
+                 ELSE false 
+               END as is_spoiler
+        FROM event e
+        INNER JOIN event_characters_character ecc ON ecc."eventId" = e.id
+        WHERE ecc."characterId" = $1
+        
+        UNION
+        
+        SELECT e.id,
+               e.title,
+               e.description,
+               e.type,
+               e."chapterNumber",
+               e."spoilerChapter",
+               e."pageNumbers"::jsonb as "pageNumbers",
+               e."isVerified",
+               e."chapterReferences"::jsonb as "chapterReferences",
+               e."arcId",
+               e."createdAt",
+               e."updatedAt",
+               CASE 
+                 WHEN $2::int IS NOT NULL AND (
+                   (e."spoilerChapter" IS NOT NULL AND e."spoilerChapter" > $2) OR
+                   (e."spoilerChapter" IS NULL AND e."chapterNumber" > $2)
+                 ) THEN true 
+                 ELSE false 
+               END as is_spoiler
+        FROM event e
+        WHERE NOT EXISTS (
+          SELECT 1 FROM event_characters_character ecc2 
+          WHERE ecc2."eventId" = e.id AND ecc2."characterId" = $1
+        )
+        AND (LOWER(e.title) LIKE LOWER($3) OR LOWER(e.description) LIKE LOWER($3))
+      )
+      SELECT *, COUNT(*) OVER() as total_count
+      FROM character_events
+      ORDER BY "chapterNumber" ASC, id ASC
+      LIMIT $4 OFFSET $5
     `;
     
     const searchTerm = `%${character.name}%`;
-    const offset = (page - 1) * limit;
     
-    const result = await this.repo.query(query, [searchTerm, limit, offset]);
+    const result = await this.repo.query(dataQuery, [
+      characterId,
+      userProgress || null,
+      searchTerm,
+      limit, 
+      offset
+    ]);
     
     const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
     const data = result.map(row => {
-      const { total_count, ...event } = row;
-      return event;
+      const { total_count, is_spoiler, ...event } = row;
+      return {
+        ...event,
+        isSpoiler: is_spoiler
+      };
     });
     
     return {
@@ -289,7 +376,10 @@ export class CharactersService {
     };
   }
 
-  async getCharacterGuides(characterId: number, options: { page: number; limit: number }) {
+  async getCharacterGuides(
+    characterId: number,
+    options: { page: number; limit: number },
+  ) {
     const { page, limit } = options;
     const character = await this.repo.findOne({ where: { id: characterId } });
     if (!character) {
@@ -308,21 +398,65 @@ export class CharactersService {
       ORDER BY g."likeCount" DESC, g."createdAt" DESC
       LIMIT $2 OFFSET $3
     `;
-    
+
     const searchTerm = `%${character.name}%`;
     const offset = (page - 1) * limit;
-    
+
     const result = await this.repo.query(query, [searchTerm, limit, offset]);
-    
+
     const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
-    const data = result.map(row => {
+    const data = result.map((row) => {
       const { total_count, author_name, ...guide } = row;
       return {
         ...guide,
-        author: { username: author_name }
+        author: { username: author_name },
       };
     });
-    
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getCharacterQuotes(
+    characterId: number,
+    options: { page: number; limit: number },
+  ) {
+    const { page, limit } = options;
+    const character = await this.repo.findOne({ where: { id: characterId } });
+    if (!character) {
+      throw new NotFoundException(`Character with id ${characterId} not found`);
+    }
+
+    // Query quotes directly from the quotes table
+    const query = `
+      SELECT q.*, c.name as character_name, u.username as submitted_by_username, 
+             COUNT(*) OVER() as total_count
+      FROM quote q
+      LEFT JOIN character c ON q."characterId" = c.id
+      LEFT JOIN "user" u ON q."submittedById" = u.id
+      WHERE q."characterId" = $1
+      ORDER BY q."chapterNumber" ASC, q."pageNumber" ASC, q."createdAt" DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const offset = (page - 1) * limit;
+
+    const result = await this.repo.query(query, [characterId, limit, offset]);
+
+    const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
+    const data = result.map((row) => {
+      const { total_count, character_name, submitted_by_username, ...quote } = row;
+      return {
+        ...quote,
+        character: { name: character_name },
+        submittedBy: submitted_by_username ? { username: submitted_by_username } : null,
+      };
+    });
+
     return {
       data,
       total,

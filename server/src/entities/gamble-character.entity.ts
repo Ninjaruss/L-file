@@ -1,7 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Character } from './character.entity';
 import { Gamble } from './gamble.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 export class GambleCharacter {
@@ -22,7 +28,7 @@ export class GambleCharacter {
   @Column()
   characterId: number;
 
-  @ApiProperty({ description: 'The character who participated' })
+  @ApiHideProperty()
   @ManyToOne(() => Character, { eager: true })
   @JoinColumn({ name: 'characterId' })
   character: Character;
