@@ -1,39 +1,57 @@
 'use client'
 
-import { Box, Typography } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
-import { motion, useScroll, useTransform } from 'motion/react'
+import { Box } from '@mui/material'
+import { motion, useScroll, useTransform, useMotionValue, useMotionTemplate } from 'motion/react'
 import Image from 'next/image'
-import { useRef } from 'react'
+import React, { useRef } from 'react'
 
 export function VolumeCoverSection() {
-  const theme = useTheme()
   const containerRef = useRef<HTMLDivElement>(null)
+  
+  // Motion values for floating animation
+  const time = useMotionValue(0)
+  
+  // Animate time continuously
+  React.useEffect(() => {
+    const animate = () => {
+      time.set(Date.now() / 1000)
+      requestAnimationFrame(animate)
+    }
+    animate()
+  }, [time])
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"]
   })
   
-  // Transform values based on scroll progress
-  const volume37Scale = useTransform(scrollYProgress, [0.3, 0.7], [1, 1.03])
-  const volume38Scale = useTransform(scrollYProgress, [0.4, 0.8], [1, 1.03])
-  const volume37X = useTransform(scrollYProgress, [0.3, 0.7], [0, -5])
-  const volume38X = useTransform(scrollYProgress, [0.4, 0.8], [0, 5])
-  const volume37RotateY = useTransform(scrollYProgress, [0.3, 0.7], [-3, -1])
-  const volume38RotateY = useTransform(scrollYProgress, [0.4, 0.8], [3, 1])
-  const volume37Z = useTransform(scrollYProgress, [0.3, 0.7], [0, 10])
-  const volume38Z = useTransform(scrollYProgress, [0.4, 0.8], [0, 10])
+  // Transform values based on scroll progress - smoothened
+  const volume37Scale = useTransform(scrollYProgress, [0.2, 0.8], [1, 1.02])
+  const volume38Scale = useTransform(scrollYProgress, [0.25, 0.85], [1, 1.02])
+  const volume37X = useTransform(scrollYProgress, [0.2, 0.8], [0, -3])
+  const volume38X = useTransform(scrollYProgress, [0.25, 0.85], [0, 3])
+  const volume37RotateY = useTransform(scrollYProgress, [0.2, 0.8], [-2, -0.5])
+  const volume38RotateY = useTransform(scrollYProgress, [0.25, 0.85], [2, 0.5])
+  const volume37Z = useTransform(scrollYProgress, [0.2, 0.8], [0, 8])
+  const volume38Z = useTransform(scrollYProgress, [0.25, 0.85], [0, 8])
   
-  // Popout floating animations based on scroll
-  const popout37Y = useTransform(scrollYProgress, [0.2, 0.8], [0, -20])
-  const popout38Y = useTransform(scrollYProgress, [0.3, 0.9], [0, -20])
-  const popout37Scale = useTransform(scrollYProgress, [0.2, 0.8], [1, 1.1])
-  const popout38Scale = useTransform(scrollYProgress, [0.3, 0.9], [1, 1.1])
-  const popout37Z = useTransform(scrollYProgress, [0.2, 0.8], [0, 30])
-  const popout38Z = useTransform(scrollYProgress, [0.3, 0.9], [0, 30])
-  const popout37RotateX = useTransform(scrollYProgress, [0.2, 0.8], [0, -5])
-  const popout38RotateX = useTransform(scrollYProgress, [0.3, 0.9], [0, -5])
+  // Popout floating animations based on scroll - smoothened
+  const popout37ScrollY = useTransform(scrollYProgress, [0.1, 0.9], [0, -15])
+  const popout38ScrollY = useTransform(scrollYProgress, [0.15, 0.95], [0, -15])
+  
+  // Floating Y animations
+  const popout37FloatY = useTransform(time, (t) => Math.sin(t * 0.8) * 2)
+  const popout38FloatY = useTransform(time, (t) => Math.sin((t + 1) * 0.7) * 2.5)
+  
+  // Combined Y positions using motion template
+  const popout37Y = useMotionTemplate`calc(${popout37ScrollY}px + ${popout37FloatY}px)`
+  const popout38Y = useMotionTemplate`calc(${popout38ScrollY}px + ${popout38FloatY}px)`
+  const popout37Scale = useTransform(scrollYProgress, [0.1, 0.9], [1, 1.08])
+  const popout38Scale = useTransform(scrollYProgress, [0.15, 0.95], [1, 1.08])
+  const popout37Z = useTransform(scrollYProgress, [0.1, 0.9], [0, 25])
+  const popout38Z = useTransform(scrollYProgress, [0.15, 0.95], [0, 25])
+  const popout37RotateX = useTransform(scrollYProgress, [0.1, 0.9], [0, -3])
+  const popout38RotateX = useTransform(scrollYProgress, [0.15, 0.95], [0, -3])
 
   return (
     <Box
@@ -43,7 +61,7 @@ export function VolumeCoverSection() {
         height: { xs: '450px', md: '550px' },
         width: '100%',
         perspective: '1200px',
-        mb: 6,
+        mb: 0,
         overflow: 'visible'
       }}
     >
@@ -112,6 +130,14 @@ export function VolumeCoverSection() {
               }}
             >
               <motion.div
+                animate={{
+                  rotateY: [-0.5, 0.5, -0.5]
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -189,6 +215,15 @@ export function VolumeCoverSection() {
               }}
             >
               <motion.div
+                animate={{
+                  rotateY: [0.5, -0.5, 0.5]
+                }}
+                transition={{
+                  duration: 9,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 2
+                }}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -212,40 +247,6 @@ export function VolumeCoverSection() {
           </Box>
         </motion.div>
 
-        {/* Enhanced floating particles effect */}
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.2, 0.6, 0.2],
-              scale: [0.8, 1.2, 0.8]
-            }}
-            transition={{
-              duration: 3 + (i * 0.5),
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.4
-            }}
-            style={{
-              position: 'absolute',
-              top: `${20 + (i * 10)}%`,
-              left: `${15 + (i * 12)}%`,
-              width: `${3 + (i % 3)}px`,
-              height: `${3 + (i % 3)}px`,
-              borderRadius: '50%',
-              backgroundColor: [
-                theme.palette.primary.main,
-                theme.palette.secondary.main,
-                theme.palette.warning.main,
-                theme.palette.error.main,
-                theme.palette.usogui.character,
-                theme.palette.usogui.arc
-              ][i % 6],
-              zIndex: 0
-            }}
-          />
-        ))}
       </Box>
     </Box>
   )

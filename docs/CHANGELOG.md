@@ -1,4 +1,7 @@
 # Changelog and notes
+## TODO:
+- Update search to also check aliases
+
 ## 2025-09-02
 ### Changes
 - Arc and gamble appearances added to character detail page
@@ -29,10 +32,6 @@
 
 ### Notes
 - As stated previously, there are ongoing issues with Claude and it's hard for me to know if my Serena MCP is working as intended or Claude's code quality really is poorer at the moment. I am finding more issues with the code it generates, so I need to try refining my prompting a lot more to mitigate the issues.
-
-### TODO
-- Add spoilers to gamble results
-
 
 ## 2025-08-31
 ### Changes

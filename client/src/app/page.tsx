@@ -67,11 +67,10 @@ export default function HomePage() {
           >
             Welcome to Usogui Fansite
           </Typography>
-          
           <Typography variant="h5" color="text.secondary" mb={4}>
             The ultimate resource for the Usogui gambling manga
           </Typography>
-
+          
           <Box sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}>
             <SearchBar />
           </Box>
@@ -132,7 +131,7 @@ export default function HomePage() {
         </Grid>
 
         {/* Trending Section */}
-        <Box mt={6}>
+        <Box>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
