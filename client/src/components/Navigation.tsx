@@ -56,7 +56,7 @@ export const Navigation: React.FC = () => {
       <Toolbar>
         {/* Logo - Left Side */}
         <Typography
-          variant="h6"
+          variant="h4"
           component={Link}
           href="/"
           sx={{
@@ -66,7 +66,7 @@ export const Navigation: React.FC = () => {
             mr: 2
           }}
         >
-          Usogui L-file
+        L-file
         </Typography>
 
         {/* Desktop Navigation */}

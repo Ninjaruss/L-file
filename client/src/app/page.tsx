@@ -93,10 +93,10 @@ export default function HomePage() {
               color: 'transparent'
             }}
           >
-            Welcome to Usogui Fansite
+            Welcome to the L-file
           </Typography>
           <Typography variant="h5" color="text.secondary" mb={4}>
-            The ultimate resource for the Usogui gambling manga
+            The ultimate unofficial database for the Usogui gambling manga
           </Typography>
           
           <Box sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}>

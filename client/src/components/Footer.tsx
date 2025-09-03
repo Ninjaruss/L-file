@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
     >
       <Stack spacing={2} alignItems="center" textAlign="center">
         <Typography variant="body2" color="text.secondary">
-          This is an unofficial fan resource for Usogui created by Sako Toshio and published by Shueisha.
+          L-file is an unofficial fan resource for Usogui created by Sako Toshio and published by Shueisha.
         </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <Typography variant="body2" color="text.secondary">
