@@ -2,6 +2,8 @@
 
 import React from 'react'
 import { Admin, Resource } from 'react-admin'
+import { ThemeProvider } from '@mui/material/styles'
+import { theme } from '../../lib/theme'
 import { AdminDataProvider } from '../../components/admin/AdminDataProvider'
 import { AdminAuthProvider } from '../../components/admin/AdminAuthProvider'
 import { AdminLayout } from '../../components/admin/AdminLayout'
@@ -36,12 +38,14 @@ const ShieldIcon = () => <Shield />
 
 export default function AdminApp() {
   return (
-    <Admin
-      dataProvider={AdminDataProvider}
-      authProvider={AdminAuthProvider}
-      layout={AdminLayout}
-      dashboard={Dashboard}
-    >
+    <ThemeProvider theme={theme}>
+      <Admin
+        dataProvider={AdminDataProvider}
+        authProvider={AdminAuthProvider}
+        layout={AdminLayout}
+        dashboard={Dashboard}
+        theme={theme}
+      >
       <Resource
         name="users"
         list={UserList}
@@ -98,12 +102,6 @@ export default function AdminApp() {
         icon={ImageIcon}
       />
       <Resource
-        name="media-approval"
-        list={MediaApprovalQueue}
-        options={{ label: 'Media Approval Queue' }}
-        icon={ImageIcon}
-      />
-      <Resource
         name="quotes"
         list={QuoteList}
         edit={QuoteEdit}
@@ -126,5 +124,6 @@ export default function AdminApp() {
         icon={ShieldIcon}
       />
     </Admin>
+    </ThemeProvider>
   )
 }

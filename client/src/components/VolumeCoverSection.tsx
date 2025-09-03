@@ -108,14 +108,15 @@ export function VolumeCoverSection() {
               fill
               style={{
                 objectFit: 'contain',
-                filter: 'drop-shadow(12px 12px 24px rgba(0, 0, 0, 0.4))'
+                filter: 'drop-shadow(12px 12px 24px rgba(0, 0, 0, 0.4))',
+                zIndex: 1
               }}
             />
             
             {/* Volume 37 Pop-out Character */}
             <motion.div
               className="popout-37"
-              initial={{ opacity: 0, y: 30, z: -50, scale: 0.6, rotateX: 20 }}
+              initial={{ opacity: 0, y: 0, z: 0, scale: 1, rotateX: 0 }}
               animate={{ opacity: 0.9, y: 0, z: 0, scale: 1, rotateX: 0 }}
               transition={{ duration: 1.5, delay: 0.8, ease: [0.175, 0.885, 0.32, 1.275] }}
               style={{
@@ -124,7 +125,7 @@ export function VolumeCoverSection() {
                 left: '0',
                 right: '0',
                 bottom: '0',
-                zIndex: 10,
+                zIndex: 20,
                 pointerEvents: 'none',
                 transformStyle: 'preserve-3d'
               }}
@@ -152,7 +153,7 @@ export function VolumeCoverSection() {
                   alt="Volume 37 Character"
                   fill
                   style={{
-                    filter: 'drop-shadow(6px 6px 16px rgba(0, 0, 0, 0.5))',
+                    filter: 'drop-shadow(8px 12px 24px rgba(0, 0, 0, 0.7)) drop-shadow(4px 6px 12px rgba(0, 0, 0, 0.4))',
                     objectFit: 'contain'
                   }}
                 />
@@ -193,14 +194,15 @@ export function VolumeCoverSection() {
               fill
               style={{
                 objectFit: 'contain',
-                filter: 'drop-shadow(12px 12px 24px rgba(0, 0, 0, 0.4))'
+                filter: 'drop-shadow(12px 12px 24px rgba(0, 0, 0, 0.4))',
+                zIndex: 1
               }}
             />
 
             {/* Volume 38 Pop-out Character */}
             <motion.div
               className="popout-38"
-              initial={{ opacity: 0, y: 30, z: -50, scale: 0.6, rotateX: 20 }}
+              initial={{ opacity: 0, y: 0, z: 0, scale: 1, rotateX: 0 }}
               animate={{ opacity: 0.9, y: 0, z: 0, scale: 1, rotateX: 0 }}
               transition={{ duration: 1.5, delay: 1.0, ease: [0.175, 0.885, 0.32, 1.275] }}
               style={{
@@ -209,7 +211,7 @@ export function VolumeCoverSection() {
                 left: '0',
                 right: '0',
                 bottom: '0',
-                zIndex: 10,
+                zIndex: 20,
                 pointerEvents: 'none',
                 transformStyle: 'preserve-3d'
               }}
@@ -238,7 +240,7 @@ export function VolumeCoverSection() {
                   alt="Volume 38 Character"
                   fill
                   style={{
-                    filter: 'drop-shadow(6px 6px 16px rgba(0, 0, 0, 0.5))',
+                    filter: 'drop-shadow(8px 12px 24px rgba(0, 0, 0, 0.7)) drop-shadow(4px 6px 12px rgba(0, 0, 0, 0.4))',
                     objectFit: 'contain'
                   }}
                 />

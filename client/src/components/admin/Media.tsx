@@ -114,7 +114,7 @@ const RejectButton = () => {
 }
 
 export const MediaList = () => (
-  <List filters={<MediaFilter />}>
+  <List filters={<MediaFilter />} filterDefaultValues={{ status: 'pending' }}>
     <Datagrid rowClick="show">
       <TextField source="id" />
       <UrlField source="url" />
@@ -152,26 +152,77 @@ export const MediaApprovalQueue = () => (
   </List>
 )
 
-export const MediaShow = () => (
-  <Show>
-    <SimpleShowLayout>
-      <TextField source="id" />
-      <UrlField source="url" />
-      <TextField source="type" />
-      <TextField source="description" />
-      <TextField source="character.name" label="Character" />
-      <TextField source="arc.name" label="Arc" />
-      <MediaStatusField source="status" />
-      <TextField source="rejectionReason" />
-      <TextField source="submittedBy.username" label="Submitted By" />
-      <DateField source="createdAt" />
-      <Box display="flex" gap={1} mt={2}>
-        <ApproveButton />
-        <RejectButton />
-      </Box>
-    </SimpleShowLayout>
-  </Show>
-)
+export const MediaShow = () => {
+  const record = useRecordContext()
+  
+  const renderMediaContent = () => {
+    if (!record?.url) return null
+    
+    switch (record.type) {
+      case 'image':
+        return (
+          <Box sx={{ mb: 2 }}>
+            <img 
+              src={record.url} 
+              alt={record.description || 'Media content'} 
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
+          </Box>
+        )
+      case 'video':
+        return (
+          <Box sx={{ mb: 2 }}>
+            <video 
+              controls 
+              style={{ maxWidth: '100%', height: 'auto' }}
+              src={record.url}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </Box>
+        )
+      case 'audio':
+        return (
+          <Box sx={{ mb: 2 }}>
+            <audio controls style={{ width: '100%' }}>
+              <source src={record.url} />
+              Your browser does not support the audio element.
+            </audio>
+          </Box>
+        )
+      default:
+        return (
+          <Box sx={{ mb: 2 }}>
+            <a href={record.url} target="_blank" rel="noopener noreferrer">
+              View Media Content
+            </a>
+          </Box>
+        )
+    }
+  }
+
+  return (
+    <Show>
+      <SimpleShowLayout>
+        <TextField source="id" />
+        <UrlField source="url" />
+        <TextField source="type" />
+        <TextField source="description" />
+        {renderMediaContent()}
+        <TextField source="character.name" label="Character" />
+        <TextField source="arc.name" label="Arc" />
+        <MediaStatusField source="status" />
+        <TextField source="rejectionReason" />
+        <TextField source="submittedBy.username" label="Submitted By" />
+        <DateField source="createdAt" />
+        <Box display="flex" gap={1} mt={2}>
+          <ApproveButton />
+          <RejectButton />
+        </Box>
+      </SimpleShowLayout>
+    </Show>
+  )
+}
 
 export const MediaEdit = () => (
   <Edit>

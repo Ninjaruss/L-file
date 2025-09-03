@@ -12,9 +12,19 @@ import {
   CircularProgress,
   Chip,
   Avatar,
-  Divider
+  Divider,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Autocomplete
 } from '@mui/material'
-import { ArrowLeft, FileText, Calendar, ThumbsUp, User, Heart } from 'lucide-react'
+import { ArrowLeft, FileText, Calendar, ThumbsUp, User, Heart, Edit, Save, X } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
@@ -53,6 +63,16 @@ export default function GuideDetailsPage() {
   const [error, setError] = useState('')
   const [liking, setLiking] = useState(false)
   const [userHasLiked, setUserHasLiked] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    content: '',
+    status: 'draft' as string,
+    tagNames: [] as string[]
+  })
+  const [saving, setSaving] = useState(false)
+  const [tagInput, setTagInput] = useState('')
 
   // Track page view
   const guideId = Array.isArray(id) ? id[0] : id
@@ -62,7 +82,19 @@ export default function GuideDetailsPage() {
     const fetchGuide = async () => {
       try {
         setLoading(true)
-        const response = await api.getGuide(Number(id))
+        let response
+        if (user) {
+          // Try authenticated endpoint first to get full guide data including status
+          try {
+            response = await api.getGuideAdmin(Number(id))
+          } catch {
+            // If authenticated request fails, fall back to public endpoint
+            response = await api.getGuide(Number(id))
+          }
+        } else {
+          // Use public endpoint for non-authenticated users
+          response = await api.getGuide(Number(id))
+        }
         setGuide(response)
         // Set user like status if it's provided by the API
         if (response.userHasLiked !== undefined) {
@@ -78,7 +110,7 @@ export default function GuideDetailsPage() {
     if (id) {
       fetchGuide()
     }
-  }, [id])
+  }, [id, user])
 
   const handleLikeToggle = async () => {
     if (!user || liking) return
@@ -99,6 +131,48 @@ export default function GuideDetailsPage() {
       setLiking(false)
     }
   }
+
+  const handleEditClick = () => {
+    if (guide) {
+      setEditForm({
+        title: guide.title,
+        description: guide.description,
+        content: guide.content,
+        status: guide.status,
+        tagNames: guide.tags?.map(tag => tag.name) || []
+      })
+      setIsEditing(true)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!guide || saving) return
+    
+    setSaving(true)
+    try {
+      const updatedGuide = await api.updateGuide(Number(id), editForm)
+      setGuide(updatedGuide)
+      setIsEditing(false)
+      setError('')
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to update guide')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditForm({
+      title: '',
+      description: '',
+      content: '',
+      status: 'draft',
+      tagNames: []
+    })
+  }
+
+  const canUserEdit = user && guide && guide.author.id === user.id
 
   if (loading) {
     return (
@@ -156,16 +230,40 @@ export default function GuideDetailsPage() {
         <Card className="gambling-card">
           <CardContent>
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h3" component="h1" gutterBottom>
-                {guide.title}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Typography variant="h3" component="h1" gutterBottom sx={{ flex: 1 }}>
+                  {guide.title}
+                </Typography>
+                {canUserEdit && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<Edit size={16} />}
+                    onClick={handleEditClick}
+                    sx={{ ml: 2 }}
+                  >
+                    Edit Guide
+                  </Button>
+                )}
+              </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ width: 32, height: 32, mr: 1 }}>
                     <User size={16} />
                   </Avatar>
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography 
+                    variant="body1" 
+                    color="text.secondary"
+                    component={Link}
+                    href={`/users/${guide.author.id}`}
+                    sx={{ 
+                      textDecoration: 'none',
+                      '&:hover': { 
+                        color: 'primary.main',
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
                     by {guide.author.username}
                   </Typography>
                 </Box>
@@ -309,6 +407,123 @@ export default function GuideDetailsPage() {
             Write Your Own Guide
           </Button>
         </Box>
+
+        {/* Edit Dialog */}
+        <Dialog
+          open={isEditing}
+          onClose={handleCancelEdit}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: { minHeight: '80vh' }
+          }}
+        >
+          <DialogTitle>
+            Edit Guide
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="Title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                fullWidth
+                required
+                helperText="Choose a clear, descriptive title for your guide"
+              />
+
+              <TextField
+                label="Description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                fullWidth
+                multiline
+                rows={3}
+                required
+                helperText="Write a compelling description that summarizes your guide"
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={editForm.status}
+                  label="Status"
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="pending">Submit for Review</MenuItem>
+                  <MenuItem value="published">Published</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Autocomplete
+                multiple
+                freeSolo
+                value={editForm.tagNames}
+                onChange={(_, newValue) => {
+                  setEditForm({ ...editForm, tagNames: newValue })
+                }}
+                inputValue={tagInput}
+                onInputChange={(_, newInputValue) => {
+                  setTagInput(newInputValue)
+                }}
+                options={[]}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      variant="outlined"
+                      label={option}
+                      {...getTagProps({ index })}
+                      key={option}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Tags"
+                    placeholder="Add tags (press Enter to add)"
+                    helperText="Add relevant tags to help others find your guide"
+                  />
+                )}
+              />
+
+              <TextField
+                label="Content"
+                value={editForm.content}
+                onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                fullWidth
+                multiline
+                minRows={15}
+                maxRows={25}
+                required
+                helperText="Write your guide content in Markdown format"
+                sx={{
+                  '& .MuiInputBase-root': {
+                    fontFamily: 'monospace'
+                  }
+                }}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              onClick={handleCancelEdit}
+              startIcon={<X size={16} />}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              variant="contained"
+              startIcon={<Save size={16} />}
+              disabled={saving || !editForm.title || !editForm.description || !editForm.content}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </motion.div>
     </Container>
   )

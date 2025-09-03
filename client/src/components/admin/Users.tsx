@@ -12,9 +12,7 @@ import {
   SimpleShowLayout,
   BooleanField,
   BooleanInput,
-  SelectInput,
-  NumberInput,
-  NumberField
+  SelectInput
 } from 'react-admin'
 
 export const UserList = () => (
@@ -25,7 +23,6 @@ export const UserList = () => (
       <EmailField source="email" />
       <TextField source="role" />
       <BooleanField source="isEmailVerified" />
-      <NumberField source="userProgress" />
       <DateField source="createdAt" />
     </Datagrid>
   </List>
@@ -39,7 +36,6 @@ export const UserShow = () => (
       <EmailField source="email" />
       <TextField source="role" />
       <BooleanField source="isEmailVerified" />
-      <NumberField source="userProgress" />
       <DateField source="createdAt" />
       <DateField source="updatedAt" />
     </SimpleShowLayout>
@@ -60,7 +56,6 @@ export const UserEdit = () => (
         ]}
       />
       <BooleanInput source="isEmailVerified" />
-      <NumberInput source="userProgress" />
     </SimpleForm>
   </Edit>
 )

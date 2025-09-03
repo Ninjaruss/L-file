@@ -20,11 +20,13 @@ import {
 } from '@mui/material'
 import { User, Settings, Crown, BookOpen, Save } from 'lucide-react'
 import { useAuth } from '../../providers/AuthProvider'
+import { useProgress } from '../../providers/ProgressProvider'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 
 export default function ProfilePage() {
   const { user, refreshUser, loading: authLoading } = useAuth()
+  const { userProgress, updateProgress } = useProgress()
   const [selectedQuote, setSelectedQuote] = useState<number | null>(null)
   const [selectedGamble, setSelectedGamble] = useState<number | null>(null)
   const [selectedProfileImage, setSelectedProfileImage] = useState<string | null>(null)
@@ -53,7 +55,7 @@ export default function ProfilePage() {
         setSelectedQuote(user?.favoriteQuoteId || null)
         setSelectedGamble(user?.favoriteGambleId || null)
         setSelectedProfileImage(user?.profileImageId || null)
-        setSelectedChapter(user?.userProgress || 1)
+        setSelectedChapter(userProgress)
 
         // Fetch quotes and gambles from API
         const [quotesResponse, gamblesResponse] = await Promise.all([
@@ -79,16 +81,16 @@ export default function ProfilePage() {
         setGambles(formattedGambles)
 
         // Fetch current chapter information
-        if (user?.userProgress) {
+        if (userProgress > 0) {
           try {
-            const chapterInfo = await api.getChapterByNumber(user.userProgress)
+            const chapterInfo = await api.getChapterByNumber(userProgress)
             setCurrentChapterInfo(chapterInfo)
           } catch (error) {
             console.error('Failed to fetch chapter info:', error)
             // Set fallback info
             setCurrentChapterInfo({
               id: 0,
-              number: user.userProgress,
+              number: userProgress,
               title: null,
               summary: null
             })
@@ -108,7 +110,7 @@ export default function ProfilePage() {
       // Reset loading state when no user is available
       setDataLoading(false)
     }
-  }, [user])
+  }, [user, userProgress])
 
   const handleSaveProfile = async () => {
     setLoading(true)
@@ -137,8 +139,7 @@ export default function ProfilePage() {
     setSuccess('')
 
     try {
-      await api.updateUserProgress(selectedChapter)
-      await refreshUser()
+      await updateProgress(selectedChapter)
       setSuccess('Reading progress updated successfully!')
       
       // Update chapter info after progress change
@@ -386,7 +387,7 @@ export default function ProfilePage() {
                   <Grid item xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
                       <Typography variant="h3" color="primary" gutterBottom>
-                        {user.userProgress}
+                        {userProgress}
                       </Typography>
                       <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
                         Current Chapter
@@ -408,7 +409,7 @@ export default function ProfilePage() {
                   <Grid item xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
                       <Typography variant="h3" color="secondary" gutterBottom>
-                        {Math.round(((user.userProgress || 0) / 539) * 100)}%
+                        {Math.round((userProgress / 539) * 100)}%
                       </Typography>
                       <Typography variant="body1" color="text.secondary">
                         Progress Complete
@@ -418,7 +419,7 @@ export default function ProfilePage() {
                   <Grid item xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
                       <Typography variant="h3" color="warning.main" gutterBottom>
-                        {539 - (user.userProgress || 0)}
+                        {539 - userProgress}
                       </Typography>
                       <Typography variant="body1" color="text.secondary">
                         Chapters Remaining

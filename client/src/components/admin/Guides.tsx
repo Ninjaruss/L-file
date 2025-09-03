@@ -22,8 +22,10 @@ import {
   useRefresh,
   Filter
 } from 'react-admin'
-import { Box, Chip } from '@mui/material'
+import { Box, Chip, Typography } from '@mui/material'
 import { Check, X } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { api } from '../../lib/api'
 
 const GuideStatusField = ({ source }: { source: string }) => {
@@ -117,7 +119,7 @@ const RejectGuideButton = () => {
 }
 
 export const GuideList = () => (
-  <List filters={<GuideFilter />}>
+  <List filters={<GuideFilter />} filterDefaultValues={{ status: 'pending' }}>
     <Datagrid rowClick="show">
       <TextField source="id" />
       <TextField source="title" />
@@ -156,29 +158,78 @@ export const GuideApprovalQueue = () => (
   </List>
 )
 
-export const GuideShow = () => (
-  <Show>
-    <SimpleShowLayout>
-      <TextField source="id" />
-      <TextField source="title" />
-      <TextField source="description" />
-      <TextField source="content" />
-      <ReferenceField source="authorId" reference="users" label="Author">
-        <TextField source="username" />
-      </ReferenceField>
-      <GuideStatusField source="status" />
-      <TextField source="rejectionReason" label="Rejection Reason" />
-      <NumberField source="viewCount" />
-      <NumberField source="likeCount" />
-      <DateField source="createdAt" />
-      <DateField source="updatedAt" />
-      <Box display="flex" gap={1} mt={2}>
-        <ApproveGuideButton />
-        <RejectGuideButton />
-      </Box>
-    </SimpleShowLayout>
-  </Show>
-)
+export const GuideShow = () => {
+  const record = useRecordContext()
+  
+  return (
+    <Show>
+      <SimpleShowLayout>
+        <TextField source="id" />
+        <TextField source="title" />
+        <TextField source="description" />
+        
+        {/* Render content as markdown */}
+        {record?.content && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Content
+            </Typography>
+            <Box sx={{ 
+              p: 2, 
+              border: '1px solid #e0e0e0', 
+              borderRadius: 1,
+              backgroundColor: '#fafafa',
+              '& h1': { fontSize: '1.5rem', fontWeight: 'bold', mb: 1 },
+              '& h2': { fontSize: '1.25rem', fontWeight: 'bold', mb: 1 },
+              '& h3': { fontSize: '1.1rem', fontWeight: 'bold', mb: 1 },
+              '& p': { mb: 1 },
+              '& ul, & ol': { mb: 1, pl: 2 },
+              '& li': { mb: 0.5 },
+              '& code': { 
+                backgroundColor: '#f5f5f5', 
+                padding: '2px 4px', 
+                borderRadius: '3px',
+                fontSize: '0.9rem'
+              },
+              '& pre': { 
+                backgroundColor: '#f5f5f5', 
+                p: 1, 
+                borderRadius: 1, 
+                overflow: 'auto',
+                mb: 1
+              },
+              '& blockquote': {
+                borderLeft: '4px solid #e0e0e0',
+                pl: 2,
+                ml: 0,
+                fontStyle: 'italic',
+                mb: 1
+              }
+            }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {record.content}
+              </ReactMarkdown>
+            </Box>
+          </Box>
+        )}
+        
+        <ReferenceField source="authorId" reference="users" label="Author">
+          <TextField source="username" />
+        </ReferenceField>
+        <GuideStatusField source="status" />
+        <TextField source="rejectionReason" label="Rejection Reason" />
+        <NumberField source="viewCount" />
+        <NumberField source="likeCount" />
+        <DateField source="createdAt" />
+        <DateField source="updatedAt" />
+        <Box display="flex" gap={1} mt={2}>
+          <ApproveGuideButton />
+          <RejectGuideButton />
+        </Box>
+      </SimpleShowLayout>
+    </Show>
+  )
+}
 
 export const GuideEdit = () => {
   const { permissions } = usePermissions()

@@ -126,7 +126,18 @@ export default function EventsPage() {
                   color="primary"
                   variant="outlined"
                   icon={<Calendar size={14} />}
-                  sx={{ mr: 1, mb: 1 }}
+                  component={Link}
+                  href={`/chapters/${event.chapterNumber}`}
+                  clickable
+                  sx={{ 
+                    mr: 1, 
+                    mb: 1,
+                    textDecoration: 'none',
+                    '&:hover': { 
+                      backgroundColor: 'primary.main',
+                      color: 'white'
+                    }
+                  }}
                 />
               )}
               {event.type && (
@@ -204,6 +215,16 @@ export default function EventsPage() {
                   label={`Chapters ${arcGroup.arc.startChapter}-${arcGroup.arc.endChapter}`}
                   color="secondary"
                   variant="outlined"
+                  component={Link}
+                  href={`/chapters?search=${arcGroup.arc.startChapter}`}
+                  clickable
+                  sx={{ 
+                    textDecoration: 'none',
+                    '&:hover': { 
+                      backgroundColor: 'secondary.main',
+                      color: 'white'
+                    }
+                  }}
                 />
               )}
             </Box>

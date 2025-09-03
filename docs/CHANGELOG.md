@@ -1,6 +1,10 @@
 # Changelog and notes
 ## TODO:
-- Update search to also check aliases
+- Update edit guides/media layout in admin pages to be easier to see
+- Fix view all guides in user (filter doesn't work on guides page)
+- Add spoilers to gambles
+- Add a full disclaimer page (update footer to link it) and faq section/page
+- Build out arcs detail page to display events and structure them in a digestible way
 
 ## 2025-09-02
 ### Changes
@@ -12,10 +16,20 @@
 - Added proper view counting for pages as well as trending section
 - Updated consistency of Lucide icons use (themeing)
 - Added Volumes 37/38 to the landing page with animations
+- Detail pages added for chapters, users, volumes, factions
+- Reading progress button added; hidden on admin page
+- Added alias to character search
+- Author linking and updated user profile view
+- Allow non logged in users and regular users to see user profiles
+- Added disclaimer footer and links
+- Added editing your own guide
+- Removal of media approval queue; set default to show pending for guides and media
+- 
 
 ### Notes
 - Cloister Black was a close contender for font, but I wanted to prioritize legibility of the uppercase.
 - I am considering adding light theme, but for the sake of theming and consistency the site will be dark themed.
+- Taking my time with adding frontend edits to ensure user experience is good. However, I am going at a lot slower pace since I am trying to fine tune certain things (i.e. landing page) without a plan to reference
 
 ## 2025-09-01
 ### Changes

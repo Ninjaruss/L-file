@@ -254,7 +254,16 @@ export default function GambleDetailsPage() {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Chapter
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography 
+                    variant="body1"
+                    component={Link}
+                    href={`/chapters/${gamble.chapter ? gamble.chapter.number : gamble.chapterId}`}
+                    sx={{ 
+                      textDecoration: 'none', 
+                      color: 'primary.main',
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
+                  >
                     {gamble.chapter 
                       ? `${gamble.chapter.number}${gamble.chapter.title ? ` - ${gamble.chapter.title}` : ''}`
                       : gamble.chapterId
@@ -288,9 +297,34 @@ export default function GambleDetailsPage() {
                               />
                             )}
                           </Box>
-                          <Typography variant="body2" color="text.secondary">
-                            Members: {team.members.map(m => m.name).join(', ')}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Members:
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {team.members.map((member, index) => (
+                                <React.Fragment key={member.id}>
+                                  <Typography 
+                                    variant="body2"
+                                    component={Link}
+                                    href={`/characters/${member.id}`}
+                                    sx={{ 
+                                      textDecoration: 'none',
+                                      color: 'primary.main',
+                                      '&:hover': { textDecoration: 'underline' }
+                                    }}
+                                  >
+                                    {member.name}
+                                  </Typography>
+                                  {index < team.members.length - 1 && (
+                                    <Typography variant="body2" color="text.secondary">
+                                      ,
+                                    </Typography>
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </Box>
+                          </Box>
                         </Box>
                       ))}
                     </Box>

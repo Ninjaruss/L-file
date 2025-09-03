@@ -17,6 +17,7 @@ import { Search, BookOpen, Users, Crown, Zap } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { api } from '../lib/api'
 import { useAuth } from '../providers/AuthProvider'
+import { useProgress } from '../providers/ProgressProvider'
 import { motion, AnimatePresence } from 'motion/react'
 
 interface SearchResult {
@@ -36,6 +37,7 @@ export const SearchBar: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const { user } = useAuth()
+  const { userProgress } = useProgress()
   const router = useRouter()
   const searchTimeout = useRef<NodeJS.Timeout | null>(null)
 
@@ -87,7 +89,7 @@ export const SearchBar: React.FC = () => {
       const response = await api.search(
         searchQuery,
         undefined,
-        user?.userProgress
+        userProgress
       )
       setResults(response.results)
       setShowResults(true)
@@ -98,7 +100,7 @@ export const SearchBar: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [user?.userProgress])
+  }, [userProgress])
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value

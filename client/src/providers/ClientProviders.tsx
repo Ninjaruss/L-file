@@ -6,7 +6,9 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { theme } from '../lib/theme'
 import { AuthProvider } from './AuthProvider'
+import { ProgressProvider } from './ProgressProvider'
 import { Navigation } from '../components/Navigation'
+import { FloatingProgressIndicator } from '../components/FloatingProgressIndicator'
 
 interface ClientProvidersProps {
   children: React.ReactNode
@@ -28,10 +30,13 @@ export function ClientProviders({ children }: ClientProvidersProps) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <ConditionalNavigation />
-        <main className="min-h-screen bg-usogui-black">
-          {children}
-        </main>
+        <ProgressProvider>
+          <ConditionalNavigation />
+          <main className="min-h-screen bg-usogui-black">
+            {children}
+          </main>
+          <FloatingProgressIndicator />
+        </ProgressProvider>
       </AuthProvider>
     </ThemeProvider>
   )

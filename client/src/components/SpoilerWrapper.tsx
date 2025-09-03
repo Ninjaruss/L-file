@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Box, Button, Typography, Alert } from '@mui/material'
 import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
+import { useProgress } from '../providers/ProgressProvider'
 
 interface SpoilerWrapperProps {
   children: React.ReactNode
@@ -13,8 +14,6 @@ interface SpoilerWrapperProps {
   className?: string
 }
 
-const SPOILER_STORAGE_KEY = 'usogui-spoiler-tolerance'
-
 export default function SpoilerWrapper({ 
   children, 
   chapterNumber, 
@@ -23,20 +22,13 @@ export default function SpoilerWrapper({
   className 
 }: SpoilerWrapperProps) {
   const [isRevealed, setIsRevealed] = useState(false)
-  const [userTolerance, setUserTolerance] = useState<number>(0)
-
-  useEffect(() => {
-    const storedTolerance = localStorage.getItem(SPOILER_STORAGE_KEY)
-    if (storedTolerance) {
-      setUserTolerance(parseInt(storedTolerance, 10))
-    }
-  }, [])
+  const { userProgress } = useProgress()
 
   const shouldHideSpoiler = () => {
     if (!chapterNumber) {
-      // For minor spoilers without chapter info, only hide if user tolerance is very low (0 or default)
+      // For minor spoilers without chapter info, only hide if user progress is very low (1 or default)
       // For major spoilers without chapter info, always hide by default
-      return spoilerType === 'major' || userTolerance === 0
+      return spoilerType === 'major' || userProgress === 1
     }
     
     // If chapter number exists, consider spoiler type in the comparison
@@ -44,11 +36,11 @@ export default function SpoilerWrapper({
       // For minor spoilers (like character descriptions), be more lenient
       // Only hide if user is very early in the series or hasn't started reading
       // This allows basic character info to be shown to users who have made some progress
-      return userTolerance === 0 && chapterNumber > 1
+      return userProgress === 1 && chapterNumber > 1
     }
     
     // For major and outcome spoilers, use strict comparison
-    return chapterNumber > userTolerance
+    return chapterNumber > userProgress
   }
 
   const getSpoilerIcon = () => {
@@ -112,9 +104,9 @@ export default function SpoilerWrapper({
                     {description}
                   </Typography>
                 )}
-                {chapterNumber && chapterNumber > userTolerance && (
+                {chapterNumber && chapterNumber > userProgress && (
                   <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
-                    You need to read up to Chapter {chapterNumber} to view this content
+                    You need to read up to Chapter {chapterNumber} to view this content (currently at Chapter {userProgress})
                   </Typography>
                 )}
               </Box>

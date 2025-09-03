@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ClientProviders } from '../providers/ClientProviders'
+import { LayoutWrapper } from '../components/LayoutWrapper'
 
 export const metadata: Metadata = {
   title: 'Usogui Fansite - Ultimate Gambling Manga Resource',
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ClientProviders>
-          {children}
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
         </ClientProviders>
       </body>
     </html>

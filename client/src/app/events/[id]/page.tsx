@@ -205,7 +205,16 @@ export default function EventDetailsPage() {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Chapter
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography 
+                    variant="body1"
+                    component={Link}
+                    href={`/chapters/${event.chapterNumber}`}
+                    sx={{ 
+                      textDecoration: 'none', 
+                      color: 'primary.main',
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
+                  >
                     {event.chapterNumber}
                   </Typography>
                 </Box>

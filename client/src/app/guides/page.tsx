@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import {
   Container,
   Typography,
@@ -18,9 +18,10 @@ import {
   Chip,
   Avatar
 } from '@mui/material'
-import { Search, FileText, Eye, Calendar, ThumbsUp, Heart } from 'lucide-react'
+import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import { useAuth } from '../../providers/AuthProvider'
@@ -36,13 +37,16 @@ interface Guide {
   }
   likeCount: number
   userHasLiked?: boolean
+  viewCount: number
   createdAt: string
   updatedAt: string
 }
 
-export default function GuidesPage() {
+function GuidesPageContent() {
   const { user } = useAuth()
   const theme = useTheme()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [guides, setGuides] = useState<Guide[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -51,12 +55,15 @@ export default function GuidesPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [liking, setLiking] = useState<number | null>(null)
+  const [authorFilter, setAuthorFilter] = useState<string | null>(null)
+  const [authorName, setAuthorName] = useState<string | null>(null)
 
-  const fetchGuides = async (page = 1, search = '') => {
+  const fetchGuides = async (page = 1, search = '', authorId?: string) => {
     setLoading(true)
     try {
-      const params: { page: number; limit: number; title?: string } = { page, limit: 12 }
+      const params: { page: number; limit: number; title?: string; authorId?: string } = { page, limit: 12 }
       if (search) params.title = search
+      if (authorId) params.authorId = authorId
       
       const response = await api.getGuides(params)
       setGuides(response.data)
@@ -70,8 +77,19 @@ export default function GuidesPage() {
   }
 
   useEffect(() => {
-    fetchGuides(currentPage, searchQuery)
-  }, [currentPage, searchQuery])
+    const authorParam = searchParams.get('author')
+    const authorNameParam = searchParams.get('authorName')
+    
+    if (authorParam !== authorFilter) {
+      setAuthorFilter(authorParam)
+      setAuthorName(authorNameParam)
+      setCurrentPage(1)
+    }
+  }, [searchParams, authorFilter])
+
+  useEffect(() => {
+    fetchGuides(currentPage, searchQuery, authorFilter || undefined)
+  }, [currentPage, searchQuery, authorFilter])
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value)
@@ -80,6 +98,13 @@ export default function GuidesPage() {
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page)
+  }
+
+  const clearAuthorFilter = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('author')
+    params.delete('authorName')
+    router.push(`/guides${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   const getContentPreview = (content: string, maxLength = 150) => {
@@ -151,6 +176,19 @@ export default function GuidesPage() {
           </Button>
         </Box>
 
+        {authorFilter && authorName && (
+          <Box sx={{ mb: 3 }}>
+            <Chip
+              label={`Author: ${authorName}`}
+              onDelete={clearAuthorFilter}
+              deleteIcon={<X size={16} />}
+              color="primary"
+              variant="outlined"
+              sx={{ fontSize: '0.875rem' }}
+            />
+          </Box>
+        )}
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -194,7 +232,20 @@ export default function GuidesPage() {
                           <Avatar sx={{ width: 24, height: 24, mr: 1, fontSize: '0.875rem' }}>
                             {guide.author.username[0].toUpperCase()}
                           </Avatar>
-                          <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            component={Link}
+                            href={`/users/${guide.author.id}`}
+                            sx={{ 
+                              mr: 2,
+                              textDecoration: 'none',
+                              '&:hover': { 
+                                color: 'primary.main',
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
                             by {guide.author.username}
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -238,11 +289,19 @@ export default function GuidesPage() {
                         </Typography>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <ThumbsUp size={16} />
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                              {guide.likeCount || 0} likes
-                            </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Eye size={16} />
+                              <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+                                {guide.viewCount || 0} views
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <ThumbsUp size={16} />
+                              <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+                                {guide.likeCount || 0} likes
+                              </Typography>
+                            </Box>
                           </Box>
                           {user && (
                             <Button
@@ -315,5 +374,19 @@ export default function GuidesPage() {
         )}
       </motion.div>
     </Container>
+  )
+}
+
+export default function GuidesPage() {
+  return (
+    <Suspense fallback={
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress size={50} />
+        </Box>
+      </Container>
+    }>
+      <GuidesPageContent />
+    </Suspense>
   )
 }

@@ -385,7 +385,7 @@ class ApiClient {
     }>(`/search?${params.toString()}`)
   }
 
-  async getGuides(params?: { page?: number; limit?: number; title?: string }) {
+  async getGuides(params?: { page?: number; limit?: number; title?: string; authorId?: string }) {
     const searchParams = new URLSearchParams()
     if (params) {
       // Map title to search parameter to match backend API
@@ -397,6 +397,9 @@ class ApiClient {
       }
       if (params.limit) {
         searchParams.append('limit', params.limit.toString())
+      }
+      if (params.authorId) {
+        searchParams.append('authorId', params.authorId)
       }
     }
     const query = searchParams.toString()
@@ -587,6 +590,32 @@ class ApiClient {
     return this.get<any>(`/users/${id}`)
   }
 
+  async getPublicUserProfile(id: number) {
+    return this.get<any>(`/users/public/${id}`)
+  }
+
+  async getPublicUsers(params?: {
+    page?: number
+    limit?: number
+    username?: string
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      totalPages: number
+    }>(`/users/public${query ? `?${query}` : ''}`)
+  }
+
   async updateUser(id: number, data: any) {
     return this.put<any>(`/users/${id}`, data)
   }
@@ -692,6 +721,44 @@ class ApiClient {
       page: number
       totalPages: number
     }>(`/factions${query ? `?${query}` : ''}`)
+  }
+
+  async getVolumes(params?: {
+    page?: number
+    limit?: number
+    number?: number
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      totalPages: number
+    }>(`/volumes${query ? `?${query}` : ''}`)
+  }
+
+  async getVolume(id: number) {
+    return this.get<any>(`/volumes/${id}`)
+  }
+
+  async getVolumeByChapter(chapterNumber: number) {
+    return this.get<any>(`/volumes/by-chapter/${chapterNumber}`)
+  }
+
+  async getVolumeChapters(id: number) {
+    return this.get<{
+      chapters: number[]
+      startChapter: number
+      endChapter: number
+    }>(`/volumes/${id}/chapters`)
   }
 
   async getFaction(id: number) {

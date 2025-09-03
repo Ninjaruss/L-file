@@ -2,7 +2,7 @@
 
 import { Box, Container, Typography, Grid, Card, CardContent, Button, Skeleton, Alert } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { Users, BookOpen, Dices, CalendarSearch, TrendingUp } from 'lucide-react'
+import { Users, BookOpen, Dices, CalendarSearch, TrendingUp, Book, Shield, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { SearchBar } from '../components/SearchBar'
 import { TrendingSection } from '../components/TrendingSection'
@@ -42,6 +42,34 @@ export default function HomePage() {
       description: 'Key events and plot points throughout the series',
       href: '/events',
       color: 'warning'
+    },
+    {
+      icon: <Book className="w-8 h-8" />,
+      title: 'Chapters',
+      description: 'Read chapter summaries and explore the story',
+      href: '/chapters',
+      color: 'info'
+    },
+    {
+      icon: <Book className="w-8 h-8" />,
+      title: 'Volumes',
+      description: 'Browse volume collections and covers',
+      href: '/volumes',
+      color: 'success'
+    },
+    {
+      icon: <Shield className="w-8 h-8" />,
+      title: 'Factions',
+      description: 'Learn about the various groups and organizations',
+      href: '/factions',
+      color: 'secondary'
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: 'Community',
+      description: 'Meet fellow fans and see their contributions',
+      href: '/users',
+      color: 'primary'
     }
   ]
 
@@ -81,7 +109,7 @@ export default function HomePage() {
 
         <Grid container spacing={4}>
           {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={3} key={feature.title}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={feature.title}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

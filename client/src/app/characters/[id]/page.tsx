@@ -266,6 +266,15 @@ export default function CharacterDetailPage() {
                             color="secondary"
                             variant="filled"
                             icon={<UsersIcon size={16} />}
+                            component={Link}
+                            href={`/factions?name=${encodeURIComponent(affiliation)}`}
+                            clickable
+                            sx={{ 
+                              textDecoration: 'none',
+                              '&:hover': { 
+                                backgroundColor: 'secondary.dark'
+                              }
+                            }}
                           />
                         ))}
                       </Box>
@@ -275,7 +284,7 @@ export default function CharacterDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Quotes Section */}
+            {/* Quotes Section - Streamlined */}
             {quotes.length > 0 && (
               <Card className="gambling-card" sx={{ mt: 4 }}>
                 <CardContent>
@@ -292,39 +301,39 @@ export default function CharacterDetailPage() {
                       View All
                     </Button>
                   </Box>
-                  {quotes.map((quote) => (
-                    <Card key={quote.id} variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {quotes.slice(0, 3).map((quote) => (
+                      <Box key={quote.id} sx={{ 
+                        p: 2, 
+                        border: 1, 
+                        borderColor: 'divider', 
+                        borderRadius: 1,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
+                      }}>
                         <SpoilerWrapper 
                           chapterNumber={quote.chapterNumber}
                           spoilerType="minor"
                           description="Character quote and context"
                         >
-                          <Typography variant="body1" sx={{ fontStyle: 'italic', mb: 2 }}>
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, lineHeight: 1.4 }}>
                             "{quote.text}"
                           </Typography>
-                          {quote.description && (
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              {quote.description}
-                            </Typography>
-                          )}
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Chip 
-                              label={`Chapter ${quote.chapterNumber}`} 
-                              size="small" 
-                              color="secondary" 
-                              variant="outlined"
-                            />
-                            {quote.pageNumber && (
-                              <Typography variant="caption" color="text.secondary">
-                                Page {quote.pageNumber}
-                              </Typography>
-                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              Ch. {quote.chapterNumber}{quote.pageNumber && `, p.${quote.pageNumber}`}
+                            </Typography>
                           </Box>
                         </SpoilerWrapper>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </Box>
+                    ))}
+                    {quotes.length > 3 && (
+                      <Box sx={{ textAlign: 'center', pt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Showing 3 of {quotes.length} quotes
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             )}
@@ -455,7 +464,16 @@ export default function CharacterDetailPage() {
                   <Typography variant="body2" color="text.secondary">
                     First Appearance
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography 
+                    variant="body1"
+                    component={Link}
+                    href={`/chapters/${character.firstAppearanceChapter}`}
+                    sx={{ 
+                      textDecoration: 'none', 
+                      color: 'primary.main',
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
+                  >
                     Chapter {character.firstAppearanceChapter}
                   </Typography>
                 </Box>
