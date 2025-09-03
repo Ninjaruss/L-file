@@ -185,13 +185,14 @@ export class SearchService {
       .where(
         `(
           to_tsvector('english', character.name) @@ plainto_tsquery('english', :query) OR
-          to_tsvector('english', character.description) @@ plainto_tsquery('english', :query)
+          to_tsvector('english', character.description) @@ plainto_tsquery('english', :query) OR
+          array_to_string(character."alternateNames", ' ') ILIKE :likeQuery
         )`,
-        { query },
+        { query, likeQuery: `%${query}%` },
       )
       .orderBy(
         `ts_rank(
-          to_tsvector('english', character.name || ' ' || character.description),
+          to_tsvector('english', character.name || ' ' || character.description || ' ' || array_to_string(character."alternateNames", ' ')),
           plainto_tsquery('english', :query)
         )`,
         'DESC',
@@ -211,6 +212,7 @@ export class SearchService {
       metadata: {
         occupation: character.occupation,
         firstAppearanceChapter: character.firstAppearanceChapter,
+        alternateNames: character.alternateNames,
       },
     }));
 

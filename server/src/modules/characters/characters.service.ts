@@ -41,9 +41,12 @@ export class CharactersService {
     }
 
     if (filters.name) {
-      query.andWhere('LOWER(character.name) LIKE LOWER(:name)', {
-        name: `%${filters.name}%`,
-      });
+      query.andWhere(
+        '(LOWER(character.name) LIKE LOWER(:name) OR array_to_string(character."alternateNames", \',\') ILIKE :name)',
+        {
+          name: `%${filters.name}%`,
+        },
+      );
     }
     if (filters.arc) {
       query.andWhere('LOWER(arc.name) LIKE LOWER(:arc)', {
