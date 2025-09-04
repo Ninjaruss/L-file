@@ -1,7 +1,14 @@
 # Changelog and notes
 ## TODO:
 - Add a full disclaimer page (update footer to link it) and faq section/page
-
+- For character detail page, make key events more of a horizontal timeline that has sections for arcs
+- Put media gallery as a seperate tab
+- Add highlight of most popular quote, gamble, and character profile picture
+- Add different image profile pictures for characters and adding labeling (update character image based on progressed chapter; subtle chapter progression)
+- Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN); allow character profile picture choice from characters
+- Figure out better structure for gambles if needed.
+- Update landing page volume showcase to handle other volume covers (single and pairs) 
+- Discord integration for creating account
 
 ## 2025-09-03
 ### Changes
@@ -12,10 +19,13 @@
 - Updated chapter progress button and pop up for better UX
 - Added media gallery with media view; updated submission link validations
 - Previous user handling for chapter progress; allows local save to retain progress
+- Changed view count to also track and display unique views
+- Fixed filtering for character quotes
+- Updating look of character detail page
 
 ### Notes
 - I am thinking of going through with the name L-file for the website. Although it is not completely faithful for the canon use of the term, it's a cool name and neat codename for the project. I will include other ways of making sure the site shows up in relevant search results.
-
+- It seems to be a good choice to sort of do this project with a rough idea of what is needed/wanted in my mind. I'm finding a lot of additional small things to add as I implement each feature. Maybe not the best workflow for a project, but I think I'd be stuck with planning a little too long. Seeing the website change gives me more reason to keep going.
 
 ## 2025-09-02
 ### Changes

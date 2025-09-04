@@ -14,7 +14,8 @@ export default function HomePage() {
   const theme = useTheme()
   const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
   
-  const features = [
+  // Primary features - most important content
+  const primaryFeatures = [
     {
       icon: <Users className="w-8 h-8" color={theme.palette.usogui.character} />,
       title: 'Characters',
@@ -37,32 +38,29 @@ export default function HomePage() {
       color: 'error'
     },
     {
-      icon: <CalendarSearch className="w-8 h-8" />,
-      title: 'Events',
-      description: 'Key events and plot points throughout the series',
-      href: '/events',
-      color: 'warning'
-    },
-    {
       icon: <FileText className="w-8 h-8" />,
       title: 'Guides',
       description: 'In-depth analysis and insights from the community',
       href: '/guides',
       color: 'info'
+    }
+  ]
+
+  // Secondary features - supporting content
+  const secondaryFeatures = [
+    {
+      icon: <CalendarSearch className="w-8 h-8" />,
+      title: 'Events',
+      description: 'Key events and plot points',
+      href: '/events',
+      color: 'warning'
     },
     {
       icon: <Quote className="w-8 h-8" />,
       title: 'Quotes',
-      description: 'Memorable lines and wisdom from Usogui',
+      description: 'Memorable lines from Usogui',
       href: '/quotes',
       color: 'success'
-    },
-    {
-      icon: <Book className="w-8 h-8" />,
-      title: 'Chapters',
-      description: 'Read chapter summaries and explore the story',
-      href: '/chapters',
-      color: 'info'
     },
     {
       icon: <Book className="w-8 h-8" />,
@@ -74,16 +72,9 @@ export default function HomePage() {
     {
       icon: <Shield className="w-8 h-8" />,
       title: 'Factions',
-      description: 'Learn about the various groups and organizations',
+      description: 'Groups and organizations',
       href: '/factions',
       color: 'secondary'
-    },
-    {
-      icon: <Users className="w-8 h-8" />,
-      title: 'Community',
-      description: 'Meet fellow fans and see their contributions',
-      href: '/users',
-      color: 'primary'
     }
   ]
 
@@ -94,6 +85,7 @@ export default function HomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Hero Section */}
         <Box textAlign="center" mb={6}>
           <Typography
             variant="h2"
@@ -121,59 +113,125 @@ export default function HomePage() {
         {/* Featured Volume Covers Section */}
         <VolumeCoverSection />
 
-        <Grid container spacing={4}>
-          {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={feature.title}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Card
-                  className="gambling-card h-full"
-                  sx={{ 
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'translateY(-4px)' }
-                  }}
+        {/* Primary Features Section */}
+        <Box mb={6}>
+          <Typography variant="h4" component="h2" textAlign="center" mb={4} sx={{ fontWeight: 'bold' }}>
+            Explore Usogui
+          </Typography>
+          <Grid container spacing={4}>
+            {primaryFeatures.map((feature, index) => (
+              <Grid item xs={12} sm={6} md={3} key={feature.title}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        mb: 2,
-                        color: `${feature.color}.main`
-                      }}
-                    >
-                      {feature.icon}
-                    </Box>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" mb={2}>
-                      {feature.description}
-                    </Typography>
-                    <Button
-                      component={Link}
-                      href={feature.href}
-                      variant="outlined"
-                      color={feature.color as any}
-                      fullWidth
-                    >
-                      Explore
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
+                  <Card
+                    className="gambling-card h-full"
+                    sx={{ 
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'all 0.3s ease',
+                      '&:hover': { 
+                        transform: 'translateY(-8px)',
+                        boxShadow: theme.shadows[8]
+                      }
+                    }}
+                  >
+                    <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          mb: 2,
+                          color: `${feature.color}.main`
+                        }}
+                      >
+                        {feature.icon}
+                      </Box>
+                      <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
+                        {feature.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" mb={3}>
+                        {feature.description}
+                      </Typography>
+                      <Button
+                        component={Link}
+                        href={feature.href}
+                        variant="contained"
+                        color={feature.color as any}
+                        fullWidth
+                        size="large"
+                      >
+                        Explore
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        {/* Secondary Features Section */}
+        <Box mb={6}>
+          <Typography variant="h5" component="h2" textAlign="center" mb={3} sx={{ fontWeight: 'bold' }}>
+            More Content
+          </Typography>
+          <Grid container spacing={3}>
+            {secondaryFeatures.map((feature, index) => (
+              <Grid item xs={12} sm={6} md={3} key={feature.title}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
+                >
+                  <Card
+                    sx={{ 
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'translateY(-4px)' }
+                    }}
+                  >
+                    <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 2 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          mb: 1,
+                          color: `${feature.color}.main`
+                        }}
+                      >
+                        {feature.icon}
+                      </Box>
+                      <Typography variant="h6" component="h3" gutterBottom>
+                        {feature.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" mb={2}>
+                        {feature.description}
+                      </Typography>
+                      <Button
+                        component={Link}
+                        href={feature.href}
+                        variant="outlined"
+                        color={feature.color as any}
+                        fullWidth
+                      >
+                        Browse
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
         {/* Trending Section */}
-        <Box>
+        <Box mb={6}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -256,40 +314,40 @@ export default function HomePage() {
 
                 {/* Site Stats */}
                 {landingData.stats && (
-                  <Box mt={4} textAlign="center">
-                    <Typography variant="h6" gutterBottom>
+                  <Box mt={4} p={3} sx={{ backgroundColor: 'background.paper', borderRadius: 2 }}>
+                    <Typography variant="h6" textAlign="center" gutterBottom>
                       Community Stats
                     </Typography>
                     <Grid container spacing={2} justifyContent="center">
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }} textAlign="center">
                           {landingData.stats.totalGuides.toLocaleString()}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" textAlign="center">
                           Guides
                         </Typography>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="h4" color="secondary.main" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="h4" color="secondary.main" sx={{ fontWeight: 'bold' }} textAlign="center">
                           {landingData.stats.totalCharacters.toLocaleString()}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" textAlign="center">
                           Characters
                         </Typography>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }} textAlign="center">
                           {landingData.stats.totalEvents.toLocaleString()}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" textAlign="center">
                           Events
                         </Typography>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="h4" color="error.main" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="h4" color="error.main" sx={{ fontWeight: 'bold' }} textAlign="center">
                           {landingData.stats.totalGambles.toLocaleString()}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" textAlign="center">
                           Gambles
                         </Typography>
                       </Grid>
@@ -301,19 +359,23 @@ export default function HomePage() {
           </motion.div>
         </Box>
 
-        <Box textAlign="center" mt={6}>
-          <Typography variant="h4" gutterBottom>
+        {/* Call to Action Section */}
+        <Box textAlign="center" p={4} sx={{ backgroundColor: 'background.paper', borderRadius: 2 }}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
             Join the Community
           </Typography>
           <Typography variant="body1" color="text.secondary" mb={3}>
             Create an account to submit fan content, guides, and track your reading progress
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Button component={Link} href="/register" variant="contained" size="large">
               Sign Up
             </Button>
             <Button component={Link} href="/login" variant="outlined" size="large">
               Log In
+            </Button>
+            <Button component={Link} href="/users" variant="text" size="large" startIcon={<Users className="w-4 h-4" />}>
+              Browse Community
             </Button>
           </Box>
         </Box>

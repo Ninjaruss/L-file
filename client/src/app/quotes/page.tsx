@@ -49,14 +49,16 @@ function QuotesPageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [characterName, setCharacterName] = useState<string | null>(null)
 
-  const fetchQuotes = async (page = 1, search = '') => {
+  const fetchQuotes = async (page = 1, search = '', characterId?: string | null) => {
     setLoading(true)
     try {
       const data = await api.getQuotes({
         page,
         limit: 12,
-        search: search || undefined
+        search: search || undefined,
+        characterId: characterId ? parseInt(characterId) : undefined
       })
       
       // Transform the API response to match the expected format
@@ -88,8 +90,18 @@ function QuotesPageContent() {
   }
 
   useEffect(() => {
-    fetchQuotes(currentPage, searchQuery)
-  }, [currentPage, searchQuery])
+    const characterIdFilter = searchParams.get('characterId')
+    fetchQuotes(currentPage, searchQuery, characterIdFilter)
+    
+    // Fetch character name for display
+    if (characterIdFilter && !characterName) {
+      api.getCharacter(parseInt(characterIdFilter))
+        .then(character => setCharacterName(character.name))
+        .catch(() => setCharacterName('Unknown'))
+    } else if (!characterIdFilter) {
+      setCharacterName(null)
+    }
+  }, [currentPage, searchQuery, searchParams, characterName])
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value)
@@ -135,6 +147,21 @@ function QuotesPageContent() {
             }}
             sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
           />
+          {searchParams.get('characterId') && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Chip
+                label={`Filtered by character: ${characterName || 'Loading...'}`}
+                variant="filled"
+                color="primary"
+                onDelete={() => {
+                  const newUrl = new URL(window.location.href)
+                  newUrl.searchParams.delete('characterId')
+                  window.history.pushState({}, '', newUrl.toString())
+                  window.location.reload()
+                }}
+              />
+            </Box>
+          )}
         </Box>
 
         {error && (

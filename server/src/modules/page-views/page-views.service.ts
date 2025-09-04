@@ -6,8 +6,10 @@ import { PageView, PageType } from '../../entities/page-view.entity';
 export interface TrendingPage {
   pageId: number;
   pageType: PageType;
-  viewCount: number;
-  recentViewCount: number;
+  viewCount: number; // unique views
+  recentViewCount: number; // recent unique views
+  totalViewCount?: number; // total views (for backward compatibility)
+  recentTotalViewCount?: number; // recent total views (for backward compatibility)
 }
 
 @Injectable()
@@ -70,6 +72,56 @@ export class PageViewsService {
     return viewCounts;
   }
 
+  async getUniqueViewCount(pageType: PageType, pageId: number, hoursBack: number = 24): Promise<number> {
+    const dateThreshold = new Date();
+    dateThreshold.setHours(dateThreshold.getHours() - hoursBack);
+
+    const result = await this.pageViewRepository
+      .createQueryBuilder('pv')
+      .select('COUNT(DISTINCT pv.ipAddress)', 'unique_count')
+      .where('pv.pageType = :pageType', { pageType })
+      .andWhere('pv.pageId = :pageId', { pageId })
+      .andWhere('pv.createdAt >= :dateThreshold', { dateThreshold })
+      .andWhere('pv.ipAddress IS NOT NULL')
+      .getRawOne();
+
+    return parseInt(result.unique_count) || 0;
+  }
+
+  async getUniqueViewCounts(
+    pageType: PageType,
+    pageIds: number[],
+    hoursBack: number = 24,
+  ): Promise<Map<number, number>> {
+    const dateThreshold = new Date();
+    dateThreshold.setHours(dateThreshold.getHours() - hoursBack);
+
+    const results = await this.pageViewRepository
+      .createQueryBuilder('pv')
+      .select('pv.pageId', 'page_id')
+      .addSelect('COUNT(DISTINCT pv.ipAddress)', 'unique_view_count')
+      .where('pv.pageType = :pageType', { pageType })
+      .andWhere('pv.pageId IN (:...pageIds)', { pageIds })
+      .andWhere('pv.createdAt >= :dateThreshold', { dateThreshold })
+      .andWhere('pv.ipAddress IS NOT NULL')
+      .groupBy('pv.pageId')
+      .getRawMany();
+
+    const uniqueViewCounts = new Map<number, number>();
+    results.forEach((result) => {
+      uniqueViewCounts.set(result.page_id, parseInt(result.unique_view_count));
+    });
+
+    // Set 0 for pageIds that have no unique views
+    pageIds.forEach((pageId) => {
+      if (!uniqueViewCounts.has(pageId)) {
+        uniqueViewCounts.set(pageId, 0);
+      }
+    });
+
+    return uniqueViewCounts;
+  }
+
   async getTrendingPages(
     pageType?: PageType,
     limit: number = 10,
@@ -82,14 +134,19 @@ export class PageViewsService {
       .createQueryBuilder('pv')
       .select('pv.pageId', 'page_id')
       .addSelect('pv.pageType', 'page_type')
-      .addSelect('COUNT(*)', 'view_count')
+      .addSelect('COUNT(DISTINCT CASE WHEN pv.ipAddress IS NOT NULL THEN pv.ipAddress END)', 'unique_view_count')
+      .addSelect('COUNT(*)', 'total_view_count')
+      .addSelect(
+        `COUNT(DISTINCT CASE WHEN pv.createdAt >= :dateThreshold AND pv.ipAddress IS NOT NULL THEN pv.ipAddress END)`,
+        'recent_unique_view_count',
+      )
       .addSelect(
         `COUNT(CASE WHEN pv.createdAt >= :dateThreshold THEN 1 END)`,
-        'recent_view_count',
+        'recent_total_view_count',
       )
       .groupBy('pv.pageId, pv.pageType')
-      .orderBy('recent_view_count', 'DESC')
-      .addOrderBy('view_count', 'DESC')
+      .orderBy('recent_unique_view_count', 'DESC')
+      .addOrderBy('unique_view_count', 'DESC')
       .limit(limit)
       .setParameter('dateThreshold', dateThreshold);
 
@@ -102,8 +159,10 @@ export class PageViewsService {
     return results.map((result) => ({
       pageId: result.page_id,
       pageType: result.page_type,
-      viewCount: parseInt(result.view_count),
-      recentViewCount: parseInt(result.recent_view_count),
+      viewCount: parseInt(result.unique_view_count),
+      recentViewCount: parseInt(result.recent_unique_view_count),
+      totalViewCount: parseInt(result.total_view_count),
+      recentTotalViewCount: parseInt(result.recent_total_view_count),
     }));
   }
 
@@ -118,15 +177,20 @@ export class PageViewsService {
       .createQueryBuilder('pv')
       .select('pv.pageId', 'page_id')
       .addSelect('pv.pageType', 'page_type')
-      .addSelect('COUNT(*)', 'view_count')
+      .addSelect('COUNT(DISTINCT CASE WHEN pv.ipAddress IS NOT NULL THEN pv.ipAddress END)', 'unique_view_count')
+      .addSelect('COUNT(*)', 'total_view_count')
+      .addSelect(
+        `COUNT(DISTINCT CASE WHEN pv.createdAt >= :dateThreshold AND pv.ipAddress IS NOT NULL THEN pv.ipAddress END)`,
+        'recent_unique_view_count',
+      )
       .addSelect(
         `COUNT(CASE WHEN pv.createdAt >= :dateThreshold THEN 1 END)`,
-        'recent_view_count',
+        'recent_total_view_count',
       )
       .groupBy('pv.pageId, pv.pageType')
       .orderBy('pv.pageType')
-      .addOrderBy('recent_view_count', 'DESC')
-      .addOrderBy('view_count', 'DESC')
+      .addOrderBy('recent_unique_view_count', 'DESC')
+      .addOrderBy('unique_view_count', 'DESC')
       .setParameter('dateThreshold', dateThreshold)
       .getRawMany();
 
@@ -147,8 +211,10 @@ export class PageViewsService {
         trendingByType[pageType].push({
           pageId: result.page_id,
           pageType: result.page_type,
-          viewCount: parseInt(result.view_count),
-          recentViewCount: parseInt(result.recent_view_count),
+          viewCount: parseInt(result.unique_view_count),
+          recentViewCount: parseInt(result.recent_unique_view_count),
+          totalViewCount: parseInt(result.total_view_count),
+          recentTotalViewCount: parseInt(result.recent_total_view_count),
         });
       }
     });

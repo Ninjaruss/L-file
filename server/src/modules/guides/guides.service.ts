@@ -131,7 +131,7 @@ export class GuidesService {
     const guideIds = guides.map((guide) => guide.id);
     const viewCounts =
       guideIds.length > 0
-        ? await this.pageViewsService.getViewCounts(PageType.GUIDE, guideIds)
+        ? await this.pageViewsService.getUniqueViewCounts(PageType.GUIDE, guideIds)
         : new Map<number, number>();
 
     // Add view counts to guides
@@ -238,7 +238,7 @@ export class GuidesService {
     const guideIds = guides.map((guide) => guide.id);
     const viewCounts =
       guideIds.length > 0
-        ? await this.pageViewsService.getViewCounts(PageType.GUIDE, guideIds)
+        ? await this.pageViewsService.getUniqueViewCounts(PageType.GUIDE, guideIds)
         : new Map<number, number>();
 
     // Add user like status if user is authenticated
@@ -340,7 +340,7 @@ export class GuidesService {
     }
 
     // Get view count from page views service
-    const viewCount = await this.pageViewsService.getViewCount(
+    const viewCount = await this.pageViewsService.getUniqueViewCount(
       PageType.GUIDE,
       id,
     );

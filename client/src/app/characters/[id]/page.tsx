@@ -14,8 +14,7 @@ import {
   Alert,
   Divider,
   List,
-  ListItem,
-  ListItemText
+  ListItem
 } from '@mui/material'
 import { ArrowLeft, User, Crown, Users as UsersIcon } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
@@ -137,49 +136,117 @@ export default function CharacterDetailPage() {
           Back to Characters
         </Button>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            {character.name}
-          </Typography>
+        {/* Header Section - More Compact */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ textAlign: 'center' }}>
+              {character.imageFileName ? (
+                <img 
+                  src={`/api/media/character/${character.imageFileName}`}
+                  alt={character.imageDisplayName || `${character.name} portrait`}
+                  style={{ 
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+                  }}
+                />
+              ) : (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  height: '200px',
+                  backgroundColor: 'background.paper',
+                  borderRadius: '12px',
+                  border: `2px dashed ${theme.palette.divider}`
+                }}>
+                  <User size={64} color={theme.palette.usogui.character} />
+                </Box>
+              )}
+            </Box>
+          </Grid>
           
-          {character.imageFileName ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <img 
-                src={`/api/media/character/${character.imageFileName}`}
-                alt={character.imageDisplayName || `${character.name} portrait`}
-                style={{ 
-                  maxWidth: '200px',
-                  maxHeight: '300px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }}
+          <Grid item xs={12} md={8}>
+            <Typography variant="h3" component="h1" sx={{ mb: 2 }}>
+              {character.name}
+            </Typography>
+            
+            {character.alternateNames?.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                {character.alternateNames.map((name) => (
+                  <Chip
+                    key={name}
+                    label={name}
+                    size="medium"
+                    variant="outlined"
+                    color="secondary"
+                    sx={{ mr: 1, mb: 1 }}
+                  />
+                ))}
+              </Box>
+            )}
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  First Appearance
+                </Typography>
+                <Typography 
+                  variant="body1"
+                  component={Link}
+                  href={`/chapters/${character.firstAppearanceChapter}`}
+                  sx={{ 
+                    textDecoration: 'none', 
+                    color: 'primary.main',
+                    '&:hover': { textDecoration: 'underline' }
+                  }}
+                >
+                  Chapter {character.firstAppearanceChapter}
+                </Typography>
+              </Box>
+
+              {character.occupation && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Occupation
+                  </Typography>
+                  <Typography variant="body1">
+                    {character.occupation}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Quick Stats as Chips */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Chip 
+                label={`${arcs.length} Arc${arcs.length !== 1 ? 's' : ''}`} 
+                size="small" 
+                variant="outlined" 
+                color="primary"
+              />
+              <Chip 
+                label={`${gambles.length} Gamble${gambles.length !== 1 ? 's' : ''}`} 
+                size="small" 
+                variant="outlined" 
+                color="primary"
+              />
+              <Chip 
+                label={`${quotes.length} Quote${quotes.length !== 1 ? 's' : ''}`} 
+                size="small" 
+                variant="outlined" 
+                color="primary"
               />
             </Box>
-          ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <User size={48} color={theme.palette.usogui.character} />
-            </Box>
-          )}
-          
-          {character.alternateNames?.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              {character.alternateNames.map((name) => (
-                <Chip
-                  key={name}
-                  label={name}
-                  size="medium"
-                  variant="outlined"
-                  color="secondary"
-                  sx={{ mr: 1, mb: 1 }}
-                />
-              ))}
-            </Box>
-          )}
-        </Box>
+          </Grid>
+        </Grid>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
-            <Card className="gambling-card">
+        <Grid container spacing={3}>
+          {/* Main Content - Left Column */}
+          <Grid item xs={12} lg={8}>
+            {/* About Section */}
+            <Card className="gambling-card" sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h5" gutterBottom>
                   About
@@ -194,421 +261,367 @@ export default function CharacterDetailPage() {
                   </Typography>
                 </SpoilerWrapper>
 
-                {character.occupation && (
+                {/* Consolidated Character Details */}
+                {(character.notableRoles?.length > 0 || character.notableGames?.length > 0 || character.affiliations?.length > 0) && (
                   <>
                     <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Occupation
-                    </Typography>
-                    <Typography variant="body1" paragraph>
-                      {character.occupation}
-                    </Typography>
-                  </>
-                )}
+                    <Grid container spacing={2}>
+                      {character.notableRoles?.length > 0 && (
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="h6" gutterBottom>
+                            Notable Roles
+                          </Typography>
+                          <SpoilerWrapper 
+                            chapterNumber={character.firstAppearanceChapter}
+                            spoilerType="major"
+                            description="Character's story roles and significance"
+                          >
+                            <List dense sx={{ py: 0 }}>
+                              {character.notableRoles.map((role, index) => (
+                                <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
+                                  <Typography variant="body2">• {role}</Typography>
+                                </ListItem>
+                              ))}
+                            </List>
+                          </SpoilerWrapper>
+                        </Grid>
+                      )}
 
-                {character.notableRoles?.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Notable Roles
-                    </Typography>
-                    <SpoilerWrapper 
-                      chapterNumber={character.firstAppearanceChapter}
-                      spoilerType="major"
-                      description="Character's story roles and significance"
-                    >
-                      <List dense>
-                        {character.notableRoles.map((role, index) => (
-                          <ListItem key={index} sx={{ pl: 0 }}>
-                            <ListItemText primary={role} />
-                          </ListItem>
-                        ))}
-                      </List>
-                    </SpoilerWrapper>
-                  </>
-                )}
+                      {character.notableGames?.length > 0 && (
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="h6" gutterBottom>
+                            Notable Gambles
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {character.notableGames.map((game) => (
+                              <Chip
+                                key={game}
+                                label={game}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                icon={<Crown size={14} />}
+                              />
+                            ))}
+                          </Box>
+                        </Grid>
+                      )}
 
-                {character.notableGames?.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Notable Gambles
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {character.notableGames.map((game) => (
-                        <Chip
-                          key={game}
-                          label={game}
-                          color="primary"
-                          variant="outlined"
-                          icon={<Crown size={16} />}
-                        />
-                      ))}
-                    </Box>
-                  </>
-                )}
-
-                {character.affiliations?.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Affiliations
-                    </Typography>
-                    <SpoilerWrapper 
-                      chapterNumber={character.firstAppearanceChapter}
-                      spoilerType="major"
-                      description="Character's group affiliations and alliances"
-                    >
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {character.affiliations.map((affiliation) => (
-                          <Chip
-                            key={affiliation}
-                            label={affiliation}
-                            color="secondary"
-                            variant="filled"
-                            icon={<UsersIcon size={16} />}
-                            component={Link}
-                            href={`/factions?name=${encodeURIComponent(affiliation)}`}
-                            clickable
-                            sx={{ 
-                              textDecoration: 'none',
-                              '&:hover': { 
-                                backgroundColor: 'secondary.dark'
-                              }
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    </SpoilerWrapper>
+                      {character.affiliations?.length > 0 && (
+                        <Grid item xs={12}>
+                          <Typography variant="h6" gutterBottom>
+                            Affiliations
+                          </Typography>
+                          <SpoilerWrapper 
+                            chapterNumber={character.firstAppearanceChapter}
+                            spoilerType="major"
+                            description="Character's group affiliations and alliances"
+                          >
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {character.affiliations.map((affiliation) => (
+                                <Chip
+                                  key={affiliation}
+                                  label={affiliation}
+                                  size="small"
+                                  color="secondary"
+                                  variant="filled"
+                                  icon={<UsersIcon size={14} />}
+                                  component={Link}
+                                  href={`/factions?name=${encodeURIComponent(affiliation)}`}
+                                  clickable
+                                  sx={{ 
+                                    textDecoration: 'none',
+                                    '&:hover': { 
+                                      backgroundColor: 'secondary.dark'
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          </SpoilerWrapper>
+                        </Grid>
+                      )}
+                    </Grid>
                   </>
                 )}
               </CardContent>
             </Card>
 
-            {/* Quotes Section - Streamlined */}
-            {quotes.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h5" gutterBottom>
-                      Memorable Quotes
-                    </Typography>
-                    <Button
-                      component={Link}
-                      href={`/quotes?character=${character.name}`}
-                      size="small"
-                      color="primary"
-                    >
-                      View All
-                    </Button>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {quotes.slice(0, 3).map((quote) => (
-                      <Box key={quote.id} sx={{ 
-                        p: 2, 
-                        border: 1, 
-                        borderColor: 'divider', 
-                        borderRadius: 1,
-                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
-                      }}>
-                        <SpoilerWrapper 
-                          chapterNumber={quote.chapterNumber}
-                          spoilerType="minor"
-                          description="Character quote and context"
-                        >
-                          <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, lineHeight: 1.4 }}>
-                            "{quote.text}"
-                          </Typography>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Ch. {quote.chapterNumber}{quote.pageNumber && `, p.${quote.pageNumber}`}
-                            </Typography>
-                          </Box>
-                        </SpoilerWrapper>
-                      </Box>
-                    ))}
-                    {quotes.length > 3 && (
-                      <Box sx={{ textAlign: 'center', pt: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          Showing 3 of {quotes.length} quotes
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Gambles Section */}
-            {gambles.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h5" gutterBottom>
-                      Related Gambles
-                    </Typography>
-                    <Button
-                      component={Link}
-                      href={`/gambles?character=${character.name}`}
-                      size="small"
-                      color="primary"
-                    >
-                      View All
-                    </Button>
-                  </Box>
-                  {gambles.map((gamble) => (
-                    <Card key={gamble.id} variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Typography variant="h6" component={Link} href={`/gambles/${gamble.id}`} 
-                                  sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                          {gamble.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          {gamble.rules}
-                        </Typography>
-                        {gamble.winnerTeam && (
-                          <Typography variant="body2" sx={{ mt: 1 }}>
-                            <strong>Winner:</strong> {gamble.winnerTeam}
-                          </Typography>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Events Section */}
-            {events.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h5" gutterBottom>
-                      Related Events (Chronological)
-                    </Typography>
-                    <Button
-                      component={Link}
-                      href={`/events?character=${character.name}`}
-                      size="small"
-                      color="primary"
-                    >
-                      View All
-                    </Button>
-                  </Box>
-                  {events.map((event) => (
-                    <Card key={event.id} variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <Box sx={{ flex: 1 }}>
-                            {event.isSpoiler ? (
-                              <SpoilerWrapper 
-                                chapterNumber={event.spoilerChapter || event.chapterNumber}
-                                spoilerType="major"
-                                description="Event details and outcome"
-                              >
-                                <Typography variant="h6" component={Link} href={`/events/${event.id}`}
-                                          sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                                  {event.title}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                  {event.description}
-                                </Typography>
-                                {event.outcome && (
-                                  <Typography variant="body2" sx={{ mt: 1 }}>
-                                    <strong>Outcome:</strong> {event.outcome}
-                                  </Typography>
-                                )}
-                              </SpoilerWrapper>
-                            ) : (
-                              <>
-                                <Typography variant="h6" component={Link} href={`/events/${event.id}`}
-                                          sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                                  {event.title}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                  {event.description}
-                                </Typography>
-                                {event.outcome && (
-                                  <Typography variant="body2" sx={{ mt: 1 }}>
-                                    <strong>Outcome:</strong> {event.outcome}
-                                  </Typography>
-                                )}
-                              </>
-                            )}
-                          </Box>
-                          {(event.chapterNumber || event.chapter_number) && (
-                            <Chip 
-                              label={`Ch. ${event.chapterNumber || event.chapter_number}`} 
-                              size="small" 
-                              color={event.isSpoiler ? "error" : "secondary"} 
-                              variant={event.isSpoiler ? "filled" : "outlined"}
-                            />
-                          )}
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Media Gallery Section */}
-            <Card className="gambling-card" sx={{ mt: 4 }}>
-              <CardContent>
-                <MediaGallery 
-                  characterId={character.id} 
-                  limit={8}
-                  showTitle={true}
-                />
-              </CardContent>
-            </Card>
-
-          </Grid>
-
-          <Grid item xs={12} md={4}>
+            {/* Tabbed Content Section */}
             <Card className="gambling-card">
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Character Stats
-                </Typography>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    First Appearance
-                  </Typography>
-                  <Typography 
-                    variant="body1"
-                    component={Link}
-                    href={`/chapters/${character.firstAppearanceChapter}`}
-                    sx={{ 
-                      textDecoration: 'none', 
-                      color: 'primary.main',
-                      '&:hover': { textDecoration: 'underline' }
-                    }}
-                  >
-                    Chapter {character.firstAppearanceChapter}
-                  </Typography>
-                </Box>
-
-                {character.occupation && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Primary Role
-                    </Typography>
-                    <Typography variant="body1">
-                      {character.occupation}
-                    </Typography>
-                  </Box>
-                )}
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Arc Appearances
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                    {arcs.length > 0 ? (
-                      arcs.map((arc) => (
-                        <Chip
-                          key={arc.id}
-                          label={arc.name}
-                          size="small"
+                <Grid container spacing={3}>
+                  {/* Quotes */}
+                  {quotes.length > 0 && (
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6">
+                          Memorable Quotes
+                        </Typography>
+                        <Button
                           component={Link}
-                          href={`/arcs/${arc.id}`}
-                          clickable
-                          color="primary"
-                          variant="outlined"
-                          sx={{ 
-                            textDecoration: 'none',
-                            '&:hover': { 
-                              backgroundColor: 'primary.main',
-                              color: 'white'
-                            }
-                          }}
-                        />
-                      ))
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No arc appearances found
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Gamble Appearances
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                    {gambles.length > 0 ? (
-                      gambles.map((gamble) => (
-                        <Chip
-                          key={gamble.id}
-                          label={gamble.name}
+                          href={`/quotes?characterId=${character.id}`}
                           size="small"
-                          component={Link}
-                          href={`/gambles/${gamble.id}`}
-                          clickable
                           color="primary"
-                          variant="outlined"
-                          sx={{ 
-                            textDecoration: 'none',
-                            '&:hover': { 
-                              backgroundColor: 'primary.main',
-                              color: 'white'
-                            }
-                          }}
-                        />
-                      ))
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No gamble appearances found
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-
-                
-                {/* Guides Section - Moved here */}
-                {guides.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" gutterBottom>
-                        Related Guides
-                      </Typography>
-                      <Button
-                        component={Link}
-                        href={`/guides?character=${character.name}`}
-                        size="small"
-                        color="primary"
-                      >
-                        View All
-                      </Button>
-                    </Box>
-                    {guides.map((guide) => (
-                      <Card key={guide.id} variant="outlined" sx={{ mb: 2 }}>
-                        <CardContent sx={{ py: 1 }}>
-                          <Typography variant="subtitle2" component={Link} href={`/guides/${guide.id}`}
-                                    sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                            {guide.title}
-                          </Typography>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              By {guide.author?.username || 'Unknown'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {guide.viewCount || 0} views
-                            </Typography>
+                        >
+                          View All
+                        </Button>
+                      </Box>
+                      <Box sx={{ maxHeight: 300, overflowY: 'auto', pr: 1 }}>
+                        {quotes.slice(0, 4).map((quote) => (
+                          <Box key={quote.id} sx={{ 
+                            p: 1.5, 
+                            mb: 1.5, 
+                            border: 1, 
+                            borderColor: 'divider', 
+                            borderRadius: 1,
+                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
+                          }}>
+                            <SpoilerWrapper 
+                              chapterNumber={quote.chapterNumber}
+                              spoilerType="minor"
+                              description="Character quote and context"
+                            >
+                              <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 0.5 }}>
+                                "{quote.text}"
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Ch. {quote.chapterNumber}{quote.pageNumber && `, p.${quote.pageNumber}`}
+                              </Typography>
+                            </SpoilerWrapper>
                           </Box>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </>
-                )}
+                        ))}
+                        {quotes.length > 4 && (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                            Showing 4 of {quotes.length} quotes
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {/* Related Content */}
+                  <Grid item xs={12} md={quotes.length > 0 ? 6 : 12}>
+                    {/* Arc Appearances */}
+                    {arcs.length > 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6" gutterBottom>
+                          Arc Appearances
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {arcs.map((arc) => (
+                            <Chip
+                              key={arc.id}
+                              label={arc.name}
+                              size="small"
+                              component={Link}
+                              href={`/arcs/${arc.id}`}
+                              clickable
+                              color="primary"
+                              variant="outlined"
+                              sx={{ 
+                                textDecoration: 'none',
+                                '&:hover': { 
+                                  backgroundColor: 'primary.main',
+                                  color: 'white'
+                                }
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Gambles - Compact List */}
+                    {gambles.length > 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="h6">
+                            Related Gambles
+                          </Typography>
+                          <Button
+                            component={Link}
+                            href={`/gambles?character=${character.name}`}
+                            size="small"
+                            color="primary"
+                          >
+                            View All
+                          </Button>
+                        </Box>
+                        <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+                          {gambles.slice(0, 3).map((gamble) => (
+                            <Box key={gamble.id} sx={{ 
+                              p: 1, 
+                              mb: 1, 
+                              border: 1, 
+                              borderColor: 'divider', 
+                              borderRadius: 1 
+                            }}>
+                              <Typography 
+                                variant="subtitle2" 
+                                component={Link} 
+                                href={`/gambles/${gamble.id}`}
+                                sx={{ 
+                                  textDecoration: 'none', 
+                                  color: 'primary.main', 
+                                  '&:hover': { textDecoration: 'underline' } 
+                                }}
+                              >
+                                {gamble.name}
+                              </Typography>
+                              {gamble.winnerTeam && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                  Winner: {gamble.winnerTeam}
+                                </Typography>
+                              )}
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Events - Compact List */}
+                    {events.length > 0 && (
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="h6">
+                            Key Events
+                          </Typography>
+                          <Button
+                            component={Link}
+                            href={`/events?character=${character.name}`}
+                            size="small"
+                            color="primary"
+                          >
+                            View All
+                          </Button>
+                        </Box>
+                        <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+                          {events.slice(0, 3).map((event) => (
+                            <Box key={event.id} sx={{ 
+                              p: 1, 
+                              mb: 1, 
+                              border: 1, 
+                              borderColor: 'divider', 
+                              borderRadius: 1 
+                            }}>
+                              {event.isSpoiler ? (
+                                <SpoilerWrapper 
+                                  chapterNumber={event.spoilerChapter || event.chapterNumber}
+                                  spoilerType="major"
+                                  description="Event details and outcome"
+                                >
+                                  <Typography 
+                                    variant="subtitle2" 
+                                    component={Link} 
+                                    href={`/events/${event.id}`}
+                                    sx={{ 
+                                      textDecoration: 'none', 
+                                      color: 'primary.main', 
+                                      '&:hover': { textDecoration: 'underline' } 
+                                    }}
+                                  >
+                                    {event.title}
+                                  </Typography>
+                                </SpoilerWrapper>
+                              ) : (
+                                <Typography 
+                                  variant="subtitle2" 
+                                  component={Link} 
+                                  href={`/events/${event.id}`}
+                                  sx={{ 
+                                    textDecoration: 'none', 
+                                    color: 'primary.main', 
+                                    '&:hover': { textDecoration: 'underline' } 
+                                  }}
+                                >
+                                  {event.title}
+                                </Typography>
+                              )}
+                              {(event.chapterNumber || event.chapter_number) && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                  Ch. {event.chapterNumber || event.chapter_number}
+                                </Typography>
+                              )}
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
           </Grid>
+
+          {/* Sidebar */}
+          <Grid item xs={12} lg={4}>
+            {/* Guides Section */}
+            {guides.length > 0 && (
+              <Card className="gambling-card">
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                      Related Guides
+                    </Typography>
+                    <Button
+                      component={Link}
+                      href={`/guides?character=${character.name}`}
+                      size="small"
+                      color="primary"
+                    >
+                      View All
+                    </Button>
+                  </Box>
+                  {guides.slice(0, 4).map((guide) => (
+                    <Box key={guide.id} sx={{ 
+                      p: 1.5, 
+                      mb: 1.5, 
+                      border: 1, 
+                      borderColor: 'divider', 
+                      borderRadius: 1 
+                    }}>
+                      <Typography 
+                        variant="subtitle2" 
+                        component={Link} 
+                        href={`/guides/${guide.id}`}
+                        sx={{ 
+                          textDecoration: 'none', 
+                          color: 'primary.main', 
+                          '&:hover': { textDecoration: 'underline' },
+                          display: 'block',
+                          mb: 0.5
+                        }}
+                      >
+                        {guide.title}
+                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          By {guide.author?.username || 'Unknown'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {guide.viewCount || 0} views
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </Grid>
         </Grid>
+
+        {/* Media Gallery Section - Full width below main content */}
+        <Card className="gambling-card" sx={{ mt: 3 }}>
+          <CardContent>
+            <MediaGallery 
+              characterId={character.id} 
+              limit={12}
+              showTitle={true}
+              compactMode={false}
+            />
+          </CardContent>
+        </Card>
       </motion.div>
     </Container>
   )

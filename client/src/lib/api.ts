@@ -67,6 +67,18 @@ class ApiClient {
       throw error
     }
 
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return undefined as T
+    }
+
+    // Check if response has content
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      const text = await response.text()
+      return text ? JSON.parse(text) : undefined as T
+    }
+
     return response.json()
   }
 
@@ -629,7 +641,7 @@ class ApiClient {
     page?: number
     limit?: number
     search?: string
-    character?: string
+    characterId?: number
   }) {
     const searchParams = new URLSearchParams()
     if (params) {
@@ -1041,6 +1053,34 @@ class ApiClient {
 
   async recordPageView(pageType: string, pageId: number) {
     return this.post<void>(`/page-views/${pageType}/${pageId}/view`, {})
+  }
+
+  async getPageViewCount(pageType: string, pageId: number) {
+    return this.get<{ viewCount: number }>(`/page-views/${pageType}/${pageId}/count`)
+  }
+
+  async getUniquePageViewCount(pageType: string, pageId: number, hoursBack?: number) {
+    const params = hoursBack ? `?hoursBack=${hoursBack}` : ''
+    return this.get<{ uniqueViewCount: number; totalViewCount: number; hoursBack: number }>(
+      `/page-views/${pageType}/${pageId}/unique-count${params}`
+    )
+  }
+
+
+  async getTrendingPagesByType(limit?: number, daysBack?: number) {
+    const params = new URLSearchParams()
+    if (limit) params.append('limit', limit.toString())
+    if (daysBack) params.append('daysBack', daysBack.toString())
+    
+    const queryString = params.toString()
+    return this.get<Record<string, Array<{
+      pageId: number
+      pageType: string
+      viewCount: number
+      recentViewCount: number
+      totalViewCount?: number
+      recentTotalViewCount?: number
+    }>>>(`/page-views/trending/by-type${queryString ? '?' + queryString : ''}`)
   }
 }
 
