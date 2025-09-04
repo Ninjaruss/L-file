@@ -11,6 +11,7 @@
 - Added events to arcs page
 - Updated chapter progress button and pop up for better UX
 - Added media gallery with media view; updated submission link validations
+- Previous user handling for chapter progress; allows local save to retain progress
 
 ### Notes
 - I am thinking of going through with the name L-file for the website. Although it is not completely faithful for the canon use of the term, it's a cool name and neat codename for the project. I will include other ways of making sure the site shows up in relevant search results.

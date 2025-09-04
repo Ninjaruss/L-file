@@ -29,6 +29,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [userProgress, setUserProgress] = useState<number>(1)
   const [loading, setLoading] = useState(true)
   const [isProgressLoaded, setIsProgressLoaded] = useState(false)
+  const [previousUser, setPreviousUser] = useState<any>(null)
 
   // Load progress from localStorage or user data
   const loadProgress = useCallback(async () => {
@@ -82,6 +83,17 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       throw error
     }
   }, [user])
+
+  // Handle logout scenario - reset to local saved progress
+  useEffect(() => {
+    // Check if user just logged out (was logged in, now not logged in)
+    if (previousUser && !user && !authLoading) {
+      // User just logged out, reset to local saved progress
+      const localProgress = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
+      setUserProgress(Math.min(Math.max(localProgress, 1), MAX_CHAPTER))
+    }
+    setPreviousUser(user)
+  }, [user, authLoading, previousUser])
 
   // Load progress when auth state changes
   useEffect(() => {

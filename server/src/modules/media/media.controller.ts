@@ -61,6 +61,11 @@ export class MediaController {
     description: 'Filter by character ID',
   })
   @ApiQuery({
+    name: 'arcId',
+    required: false,
+    description: 'Filter by arc ID',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     description: 'Page number (default: 1)',
@@ -120,10 +125,17 @@ export class MediaController {
   findAllPublic(
     @Query('type') type?: string,
     @Query('characterId') characterId?: number,
+    @Query('arcId') arcId?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.mediaService.findAllPublic({ type, characterId, page, limit });
+    return this.mediaService.findAllPublic({
+      type,
+      characterId,
+      arcId,
+      page,
+      limit,
+    });
   }
 
   @Get('public/:id')

@@ -302,6 +302,7 @@ export class MediaService {
     filters: {
       type?: string;
       characterId?: number;
+      arcId?: number;
       page?: number;
       limit?: number;
     } = {},
@@ -333,6 +334,11 @@ export class MediaService {
     if (filters.characterId) {
       query.andWhere('character.id = :characterId', {
         characterId: filters.characterId,
+      });
+    }
+    if (filters.arcId) {
+      query.andWhere('arc.id = :arcId', {
+        arcId: filters.arcId,
       });
     }
 

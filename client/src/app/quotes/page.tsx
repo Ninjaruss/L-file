@@ -21,6 +21,7 @@ import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
+import api from '@/lib/api'
 
 interface Quote {
   id: number
@@ -49,65 +50,37 @@ function QuotesPageContent() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  // Mock data for now - replace with actual API call
-  const mockQuotes: Quote[] = [
-    {
-      id: 1,
-      text: "I don't gamble. I calculate.",
-      speaker: "Baku Madarame",
-      context: "When explaining his approach to games",
-      tags: ["Strategy", "Philosophy"],
-      chapter: 45,
-      volume: 5,
-      submittedBy: { id: 1, username: "admin" },
-      createdAt: "2024-01-15T10:30:00Z",
-      updatedAt: "2024-01-15T10:30:00Z"
-    },
-    {
-      id: 2,
-      text: "The moment you think you've won, you've already lost.",
-      speaker: "Kaji Takaomi",
-      context: "During the Tower of Karma arc",
-      tags: ["Wisdom", "Psychology"],
-      chapter: 128,
-      volume: 12,
-      submittedBy: { id: 2, username: "fan123" },
-      createdAt: "2024-01-14T15:45:00Z",
-      updatedAt: "2024-01-14T15:45:00Z"
-    },
-    {
-      id: 3,
-      text: "Fear and excitement... they're the same thing.",
-      speaker: "Marco",
-      context: "Before entering a high-stakes gamble",
-      tags: ["Psychology", "Emotion"],
-      chapter: 89,
-      volume: 9,
-      submittedBy: { id: 3, username: "quotelover" },
-      createdAt: "2024-01-13T09:15:00Z",
-      updatedAt: "2024-01-13T09:15:00Z"
-    }
-  ]
-
   const fetchQuotes = async (page = 1, search = '') => {
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const data = await api.getQuotes({
+        page,
+        limit: 12,
+        search: search || undefined
+      })
       
-      let filteredQuotes = mockQuotes
-      if (search) {
-        filteredQuotes = mockQuotes.filter(quote => 
-          quote.text.toLowerCase().includes(search.toLowerCase()) ||
-          quote.speaker.toLowerCase().includes(search.toLowerCase()) ||
-          quote.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
-        )
-      }
+      // Transform the API response to match the expected format
+      const transformedQuotes = data.data.map((quote: any) => ({
+        id: quote.id,
+        text: quote.text,
+        speaker: quote.character?.name || 'Unknown',
+        context: quote.description || quote.context,
+        tags: quote.tags ? (Array.isArray(quote.tags) ? quote.tags : [quote.tags]) : [],
+        chapter: quote.chapterNumber,
+        volume: quote.volumeNumber,
+        submittedBy: {
+          id: quote.submittedBy?.id || 0,
+          username: quote.submittedBy?.username || 'Unknown'
+        },
+        createdAt: quote.createdAt,
+        updatedAt: quote.updatedAt
+      }))
       
-      setQuotes(filteredQuotes)
-      setTotal(filteredQuotes.length)
-      setTotalPages(Math.ceil(filteredQuotes.length / 12))
+      setQuotes(transformedQuotes)
+      setTotal(data.total || 0)
+      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / 12))
     } catch (error: unknown) {
+      console.error('Error fetching quotes:', error)
       setError(error instanceof Error ? error.message : 'Failed to fetch quotes')
     } finally {
       setLoading(false)

@@ -108,7 +108,10 @@ export class UrlNormalizerService {
           return url;
         }
         // Normalize regular TikTok URLs to use www subdomain
-        return url.replace(/^https?:\/\/(www\.)?tiktok\.com/, 'https://www.tiktok.com');
+        return url.replace(
+          /^https?:\/\/(www\.)?tiktok\.com/,
+          'https://www.tiktok.com',
+        );
       }
       return url;
     } catch {
@@ -129,7 +132,10 @@ export class UrlNormalizerService {
           return url;
         }
         // Normalize gallery/album URLs to use www subdomain
-        return url.replace(/^https?:\/\/(www\.)?imgur\.com/, 'https://www.imgur.com');
+        return url.replace(
+          /^https?:\/\/(www\.)?imgur\.com/,
+          'https://www.imgur.com',
+        );
       }
       return url;
     } catch {
@@ -145,7 +151,10 @@ export class UrlNormalizerService {
         parsedUrl.hostname === 'www.soundcloud.com'
       ) {
         // Ensure we're using www subdomain
-        return url.replace(/^https?:\/\/(www\.)?soundcloud\.com/, 'https://www.soundcloud.com');
+        return url.replace(
+          /^https?:\/\/(www\.)?soundcloud\.com/,
+          'https://www.soundcloud.com',
+        );
       }
       return url;
     } catch {

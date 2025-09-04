@@ -17,7 +17,11 @@ import {
   Link as MuiLink,
   Fade,
   Button,
-  Skeleton
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip
 } from '@mui/material'
 import { Image, Play, ExternalLink, X, ZoomIn, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
@@ -51,6 +55,8 @@ interface MediaGalleryProps {
   limit?: number
   showTitle?: boolean
   compactMode?: boolean
+  showFilters?: boolean
+  allowMultipleTypes?: boolean
 }
 
 export default function MediaGallery({ 
@@ -58,11 +64,14 @@ export default function MediaGallery({
   arcId, 
   limit = 12, 
   showTitle = true,
-  compactMode = false 
+  compactMode = false,
+  showFilters = false,
+  allowMultipleTypes = true
 }: MediaGalleryProps) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [media, setMedia] = useState<MediaItem[]>([])
+  const [filteredMedia, setFilteredMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
@@ -71,13 +80,18 @@ export default function MediaGallery({
   const [imageZoomed, setImageZoomed] = useState(false)
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
+  
+  // Filter states
+  const [selectedMediaType, setSelectedMediaType] = useState<string>('all')
+  const [selectedCharacter, setSelectedCharacter] = useState<string>('all')
+  const [selectedArc, setSelectedArc] = useState<string>('all')
 
   useEffect(() => {
     const fetchMedia = async () => {
       try {
         setLoading(true)
         
-        // Use the public media endpoint with filtering
+        // Always attempt to fetch media
         const params = {
           page: 1,
           limit,
@@ -88,6 +102,7 @@ export default function MediaGallery({
         const response = await api.getApprovedMedia(params)
         
         setMedia(response.data)
+        setFilteredMedia(response.data)
       } catch (error: any) {
         console.error('Failed to fetch media:', error)
         setError(error.message || 'Failed to load media')
@@ -96,13 +111,46 @@ export default function MediaGallery({
       }
     }
 
-    if (characterId || arcId) {
-      fetchMedia()
-    }
+    fetchMedia()
   }, [characterId, arcId, limit])
 
+  // Apply filters when filter states change
+  useEffect(() => {
+    let filtered = [...media]
+
+    // Filter by media type
+    if (selectedMediaType !== 'all') {
+      filtered = filtered.filter(item => item.type === selectedMediaType)
+    }
+
+    // Filter by character (only if not already filtering by characterId prop)
+    if (!characterId && selectedCharacter !== 'all') {
+      filtered = filtered.filter(item => 
+        item.character?.name === selectedCharacter
+      )
+    }
+
+    // Filter by arc (only if not already filtering by arcId prop)
+    if (!arcId && selectedArc !== 'all') {
+      filtered = filtered.filter(item => 
+        item.arc?.name === selectedArc
+      )
+    }
+
+    setFilteredMedia(filtered)
+  }, [media, selectedMediaType, selectedCharacter, selectedArc, characterId, arcId])
+
+  // Get unique characters and arcs from media for filter options
+  const availableCharacters = Array.from(
+    new Set(media.filter(item => item.character).map(item => item.character!.name))
+  ).sort()
+  
+  const availableArcs = Array.from(
+    new Set(media.filter(item => item.arc).map(item => item.arc!.name))
+  ).sort()
+
   const handleMediaClick = (mediaItem: MediaItem) => {
-    const mediaIndex = media.findIndex(m => m.id === mediaItem.id)
+    const mediaIndex = filteredMedia.findIndex(m => m.id === mediaItem.id)
     setCurrentImageIndex(mediaIndex)
     setSelectedMedia(mediaItem)
     setDialogOpen(true)
@@ -123,7 +171,7 @@ export default function MediaGallery({
     if (currentImageIndex > 0) {
       const newIndex = currentImageIndex - 1
       setCurrentImageIndex(newIndex)
-      setSelectedMedia(media[newIndex])
+      setSelectedMedia(filteredMedia[newIndex])
       setImageZoomed(false)
       setVideoLoaded(false)
       setShouldLoadVideo(false)
@@ -131,10 +179,10 @@ export default function MediaGallery({
   }
 
   const handleNext = () => {
-    if (currentImageIndex < media.length - 1) {
+    if (currentImageIndex < filteredMedia.length - 1) {
       const newIndex = currentImageIndex + 1
       setCurrentImageIndex(newIndex)
-      setSelectedMedia(media[newIndex])
+      setSelectedMedia(filteredMedia[newIndex])
       setImageZoomed(false)
       setVideoLoaded(false)
       setShouldLoadVideo(false)
@@ -236,10 +284,14 @@ export default function MediaGallery({
   }
 
   if (media.length === 0) {
+    const contextType = characterId ? 'character' : arcId ? 'arc' : 'content'
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="h6" gutterBottom color="text.secondary">
+          No Media Found
+        </Typography>
         <Typography variant="body2" color="text.secondary">
-          No approved media found for this {characterId ? 'character' : 'arc'}.
+          No approved media has been submitted for this {contextType} yet.
         </Typography>
       </Box>
     )
@@ -249,12 +301,71 @@ export default function MediaGallery({
     <Box>
       {showTitle && (
         <Typography variant={compactMode ? "h6" : "h5"} gutterBottom sx={{ mb: 3 }}>
-          Media Gallery ({media.length})
+          Media Gallery ({filteredMedia.length}{filteredMedia.length !== media.length ? ` of ${media.length}` : ''})
         </Typography>
+      )}
+
+      {/* Filter Controls */}
+      {showFilters && (
+        <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={4}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Media Type</InputLabel>
+                <Select
+                  value={selectedMediaType}
+                  label="Media Type"
+                  onChange={(e) => setSelectedMediaType(e.target.value)}
+                >
+                  <MenuItem value="all">All Types</MenuItem>
+                  <MenuItem value="image">Images</MenuItem>
+                  <MenuItem value="video">Videos</MenuItem>
+                  <MenuItem value="audio">Audio</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {!characterId && availableCharacters.length > 0 && (
+              <Grid item xs={12} sm={4}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Character</InputLabel>
+                  <Select
+                    value={selectedCharacter}
+                    label="Character"
+                    onChange={(e) => setSelectedCharacter(e.target.value)}
+                  >
+                    <MenuItem value="all">All Characters</MenuItem>
+                    {availableCharacters.map(name => (
+                      <MenuItem key={name} value={name}>{name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+
+            {!arcId && availableArcs.length > 0 && (
+              <Grid item xs={12} sm={4}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Arc</InputLabel>
+                  <Select
+                    value={selectedArc}
+                    label="Arc"
+                    onChange={(e) => setSelectedArc(e.target.value)}
+                  >
+                    <MenuItem value="all">All Arcs</MenuItem>
+                    {availableArcs.map(name => (
+                      <MenuItem key={name} value={name}>{name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+          </Grid>
+        </Box>
       )}
       
       <Grid container spacing={compactMode ? 1 : 2}>
-        {media.map((mediaItem) => {
+        {filteredMedia.map((mediaItem) => {
           const thumbnail = getMediaThumbnail(mediaItem)
           
           return (
@@ -317,6 +428,47 @@ export default function MediaGallery({
                   >
                     {getMediaTypeIcon(mediaItem.type)}
                   </Box>
+
+                  {/* Character/Arc indicators */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 8,
+                      left: 8,
+                      display: 'flex',
+                      gap: 0.5,
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    {mediaItem.character && (
+                      <Chip
+                        label={mediaItem.character.name}
+                        size="small"
+                        color="primary"
+                        variant="filled"
+                        sx={{
+                          fontSize: '0.75rem',
+                          height: '20px',
+                          backgroundColor: 'rgba(25, 118, 210, 0.9)',
+                          color: 'white'
+                        }}
+                      />
+                    )}
+                    {mediaItem.arc && (
+                      <Chip
+                        label={mediaItem.arc.name}
+                        size="small"
+                        color="secondary"
+                        variant="filled"
+                        sx={{
+                          fontSize: '0.75rem',
+                          height: '20px',
+                          backgroundColor: 'rgba(156, 39, 176, 0.9)',
+                          color: 'white'
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Box>
                 
                 {!compactMode && (
@@ -375,16 +527,16 @@ export default function MediaGallery({
               {selectedMedia?.type === 'image' ? 'Image' : 
                selectedMedia?.type === 'video' ? 'Video' : 'Media'} Viewer
             </Typography>
-            {media.length > 1 && (
+            {filteredMedia.length > 1 && (
               <Typography variant="body2" color="text.secondary">
-                {currentImageIndex + 1} of {media.length}
+                {currentImageIndex + 1} of {filteredMedia.length}
               </Typography>
             )}
           </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {/* Navigation buttons */}
-            {media.length > 1 && (
+            {filteredMedia.length > 1 && (
               <>
                 <IconButton 
                   onClick={handlePrevious} 
@@ -396,7 +548,7 @@ export default function MediaGallery({
                 </IconButton>
                 <IconButton 
                   onClick={handleNext} 
-                  disabled={currentImageIndex === media.length - 1}
+                  disabled={currentImageIndex === filteredMedia.length - 1}
                   size="small"
                   title="Next"
                 >
@@ -620,3 +772,4 @@ export default function MediaGallery({
     </Box>
   )
 }
+
