@@ -42,8 +42,7 @@ export const FloatingProgressIndicator: React.FC = () => {
   const { user } = useAuth()
   const { userProgress, updateProgress, loading: progressLoading } = useProgress()
   const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
+  const [tempProgress, setTempProgress] = useState(userProgress)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
@@ -51,32 +50,31 @@ export const FloatingProgressIndicator: React.FC = () => {
   const progressPercentage = Math.round((userProgress / MAX_CHAPTER) * 100)
 
   useEffect(() => {
-    setInputValue(userProgress.toString())
+    setTempProgress(userProgress)
   }, [userProgress])
 
   const handleOpen = () => {
     setOpen(true)
     setError('')
-    setIsEditing(false)
+    setTempProgress(userProgress)
   }
 
   const handleClose = () => {
     setOpen(false)
-    setInputValue(userProgress.toString())
-    setIsEditing(false)
+    setTempProgress(userProgress)
     setError('')
   }
 
-  const handleEdit = () => {
-    setIsEditing(true)
-    setError('')
+  const handleProgressChange = (newProgress: number) => {
+    if (newProgress >= 1 && newProgress <= MAX_CHAPTER) {
+      setTempProgress(newProgress)
+      setError('')
+    }
   }
 
   const handleSave = async () => {
-    const chapter = parseInt(inputValue, 10)
-    
-    if (isNaN(chapter) || chapter < 1 || chapter > MAX_CHAPTER) {
-      setError(`Chapter must be between 1 and ${MAX_CHAPTER}`)
+    if (tempProgress === userProgress) {
+      handleClose()
       return
     }
 
@@ -84,10 +82,12 @@ export const FloatingProgressIndicator: React.FC = () => {
     setError('')
 
     try {
-      await updateProgress(chapter)
-      setIsEditing(false)
+      await updateProgress(tempProgress)
       setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 2000)
+      setTimeout(() => {
+        setShowSuccess(false)
+        handleClose()
+      }, 1500)
     } catch (error) {
       setError('Failed to update progress. Please try again.')
     } finally {
@@ -95,23 +95,45 @@ export const FloatingProgressIndicator: React.FC = () => {
     }
   }
 
-  const handleCancel = () => {
-    setInputValue(userProgress.toString())
-    setIsEditing(false)
-    setError('')
-  }
-
   const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (!open) return
+    
     if (event.key === 'Enter' && !isUpdating) {
       handleSave()
     } else if (event.key === 'Escape') {
-      handleCancel()
+      handleClose()
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      handleProgressChange(tempProgress - 1)
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      handleProgressChange(tempProgress + 1)
     }
   }
+
+  const getVolumeInfo = (chapter: number) => {
+    // Approximate volume groupings for Usogui (49 volumes, ~11 chapters each)
+    const volume = Math.ceil(chapter / 11)
+    const chapterInVolume = ((chapter - 1) % 11) + 1
+    return { volume: Math.min(volume, 49), chapterInVolume }
+  }
+
+  useEffect(() => {
+    const handleGlobalKeyPress = (event: KeyboardEvent) => {
+      if (open) {
+        handleKeyPress(event as any)
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyPress)
+    return () => window.removeEventListener('keydown', handleGlobalKeyPress)
+  }, [open, tempProgress, isUpdating])
 
   if (progressLoading) {
     return null
   }
+
+  const volumeInfo = getVolumeInfo(tempProgress)
 
   return (
     <>
@@ -151,19 +173,19 @@ export const FloatingProgressIndicator: React.FC = () => {
                   position: 'absolute',
                   bottom: -2,
                   right: -2,
-                  width: 20,
+                  width: userProgress > 99 ? 24 : userProgress > 9 ? 22 : 20,
                   height: 20,
                   borderRadius: '50%',
                   backgroundColor: theme.palette.success.main,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '10px',
+                  fontSize: userProgress > 99 ? '8px' : userProgress > 9 ? '9px' : '10px',
                   fontWeight: 'bold',
                   color: 'white'
                 }}
               >
-                {Math.min(Math.round(progressPercentage / 10), 9)}
+                {userProgress > 99 ? '99+' : userProgress}
               </Box>
             </Box>
           </Fab>
@@ -199,7 +221,7 @@ export const FloatingProgressIndicator: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Progress Dialog */}
+      {/* Enhanced Progress Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -212,7 +234,8 @@ export const FloatingProgressIndicator: React.FC = () => {
             background: theme.palette.mode === 'dark' 
               ? 'linear-gradient(135deg, rgba(33, 33, 33, 0.95) 0%, rgba(66, 66, 66, 0.95) 100%)'
               : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.95) 100%)',
-            backdropFilter: 'blur(10px)'
+            backdropFilter: 'blur(10px)',
+            maxHeight: '80vh'
           }
         }}
       >
@@ -222,7 +245,7 @@ export const FloatingProgressIndicator: React.FC = () => {
             <Typography variant="h6">Reading Progress</Typography>
             {user && (
               <Chip
-                label={`Logged in as ${user.username}`}
+                label={`${user.username}`}
                 size="small"
                 color="primary"
                 variant="outlined"
@@ -232,73 +255,128 @@ export const FloatingProgressIndicator: React.FC = () => {
           </Box>
         </DialogTitle>
 
-        <DialogContent>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Progress: {progressPercentage}% complete ({MAX_CHAPTER - userProgress} chapters remaining)
+        <DialogContent sx={{ px: 3 }}>
+          {/* Current Progress Display */}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
+              Chapter {tempProgress}
             </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={progressPercentage}
-              sx={{
-                height: 8,
-                borderRadius: 1,
-                '& .MuiLinearProgress-bar': {
-                  borderRadius: 1,
-                  background: `linear-gradient(90deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`
-                }
-              }}
-            />
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+              Volume {volumeInfo.volume}, Chapter {volumeInfo.chapterInVolume}
+            </Typography>
+            
+            {/* Visual Progress Bar */}
+            <Box sx={{ position: 'relative', mb: 2 }}>
+              <LinearProgress
+                variant="determinate"
+                value={Math.round((tempProgress / MAX_CHAPTER) * 100)}
+                sx={{
+                  height: 12,
+                  borderRadius: 2,
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 2,
+                    background: `linear-gradient(90deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 50%, ${theme.palette.primary.main} 100%)`
+                  }
+                }}
+              />
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  position: 'absolute', 
+                  right: 0, 
+                  top: -20,
+                  fontWeight: 'bold',
+                  color: 'text.secondary'
+                }}
+              >
+                {Math.round((tempProgress / MAX_CHAPTER) * 100)}% ({MAX_CHAPTER - tempProgress} remaining)
+              </Typography>
+            </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            {isEditing ? (
-              <>
-                <TextField
-                  fullWidth
-                  label="Current Chapter"
-                  type="number"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  inputProps={{ min: 1, max: MAX_CHAPTER }}
-                  disabled={isUpdating}
-                  size="small"
-                  helperText={`Enter a chapter number between 1 and ${MAX_CHAPTER}`}
-                />
-                <IconButton
-                  color="primary"
-                  onClick={handleSave}
-                  disabled={isUpdating}
-                  size="small"
-                >
-                  <Check size={20} />
-                </IconButton>
-                <IconButton
-                  color="secondary"
-                  onClick={handleCancel}
-                  disabled={isUpdating}
-                  size="small"
-                >
-                  <X size={20} />
-                </IconButton>
-              </>
-            ) : (
-              <>
-                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                  Chapter {userProgress}
-                </Typography>
-                <IconButton
-                  color="primary"
-                  onClick={handleEdit}
-                  size="small"
-                  sx={{ ml: 'auto' }}
-                >
-                  <Edit3 size={20} />
-                </IconButton>
-              </>
-            )}
+          {/* Quick Navigation Buttons */}
+          <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleProgressChange(tempProgress - 10)}
+              disabled={tempProgress <= 10}
+              sx={{ minWidth: 'auto', px: 2 }}
+            >
+              -10
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleProgressChange(tempProgress - 1)}
+              disabled={tempProgress <= 1}
+              sx={{ minWidth: 'auto', px: 2 }}
+            >
+              -1
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleProgressChange(tempProgress + 1)}
+              disabled={tempProgress >= MAX_CHAPTER}
+              sx={{ minWidth: 'auto', px: 2 }}
+            >
+              +1
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleProgressChange(tempProgress + 10)}
+              disabled={tempProgress >= MAX_CHAPTER - 9}
+              sx={{ minWidth: 'auto', px: 2 }}
+            >
+              +10
+            </Button>
           </Box>
+
+          {/* Chapter Input with Slider */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Jump to chapter:
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2">1</Typography>
+              <Box sx={{ flex: 1 }}>
+                <input
+                  type="range"
+                  min="1"
+                  max={MAX_CHAPTER}
+                  value={tempProgress}
+                  onChange={(e) => handleProgressChange(parseInt(e.target.value))}
+                  disabled={isUpdating}
+                  style={{
+                    width: '100%',
+                    height: '8px',
+                    borderRadius: '4px',
+                    background: `linear-gradient(to right, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} ${(tempProgress / MAX_CHAPTER) * 100}%, ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'} ${(tempProgress / MAX_CHAPTER) * 100}%, ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'} 100%)`,
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                />
+              </Box>
+              <Typography variant="body2">{MAX_CHAPTER}</Typography>
+            </Box>
+          </Box>
+
+          {/* Direct Input Field */}
+          <TextField
+            fullWidth
+            label="Or enter chapter number"
+            type="number"
+            value={tempProgress}
+            onChange={(e) => handleProgressChange(parseInt(e.target.value) || 1)}
+            inputProps={{ min: 1, max: MAX_CHAPTER }}
+            disabled={isUpdating}
+            size="small"
+            sx={{ mb: 2 }}
+            helperText="Use arrow keys for fine control"
+          />
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -311,18 +389,39 @@ export const FloatingProgressIndicator: React.FC = () => {
               Your progress is saved locally. Sign in to sync across devices.
             </Alert>
           )}
+
+          {tempProgress !== userProgress && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              You have unsaved changes. Click "Update Progress" to save.
+            </Alert>
+          )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
           <Button
             component={Link}
-            href={`/chapters/${userProgress}`}
-            variant="contained"
+            href={`/chapters/${tempProgress}`}
+            variant="outlined"
             startIcon={<BookOpen size={16} />}
             onClick={handleClose}
             fullWidth
+            sx={{ order: { xs: 2, sm: 1 } }}
           >
-            Go to Chapter {userProgress}
+            Read Chapter {tempProgress}
+          </Button>
+          
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={isUpdating || tempProgress === userProgress}
+            startIcon={isUpdating ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}><Check size={16} /></motion.div> : <Check size={16} />}
+            fullWidth
+            sx={{ 
+              order: { xs: 1, sm: 2 },
+              background: tempProgress !== userProgress ? `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)` : undefined
+            }}
+          >
+            {isUpdating ? 'Updating...' : tempProgress !== userProgress ? 'Update Progress' : 'Progress Saved'}
           </Button>
         </DialogActions>
       </Dialog>

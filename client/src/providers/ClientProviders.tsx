@@ -25,6 +25,17 @@ function ConditionalNavigation() {
   return <Navigation />
 }
 
+function ConditionalFloatingProgress() {
+  const pathname = usePathname()
+  const isAdminPage = pathname?.startsWith('/admin')
+  
+  if (isAdminPage) {
+    return null
+  }
+  
+  return <FloatingProgressIndicator />
+}
+
 export function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <ThemeProvider theme={theme}>
@@ -35,7 +46,7 @@ export function ClientProviders({ children }: ClientProvidersProps) {
           <main className="min-h-screen bg-usogui-black">
             {children}
           </main>
-          <FloatingProgressIndicator />
+          <ConditionalFloatingProgress />
         </ProgressProvider>
       </AuthProvider>
     </ThemeProvider>

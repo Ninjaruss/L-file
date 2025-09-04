@@ -457,7 +457,7 @@ export default function ProfilePage() {
                   size="large"
                   color="secondary"
                 >
-                  {progressLoading ? 'Updating...' : dataLoading ? 'Loading...' : 'Update Reading Progress'}
+                  {progressLoading ? 'Updating...' : dataLoading ? 'Loading...' : `Update Reading Progress (Chapter ${userProgress})`}
                 </Button>
               </CardContent>
             </Card>

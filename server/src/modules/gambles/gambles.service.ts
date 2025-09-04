@@ -29,6 +29,15 @@ export class GamblesService {
   ) {}
 
   async create(createGambleDto: CreateGambleDto): Promise<Gamble> {
+    // Validate chapter exists
+    await this.chaptersRepository
+      .findOneByOrFail({ id: createGambleDto.chapterId })
+      .catch(() => {
+        throw new NotFoundException(
+          `Chapter with ID ${createGambleDto.chapterId} not found`,
+        );
+      });
+
     // Create new gamble
     const gamble = new Gamble();
     gamble.name = createGambleDto.name;
@@ -349,6 +358,17 @@ export class GamblesService {
       throw new NotFoundException(`Gamble with ID ${id} not found`);
     }
 
+    // Validate chapter exists if chapterId is being updated
+    if (updateGambleDto.chapterId !== undefined) {
+      await this.chaptersRepository
+        .findOneByOrFail({ id: updateGambleDto.chapterId })
+        .catch(() => {
+          throw new NotFoundException(
+            `Chapter with ID ${updateGambleDto.chapterId} not found`,
+          );
+        });
+    }
+
     // Update basic gamble info
     await this.gamblesRepository.update(id, {
       name: updateGambleDto.name,
@@ -360,8 +380,13 @@ export class GamblesService {
 
     // Update participants if provided
     if (updateGambleDto.participants) {
-      // Remove existing participants
-      await this.gambleCharactersRepository.delete({ gamble: { id } });
+      // Remove existing participants using the foreign key column
+      await this.gambleCharactersRepository
+        .createQueryBuilder()
+        .delete()
+        .from(GambleCharacter)
+        .where('gambleId = :gambleId', { gambleId: id })
+        .execute();
 
       // Add new participants
       const participants = await Promise.all(
@@ -381,8 +406,13 @@ export class GamblesService {
 
     // Update rounds if provided
     if (updateGambleDto.rounds) {
-      // Remove existing rounds
-      await this.gambleRoundsRepository.delete({ gamble: { id } });
+      // Remove existing rounds using the foreign key column
+      await this.gambleRoundsRepository
+        .createQueryBuilder()
+        .delete()
+        .from(GambleRound)
+        .where('gambleId = :gambleId', { gambleId: id })
+        .execute();
 
       // Add new rounds
       await Promise.all(

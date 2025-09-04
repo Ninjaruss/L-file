@@ -22,6 +22,7 @@ import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
+import SpoilerWrapper from '../../components/SpoilerWrapper'
 
 interface Gamble {
   id: number
@@ -206,13 +207,19 @@ export default function GamblesPage() {
 
                         {gamble.winnerTeam && (
                           <Box sx={{ mt: 'auto' }}>
-                            <Chip
-                              label={`Winner: ${gamble.winnerTeam}`}
-                              size="small"
-                              color="success"
-                              variant="filled"
-                              icon={<Trophy size={14} />}
-                            />
+                            <SpoilerWrapper 
+                              chapterNumber={gamble.chapterId} 
+                              spoilerType="outcome"
+                              description="Gamble winner"
+                            >
+                              <Chip
+                                label={`Winner: ${gamble.winnerTeam}`}
+                                size="small"
+                                color="success"
+                                variant="filled"
+                                icon={<Trophy size={14} />}
+                              />
+                            </SpoilerWrapper>
                           </Box>
                         )}
                       </CardContent>
