@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Box, Typography, Link, Stack } from '@mui/material'
+import NextLink from 'next/link'
 
 export const Footer: React.FC = () => {
   return (
@@ -18,8 +19,15 @@ export const Footer: React.FC = () => {
     >
       <Stack spacing={2} alignItems="center" textAlign="center">
         <Typography variant="body2" color="text.secondary">
-          L-file is an unofficial fan resource for Usogui created by Sako Toshio and published by Shueisha.
+          L-file is an independent fan resource. Usogui © Sako Toshio/Shueisha.
         </Typography>
+        <Box>
+          <Link component={NextLink} href="/disclaimer" color="primary" sx={{ textDecoration: 'none' }}>
+            <Typography variant="body2">
+              Disclaimer & Legal Information
+            </Typography>
+          </Link>
+        </Box>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <Typography variant="body2" color="text.secondary">
             Contact:{' '}

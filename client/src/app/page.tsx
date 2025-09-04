@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { SearchBar } from '../components/SearchBar'
 import { TrendingSection } from '../components/TrendingSection'
 import { VolumeCoverSection } from '../components/VolumeCoverSection'
+import { FAQ } from '../components/FAQ'
 import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
 
@@ -356,6 +357,17 @@ export default function HomePage() {
                 )}
               </Box>
             ) : null}
+          </motion.div>
+        </Box>
+
+        {/* FAQ Section */}
+        <Box mb={6}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <FAQ maxItems={6} />
           </motion.div>
         </Box>
 

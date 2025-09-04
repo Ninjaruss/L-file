@@ -157,11 +157,13 @@ export const FloatingProgressIndicator: React.FC = () => {
             color="primary"
             onClick={handleOpen}
             sx={{
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              boxShadow: 4,
+              background: `linear-gradient(135deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.usogui.character} 50%, ${theme.palette.primary.main} 100%)`,
+              boxShadow: `0 4px 12px rgba(225, 29, 72, 0.3)`,
+              border: `1px solid rgba(225, 29, 72, 0.2)`,
               '&:hover': {
-                boxShadow: 8,
-                transform: 'scale(1.05)'
+                boxShadow: `0 8px 24px rgba(225, 29, 72, 0.4)`,
+                transform: 'scale(1.05)',
+                border: `1px solid ${theme.palette.primary.main}`
               },
               transition: 'all 0.2s ease-in-out'
             }}
@@ -171,21 +173,24 @@ export const FloatingProgressIndicator: React.FC = () => {
               <Box
                 sx={{
                   position: 'absolute',
-                  bottom: -2,
-                  right: -2,
-                  width: userProgress > 99 ? 24 : userProgress > 9 ? 22 : 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  backgroundColor: theme.palette.success.main,
+                  bottom: -4,
+                  right: -6,
+                  minWidth: userProgress > 999 ? 32 : userProgress > 99 ? 28 : userProgress > 9 ? 24 : 22,
+                  height: 18,
+                  px: 0.5,
+                  borderRadius: '12px',
+                  background: `linear-gradient(135deg, ${theme.palette.usogui.arc} 0%, ${theme.palette.primary.main} 100%)`,
+                  border: `2px solid ${theme.palette.usogui.black}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: userProgress > 99 ? '8px' : userProgress > 9 ? '9px' : '10px',
+                  fontSize: userProgress > 999 ? '9px' : userProgress > 99 ? '10px' : userProgress > 9 ? '11px' : '12px',
                   fontWeight: 'bold',
-                  color: 'white'
+                  color: 'white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                 }}
               >
-                {userProgress > 99 ? '99+' : userProgress}
+                {userProgress}
               </Box>
             </Box>
           </Fab>
@@ -276,7 +281,7 @@ export const FloatingProgressIndicator: React.FC = () => {
                   backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                   '& .MuiLinearProgress-bar': {
                     borderRadius: 2,
-                    background: `linear-gradient(90deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 50%, ${theme.palette.primary.main} 100%)`
+                    background: `linear-gradient(90deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.usogui.character} 50%, ${theme.palette.usogui.arc} 80%, ${theme.palette.primary.main} 100%)`
                   }
                 }}
               />
@@ -418,7 +423,10 @@ export const FloatingProgressIndicator: React.FC = () => {
             fullWidth
             sx={{ 
               order: { xs: 1, sm: 2 },
-              background: tempProgress !== userProgress ? `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)` : undefined
+              background: tempProgress !== userProgress ? `linear-gradient(135deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.primary.main} 100%)` : undefined,
+              '&:hover': tempProgress !== userProgress ? {
+                background: `linear-gradient(135deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.primary.dark} 100%)`
+              } : undefined
             }}
           >
             {isUpdating ? 'Updating...' : tempProgress !== userProgress ? 'Update Progress' : 'Progress Saved'}

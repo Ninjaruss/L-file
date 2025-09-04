@@ -1,14 +1,23 @@
 # Changelog and notes
 ## TODO:
-- Add a full disclaimer page (update footer to link it) and faq section/page
-- For character detail page, make key events more of a horizontal timeline that has sections for arcs
-- Put media gallery as a seperate tab
+- Put media gallery as a seperate tab; update media viewer 
+- Fix events showing for character detail pages
+- Add modal to view events info in detail
 - Add highlight of most popular quote, gamble, and character profile picture
 - Add different image profile pictures for characters and adding labeling (update character image based on progressed chapter; subtle chapter progression)
 - Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN); allow character profile picture choice from characters
-- Figure out better structure for gambles if needed.
+- Figure out better structure for gambles if needed. Also look into adding more detail to events to allow for better filtering (i.e. Character action, affected characters)
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
 - Discord integration for creating account
+- Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
+- Update admin edit pages to have better layout (put delete button somewhere to not be clicked accidentally)
+
+## 2025-09-04
+### Changes
+- Added disclaimer page and FAQ section
+- Fixed spoilers on character detail page to use useSpoilerSettings hook
+- Updated character timeline to hide spoilers and list multiple events per arc
+- Jump to chapter functionality added to character timeline
 
 ## 2025-09-03
 ### Changes
