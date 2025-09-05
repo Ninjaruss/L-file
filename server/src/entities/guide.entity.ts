@@ -14,6 +14,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { User } from './user.entity';
 import { Tag } from './tag.entity';
+import { GuideLike } from './guide-like.entity';
 
 export enum GuideStatus {
   DRAFT = 'draft',
@@ -104,8 +105,8 @@ export class Guide {
   @ApiPropertyOptional({
     description: 'Likes received by this guide',
   })
-  @OneToMany('GuideLike', 'guide')
-  likes: any[];
+  @OneToMany(() => GuideLike, (guideLike) => guideLike.guide)
+  likes: GuideLike[];
 
   @ApiProperty({ description: 'Date and time when the guide was created' })
   @CreateDateColumn()

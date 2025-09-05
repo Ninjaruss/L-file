@@ -27,19 +27,21 @@ interface Event {
   title: string
   description: string
   chapterNumber: number
-  type: string
+  type: 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution'
+  status: 'draft' | 'pending_review' | 'approved'
   arc?: {
     id: number
     name: string
   }
+  gamble?: {
+    id: number
+    name: string
+    rules: string
+    winCondition?: string
+  }
   characters: Array<{
     id: number
     name: string
-  }>
-  pageNumbers?: number[]
-  chapterReferences?: Array<{
-    chapterNumber: number
-    context: string
   }>
   createdAt: string
   updatedAt: string
@@ -169,25 +171,30 @@ export default function EventDetailsPage() {
                   </Typography>
                 </SpoilerWrapper>
 
-                {event.chapterReferences && event.chapterReferences.length > 0 && (
+                {event.gamble && (
                   <>
                     <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                      Related Chapters
+                      Related Gamble
                     </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {event.chapterReferences.map((ref, index) => (
-                        <SpoilerWrapper 
-                          key={index}
-                          chapterNumber={ref.chapterNumber}
-                          spoilerType="minor"
-                          description={`Cross-reference to Chapter ${ref.chapterNumber}`}
-                        >
-                          <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Chapter {ref.chapterNumber}:</strong> {ref.context}
+                    <SpoilerWrapper 
+                      chapterNumber={event.chapterNumber}
+                      spoilerType="minor"
+                      description={`Gamble details: ${event.gamble.name}`}
+                    >
+                      <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                          {event.gamble.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Rules:</strong> {event.gamble.rules}
+                        </Typography>
+                        {event.gamble.winCondition && (
+                          <Typography variant="body2">
+                            <strong>Win Condition:</strong> {event.gamble.winCondition}
                           </Typography>
-                        </SpoilerWrapper>
-                      ))}
-                    </Box>
+                        )}
+                      </Box>
+                    </SpoilerWrapper>
                   </>
                 )}
               </CardContent>
@@ -264,14 +271,17 @@ export default function EventDetailsPage() {
                   </Box>
                 )}
 
-                {event.pageNumbers && event.pageNumbers.length > 0 && (
+                {event.status && (
                   <Box>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Page References
+                      Status
                     </Typography>
-                    <Typography variant="body2">
-                      Pages: {event.pageNumbers.join(', ')}
-                    </Typography>
+                    <Chip
+                      label={event.status.replace('_', ' ').toUpperCase()}
+                      size="small"
+                      color={event.status === 'approved' ? 'success' : event.status === 'pending_review' ? 'warning' : 'default'}
+                      variant="outlined"
+                    />
                   </Box>
                 )}
               </CardContent>

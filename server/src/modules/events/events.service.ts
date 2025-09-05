@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Event, EventType } from '../../entities/event.entity';
+import { Event, EventType, EventStatus } from '../../entities/event.entity';
 import { Character } from '../../entities/character.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -22,7 +22,7 @@ export class EventsService {
     description?: string;
     type?: EventType;
     userProgress?: number;
-    isVerified?: boolean;
+    status?: EventStatus;
     page?: number;
     limit?: number;
     sort?: string;
@@ -53,9 +53,9 @@ export class EventsService {
     if (filters.type) {
       query.andWhere('event.type = :type', { type: filters.type });
     }
-    if (filters.isVerified !== undefined) {
-      query.andWhere('event.isVerified = :isVerified', {
-        isVerified: filters.isVerified,
+    if (filters.status !== undefined) {
+      query.andWhere('event.status = :status', {
+        status: filters.status,
       });
     }
 
@@ -89,7 +89,7 @@ export class EventsService {
     userProgress: number,
     filters?: {
       type?: EventType;
-      isVerified?: boolean;
+      status?: EventStatus;
       arc?: string;
     },
   ): Promise<Event[]> {
@@ -105,9 +105,9 @@ export class EventsService {
     if (filters?.type) {
       query.andWhere('event.type = :type', { type: filters.type });
     }
-    if (filters?.isVerified !== undefined) {
-      query.andWhere('event.isVerified = :isVerified', {
-        isVerified: filters.isVerified,
+    if (filters?.status !== undefined) {
+      query.andWhere('event.status = :status', {
+        status: filters.status,
       });
     }
     if (filters?.arc) {
@@ -154,6 +154,94 @@ export class EventsService {
     return query.getMany();
   }
 
+  async findByArc(arcId: number, filters: {
+    title?: string;
+    description?: string;
+    type?: EventType;
+    userProgress?: number;
+    status?: EventStatus;
+  }): Promise<Event[]> {
+    const query = this.repo
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.arc', 'arc')
+      .leftJoinAndSelect('event.characters', 'characters')
+      .where('event.arcId = :arcId', { arcId });
+
+    if (filters.title) {
+      query.andWhere('LOWER(event.title) LIKE LOWER(:title)', {
+        title: `%${filters.title}%`,
+      });
+    }
+    if (filters.description) {
+      query.andWhere('LOWER(event.description) LIKE LOWER(:description)', {
+        description: `%${filters.description}%`,
+      });
+    }
+    if (filters.type) {
+      query.andWhere('event.type = :type', { type: filters.type });
+    }
+    if (filters.status !== undefined) {
+      query.andWhere('event.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    // Spoiler protection: only show events user can safely view
+    if (filters.userProgress !== undefined) {
+      query.andWhere(
+        '(event.spoilerChapter IS NULL OR event.spoilerChapter <= :userProgress)',
+        { userProgress: filters.userProgress },
+      );
+    }
+
+    query.orderBy('event.chapterNumber', 'ASC');
+    return query.getMany();
+  }
+
+  async findByChapter(chapterNumber: number, filters: {
+    title?: string;
+    description?: string;
+    type?: EventType;
+    userProgress?: number;
+    status?: EventStatus;
+  }): Promise<Event[]> {
+    const query = this.repo
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.arc', 'arc')
+      .leftJoinAndSelect('event.characters', 'characters')
+      .where('event.chapterNumber = :chapterNumber', { chapterNumber });
+
+    if (filters.title) {
+      query.andWhere('LOWER(event.title) LIKE LOWER(:title)', {
+        title: `%${filters.title}%`,
+      });
+    }
+    if (filters.description) {
+      query.andWhere('LOWER(event.description) LIKE LOWER(:description)', {
+        description: `%${filters.description}%`,
+      });
+    }
+    if (filters.type) {
+      query.andWhere('event.type = :type', { type: filters.type });
+    }
+    if (filters.status !== undefined) {
+      query.andWhere('event.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    // Spoiler protection: only show events user can safely view
+    if (filters.userProgress !== undefined) {
+      query.andWhere(
+        '(event.spoilerChapter IS NULL OR event.spoilerChapter <= :userProgress)',
+        { userProgress: filters.userProgress },
+      );
+    }
+
+    query.orderBy('event.chapterNumber', 'ASC');
+    return query.getMany();
+  }
+
   findOne(id: number): Promise<Event | null> {
     return this.repo.findOne({
       where: { id },
@@ -167,8 +255,8 @@ export class EventsService {
     // Clean up numeric fields to handle NaN values
     const cleanedData = {
       ...eventData,
-      type: data.type || EventType.OTHER,
-      isVerified: data.isVerified || false,
+      type: data.type || EventType.DECISION,
+      status: data.status || EventStatus.DRAFT,
       chapterNumber: Number(eventData.chapterNumber) || 1,
       spoilerChapter:
         eventData.spoilerChapter && !isNaN(Number(eventData.spoilerChapter))
@@ -328,7 +416,7 @@ export class EventsService {
     userProgress?: number,
     filters?: {
       type?: EventType;
-      isVerified?: boolean;
+      status?: EventStatus;
     },
   ): Promise<{
     arcs: Array<{
@@ -354,9 +442,9 @@ export class EventsService {
       eventsQuery.andWhere('event.type = :type', { type: filters.type });
     }
 
-    if (filters?.isVerified !== undefined) {
-      eventsQuery.andWhere('event.isVerified = :isVerified', {
-        isVerified: filters.isVerified,
+    if (filters?.status !== undefined) {
+      eventsQuery.andWhere('event.status = :status', {
+        status: filters.status,
       });
     }
 
@@ -394,5 +482,16 @@ export class EventsService {
       arcs,
       noArc: noArcEvents,
     };
+  }
+
+  async findGroupedByArc(filters?: {
+    userProgress?: number;
+    type?: EventType;
+    status?: EventStatus;
+  }) {
+    return this.getEventsGroupedByArc(filters?.userProgress, {
+      type: filters?.type,
+      status: filters?.status,
+    });
   }
 }

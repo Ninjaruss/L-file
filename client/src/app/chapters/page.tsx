@@ -48,7 +48,7 @@ export default function ChaptersPage() {
     const fetchChapters = async () => {
       try {
         setLoading(true)
-        const params: any = { page, limit }
+        const params: Record<string, string | number> = { page, limit }
         if (searchTerm.trim()) {
           // If searchTerm is a number, search by chapter number
           if (!isNaN(Number(searchTerm))) {
@@ -62,8 +62,8 @@ export default function ChaptersPage() {
         setChapters(response.data)
         setTotalPages(response.totalPages)
         setTotal(response.total)
-      } catch (error: any) {
-        setError(error.message)
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'An error occurred')
       } finally {
         setLoading(false)
       }

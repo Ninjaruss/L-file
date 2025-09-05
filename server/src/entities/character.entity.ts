@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Media } from './media.entity';
 import { Faction } from './faction.entity';
-import { GambleCharacter } from './gamble-character.entity';
 import { Quote } from './quote.entity';
 import {
   ApiProperty,
@@ -116,19 +115,6 @@ export class Character {
   @ManyToMany(() => Faction, (faction) => faction.characters)
   factions: Faction[];
 
-  @ApiPropertyOptional({
-    description: 'Gambles this character participated in',
-    type: () => [GambleCharacter],
-  })
-  @OneToMany(
-    () => GambleCharacter,
-    (gambleCharacter) => gambleCharacter.character,
-    {
-      nullable: true,
-      cascade: true,
-    },
-  )
-  gambleParticipations: GambleCharacter[];
 
   @ApiHideProperty()
   @OneToMany(() => Quote, (quote) => quote.character, {

@@ -30,59 +30,6 @@ import {
 } from 'react-admin'
 import { Box, Typography, Divider, Card, CardContent } from '@mui/material'
 
-// Custom participants table that redirects to edit view with participants tab
-const ParticipantsTable = () => {
-  const record = useRecordContext()
-  const redirect = useRedirect()
-  
-  const handleRowClick = (): string | false => {
-    if (record?.id) {
-      // Navigate to edit view - React Admin will handle the rest
-      redirect('edit', 'gambles', record.id)
-      return false // Prevent default row click behavior since we're handling navigation manually
-    }
-    return false
-  }
-
-  return (
-    <ArrayField source="participants" label="Players">
-      <Datagrid rowClick={handleRowClick} bulkActionButtons={false}>
-        <ReferenceField source="characterId" reference="characters" label="Character" link="show">
-          <TextField source="name" />
-        </ReferenceField>
-        <TextField source="teamName" label="Team" />
-        <BooleanField source="isWinner" label="Winner" />
-        <TextField source="stake" label="Stake" />
-      </Datagrid>
-    </ArrayField>
-  )
-}
-
-// Custom rounds table that redirects to edit view with rounds tab
-const RoundsTable = () => {
-  const record = useRecordContext()
-  const redirect = useRedirect()
-  
-  const handleRowClick = (): string | false => {
-    if (record?.id) {
-      // Navigate to edit view - React Admin will handle the rest  
-      redirect('edit', 'gambles', record.id)
-      return false // Prevent default row click behavior since we're handling navigation manually
-    }
-    return false
-  }
-
-  return (
-    <ArrayField source="rounds">
-      <Datagrid rowClick={handleRowClick} bulkActionButtons={false}>
-        <TextField source="roundNumber" label="Round #" />
-        <TextField source="outcome" label="What Happened" />
-        <TextField source="reward" label="Reward" />
-        <TextField source="penalty" label="Penalty" />
-      </Datagrid>
-    </ArrayField>
-  )
-}
 
 
 
@@ -91,16 +38,12 @@ export const GambleList = () => (
     <Datagrid rowClick="show">
       <TextField source="id" />
       <TextField source="name" />
-      <TextField source="chapter.number" label="Chapter #" />
-      <BooleanField source="hasTeams" label="Team Game" />
+      <TextField source="chapterId" label="Chapter ID" />
       <ArrayField source="participants" label="Participants">
         <SingleFieldList linkType={false}>
-          <ReferenceField source="characterId" reference="characters" link="show">
-            <ChipField source="name" size="small" />
-          </ReferenceField>
+          <ChipField source="name" size="small" />
         </SingleFieldList>
       </ArrayField>
-      <TextField source="winnerTeam" label="Winner" />
       <DateField source="createdAt" />
     </Datagrid>
   </List>
@@ -114,15 +57,8 @@ export const GambleShow = () => (
         <Divider sx={{ mb: 2 }} />
         <TextField source="id" label="Gamble ID" />
         <TextField source="name" label="Gamble Name" />
-        <ReferenceField source="chapterId" reference="chapters" label="Chapter" link="show">
-          <TextField source="number" />
-        </ReferenceField>
-        <ReferenceField source="chapterId" reference="chapters" label="Chapter Title" link={false}>
-          <TextField source="title" />
-        </ReferenceField>
-        <BooleanField source="hasTeams" label="Team-based Game" />
-        <TextField source="winnerTeam" label="Winner" />
-      </Box>
+        <TextField source="chapterId" label="Chapter ID" />
+        </Box>
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" gutterBottom>Game Details</Typography>
@@ -134,26 +70,13 @@ export const GambleShow = () => (
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" gutterBottom>Participants</Typography>
         <Divider sx={{ mb: 2 }} />
-        <ParticipantsTable />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom>Observers</Typography>
-        <Divider sx={{ mb: 2 }} />
-        <ArrayField source="observers" label="Observers">
+        <ArrayField source="participants" label="Participants">
           <SingleFieldList linkType={false}>
-            <ReferenceField source="id" reference="characters" link="show">
-              <ChipField source="name" />
-            </ReferenceField>
+            <ChipField source="name" size="small" />
           </SingleFieldList>
         </ArrayField>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom>Rounds</Typography>
-        <Divider sx={{ mb: 2 }} />
-        <RoundsTable />
-      </Box>
 
       <Box>
         <Typography variant="h6" gutterBottom>Metadata</Typography>
@@ -168,19 +91,13 @@ export const GambleShow = () => (
 const GambleEditForm = () => {
   const { record, isLoading } = useEditController()
   
-  // Transform observers to observerIds for the form
-  const transformedRecord = React.useMemo(() => {
-    if (record && record.observers && Array.isArray(record.observers)) {
-      return {
-        ...record,
-        observerIds: record.observers.map((observer: any) => observer.id)
-      }
-    }
-    return record
-  }, [record])
+  if (isLoading || !record) return null
 
-
-  if (isLoading || !transformedRecord) return null
+  // Transform record to include participantIds for the form
+  const transformedRecord = {
+    ...record,
+    participantIds: record.participants ? record.participants.map((p: any) => p.id) : []
+  }
 
   return (
     <TabbedForm
@@ -201,23 +118,6 @@ const GambleEditForm = () => {
             max={539} 
             helperText="Chapter where this gamble occurs (1-539)"
             sx={{ mb: 2 }}
-          />
-          <SelectInput 
-            source="hasTeams" 
-            label="Game Type"
-            choices={[
-              { id: false, name: 'Individual Players' },
-              { id: true, name: 'Team-based Game' }
-            ]}
-            helperText="Whether this gamble involves teams or individual participants"
-            emptyText="Select game type"
-            sx={{ mb: 2 }}
-          />
-          <TextInput 
-            source="winnerTeam" 
-            label="Winning Team/Player" 
-            helperText="Name of the team or player that won"
-            fullWidth
           />
         </Box>
       </FormTab>
@@ -253,96 +153,35 @@ const GambleEditForm = () => {
           <Typography variant="h6" gutterBottom color="primary">
             Game Participants
           </Typography>
-          <ArrayInput source="participants" label="Players">
-            <SimpleFormIterator>
-              <Card variant="outlined" sx={{ mb: 2, p: 2 }}>
-                <CardContent>
-                  <ReferenceInput source="characterId" reference="characters" label="Character" required>
-                    <AutocompleteInput optionText="name" noOptionsText="No characters found" />
-                  </ReferenceInput>
-                  <TextInput source="teamName" label="Team Name" helperText="Leave blank for individual games" />
-                  <SelectInput 
-                    source="isWinner" 
-                    label="Winner?"
-                    choices={[
-                      { id: false, name: 'No' },
-                      { id: true, name: 'Yes' }
-                    ]}
-                    helperText="Did this participant win?"
-                  />
-                  <TextInput source="stake" label="Stake" helperText="What this character is betting" />
-                </CardContent>
-              </Card>
-            </SimpleFormIterator>
-          </ArrayInput>
-        </Box>
-
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" gutterBottom color="primary">
-            Observers
-          </Typography>
-          <ReferenceArrayInput source="observerIds" reference="characters">
+          <ReferenceArrayInput source="participantIds" reference="characters">
             <AutocompleteArrayInput 
               optionText="name" 
-              helperText="Characters who observed but didn't participate"
+              helperText="Characters who participated in this gamble"
               noOptionsText="No characters available"
             />
           </ReferenceArrayInput>
         </Box>
+
       </FormTab>
 
-      <FormTab label="Rounds">
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" gutterBottom color="primary">
-            Game Rounds
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Document the progression of the gamble round by round
-          </Typography>
-          <ArrayInput source="rounds">
-            <SimpleFormIterator>
-              <Card variant="outlined" sx={{ mb: 2, p: 2 }}>
-                <CardContent>
-                  <NumberInput source="roundNumber" label="Round #" />
-                  <TextInput 
-                    source="outcome" 
-                    label="What Happened" 
-                    multiline 
-                    rows={3} 
-                    required 
-                    fullWidth
-                    helperText="Describe the events of this round"
-                  />
-                  <TextInput source="reward" label="Reward" helperText="What the winner gained" />
-                  <TextInput source="penalty" label="Penalty" helperText="What the loser lost" />
-                </CardContent>
-              </Card>
-            </SimpleFormIterator>
-          </ArrayInput>
-        </Box>
-      </FormTab>
       </TabbedForm>
   )
 }
 
 export const GambleEdit = () => {
+  // Data transformation is no longer needed as we're directly using participantIds
   return (
-    <Edit 
-      transform={(data: any) => {
-        const transformedData = { ...data }
-        // Remove the observers array as we only need observerIds for the update
-        delete transformedData.observers
-        return transformedData
-      }}
-    >
+    <Edit>
       <GambleEditForm />
     </Edit>
   )
 }
 
-export const GambleCreate = () => (
-  <Create>
-    <TabbedForm>
+export const GambleCreate = () => {
+  // Data transformation is no longer needed as we're directly using participantIds
+  return (
+    <Create>
+      <TabbedForm>
       <FormTab label="Basic Info">
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom color="primary">
@@ -357,23 +196,6 @@ export const GambleCreate = () => (
             max={539} 
             helperText="Chapter where this gamble occurs (1-539)"
             sx={{ mb: 2 }}
-          />
-          <SelectInput 
-            source="hasTeams" 
-            label="Game Type"
-            choices={[
-              { id: false, name: 'Individual Players' },
-              { id: true, name: 'Team-based Game' }
-            ]}
-            defaultValue={false}
-            helperText="Whether this gamble involves teams or individual participants"
-            sx={{ mb: 2 }}
-          />
-          <TextInput 
-            source="winnerTeam" 
-            label="Winning Team/Player" 
-            helperText="Name of the team or player that won (optional)"
-            fullWidth
           />
         </Box>
       </FormTab>
@@ -409,74 +231,16 @@ export const GambleCreate = () => (
           <Typography variant="h6" gutterBottom color="primary">
             Game Participants
           </Typography>
-          <ArrayInput source="participants" label="Players">
-            <SimpleFormIterator>
-              <Card variant="outlined" sx={{ mb: 2, p: 2 }}>
-                <CardContent>
-                  <ReferenceInput source="characterId" reference="characters" label="Character" required>
-                    <AutocompleteInput optionText="name" noOptionsText="No characters found" />
-                  </ReferenceInput>
-                  <TextInput source="teamName" label="Team Name" helperText="Leave blank for individual games" />
-                  <SelectInput 
-                    source="isWinner" 
-                    label="Winner?"
-                    choices={[
-                      { id: false, name: 'No' },
-                      { id: true, name: 'Yes' }
-                    ]}
-                    defaultValue={false}
-                  />
-                  <TextInput source="stake" label="Stake" helperText="What this character is betting" />
-                </CardContent>
-              </Card>
-            </SimpleFormIterator>
-          </ArrayInput>
-        </Box>
-
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" gutterBottom color="primary">
-            Observers
-          </Typography>
-          <ReferenceArrayInput source="observerIds" reference="characters">
+          <ReferenceArrayInput source="participantIds" reference="characters">
             <AutocompleteArrayInput 
               optionText="name" 
-              helperText="Characters who observed but didn't participate"
+              helperText="Characters who participated in this gamble"
               noOptionsText="No characters available"
             />
           </ReferenceArrayInput>
         </Box>
       </FormTab>
-
-      <FormTab label="Rounds">
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" gutterBottom color="primary">
-            Game Rounds
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Document the progression of the gamble round by round (optional)
-          </Typography>
-          <ArrayInput source="rounds">
-            <SimpleFormIterator>
-              <Card variant="outlined" sx={{ mb: 2, p: 2 }}>
-                <CardContent>
-                  <NumberInput source="roundNumber" label="Round #" />
-                  <TextInput 
-                    source="outcome" 
-                    label="What Happened" 
-                    multiline 
-                    rows={3} 
-                    required 
-                    fullWidth
-                    helperText="Describe the events of this round"
-                  />
-                  <TextInput source="reward" label="Reward" helperText="What the winner gained" />
-                  <TextInput source="penalty" label="Penalty" helperText="What the loser lost" />
-                </CardContent>
-              </Card>
-            </SimpleFormIterator>
-          </ArrayInput>
-        </Box>
-      </FormTab>
     </TabbedForm>
   </Create>
-)
+  )
+}

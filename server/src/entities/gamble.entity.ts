@@ -2,22 +2,15 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToMany,
-  ManyToOne,
-  OneToMany,
-  JoinTable,
-  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Character } from './character.entity';
-import { Chapter } from './chapter.entity';
-import { GambleCharacter } from './gamble-character.entity';
-import { GambleRound } from './gamble-round.entity';
 import {
   ApiProperty,
   ApiPropertyOptional,
-  ApiHideProperty,
 } from '@nestjs/swagger';
 
 @Entity()
@@ -47,30 +40,6 @@ export class Gamble {
   @Column({ type: 'text', nullable: true })
   winCondition?: string;
 
-  @ApiPropertyOptional({
-    description: 'Characters participating in this gamble',
-    type: () => [GambleCharacter],
-  })
-  @OneToMany(() => GambleCharacter, (participant) => participant.gamble, {
-    cascade: true,
-    eager: true,
-  })
-  participants: GambleCharacter[];
-
-  @ApiPropertyOptional({
-    description: 'Rounds of this gamble',
-    type: () => [GambleRound],
-  })
-  @OneToMany(() => GambleRound, (round) => round.gamble, {
-    cascade: true,
-    nullable: true,
-  })
-  rounds?: GambleRound[];
-
-  @ApiHideProperty()
-  @ManyToMany(() => Character)
-  @JoinTable({ name: 'gamble_observers' })
-  observers: Character[];
 
   @ApiProperty({
     description: 'Chapter number where this gamble takes place',
@@ -78,28 +47,14 @@ export class Gamble {
   })
   @Column()
   chapterId: number;
-
-  @ApiPropertyOptional({
-    description: 'Chapter where this gamble takes place',
-    type: () => Chapter,
+  @ManyToMany(() => Character)
+  @JoinTable({
+    name: 'gamble_participants',
+    joinColumn: { name: 'gambleId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'characterId', referencedColumnName: 'id' },
   })
-  @ManyToOne(() => Chapter, { nullable: true })
-  @JoinColumn({ name: 'chapterId' })
-  chapter?: Chapter;
+  participants?: Character[];
 
-  @ApiPropertyOptional({
-    description: 'Whether this gamble uses teams (false for 1v1s)',
-    default: false,
-  })
-  @Column({ default: false })
-  hasTeams: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Winning team name if hasTeams is true',
-    example: 'Team Baku',
-  })
-  @Column({ nullable: true })
-  winnerTeam?: string;
 
   @CreateDateColumn()
   createdAt: Date;

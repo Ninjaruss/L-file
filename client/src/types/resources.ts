@@ -125,8 +125,11 @@ export interface Media {
 
 export interface Gamble {
   id: number;
-  title: string;
-  description?: string;
+  name: string;
+  rules: string;
+  winCondition?: string;
+  chapterId: number;
+  participants?: Character[];
   createdAt: string;
   updatedAt: string;
 }

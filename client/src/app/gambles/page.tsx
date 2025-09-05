@@ -30,11 +30,12 @@ interface Gamble {
   rules: string
   winCondition?: string
   chapterId: number
-  hasTeams: boolean
-  winnerTeam?: string
-  participants: any[]
-  rounds?: any[]
-  observers: any[]
+  participants?: Array<{
+    id: number
+    name: string
+    description?: string
+    alternateNames?: string[]
+  }>
   createdAt: string
   updatedAt: string
 }
@@ -170,23 +171,14 @@ export default function GamblesPage() {
                         </Typography>
                         
                         <Box sx={{ mb: 2 }}>
-                          {gamble.participants?.length > 0 && (
+                          {gamble.participants && gamble.participants.length > 0 && (
                             <Chip
-                              label={`${gamble.participants.length} Participants`}
+                              label={`${gamble.participants?.length || 0} Participants`}
                               size="small"
                               color="primary"
                               variant="outlined"
                               icon={<Users size={14} />}
                               sx={{ mb: 1 }}
-                            />
-                          )}
-                          {gamble.hasTeams && (
-                            <Chip
-                              label="Team Game"
-                              size="small"
-                              color="secondary"
-                              variant="outlined"
-                              sx={{ mr: 1, mb: 1 }}
                             />
                           )}
                         </Box>
@@ -205,23 +197,6 @@ export default function GamblesPage() {
                           {gamble.rules}
                         </Typography>
 
-                        {gamble.winnerTeam && (
-                          <Box sx={{ mt: 'auto' }}>
-                            <SpoilerWrapper 
-                              chapterNumber={gamble.chapterId} 
-                              spoilerType="outcome"
-                              description="Gamble winner"
-                            >
-                              <Chip
-                                label={`Winner: ${gamble.winnerTeam}`}
-                                size="small"
-                                color="success"
-                                variant="filled"
-                                icon={<Trophy size={14} />}
-                              />
-                            </SpoilerWrapper>
-                          </Box>
-                        )}
                       </CardContent>
 
                       <CardActions>

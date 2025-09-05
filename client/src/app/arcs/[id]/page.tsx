@@ -33,10 +33,29 @@ interface Arc {
   updatedAt: string
 }
 
+interface Character {
+  id: number
+  name: string
+}
+
+interface Event {
+  id: number
+  title: string
+  description: string
+  type: string
+  chapterNumber: number
+  characters?: Character[]
+}
+
+interface ArcGroup {
+  arc: Arc
+  events: Event[]
+}
+
 export default function ArcDetailPage() {
   const theme = useTheme()
   const [arc, setArc] = useState<Arc | null>(null)
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [eventsLoading, setEventsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -63,11 +82,11 @@ export default function ArcDetailPage() {
         setArc(arcData)
         
         // Find events for this specific arc
-        const arcGroup = eventsGroupedData.arcs.find((group: any) => group.arc.id === Number(id))
+        const arcGroup = eventsGroupedData.arcs.find((group: ArcGroup) => group.arc.id === Number(id))
         setEvents(arcGroup?.events || [])
         
-      } catch (error: any) {
-        setError(error.message)
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'An error occurred')
         setEventsError('Failed to load arc events')
       } finally {
         setLoading(false)
@@ -215,7 +234,7 @@ export default function ArcDetailPage() {
                         }}
                       />
                       
-                      {events.map((event: any, index: number) => (
+                      {events.map((event: Event, index: number) => (
                         <motion.div
                           key={event.id}
                           initial={{ opacity: 0, x: -20 }}
@@ -293,7 +312,7 @@ export default function ArcDetailPage() {
                                     color="secondary"
                                     variant="filled"
                                   />
-                                  {event.characters?.slice(0, 3).map((character: any) => (
+                                  {event.characters?.slice(0, 3).map((character: Character) => (
                                     <Chip
                                       key={character.id}
                                       label={character.name}
@@ -301,9 +320,9 @@ export default function ArcDetailPage() {
                                       variant="outlined"
                                     />
                                   ))}
-                                  {event.characters?.length > 3 && (
+                                  {(event.characters?.length || 0) > 3 && (
                                     <Chip
-                                      label={`+${event.characters.length - 3} more`}
+                                      label={`+${(event.characters?.length || 0) - 3} more`}
                                       size="small"
                                       variant="outlined"
                                       color="default"

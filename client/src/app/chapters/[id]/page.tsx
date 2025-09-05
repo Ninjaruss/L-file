@@ -23,6 +23,30 @@ import { motion } from 'motion/react'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
 
+interface Volume {
+  id: number
+  number: number
+  title?: string
+}
+
+interface Character {
+  id: number
+  name: string
+}
+
+interface Event {
+  id: number
+  title: string
+  description: string
+}
+
+interface Quote {
+  id: number
+  text: string
+  pageNumber?: number
+  character?: Character
+}
+
 interface Chapter {
   id: number
   number: number
@@ -31,11 +55,7 @@ interface Chapter {
   summary?: string | null
   description?: string
   volumeId?: number
-  volume?: {
-    id: number
-    number: number
-    title?: string
-  }
+  volume?: Volume
   createdAt?: string
   updatedAt?: string
 }
@@ -43,9 +63,9 @@ interface Chapter {
 export default function ChapterDetailPage() {
   const theme = useTheme()
   const [chapter, setChapter] = useState<Chapter | null>(null)
-  const [events, setEvents] = useState<any[]>([])
-  const [quotes, setQuotes] = useState<any[]>([])
-  const [characters, setCharacters] = useState<any[]>([])
+  const [events, setEvents] = useState<Event[]>([])
+  const [quotes, setQuotes] = useState<Quote[]>([])
+  const [characters, setCharacters] = useState<Character[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const params = useParams()
@@ -69,8 +89,8 @@ export default function ChapterDetailPage() {
         setEvents([])
         setQuotes([])
         setCharacters([])
-      } catch (error: any) {
-        setError(error.message)
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
@@ -220,7 +240,7 @@ export default function ChapterDetailPage() {
                         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
                       }}>
                         <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, lineHeight: 1.4 }}>
-                          "{quote.text}"
+                          &ldquo;{quote.text}&rdquo;
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {quote.character && `— ${quote.character.name}`}

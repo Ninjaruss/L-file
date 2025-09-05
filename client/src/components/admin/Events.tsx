@@ -15,22 +15,64 @@ import {
   ReferenceField,
   ReferenceInput,
   AutocompleteInput,
-  ReferenceManyField,
   ReferenceArrayInput,
   AutocompleteArrayInput,
   ArrayField,
   SingleFieldList,
-  ChipField
+  ChipField,
+  FilterButton,
+  TopToolbar,
+  CreateButton,
+  ExportButton,
+  SearchInput
 } from 'react-admin'
 
+const EventFilters = [
+  <SearchInput key="title-search" source="title" placeholder="Search by title" alwaysOn />,
+  <SelectInput
+    key="type-filter"
+    source="type"
+    label="Type"
+    choices={[
+      { id: 'gamble', name: 'Gamble' },
+      { id: 'decision', name: 'Decision' },
+      { id: 'reveal', name: 'Reveal' },
+      { id: 'shift', name: 'Shift' },
+      { id: 'resolution', name: 'Resolution' },
+    ]}
+  />,
+  <SelectInput
+    key="status-filter"
+    source="status"
+    label="Status"
+    choices={[
+      { id: 'draft', name: 'Draft' },
+      { id: 'pending_review', name: 'Pending Review' },
+      { id: 'approved', name: 'Approved' },
+    ]}
+  />,
+  <ReferenceInput key="arc-filter" source="arcId" reference="arcs" label="Arc">
+    <AutocompleteInput optionText="name" />
+  </ReferenceInput>,
+]
+
+const EventListActions = () => (
+  <TopToolbar>
+    <FilterButton />
+    <CreateButton />
+    <ExportButton />
+  </TopToolbar>
+)
+
 export const EventList = () => (
-  <List>
+  <List filters={EventFilters} actions={<EventListActions />}>
     <Datagrid rowClick="show">
       <TextField source="id" />
       <TextField source="title" />
       <TextField source="type" />
       <NumberField source="chapterNumber" />
       <NumberField source="spoilerChapter" label="Spoiler Ch." />
+      <TextField source="status" />
       <ReferenceField source="arcId" reference="arcs" label="Arc">
         <TextField source="name" />
       </ReferenceField>
@@ -53,6 +95,7 @@ export const EventShow = () => (
       <TextField source="type" />
       <NumberField source="chapterNumber" />
       <NumberField source="spoilerChapter" />
+      <TextField source="status" />
       <ReferenceField source="arcId" reference="arcs" label="Arc">
         <TextField source="name" />
       </ReferenceField>
@@ -73,13 +116,11 @@ export const EventEdit = () => (
       <SelectInput
         source="type"
         choices={[
-          { id: 'arc', name: 'Arc' },
-          { id: 'character_reveal', name: 'Character Reveal' },
-          { id: 'plot_twist', name: 'Plot Twist' },
-          { id: 'death', name: 'Death' },
-          { id: 'backstory', name: 'Backstory' },
-          { id: 'plot', name: 'Plot' },
-          { id: 'other', name: 'Other' },
+          { id: 'gamble', name: 'Gamble' },
+          { id: 'decision', name: 'Decision' },
+          { id: 'reveal', name: 'Reveal' },
+          { id: 'shift', name: 'Shift' },
+          { id: 'resolution', name: 'Resolution' },
         ]}
         required
       />
@@ -88,6 +129,16 @@ export const EventEdit = () => (
       <ReferenceInput source="arcId" reference="arcs" label="Arc">
         <AutocompleteInput optionText="name" />
       </ReferenceInput>
+      <SelectInput
+        source="status"
+        choices={[
+          { id: 'draft', name: 'Draft' },
+          { id: 'pending_review', name: 'Pending Review' },
+          { id: 'approved', name: 'Approved' },
+        ]}
+        required
+        defaultValue="draft"
+      />
       <ReferenceArrayInput source="characterIds" reference="characters" label="Characters">
         <AutocompleteArrayInput optionText="name" />
       </ReferenceArrayInput>
@@ -103,22 +154,30 @@ export const EventCreate = () => (
       <SelectInput
         source="type"
         choices={[
-          { id: 'arc', name: 'Arc' },
-          { id: 'character_reveal', name: 'Character Reveal' },
-          { id: 'plot_twist', name: 'Plot Twist' },
-          { id: 'death', name: 'Death' },
-          { id: 'backstory', name: 'Backstory' },
-          { id: 'plot', name: 'Plot' },
-          { id: 'other', name: 'Other' },
+          { id: 'gamble', name: 'Gamble' },
+          { id: 'decision', name: 'Decision' },
+          { id: 'reveal', name: 'Reveal' },
+          { id: 'shift', name: 'Shift' },
+          { id: 'resolution', name: 'Resolution' },
         ]}
         required
-        defaultValue="other"
+        defaultValue="decision"
       />
       <NumberInput source="chapterNumber" required max={539} min={1} />
       <NumberInput source="spoilerChapter" max={539} min={1} />
       <ReferenceInput source="arcId" reference="arcs" label="Arc">
         <AutocompleteInput optionText="name" />
       </ReferenceInput>
+      <SelectInput
+        source="status"
+        choices={[
+          { id: 'draft', name: 'Draft' },
+          { id: 'pending_review', name: 'Pending Review' },
+          { id: 'approved', name: 'Approved' },
+        ]}
+        required
+        defaultValue="draft"
+      />
       <ReferenceArrayInput source="characterIds" reference="characters" label="Characters">
         <AutocompleteArrayInput optionText="name" />
       </ReferenceArrayInput>

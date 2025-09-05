@@ -22,7 +22,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { EventsService } from './events.service';
-import { Event, EventType } from '../../entities/event.entity';
+import { Event, EventType, EventStatus } from '../../entities/event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -64,9 +64,10 @@ export class EventsController {
     description: "User's reading progress - only shows safe events",
   })
   @ApiQuery({
-    name: 'isVerified',
+    name: 'status',
     required: false,
-    description: 'Filter by verification status',
+    enum: EventStatus,
+    description: 'Filter by approval status',
   })
   @ApiQuery({
     name: 'page',
@@ -85,37 +86,6 @@ export class EventsController {
     enum: ['ASC', 'DESC'],
     description: 'Sort order (default: ASC)',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Events retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              title: { type: 'string', example: 'The 17 Steps Tournament' },
-              description: {
-                type: 'string',
-                example:
-                  'A high-stakes tournament where participants must climb 17 steps...',
-              },
-              chapterNumber: { type: 'number', example: 45 },
-              createdAt: { type: 'string', format: 'date-time' },
-              updatedAt: { type: 'string', format: 'date-time' },
-            },
-          },
-        },
-        total: { type: 'number', example: 30 },
-        page: { type: 'number', example: 1 },
-        totalPages: { type: 'number', example: 2 },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getAll(
     @Query('title') title?: string,
     @Query('arc') arc?: string,
@@ -123,56 +93,205 @@ export class EventsController {
     @Query('type') type?: EventType,
     @Query('userProgress', new ParseIntPipe({ optional: true }))
     userProgress?: number,
-    @Query('isVerified') isVerifiedStr?: string,
+    @Query('status') status?: EventStatus,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
     @Query('sort') sort?: string,
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
-  ): Promise<{
-    data: Event[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const isVerified =
-      isVerifiedStr !== undefined ? isVerifiedStr === 'true' : undefined;
+  ) {
     const result = await this.service.findAll({
       title,
       arc,
       description,
       type,
       userProgress,
-      isVerified,
+      status,
       page: parseInt(page),
       limit: parseInt(limit),
       sort,
       order,
     });
 
-    // Transform data for react-admin compatibility
-    const transformedData = result.data.map((event) => ({
-      ...event,
-      characterIds: event.characters
-        ? event.characters.map((char) => char.id)
-        : [],
-    }));
+    return result;
+  }
 
-    return {
-      ...result,
-      data: transformedData as Event[],
-    };
+  @Get('by-arc/:arcId')
+  @ApiOperation({
+    summary: 'Get events by arc',
+    description: 'Retrieve all events for a specific arc with optional filtering',
+  })
+  @ApiParam({
+    name: 'arcId',
+    description: 'Arc ID to filter events',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'title',
+    required: false,
+    description: 'Filter by event title',
+  })
+  @ApiQuery({
+    name: 'description',
+    required: false,
+    description: 'Filter by description content',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: EventType,
+    description: 'Filter by event type',
+  })
+  @ApiQuery({
+    name: 'userProgress',
+    required: false,
+    description: "User's reading progress - only shows safe events",
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: EventStatus,
+    description: 'Filter by approval status',
+  })
+  async getByArc(
+    @Param('arcId', ParseIntPipe) arcId: number,
+    @Query('title') title?: string,
+    @Query('description') description?: string,
+    @Query('type') type?: EventType,
+    @Query('userProgress', new ParseIntPipe({ optional: true }))
+    userProgress?: number,
+    @Query('status') status?: EventStatus,
+  ) {
+    return await this.service.findByArc(arcId, {
+      title,
+      description,
+      type,
+      userProgress,
+      status,
+    });
+  }
+
+  @Get('by-chapter/:chapterNumber')
+  @ApiOperation({
+    summary: 'Get events by chapter',
+    description:
+      'Retrieve all events for a specific chapter with optional filtering',
+  })
+  @ApiParam({
+    name: 'chapterNumber',
+    description: 'Chapter number to filter events',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'title',
+    required: false,
+    description: 'Filter by event title',
+  })
+  @ApiQuery({
+    name: 'description',
+    required: false,
+    description: 'Filter by description content',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: EventType,
+    description: 'Filter by event type',
+  })
+  @ApiQuery({
+    name: 'userProgress',
+    required: false,
+    description: "User's reading progress - only shows safe events",
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: EventStatus,
+    description: 'Filter by approval status',
+  })
+  async getByChapter(
+    @Param('chapterNumber', ParseIntPipe) chapterNumber: number,
+    @Query('title') title?: string,
+    @Query('description') description?: string,
+    @Query('type') type?: EventType,
+    @Query('userProgress', new ParseIntPipe({ optional: true }))
+    userProgress?: number,
+    @Query('status') status?: EventStatus,
+  ) {
+    return await this.service.findByChapter(chapterNumber, {
+      title,
+      description,
+      type,
+      userProgress,
+      status,
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get a single event',
+    description: 'Retrieve a single event by its ID',
+  })
+  @ApiParam({ name: 'id', description: 'Event ID', type: 'number' })
+  async getOne(@Param('id', ParseIntPipe) id: number): Promise<Event> {
+    const event = await this.service.findOne(id);
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+    return event;
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create a new event',
+    description: 'Create a new event (requires authentication)',
+  })
+  @ApiBody({ type: CreateEventDto })
+  async create(@Body(ValidationPipe) createEventDto: CreateEventDto) {
+    return await this.service.create(createEventDto);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update an event',
+    description: 'Update an existing event (requires admin/moderator role)',
+  })
+  @ApiParam({ name: 'id', description: 'Event ID', type: 'number' })
+  @ApiBody({ type: UpdateEventDto })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(ValidationPipe) updateEventDto: UpdateEventDto,
+  ) {
+    return await this.service.update(id, updateEventDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Delete an event',
+    description: 'Delete an event (requires admin role)',
+  })
+  @ApiParam({ name: 'id', description: 'Event ID', type: 'number' })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return await this.service.remove(id);
   }
 
   @Get('grouped/by-arc')
   @ApiOperation({
     summary: 'Get events grouped by arc',
-    description:
-      'Retrieve events grouped by arc chapter ranges, with events that have no arc',
+    description: 'Retrieve all events grouped by their story arcs',
   })
   @ApiQuery({
     name: 'userProgress',
     required: false,
-    description: "User's reading progress for spoiler protection",
+    description: "User's reading progress - only shows safe events",
   })
   @ApiQuery({
     name: 'type',
@@ -181,403 +300,35 @@ export class EventsController {
     description: 'Filter by event type',
   })
   @ApiQuery({
-    name: 'isVerified',
+    name: 'status',
     required: false,
-    description: 'Filter by verification status',
+    enum: EventStatus,
+    description: 'Filter by approval status',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Events grouped by arc retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        arcs: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              arc: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  name: { type: 'string', example: '17 Steps Tournament Arc' },
-                  order: { type: 'number', example: 1 },
-                  startChapter: { type: 'number', example: 45 },
-                  endChapter: { type: 'number', example: 52 },
-                },
-              },
-              events: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/Event' },
-              },
-            },
-          },
-        },
-        noArc: {
-          type: 'array',
-          items: { $ref: '#/components/schemas/Event' },
-          description: 'Events that are not associated with any arc',
-        },
-      },
-    },
-  })
-  getEventsGroupedByArc(
+  async getGroupedByArc(
     @Query('userProgress', new ParseIntPipe({ optional: true }))
     userProgress?: number,
     @Query('type') type?: EventType,
-    @Query('isVerified') isVerifiedStr?: string,
+    @Query('status') status?: EventStatus,
   ) {
-    const isVerified =
-      isVerifiedStr !== undefined ? isVerifiedStr === 'true' : undefined;
-    return this.service.getEventsGroupedByArc(userProgress, {
+    return await this.service.findGroupedByArc({
+      userProgress,
       type,
-      isVerified,
+      status,
     });
   }
 
-  @Get('viewable/:userProgress')
-  @ApiOperation({
-    summary: 'Get all events viewable by user',
-    description:
-      'Get all events that are safe for the user to view based on their reading progress',
-  })
-  @ApiParam({
-    name: 'userProgress',
-    description: 'Highest chapter number the user has read',
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: EventType,
-    description: 'Filter by event type',
-  })
-  @ApiQuery({
-    name: 'isVerified',
-    required: false,
-    description: 'Filter by verification status',
-  })
-  @ApiQuery({ name: 'arc', required: false, description: 'Filter by arc name' })
-  @ApiResponse({
-    status: 200,
-    description: 'Viewable events retrieved successfully',
-    type: [Event],
-  })
-  getViewableEvents(
-    @Param('userProgress', ParseIntPipe) userProgress: number,
-    @Query('type') type?: EventType,
-    @Query('isVerified') isVerifiedStr?: string,
-    @Query('arc') arc?: string,
-  ): Promise<Event[]> {
-    const isVerified =
-      isVerifiedStr !== undefined ? isVerifiedStr === 'true' : undefined;
-    return this.service.findViewableEvents(userProgress, {
-      type,
-      isVerified,
-      arc,
-    });
-  }
-
-  @Post('check-viewable')
-  @ApiOperation({
-    summary: 'Check if user can view an event',
-    description:
-      'Determines if a user can view a specific event based on their reading progress',
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        eventId: { type: 'number', example: 1 },
-        userProgress: { type: 'number', example: 15 },
-      },
-      required: ['eventId', 'userProgress'],
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Event viewability determined',
-    schema: {
-      example: { viewable: true },
-    },
-  })
-  async checkEventViewable(
-    @Body('eventId', ParseIntPipe) eventId: number,
-    @Body('userProgress', ParseIntPipe) userProgress: number,
-  ): Promise<{ viewable: boolean }> {
-    const viewable = await this.service.canViewEvent(eventId, userProgress);
-    return { viewable };
-  }
-
-  @Get('type/:type')
-  @ApiOperation({
-    summary: 'Get events by type',
-    description:
-      'Retrieve all events of a specific type with optional spoiler protection',
-  })
-  @ApiParam({ name: 'type', enum: EventType, description: 'Event type' })
-  @ApiQuery({
-    name: 'userProgress',
-    required: false,
-    description: "User's reading progress for spoiler protection",
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Events retrieved successfully',
-    type: [Event],
-  })
-  getEventsByType(
-    @Param('type') type: EventType,
-    @Query('userProgress', new ParseIntPipe({ optional: true }))
-    userProgress?: number,
-  ): Promise<Event[]> {
-    return this.service.findByType(type, userProgress);
-  }
-
-  @Get('chapter/:chapterNumber')
-  @ApiOperation({
-    summary: 'Get events occurring in a specific chapter',
-    description:
-      'Retrieve all events that occur during a specific chapter with optional spoiler protection',
-  })
-  @ApiParam({ name: 'chapterNumber', description: 'Chapter number' })
-  @ApiQuery({
-    name: 'userProgress',
-    required: false,
-    description: "User's reading progress for spoiler protection",
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Chapter events retrieved successfully',
-    type: [Event],
-  })
-  getEventsByChapter(
-    @Param('chapterNumber', ParseIntPipe) chapterNumber: number,
-    @Query('userProgress', new ParseIntPipe({ optional: true }))
-    userProgress?: number,
-  ): Promise<Event[]> {
-    return this.service.getEventsByChapter(chapterNumber, userProgress);
-  }
-
-  @Get('search')
-  @ApiOperation({
-    summary: 'Search events by text',
-    description:
-      'Search for events containing specific text in title or description',
-  })
-  @ApiQuery({ name: 'q', required: true, description: 'Search term' })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: EventType,
-    description: 'Filter by event type',
-  })
-  @ApiQuery({
-    name: 'userProgress',
-    required: false,
-    description: "User's reading progress for spoiler protection",
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Maximum number of results',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Search results retrieved successfully',
-    type: [Event],
-  })
-  searchEvents(
-    @Query('q') searchTerm: string,
-    @Query('type') type?: EventType,
-    @Query('userProgress', new ParseIntPipe({ optional: true }))
-    userProgress?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-  ): Promise<Event[]> {
-    return this.service.searchEvents(searchTerm, { type, userProgress, limit });
-  }
-
-  @Get(':id')
-  @ApiOperation({
-    summary: 'Get event by ID',
-    description: 'Retrieve a specific event by its unique identifier',
-  })
-  @ApiParam({ name: 'id', description: 'Event ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Event found',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'number', example: 1 },
-        title: { type: 'string', example: 'The 17 Steps Tournament' },
-        description: {
-          type: 'string',
-          example:
-            'A high-stakes tournament where participants must climb 17 steps...',
-        },
-        chapterNumber: { type: 'number', example: 45 },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'Event not found' })
-  async getOne(@Param('id', ParseIntPipe) id: number): Promise<Event> {
-    const event = await this.service.findOne(id);
-    if (!event) {
-      throw new NotFoundException(`Event with id ${id} not found`);
-    }
-
-    // Transform for react-admin compatibility
-    const transformedEvent = {
-      ...event,
-      characterIds: event.characters
-        ? event.characters.map((char) => char.id)
-        : [],
-    };
-
-    return transformedEvent as Event;
-  }
-
-  @Post()
+  @Put(':id/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Create a new event',
-    description: 'Create a new event (requires moderator or admin role)',
+    summary: 'Approve an event',
+    description: 'Approve an event (requires admin/moderator role)',
   })
-  @ApiBody({ type: CreateEventDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Event created successfully',
-    type: Event,
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - requires moderator or admin role',
-  })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async create(
-    @Body(ValidationPipe) createEventDto: CreateEventDto,
-  ): Promise<Event> {
-    const createdEvent = await this.service.create(createEventDto);
-
-    // Load the event with relations for proper transformation
-    const eventWithRelations = await this.service.findOne(createdEvent.id);
-    if (!eventWithRelations) {
-      throw new NotFoundException(
-        `Created event with id ${createdEvent.id} not found`,
-      );
-    }
-
-    // Transform for react-admin compatibility
-    const transformedEvent = {
-      ...eventWithRelations,
-      characterIds: eventWithRelations.characters
-        ? eventWithRelations.characters.map((char) => char.id)
-        : [],
-    };
-
-    return transformedEvent as Event;
-  }
-
-  @Put(':id/verify')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  @ApiOperation({
-    summary: 'Verify an event',
-    description: 'Mark an event as verified by moderators/admins',
-  })
-  @ApiParam({ name: 'id', description: 'Event ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Event verified successfully',
-    type: Event,
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - requires moderator or admin role',
-  })
-  @ApiResponse({ status: 404, description: 'Event not found' })
-  async verify(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ message: string }> {
-    await this.service.update(id, { isVerified: true });
-    return { message: 'Event verified successfully' };
-  }
-
-  @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Update event',
-    description: 'Update an existing event (requires moderator or admin role)',
-  })
-  @ApiParam({ name: 'id', description: 'Event ID', example: 1 })
-  @ApiBody({ type: UpdateEventDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Event updated successfully',
-    type: Event,
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - requires moderator or admin role',
-  })
-  @ApiResponse({ status: 404, description: 'Event not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body(ValidationPipe) data: UpdateEventDto,
-  ): Promise<Event> {
-    const updatedEvent = await this.service.update(id, data);
-
-    // Transform for react-admin compatibility
-    const transformedEvent = {
-      ...updatedEvent,
-      characterIds: updatedEvent.characters
-        ? updatedEvent.characters.map((char) => char.id)
-        : [],
-    };
-
-    return transformedEvent as Event;
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Delete event',
-    description: 'Delete an event (requires moderator or admin role)',
-  })
-  @ApiParam({ name: 'id', description: 'Event ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Event deleted successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Deleted successfully' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - requires moderator or admin role',
-  })
-  @ApiResponse({ status: 404, description: 'Event not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    const result = await this.service.remove(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Event with id ${id} not found`);
-    }
-    return { message: 'Deleted successfully' };
+  @ApiParam({ name: 'id', description: 'Event ID', type: 'number' })
+  async approve(@Param('id', ParseIntPipe) id: number) {
+    await this.service.update(id, { status: EventStatus.APPROVED });
+    return { message: 'Event approved successfully' };
   }
 }

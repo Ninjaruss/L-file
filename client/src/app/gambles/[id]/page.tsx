@@ -29,42 +29,17 @@ interface Gamble {
   rules: string
   winCondition?: string
   chapterId: number
+  participants?: Array<{
+    id: number
+    name: string
+    description?: string
+    alternateNames?: string[]
+  }>
   chapter?: {
     id: number
     number: number
-    title: string | null
-    summary: string | null
+    title?: string
   }
-  hasTeams: boolean
-  teams?: Array<{
-    id: number
-    name: string
-    members: Array<{
-      id: number
-      name: string
-    }>
-    isWinner: boolean
-  }>
-  participants?: Array<{
-    id: number
-    character: {
-      id: number
-      name: string
-    }
-    teamName?: string
-    isWinner: boolean
-    stake?: string
-  }>
-  rounds?: Array<{
-    id: number
-    roundNumber: number
-    description: string
-    outcome: string
-  }>
-  observers: Array<{
-    id: number
-    name: string
-  }>
   createdAt: string
   updatedAt: string
 }
@@ -169,28 +144,12 @@ export default function GambleDetailsPage() {
               color="primary"
               variant="outlined"
             />
-            {gamble.hasTeams && gamble.teams && gamble.teams.length > 0 && (
-              <Chip
-                icon={<Users size={16} />}
-                label={`${gamble.teams.length} Teams`}
-                color="secondary"
-                variant="outlined"
-              />
-            )}
-            {!gamble.hasTeams && gamble.participants && gamble.participants.length > 0 && (
+            {gamble.participants && gamble.participants.length > 0 && (
               <Chip
                 icon={<Users size={16} />}
                 label={`${gamble.participants.length} Participants`}
                 color="secondary"
                 variant="outlined"
-              />
-            )}
-            {gamble.rounds && gamble.rounds.length > 0 && (
-              <Chip
-                icon={<Trophy size={16} />}
-                label={`${gamble.rounds.length} Rounds`}
-                color="success"
-                variant="filled"
               />
             )}
           </Box>
@@ -219,33 +178,6 @@ export default function GambleDetailsPage() {
                   </>
                 )}
 
-                {gamble.rounds && gamble.rounds.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 3 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Rounds
-                    </Typography>
-                    <SpoilerWrapper 
-                      chapterNumber={gamble.chapterId} 
-                      spoilerType="major"
-                      description="Detailed round outcomes and progression"
-                    >
-                      {gamble.rounds.map((round) => (
-                        <Box key={round.id} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                          <Typography variant="subtitle1" gutterBottom>
-                            Round {round.roundNumber}
-                          </Typography>
-                          <Typography variant="body2" sx={{ mb: 1 }}>
-                            {round.description}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Outcome:</strong> {round.outcome}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </SpoilerWrapper>
-                  </>
-                )}
               </CardContent>
             </Card>
           </Grid>
@@ -278,68 +210,7 @@ export default function GambleDetailsPage() {
                   </Typography>
                 </Box>
 
-                {gamble.hasTeams && gamble.teams && gamble.teams.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Teams ({gamble.teams.length})
-                    </Typography>
-                    <SpoilerWrapper 
-                      chapterNumber={gamble.chapterId} 
-                      spoilerType="major"
-                      description="Gamble participants and outcomes"
-                    >
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {gamble.teams.map((team) => (
-                          <Box key={team.id} sx={{ p: 1, border: '1px solid', borderColor: team.isWinner ? 'success.main' : 'divider', borderRadius: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                              <Typography variant="subtitle2">
-                                {team.name}
-                              </Typography>
-                              {team.isWinner && (
-                                <Chip
-                                  label="Winner"
-                                  size="small"
-                                  color="success"
-                                  variant="filled"
-                                />
-                              )}
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                Members:
-                              </Typography>
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {team.members.map((member, index) => (
-                                  <React.Fragment key={member.id}>
-                                    <Typography 
-                                      variant="body2"
-                                      component={Link}
-                                      href={`/characters/${member.id}`}
-                                      sx={{ 
-                                        textDecoration: 'none',
-                                        color: 'primary.main',
-                                        '&:hover': { textDecoration: 'underline' }
-                                      }}
-                                    >
-                                      {member.name}
-                                    </Typography>
-                                    {index < team.members.length - 1 && (
-                                      <Typography variant="body2" color="text.secondary">
-                                        ,
-                                      </Typography>
-                                    )}
-                                  </React.Fragment>
-                                ))}
-                              </Box>
-                            </Box>
-                          </Box>
-                        ))}
-                      </Box>
-                    </SpoilerWrapper>
-                  </Box>
-                )}
-
-                {!gamble.hasTeams && gamble.participants && gamble.participants.length > 0 && (
+                {gamble.participants && gamble.participants.length > 0 && (
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Participants ({gamble.participants.length})
@@ -351,25 +222,12 @@ export default function GambleDetailsPage() {
                     >
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {gamble.participants.map((participant) => (
-                          <Box key={participant.id} sx={{ p: 1, border: '1px solid', borderColor: participant.isWinner ? 'success.main' : 'divider', borderRadius: 1 }}>
+                          <Box key={participant.id} sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                               <Typography variant="subtitle2">
-                                {participant.character.name}
+                                {participant.name}
                               </Typography>
-                              {participant.isWinner && (
-                                <Chip
-                                  label="Winner"
-                                  size="small"
-                                  color="success"
-                                  variant="filled"
-                                />
-                              )}
                             </Box>
-                            {participant.stake && (
-                              <Typography variant="body2" color="text.secondary">
-                                Stake: {participant.stake}
-                              </Typography>
-                            )}
                           </Box>
                         ))}
                       </Box>
@@ -377,24 +235,6 @@ export default function GambleDetailsPage() {
                   </Box>
                 )}
 
-                {gamble.observers?.length > 0 && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Observers ({gamble.observers.length})
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {gamble.observers.map((observer) => (
-                        <Chip
-                          key={observer.id}
-                          label={observer.name}
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
               </CardContent>
             </Card>
 

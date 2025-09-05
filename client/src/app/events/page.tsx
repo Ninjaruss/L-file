@@ -15,7 +15,12 @@ import {
   Pagination,
   CircularProgress,
   Alert,
-  Chip
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent
 } from '@mui/material'
 import { CalendarSearch, Eye, Calendar, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
@@ -46,20 +51,30 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
-  const fetchEvents = async (search = '') => {
+  const fetchEvents = async (search = '', type = '', status = '') => {
     setLoading(true)
     try {
       if (search) {
         // Fall back to regular search when searching
-        const response = await api.getEvents({ page: 1, limit: 100, title: search })
+        const params: any = { page: 1, limit: 100, title: search }
+        if (type) params.type = type
+        if (status) params.status = status
+        
+        const response = await api.getEvents(params)
         setGroupedEvents({
           arcs: [],
           noArc: response.data
         })
       } else {
         // Use grouped endpoint when not searching
-        const response = await api.getEventsGroupedByArc()
+        const params: any = {}
+        if (type) params.type = type
+        if (status) params.status = status
+        
+        const response = await api.getEventsGroupedByArc(params)
         setGroupedEvents(response)
       }
     } catch (error: any) {
@@ -70,26 +85,32 @@ export default function EventsPage() {
   }
 
   useEffect(() => {
-    fetchEvents(searchQuery)
-  }, [searchQuery])
+    fetchEvents(searchQuery, typeFilter, statusFilter)
+  }, [searchQuery, typeFilter, statusFilter])
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value)
   }
 
+  const handleTypeChange = (event: SelectChangeEvent) => {
+    setTypeFilter(event.target.value as string)
+  }
+
+  const handleStatusChange = (event: SelectChangeEvent) => {
+    setStatusFilter(event.target.value as string)
+  }
+
   const getEventTypeColor = (eventType: string) => {
     switch (eventType?.toLowerCase()) {
-      case 'arc':
+      case 'gamble':
         return 'primary'
-      case 'character_reveal':
+      case 'decision':
         return 'secondary'
-      case 'plot_twist':
+      case 'reveal':
         return 'warning'
-      case 'death':
-        return 'error'
-      case 'backstory':
+      case 'shift':
         return 'info'
-      case 'plot':
+      case 'resolution':
         return 'success'
       default:
         return 'default'
@@ -149,9 +170,9 @@ export default function EventsPage() {
                   sx={{ mr: 1, mb: 1 }}
                 />
               )}
-              {event.isVerified && (
+              {event.status === 'approved' && (
                 <Chip
-                  label="Verified"
+                  label="Approved"
                   size="small"
                   color="success"
                   variant="filled"
@@ -265,21 +286,50 @@ export default function EventsPage() {
         </Box>
 
         <Box sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search events..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
-          />
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, maxWidth: 800, mx: 'auto' }}>
+            <TextField
+              variant="outlined"
+              placeholder="Search events..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={20} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ flexGrow: 1 }}
+            />
+            <FormControl variant="outlined" sx={{ minWidth: 120 }}>
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={typeFilter}
+                onChange={handleTypeChange}
+                label="Type"
+              >
+                <MenuItem value="">All Types</MenuItem>
+                <MenuItem value="gamble">Gamble</MenuItem>
+                <MenuItem value="decision">Decision</MenuItem>
+                <MenuItem value="reveal">Reveal</MenuItem>
+                <MenuItem value="shift">Shift</MenuItem>
+                <MenuItem value="resolution">Resolution</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl variant="outlined" sx={{ minWidth: 120 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={handleStatusChange}
+                label="Status"
+              >
+                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="draft">Draft</MenuItem>
+                <MenuItem value="pending_review">Pending Review</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
 
         {error && (

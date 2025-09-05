@@ -9,11 +9,9 @@ import {
   MaxLength,
   Min,
   ArrayMaxSize,
-  ValidateIf,
   IsEnum,
-  IsBoolean,
 } from 'class-validator';
-import { EventType, ChapterReference } from '../../../entities/event.entity';
+import { EventType, EventStatus } from '../../../entities/event.entity';
 
 export class CreateEventDto {
   @IsString()
@@ -42,10 +40,20 @@ export class CreateEventDto {
   @ApiPropertyOptional({
     description: 'Type of event',
     enum: EventType,
-    default: EventType.OTHER,
-    example: EventType.ARC,
+    default: EventType.DECISION,
+    example: EventType.GAMBLE,
   })
   type?: EventType;
+
+  @IsEnum(EventStatus)
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Status of the event',
+    enum: EventStatus,
+    default: EventStatus.DRAFT,
+    example: EventStatus.DRAFT,
+  })
+  status?: EventStatus;
 
   @IsNumber()
   @IsOptional()
@@ -56,16 +64,14 @@ export class CreateEventDto {
   })
   arcId?: number;
 
-  @IsArray()
-  @IsNumber({}, { each: true })
+  @IsNumber()
   @IsOptional()
-  @ArrayMaxSize(100)
+  @Min(1)
   @ApiPropertyOptional({
-    description: 'IDs of chapters where this event occurs',
-    type: [Number],
-    example: [45, 46, 47],
+    description: 'ID of the gamble associated with this event',
+    example: 1,
   })
-  chapterIds?: number[];
+  gambleId?: number;
 
   @IsNumber()
   @IsNotEmpty()
@@ -89,29 +95,6 @@ export class CreateEventDto {
   @IsArray()
   @IsNumber({}, { each: true })
   @IsOptional()
-  @ArrayMaxSize(50)
-  @ApiPropertyOptional({
-    description: 'Page numbers where this event occurs or is referenced',
-    type: [Number],
-    example: [15, 22, 35],
-  })
-  pageNumbers?: number[];
-
-  @IsOptional()
-  @ApiPropertyOptional({
-    description:
-      'List of chapter references with context for additional reading',
-    type: 'array',
-    example: [
-      { chapterNumber: 10, context: 'Page 8 - Character background revealed' },
-      { chapterNumber: 12, context: 'Final scene - Important foreshadowing' },
-    ],
-  })
-  chapterReferences?: ChapterReference[];
-
-  @IsArray()
-  @IsNumber({}, { each: true })
-  @IsOptional()
   @ArrayMaxSize(20)
   @ApiPropertyOptional({
     description: 'IDs of characters involved in this event',
@@ -119,12 +102,4 @@ export class CreateEventDto {
     example: [1, 3, 5],
   })
   characterIds?: number[];
-
-  @IsBoolean()
-  @IsOptional()
-  @ApiPropertyOptional({
-    description: 'Whether this event has been verified by moderators',
-    example: false,
-  })
-  isVerified?: boolean;
 }

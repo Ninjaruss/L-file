@@ -15,14 +15,14 @@ import { ArcList, ArcEdit, ArcCreate, ArcShow } from '../../components/admin/Arc
 import { GambleList, GambleEdit, GambleCreate, GambleShow } from '../../components/admin/Gambles'
 import { EventList, EventEdit, EventCreate, EventShow } from '../../components/admin/Events'
 import { GuideList, GuideEdit, GuideCreate, GuideShow } from '../../components/admin/Guides'
-import { MediaList, MediaEdit, MediaShow, MediaCreate, MediaApprovalQueue } from '../../components/admin/Media'
+import { MediaList, MediaEdit, MediaShow, MediaCreate } from '../../components/admin/Media'
 import { UserList, UserEdit, UserShow } from '../../components/admin/Users'
 import { QuoteList, QuoteEdit, QuoteCreate, QuoteShow } from '../../components/admin/Quotes'
 import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
 import { FactionList, FactionEdit, FactionCreate } from '../../components/admin/Factions'
 
 // Icons
-import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Book, Shield } from 'lucide-react'
+import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield } from 'lucide-react'
 
 // Convert icons to components
 const UsersIcon = () => <Users />
@@ -33,7 +33,6 @@ const FileTextIcon = () => <FileText />
 const ImageIcon = () => <Image />
 const QuoteIcon = () => <Quote />
 const TagIcon = () => <Tag />
-const BookIcon = () => <Book />
 const ShieldIcon = () => <Shield />
 
 export default function AdminApp() {

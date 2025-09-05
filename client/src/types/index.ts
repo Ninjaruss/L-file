@@ -39,8 +39,10 @@ export interface Event {
   title: string;
   description: string;
   chapterNumber: number;
-  type: string;
-  isVerified: boolean;
+  type: 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution';
+  status: 'draft' | 'pending_review' | 'approved';
+  gambleId?: number;
+  gamble?: Gamble;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,11 +73,9 @@ export interface Gamble {
   id: number;
   name: string;
   rules: string;
-  winCondition: string;
+  winCondition?: string;
   chapterId: number;
-  teams: Team[];
-  rounds: Round[];
-  observers: string[];
+  participants?: Character[];
   createdAt: string;
   updatedAt: string;
 }

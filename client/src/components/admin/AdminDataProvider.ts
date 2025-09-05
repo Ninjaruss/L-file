@@ -27,9 +27,8 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>): Recor
   if (resource === 'events') {
     // Keep only the fields that are allowed in the CreateEventDto/UpdateEventDto
     const allowedFields = [
-      'title', 'description', 'type', 'arcId', 'chapterIds', 
-      'chapterNumber', 'spoilerChapter', 'pageNumbers',
-      'chapterReferences', 'isVerified', 'characterIds'
+      'title', 'description', 'type', 'status', 'arcId', 'gambleId', 
+      'chapterNumber', 'spoilerChapter', 'characterIds'
     ]
     
     const eventCleaned: Record<string, unknown> = {}
@@ -44,7 +43,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>): Recor
   if (resource === 'gambles') {
     // Keep only the fields that are allowed in the CreateGambleDto/UpdateGambleDto
     const allowedFields = [
-      'name', 'rules', 'winCondition', 'chapterId', 'hasTeams', 'participants', 'rounds', 'observerIds'
+      'name', 'rules', 'winCondition', 'chapterId', 'participantIds'
     ]
     
     const gambleCleaned: Record<string, unknown> = {}
@@ -54,41 +53,33 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>): Recor
       }
     })
     
-    // Transform participants from admin form format to DTO format
-    if (gambleCleaned.participants && Array.isArray(gambleCleaned.participants)) {
-      gambleCleaned.participants = gambleCleaned.participants.map((p: Record<string, unknown>) => ({
-        characterId: p.characterId,
-        teamName: p.teamName || undefined,
-        isWinner: p.isWinner || false,
-        stake: p.stake || undefined
-      }))
-    }
-    
-    // Transform rounds from admin form format to DTO format
-    if (gambleCleaned.rounds && Array.isArray(gambleCleaned.rounds)) {
-      gambleCleaned.rounds = gambleCleaned.rounds.map((r: Record<string, unknown>) => ({
-        roundNumber: r.roundNumber,
-        outcome: r.outcome,
-        winnerTeam: r.winnerTeam || undefined,
-        reward: r.reward || undefined,
-        penalty: r.penalty || undefined
-      }))
-    }
-    
-    // Transform observers from admin form format to DTO format
-    if (gambleCleaned.observers && Array.isArray(gambleCleaned.observers)) {
-      gambleCleaned.observerIds = gambleCleaned.observers.map((o: unknown) => 
-        typeof o === 'object' && o !== null ? (o as Record<string, unknown>).id : o
-      )
-      delete gambleCleaned.observers
-    }
-    
-    // Handle observerIds directly if provided (new format)
-    if (gambleCleaned.observerIds && Array.isArray(gambleCleaned.observerIds)) {
-      // Ensure all values are properly extracted IDs
-      gambleCleaned.observerIds = gambleCleaned.observerIds.map((o: unknown) => 
-        typeof o === 'object' && o !== null ? (o as Record<string, unknown>).id : o
-      ).filter(id => id !== null && id !== undefined)
+    // Handle participantIds - ReferenceArrayInput might set this as objects or IDs
+    if (gambleCleaned.participantIds && Array.isArray(gambleCleaned.participantIds)) {
+      // Log for debugging
+      console.log('Original participantIds:', gambleCleaned.participantIds)
+      
+      gambleCleaned.participantIds = gambleCleaned.participantIds.map((p: unknown) => {
+        // If it's already a number, keep it
+        if (typeof p === 'number') return p
+        // If it's a string that can be parsed as number, parse it
+        if (typeof p === 'string' && !isNaN(Number(p))) return Number(p)
+        // If it's an object with id property, extract the id
+        if (typeof p === 'object' && p !== null && 'id' in p) {
+          const id = (p as Record<string, unknown>).id
+          return typeof id === 'number' ? id : Number(id)
+        }
+        return p
+      }).filter(id => id !== null && id !== undefined && !isNaN(Number(id)))
+      
+      // Log for debugging
+      console.log('Processed participantIds:', gambleCleaned.participantIds)
+    } else if (data.participants && Array.isArray(data.participants)) {
+      // If participantIds doesn't exist but participants does, extract IDs from participants
+      console.log('Original participants:', data.participants)
+      gambleCleaned.participantIds = data.participants.map((p: any) => 
+        typeof p === 'object' && p !== null ? (p.id || p.characterId) : p
+      ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
+      console.log('Extracted participantIds from participants:', gambleCleaned.participantIds)
     }
     
     return gambleCleaned
@@ -346,9 +337,21 @@ export const AdminDataProvider: DataProvider = {
     try {
       // Clean the create data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
+      
+      if (resource === 'gambles') {
+        console.log('=== GAMBLE CREATE DEBUG ===')
+        console.log('Original params.data:', params.data)
+        console.log('Cleaned data being sent:', cleanedData)
+      }
+      
       const response = await api.post<unknown>(`/${resource}`, cleanedData)
       
       const data = (response as Record<string, unknown>)?.data ?? response
+      
+      if (resource === 'gambles') {
+        console.log('Gamble create server response data:', data)
+        console.log('=== END GAMBLE CREATE DEBUG ===')
+      }
       
       if (!data) {
         throw new HttpError('No data returned from server', 500)
@@ -382,6 +385,12 @@ export const AdminDataProvider: DataProvider = {
         console.log('Cleaned data being sent:', cleanedData)
       }
       
+      if (resource === 'gambles') {
+        console.log('=== GAMBLE UPDATE DEBUG ===')
+        console.log('Original params.data:', params.data)
+        console.log('Cleaned data being sent:', cleanedData)
+      }
+      
       // Use PATCH for resources that support it, PUT for others
       const usePatch = ['quotes', 'guides', 'media'].includes(resource)
       const response = usePatch 
@@ -392,6 +401,11 @@ export const AdminDataProvider: DataProvider = {
       
       if (resource === 'guides') {
         console.log('Server response data:', data)
+      }
+      
+      if (resource === 'gambles') {
+        console.log('Gamble server response data:', data)
+        console.log('=== END GAMBLE UPDATE DEBUG ===')
       }
       
       // Ensure the returned item has proper id and includes all the updated data

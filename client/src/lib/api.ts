@@ -350,7 +350,7 @@ class ApiClient {
   async getEventsGroupedByArc(params?: { 
     userProgress?: number; 
     type?: string; 
-    isVerified?: boolean 
+    status?: 'draft' | 'pending_review' | 'approved' 
   }) {
     const searchParams = new URLSearchParams()
     if (params) {

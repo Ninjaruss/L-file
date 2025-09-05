@@ -165,7 +165,7 @@ export class CharactersService {
     const countQuery = `
       SELECT COUNT(DISTINCT g.id) as total_count
       FROM gamble g
-      INNER JOIN gamble_character gc ON g.id = gc."gambleId"
+      INNER JOIN gamble_participants gc ON g.id = gc."gambleId"
       WHERE gc."characterId" = $1
     `;
 
@@ -176,7 +176,7 @@ export class CharactersService {
     const dataQuery = `
       SELECT DISTINCT g.*
       FROM gamble g
-      INNER JOIN gamble_character gc ON g.id = gc."gambleId"
+      INNER JOIN gamble_participants gc ON g.id = gc."gambleId"
       WHERE gc."characterId" = $1
       ORDER BY g."createdAt" DESC
       LIMIT $2 OFFSET $3

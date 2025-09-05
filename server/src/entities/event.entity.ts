@@ -15,6 +15,7 @@ import { Arc } from './arc.entity';
 import { Character } from './character.entity';
 import { User } from './user.entity';
 import { Tag } from './tag.entity';
+import { Gamble } from './gamble.entity';
 import {
   ApiProperty,
   ApiPropertyOptional,
@@ -22,20 +23,18 @@ import {
 } from '@nestjs/swagger';
 
 export enum EventType {
-  ARC = 'arc',
-  CHARACTER_REVEAL = 'character_reveal',
-  PLOT_TWIST = 'plot_twist',
-  DEATH = 'death',
-  BACKSTORY = 'backstory',
-  PLOT = 'plot',
-  OTHER = 'other',
+  GAMBLE = 'gamble',
+  DECISION = 'decision',
+  REVEAL = 'reveal', 
+  SHIFT = 'shift',
+  RESOLUTION = 'resolution',
+}
+export enum EventStatus {
+  DRAFT = 'draft',
+  PENDING_REVIEW = 'pending_review', 
+  APPROVED = 'approved',
 }
 
-// Interface for chapter references with context
-export interface ChapterReference {
-  chapterNumber: number;
-  context: string; // e.g., "Page 15 - Character introduction" or "Final scene - Important dialogue"
-}
 
 @Entity()
 @Index(['arc'])
@@ -67,13 +66,13 @@ export class Event {
   @ApiProperty({
     description: 'Type of event',
     enum: EventType,
-    default: EventType.OTHER,
-    example: EventType.ARC,
+    default: EventType.DECISION,
+    example: EventType.GAMBLE,
   })
   @Column({
     type: 'enum',
     enum: EventType,
-    default: EventType.OTHER,
+    default: EventType.DECISION,
   })
   type: EventType;
 
@@ -92,30 +91,18 @@ export class Event {
   @Column({ nullable: true })
   spoilerChapter: number;
 
-  @ApiPropertyOptional({
-    description: 'Page numbers where this event occurs or is referenced',
-    example: [15, 22, 35],
-  })
-  @Column('json', { nullable: true })
-  pageNumbers: number[];
-
   @ApiProperty({
-    description: 'Whether this event has been verified by moderators',
-    example: true,
+    description: 'Status of the event',
+    enum: EventStatus,
+    default: EventStatus.DRAFT,
+    example: EventStatus.APPROVED,
   })
-  @Column({ default: false })
-  isVerified: boolean;
-
-  @ApiPropertyOptional({
-    description:
-      'List of chapter references with context for additional reading',
-    example: [
-      { chapterNumber: 10, context: 'Page 8 - Character background revealed' },
-      { chapterNumber: 12, context: 'Final scene - Important foreshadowing' },
-    ],
+  @Column({
+    type: 'enum',
+    enum: EventStatus,
+    default: EventStatus.DRAFT,
   })
-  @Column('json', { nullable: true })
-  chapterReferences: ChapterReference[];
+  status: EventStatus;
 
   @ApiPropertyOptional({
     description: 'Story arc this event belongs to',
@@ -131,6 +118,21 @@ export class Event {
   })
   @Column({ nullable: true })
   arcId: number;
+
+  @ApiPropertyOptional({
+    description: 'Gamble associated with this event',
+    type: () => Gamble,
+  })
+  @ManyToOne(() => Gamble, { nullable: true })
+  @JoinColumn({ name: 'gambleId' })
+  gamble: Gamble;
+
+  @ApiPropertyOptional({
+    description: 'ID of the gamble associated with this event',
+    example: 1,
+  })
+  @Column({ nullable: true })
+  gambleId: number;
 
   @ApiHideProperty()
   @ManyToMany(() => Character)
