@@ -218,11 +218,8 @@ export class CharactersService {
     `;
     let params = [characterId, searchTerm];
 
-    // Add spoiler filtering if userProgress is provided
-    if (userProgress !== undefined) {
-      whereClause += ` AND (e."spoilerChapter" IS NULL OR e."spoilerChapter" <= $3)`;
-      params.push(userProgress);
-    }
+    // Note: Removed server-side spoiler filtering to allow client-side spoiler wrapping
+    // Client will handle spoiler protection with SpoilerWrapper components
 
     // Get paginated unique event IDs with proper ordering first
     const paginatedQuery = `

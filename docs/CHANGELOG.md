@@ -5,7 +5,6 @@
 - Add highlight of most popular quote, gamble, and character profile picture
 - Add different image profile pictures for characters and adding labeling (update character image based on progressed chapter; subtle chapter progression)
 - Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN); allow character profile picture choice from characters
-- Figure out better structure for gambles if needed. Also look into adding more detail to events to allow for better filtering (i.e. Character action, affected characters)
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
 - Discord integration for creating account
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well

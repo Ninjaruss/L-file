@@ -781,20 +781,6 @@ export default function CharacterDetailPage() {
                                         }}>
                                           Ch. {quote.chapterNumber}{quote.pageNumber && `, p.${quote.pageNumber}`}
                                         </Typography>
-                                        <Box sx={{
-                                          width: 24,
-                                          height: 24,
-                                          borderRadius: '50%',
-                                          backgroundColor: 'warning.main',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          color: 'white',
-                                          fontSize: '0.75rem',
-                                          fontWeight: 'bold'
-                                        }}>
-                                          {index + 1}
-                                        </Box>
                                       </Box>
                                     </SpoilerWrapper>
                                   </Box>
@@ -1026,25 +1012,6 @@ export default function CharacterDetailPage() {
                                   }
                                 }
                               }}>
-                                {/* Guide Number Badge */}
-                                <Box sx={{
-                                  position: 'absolute',
-                                  top: -8,
-                                  right: -8,
-                                  width: 28,
-                                  height: 28,
-                                  borderRadius: '50%',
-                                  backgroundColor: 'success.main',
-                                  color: 'white',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  boxShadow: theme.shadows[4]
-                                }}>
-                                  {index + 1}
-                                </Box>
 
                                 <Typography 
                                   variant="h6" 
@@ -1171,7 +1138,7 @@ export default function CharacterDetailPage() {
             )}
 
             {/* Timeline Tab */}
-            {activeTab === 1 && events.length > 0 && character.firstAppearanceChapter && (
+            {activeTab === 1 && events.length > 0 && (
               <Box>
                 <CharacterTimeline
                   events={events.map(event => ({
@@ -1186,17 +1153,8 @@ export default function CharacterDetailPage() {
                   }))}
                   arcs={arcs}
                   characterName={character.name}
-                  firstAppearanceChapter={character.firstAppearanceChapter}
+                  firstAppearanceChapter={character.firstAppearanceChapter || 1}
                 />
-              </Box>
-            )}
-
-            {/* Timeline Tab - No First Appearance Chapter */}
-            {activeTab === 1 && events.length > 0 && !character.firstAppearanceChapter && (
-              <Box sx={{ p: 3 }}>
-                <Alert severity="info">
-                  Timeline view requires a first appearance chapter to be set for this character.
-                </Alert>
               </Box>
             )}
 

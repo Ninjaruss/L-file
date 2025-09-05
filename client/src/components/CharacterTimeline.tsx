@@ -615,6 +615,7 @@ function TimelineSpoilerWrapper({ event, children }: { event: TimelineEvent, chi
   // This ensures spoilers work properly when not logged in
   const clientSideShouldHide = shouldHideSpoiler()
   
+  // Always render the event, but with spoiler protection overlay if needed
   if (!clientSideShouldHide || isRevealed) {
     return <>{children}</>
   }
@@ -631,61 +632,69 @@ function TimelineSpoilerWrapper({ event, children }: { event: TimelineEvent, chi
     : userProgress
 
   return (
-    <Box 
-      sx={{ 
-        position: 'relative',
-        minHeight: '60px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'error.light',
-        borderRadius: 1,
-        p: 2,
-        cursor: 'pointer',
-        border: `1px solid ${theme.palette.error.main}`,
-        '&:hover': {
-          backgroundColor: 'error.dark'
-        },
-        // Prevent click-through to underlying elements
-        pointerEvents: 'auto',
-        zIndex: 100
-      }}
-      onClick={handleReveal}
-    >
-      <Tooltip 
-        title={`Chapter ${chapterNumber} spoiler - You're at Chapter ${effectiveProgress}. Click to reveal.`}
-        placement="top"
-        arrow
+    <Box sx={{ position: 'relative' }}>
+      {/* Render the actual content underneath */}
+      <Box sx={{ opacity: 0.3, filter: 'blur(2px)', pointerEvents: 'none' }}>
+        {children}
+      </Box>
+      
+      {/* Spoiler overlay */}
+      <Box 
+        sx={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'error.light',
+          borderRadius: 1,
+          cursor: 'pointer',
+          border: `1px solid ${theme.palette.error.main}`,
+          '&:hover': {
+            backgroundColor: 'error.dark'
+          },
+          zIndex: 100
+        }}
+        onClick={handleReveal}
       >
-        <Box sx={{ textAlign: 'center', width: '100%', pointerEvents: 'none' }}>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: 'white',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 0.5,
-              fontSize: '0.75rem',
-              mb: 0.5
-            }}
-          >
-            <AlertTriangle size={14} />
-            Chapter {chapterNumber} Spoiler
-          </Typography>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: 'rgba(255,255,255,0.8)',
-              fontSize: '0.65rem',
-              display: 'block'
-            }}
-          >
-            Read Chapter {chapterNumber} to reveal
-          </Typography>
-        </Box>
-      </Tooltip>
+        <Tooltip 
+          title={`Chapter ${chapterNumber} spoiler - You're at Chapter ${effectiveProgress}. Click to reveal.`}
+          placement="top"
+          arrow
+        >
+          <Box sx={{ textAlign: 'center', width: '100%' }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'white',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.5,
+                fontSize: '0.75rem',
+                mb: 0.5
+              }}
+            >
+              <AlertTriangle size={14} />
+              Chapter {chapterNumber} Spoiler
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '0.65rem',
+                display: 'block'
+              }}
+            >
+              Click to reveal
+            </Typography>
+          </Box>
+        </Tooltip>
+      </Box>
     </Box>
   )
 }
