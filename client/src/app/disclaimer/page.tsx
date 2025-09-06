@@ -27,8 +27,8 @@ export default function DisclaimerPage() {
             </Typography>
           </Box>
           <Typography variant="body1" paragraph>
-            This website ("L-file") is an unofficial fan resource dedicated to the manga series 
-            "Usogui" (also known as "Lie Eater") created by Sako Toshio 迫 稔雄 and published by Shueisha 集英社. 
+            This website (&quot;L-file&quot;) is an unofficial fan resource dedicated to the manga series 
+            &quot;Usogui&quot; (also known as &quot;Lie Eater&quot;) created by Sako Toshio 迫 稔雄 and published by Shueisha 集英社. 
             All original manga content, including but not limited to characters, storylines, artwork, 
             and related intellectual property, remains the exclusive property of their respective copyright holders.
           </Typography>
@@ -88,7 +88,7 @@ export default function DisclaimerPage() {
             Limitation of Liability
           </Typography>
           <Typography variant="body1" paragraph>
-            This website and its content are provided "as is" without warranty of any kind. We make 
+            This website and its content are provided &quot;as is&quot; without warranty of any kind. We make 
             no representations or warranties regarding the accuracy, completeness, or reliability of 
             any information on this site. Use of this website is at your own risk.
           </Typography>

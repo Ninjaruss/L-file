@@ -22,6 +22,7 @@ import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import GambleTimeline from '../../../components/GambleTimeline'
 
 interface Gamble {
   id: number
@@ -50,6 +51,9 @@ export default function GambleDetailsPage() {
   const [gamble, setGamble] = useState<Gamble | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [timelineEvents, setTimelineEvents] = useState<any[]>([])
+  const [arcs, setArcs] = useState<any[]>([])
+  const [timelineLoading, setTimelineLoading] = useState(false)
 
   // Track page view
   const gambleId = Array.isArray(id) ? id[0] : id
@@ -72,6 +76,44 @@ export default function GambleDetailsPage() {
       fetchGamble()
     }
   }, [id])
+
+  // Fetch timeline events and arcs when gamble is loaded
+  useEffect(() => {
+    const fetchTimelineData = async () => {
+      if (!gamble) return
+      
+      try {
+        setTimelineLoading(true)
+        
+        // Fetch events and arcs in parallel
+        const [eventsResponse, arcsResponse] = await Promise.all([
+          api.getEvents({ limit: 100 }), // Get a large set of events to filter from
+          api.getArcs({ limit: 100 })
+        ])
+        
+        // Filter events to those related to this gamble's timeline
+        // We'll include events from a few chapters before and after the gamble chapter
+        const gambleChapter = gamble.chapter?.number || gamble.chapterId
+        const chapterRange = 10 // Include events from 10 chapters before and after
+        
+        const filteredEvents = eventsResponse.data.filter((event: any) => 
+          event.chapterNumber && 
+          event.chapterNumber >= (gambleChapter - chapterRange) &&
+          event.chapterNumber <= (gambleChapter + chapterRange)
+        )
+        
+        setTimelineEvents(filteredEvents)
+        setArcs(arcsResponse.data || [])
+        
+      } catch (error: unknown) {
+        console.error('Failed to fetch timeline data:', error)
+      } finally {
+        setTimelineLoading(false)
+      }
+    }
+
+    fetchTimelineData()
+  }, [gamble])
 
   // Remove difficulty logic as it's not in the backend structure
 
@@ -216,9 +258,9 @@ export default function GambleDetailsPage() {
                       Participants ({gamble.participants.length})
                     </Typography>
                     <SpoilerWrapper 
-                      chapterNumber={gamble.chapterId} 
-                      spoilerType="major"
-                      description="Gamble participants and outcomes"
+                      chapterNumber={gamble.chapter?.number || gamble.chapterId}
+                      spoilerType="minor"
+                      description="Gamble participants"
                     >
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {gamble.participants.map((participant) => (
@@ -240,6 +282,18 @@ export default function GambleDetailsPage() {
 
           </Grid>
         </Grid>
+
+        {/* Timeline Section */}
+        {timelineEvents.length > 0 && (
+          <Box sx={{ mt: 4 }}>
+            <GambleTimeline
+              events={timelineEvents}
+              arcs={arcs}
+              gambleName={gamble.name}
+              gambleChapter={gamble.chapter?.number || gamble.chapterId}
+            />
+          </Box>
+        )}
       </motion.div>
     </Container>
   )

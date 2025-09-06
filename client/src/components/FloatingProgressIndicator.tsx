@@ -127,7 +127,7 @@ export const FloatingProgressIndicator: React.FC = () => {
 
     window.addEventListener('keydown', handleGlobalKeyPress)
     return () => window.removeEventListener('keydown', handleGlobalKeyPress)
-  }, [open, tempProgress, isUpdating])
+  }, [open, tempProgress, isUpdating, handleKeyPress])
 
   if (progressLoading) {
     return null

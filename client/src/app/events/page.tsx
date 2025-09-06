@@ -12,7 +12,6 @@ import {
   Box,
   TextField,
   InputAdornment,
-  Pagination,
   CircularProgress,
   Alert,
   Chip,
@@ -27,26 +26,13 @@ import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
-
-interface Event {
-  id: number
-  title: string
-  name: string
-  description: string
-  eventType: string
-  chapter: number
-  significance: string
-  participants: string[]
-  outcome: string
-  createdAt: string
-  updatedAt: string
-}
+import type { Event, Arc } from '../../types'
 
 export default function EventsPage() {
   const theme = useTheme()
   const [groupedEvents, setGroupedEvents] = useState<{
-    arcs: Array<{ arc: any; events: any[] }>
-    noArc: any[]
+    arcs: Array<{ arc: Arc; events: Event[] }>
+    noArc: Event[]
   }>({ arcs: [], noArc: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -59,7 +45,7 @@ export default function EventsPage() {
     try {
       if (search) {
         // Fall back to regular search when searching
-        const params: any = { page: 1, limit: 100, title: search }
+        const params: Record<string, string | number> = { page: 1, limit: 100, title: search }
         if (type) params.type = type
         if (status) params.status = status
         
@@ -70,15 +56,15 @@ export default function EventsPage() {
         })
       } else {
         // Use grouped endpoint when not searching
-        const params: any = {}
+        const params: Record<string, string> = {}
         if (type) params.type = type
         if (status) params.status = status
         
         const response = await api.getEventsGroupedByArc(params)
         setGroupedEvents(response)
       }
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -117,7 +103,7 @@ export default function EventsPage() {
     }
   }
 
-  const renderEvent = (event: any, index: number) => (
+  const renderEvent = (event: Event, index: number) => (
     <Grid item xs={12} sm={6} md={4} key={event.id}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -196,11 +182,6 @@ export default function EventsPage() {
               {event.description}
             </Typography>
 
-            {event.arc && (
-              <Typography variant="body2" color="text.secondary">
-                <strong>Arc:</strong> {event.arc.name}
-              </Typography>
-            )}
           </CardContent>
 
           <CardActions>
@@ -219,7 +200,7 @@ export default function EventsPage() {
     </Grid>
   )
 
-  const renderArcSection = (title: string, arcs: Array<{ arc: any; events: any[] }>, color: string) => (
+  const renderArcSection = (title: string, arcs: Array<{ arc: Arc; events: Event[] }>, color: string) => (
     arcs.length > 0 && (
       <Box sx={{ mb: 6 }}>
         <Typography variant="h4" component="h2" sx={{ mb: 3, color, fontWeight: 'bold' }}>

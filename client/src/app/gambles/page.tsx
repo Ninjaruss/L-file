@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import {
   Container,
   Typography,
@@ -20,6 +20,7 @@ import {
 import { Eye, Users, Dices, Trophy, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import SpoilerWrapper from '../../components/SpoilerWrapper'
@@ -40,8 +41,9 @@ interface Gamble {
   updatedAt: string
 }
 
-export default function GamblesPage() {
+function GamblesPageContent() {
   const theme = useTheme()
+  const searchParams = useSearchParams()
   const [gambles, setGambles] = useState<Gamble[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,14 +51,43 @@ export default function GamblesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [characterFilter, setCharacterFilter] = useState<string | null>(null)
 
-  const fetchGambles = async (page = 1, search = '') => {
+  const fetchGambles = async (page = 1, search = '', characterName?: string) => {
     setLoading(true)
     try {
-      const params: { page: number; limit: number; gambleName?: string } = { page, limit: 12 }
-      if (search) params.gambleName = search
+      let response
       
-      const response = await api.getGambles(params)
+      if (characterName) {
+        // First find the character ID by name
+        const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
+        if (charactersResponse.data.length > 0) {
+          const characterId = charactersResponse.data[0].id
+          // Get character-specific gambles
+          const characterGamblesResponse = await api.getCharacterGambles(characterId, { limit: 1000 })
+          // For character filtering, we'll simulate pagination client-side
+          const allGambles = characterGamblesResponse.data || []
+          const startIndex = (page - 1) * 12
+          const endIndex = startIndex + 12
+          const paginatedGambles = allGambles.slice(startIndex, endIndex)
+          
+          response = {
+            data: paginatedGambles,
+            total: allGambles.length,
+            totalPages: Math.ceil(allGambles.length / 12),
+            page
+          }
+        } else {
+          // Character not found, return empty results
+          response = { data: [], total: 0, totalPages: 1, page: 1 }
+        }
+      } else {
+        // Normal gamble fetching with search
+        const params: { page: number; limit: number; gambleName?: string } = { page, limit: 12 }
+        if (search) params.gambleName = search
+        response = await api.getGambles(params)
+      }
+      
       setGambles(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
@@ -68,8 +99,10 @@ export default function GamblesPage() {
   }
 
   useEffect(() => {
-    fetchGambles(currentPage, searchQuery)
-  }, [currentPage, searchQuery])
+    const character = searchParams.get('character')
+    setCharacterFilter(character)
+    fetchGambles(currentPage, searchQuery, character || undefined)
+  }, [currentPage, searchQuery, searchParams])
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value)
@@ -109,8 +142,25 @@ export default function GamblesPage() {
             Gambles
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Discover the high-stakes games and competitions of Usogui
+            {characterFilter 
+              ? `Gambles featuring ${characterFilter}`
+              : 'Discover the high-stakes games and competitions of Usogui'
+            }
           </Typography>
+          {characterFilter && (
+            <Box sx={{ mt: 2 }}>
+              <Chip
+                label={`Filtered by: ${characterFilter}`}
+                onDelete={() => {
+                  window.history.replaceState({}, '', '/gambles')
+                  setCharacterFilter(null)
+                  fetchGambles(1, searchQuery)
+                }}
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
+          )}
         </Box>
 
         <Box sx={{ mb: 4 }}>
@@ -231,5 +281,13 @@ export default function GamblesPage() {
         )}
       </motion.div>
     </Container>
+  )
+}
+
+export default function GamblesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GamblesPageContent />
+    </Suspense>
   )
 }

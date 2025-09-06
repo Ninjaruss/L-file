@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import {
   Container,
   Typography,
@@ -28,6 +28,7 @@ import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
 import { motion } from 'motion/react'
@@ -36,17 +37,18 @@ interface Arc {
   id: number
   name: string
   description: string
-  startChapter: number
-  endChapter: number
-  createdAt: string
-  updatedAt: string
+  startChapter?: number
+  endChapter?: number
+  createdAt?: string
+  updatedAt?: string
   imageFileName?: string
   imageDisplayName?: string
 }
 
-export default function ArcsPage() {
+function ArcsPageContent() {
   const { user } = useAuth()
   const theme = useTheme()
+  const searchParams = useSearchParams()
   const [arcs, setArcs] = useState<Arc[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -54,6 +56,7 @@ export default function ArcsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [characterFilter, setCharacterFilter] = useState<string | null>(null)
   
   // Image upload state
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
@@ -66,13 +69,41 @@ export default function ArcsPage() {
 
   const isModeratorOrAdmin = user?.role === 'moderator' || user?.role === 'admin'
 
-  const fetchArcs = async (page = 1, search = '') => {
+  const fetchArcs = async (page = 1, search = '', characterName?: string) => {
     setLoading(true)
     try {
-      const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
-      if (search) params.name = search
+      let response
       
-      const response = await api.getArcs(params)
+      if (characterName) {
+        // First find the character ID by name
+        const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
+        if (charactersResponse.data.length > 0) {
+          const characterId = charactersResponse.data[0].id
+          // Get character-specific arcs
+          const characterArcsResponse = await api.getCharacterArcs(characterId)
+          // For character filtering, we'll simulate pagination client-side
+          const allArcs = characterArcsResponse.data || []
+          const startIndex = (page - 1) * 12
+          const endIndex = startIndex + 12
+          const paginatedArcs = allArcs.slice(startIndex, endIndex)
+          
+          response = {
+            data: paginatedArcs,
+            total: allArcs.length,
+            totalPages: Math.ceil(allArcs.length / 12),
+            page
+          }
+        } else {
+          // Character not found, return empty results
+          response = { data: [], total: 0, totalPages: 1, page: 1 }
+        }
+      } else {
+        // Normal arc fetching with search
+        const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
+        if (search) params.name = search
+        response = await api.getArcs(params)
+      }
+      
       setArcs(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
@@ -84,8 +115,10 @@ export default function ArcsPage() {
   }
 
   useEffect(() => {
-    fetchArcs(currentPage, searchQuery)
-  }, [currentPage, searchQuery])
+    const character = searchParams.get('character')
+    setCharacterFilter(character)
+    fetchArcs(currentPage, searchQuery, character || undefined)
+  }, [currentPage, searchQuery, searchParams])
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value)
@@ -97,6 +130,9 @@ export default function ArcsPage() {
   }
 
   const getChapterCount = (arc: Arc) => {
+    if (typeof arc.startChapter === 'undefined' || typeof arc.endChapter === 'undefined') {
+      return null
+    }
     return arc.endChapter - arc.startChapter + 1
   }
 
@@ -190,8 +226,25 @@ export default function ArcsPage() {
             Story Arcs
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Explore the major storylines and arcs of Usogui
+            {characterFilter 
+              ? `Arcs featuring ${characterFilter}`
+              : 'Explore the major storylines and arcs of Usogui'
+            }
           </Typography>
+          {characterFilter && (
+            <Box sx={{ mt: 2 }}>
+              <Chip
+                label={`Filtered by: ${characterFilter}`}
+                onDelete={() => {
+                  window.history.replaceState({}, '', '/arcs')
+                  setCharacterFilter(null)
+                  fetchArcs(1, searchQuery)
+                }}
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
+          )}
         </Box>
 
         <Box sx={{ mb: 4 }}>
@@ -281,19 +334,23 @@ export default function ArcsPage() {
                         </Typography>
                         
                         <Box sx={{ mb: 2 }}>
-                          <Chip
-                            label={`Chapters ${arc.startChapter}-${arc.endChapter}`}
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                          <Chip
-                            label={`${getChapterCount(arc)} chapters`}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
+                          {arc.startChapter && arc.endChapter && (
+                            <Chip
+                              label={`Chapters ${arc.startChapter}-${arc.endChapter}`}
+                              size="small"
+                              color="secondary"
+                              variant="outlined"
+                              sx={{ mr: 1 }}
+                            />
+                          )}
+                          {getChapterCount(arc) && (
+                            <Chip
+                              label={`${getChapterCount(arc)} chapters`}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          )}
                         </Box>
 
                         <Typography
@@ -460,5 +517,13 @@ export default function ArcsPage() {
         />
       </motion.div>
     </Container>
+  )
+}
+
+export default function ArcsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ArcsPageContent />
+    </Suspense>
   )
 }

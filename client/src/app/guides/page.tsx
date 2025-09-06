@@ -93,7 +93,7 @@ function GuidesPageContent() {
     if (authorParam && !searchQuery) {
       setSearchQuery('')
     }
-  }, [searchParams])
+  }, [searchParams, searchQuery])
 
   // Handle data fetching - this will trigger when authorFilter changes from the above effect
   useEffect(() => {

@@ -1,7 +1,5 @@
 # Changelog and notes
 ## TODO:
-- Put media gallery as a seperate tab; update media viewer 
-- Add modal to view events info in detail
 - Add highlight of most popular quote, gamble, and character profile picture
 - Add different image profile pictures for characters and adding labeling (update character image based on progressed chapter; subtle chapter progression)
 - Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN); allow character profile picture choice from characters
@@ -10,12 +8,34 @@
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Update admin edit pages to have better layout (put delete button somewhere to not be clicked accidentally)
 
+## 2025-09-05
+### Changes
+- Fixed syntax errors in arc and character detail pages causing build failures
+- Completed ArcTimeline component implementation with spoiler protection
+- Streamlined timelines to have modals, spoilers, and event type filtering
+- Updates to the looks of timelines; separation by arcs for characters and split detection for arcs/gambles timelines.
+
+### Notes
+- I need to start manually asking Claude to summarize long chats to limit use of tokens and continue working on complex features that require continous context. The command seems to be /compact to summarize context.
+- So I made the mistake of asking Claude to create a timeline for gambles based on the timelines of characters and arcs. The result was the original timelines got refactored and not being the look of their original design. I noticed this too late, so I need to step by step revert changes rather than resetting to previous Git save. 
+
 ## 2025-09-04
 ### Changes
 - Added disclaimer page and FAQ section
 - Fixed spoilers on character detail page to use useSpoilerSettings hook
 - Updated character timeline to hide spoilers and list multiple events per arc
 - Jump to chapter functionality added to character timeline
+- Separate tabs for overview, timeline, and media
+- Fixed filtering out events for character detail page; events properly load in and have spoiler warnings
+- Added event modal that shows up when hovering over events in character timeline
+
+### Notes
+- For reference, a key inspiration for the site is masterduelmeta.com, eldenring.wiki.fextralife.com, and anilist.co; primarily focusing on providing streamlined data and adding any features that will enhance the website without too much bloat.
+- I considered adding comments, but opted not to cause of additional time spent moderating the site and leaving the community interaction for Discord, Youtube, Reddit, etc.
+- Spoilers was a big thing I noticed when I spent a lot of time going through wikis back then. So implementing the user progress is a big thing that will allow people to read the wiki without having to finish the manga. As the biggest goal is to make this a good resource to understand the story.
+- Claude code sonnet 4.0 is still having issues making code clean and will occasionally forget/hallucinate. A lot of the tokens recently have been spent trying to fix issues that are hard to spot for the coding agent like loading data properly. The trend seems to be that it will usually miss an already implemented component as it wasn't defined in the prompt (even though I expect MCP Serena to clue it in)
+- Not sure if the 5 hour limit is a good thing as occasionally it will hit the limit while it is refactoring/generating code. I tend to get carried away with coding so having a forced break is somewhat helpful. Either way, the limit is still usually reached within 2 hours of use even though I am trying to /clear the context as much as possible.
+- Some tips are: always try to run /clear to free up context to limit tokens used. Long chats will continue to pull previous tokens, so it's best to clear it often.
 
 ## 2025-09-03
 ### Changes

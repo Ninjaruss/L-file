@@ -225,7 +225,7 @@ export default function MediaGallery({
   }
 
   const getYouTubeEmbedUrl = (videoId: string): string => {
-    return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1`
+    return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1&controls=1&enablejsapi=1&fs=1&cc_load_policy=0&disablekb=0&iv_load_policy=3`
   }
 
   const getVimeoVideoId = (url: string): string | null => {
@@ -235,11 +235,17 @@ export default function MediaGallery({
   }
 
   const getVimeoEmbedUrl = (videoId: string): string => {
-    return `https://player.vimeo.com/video/${videoId}?byline=0&portrait=0`
+    return `https://player.vimeo.com/video/${videoId}?byline=0&portrait=0&color=ffffff&title=0&autoplay=0&controls=1`
+  }
+
+  const isDirectVideoUrl = (url: string): boolean => {
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv']
+    const urlPath = url.toLowerCase()
+    return videoExtensions.some(ext => urlPath.includes(ext))
   }
 
   const canEmbedVideo = (url: string): boolean => {
-    return !!(extractYouTubeVideoId(url) || getVimeoVideoId(url))
+    return !!(extractYouTubeVideoId(url) || getVimeoVideoId(url) || isDirectVideoUrl(url))
   }
 
   const getEmbedUrl = (url: string): string | null => {
@@ -369,14 +375,19 @@ export default function MediaGallery({
           const thumbnail = getMediaThumbnail(mediaItem)
           
           return (
-            <Grid item xs={6} sm={4} md={compactMode ? 6 : 3} key={mediaItem.id}>
+            <Grid item xs={6} sm={4} md={compactMode ? 6 : 3} lg={compactMode ? 4 : 3} key={mediaItem.id}>
               <Card 
                 sx={{ 
                   cursor: 'pointer',
-                  transition: 'transform 0.2s ease-in-out',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: 2,
+                  overflow: 'hidden',
                   '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: theme.shadows[8]
+                    transform: 'translateY(-4px) scale(1.02)',
+                    boxShadow: theme.shadows[12],
+                    '& .media-overlay': {
+                      opacity: 1
+                    }
                   }
                 }}
                 onClick={() => handleMediaClick(mediaItem)}
@@ -412,21 +423,73 @@ export default function MediaGallery({
                     </Box>
                   )}
                   
+                  {/* Enhanced overlay with play button for videos */}
+                  <Box
+                    className="media-overlay"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: mediaItem.type === 'video' 
+                        ? 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)'
+                        : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: mediaItem.type === 'video' ? 0 : 1,
+                      transition: 'opacity 0.3s ease'
+                    }}
+                  >
+                    {mediaItem.type === 'video' && (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 56,
+                          height: 56,
+                          borderRadius: '50%',
+                          bgcolor: 'rgba(255,255,255,0.9)',
+                          color: 'primary.main',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                          backdropFilter: 'blur(10px)',
+                          border: '2px solid rgba(255,255,255,0.2)'
+                        }}
+                      >
+                        <Play size={24} fill="currentColor" />
+                      </Box>
+                    )}
+                  </Box>
+
                   {/* Media type indicator */}
                   <Box
                     sx={{
                       position: 'absolute',
                       top: 8,
                       right: 8,
-                      bgcolor: 'rgba(0,0,0,0.7)',
+                      bgcolor: 'rgba(0,0,0,0.8)',
                       color: 'white',
-                      borderRadius: 1,
-                      p: 0.5,
+                      borderRadius: 1.5,
+                      px: 1,
+                      py: 0.5,
                       display: 'flex',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      gap: 0.5,
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255,255,255,0.1)'
                     }}
                   >
                     {getMediaTypeIcon(mediaItem.type)}
+                    <Typography variant="caption" sx={{ 
+                      fontSize: '0.7rem', 
+                      fontWeight: 600, 
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5
+                    }}>
+                      {mediaItem.type}
+                    </Typography>
                   </Box>
 
                   {/* Character/Arc indicators */}
@@ -435,9 +498,11 @@ export default function MediaGallery({
                       position: 'absolute',
                       bottom: 8,
                       left: 8,
+                      right: 8,
                       display: 'flex',
                       gap: 0.5,
-                      flexWrap: 'wrap'
+                      flexWrap: 'wrap',
+                      justifyContent: 'flex-start'
                     }}
                   >
                     {mediaItem.character && (
@@ -447,10 +512,13 @@ export default function MediaGallery({
                         color="primary"
                         variant="filled"
                         sx={{
-                          fontSize: '0.75rem',
-                          height: '20px',
-                          backgroundColor: 'rgba(25, 118, 210, 0.9)',
-                          color: 'white'
+                          fontSize: '0.7rem',
+                          height: '22px',
+                          backgroundColor: 'rgba(25, 118, 210, 0.95)',
+                          color: 'white',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          fontWeight: 600
                         }}
                       />
                     )}
@@ -461,10 +529,13 @@ export default function MediaGallery({
                         color="secondary"
                         variant="filled"
                         sx={{
-                          fontSize: '0.75rem',
-                          height: '20px',
-                          backgroundColor: 'rgba(156, 39, 176, 0.9)',
-                          color: 'white'
+                          fontSize: '0.7rem',
+                          height: '22px',
+                          backgroundColor: 'rgba(156, 39, 176, 0.95)',
+                          color: 'white',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          fontWeight: 600
                         }}
                       />
                     )}
@@ -472,7 +543,7 @@ export default function MediaGallery({
                 </Box>
                 
                 {!compactMode && (
-                  <CardContent sx={{ p: 1.5 }}>
+                  <CardContent sx={{ p: 2 }}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
@@ -480,15 +551,36 @@ export default function MediaGallery({
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        mb: 0.5,
-                        fontSize: '0.875rem'
+                        mb: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        lineHeight: 1.4
                       }}
                     >
-                      {mediaItem.description || 'No description'}
+                      {mediaItem.description || 'No description available'}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      By {mediaItem.submittedBy.username}
-                    </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      mt: 1
+                    }}>
+                      <Typography variant="caption" color="text.secondary" sx={{
+                        fontSize: '0.75rem',
+                        fontWeight: 500
+                      }}>
+                        By {mediaItem.submittedBy.username}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{
+                        fontSize: '0.7rem',
+                        opacity: 0.7
+                      }}>
+                        {new Date(mediaItem.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </Typography>
+                    </Box>
                   </CardContent>
                 )}
               </Card>
@@ -627,91 +719,130 @@ export default function MediaGallery({
                     justifyContent: 'center',
                     bgcolor: 'black'
                   }}>
-                    {!shouldLoadVideo ? (
-                      <Box sx={{ 
-                        textAlign: 'center',
-                        p: 4,
-                        bgcolor: 'rgba(0,0,0,0.8)',
-                        borderRadius: 2,
-                        color: 'white'
-                      }}>
-                        <Box sx={{ mb: 2 }}>
-                          {getMediaThumbnail(selectedMedia) && (
-                            <img
-                              src={getMediaThumbnail(selectedMedia)!}
-                              alt="Video thumbnail"
-                              style={{
-                                maxWidth: '300px',
-                                maxHeight: '200px',
-                                objectFit: 'cover',
-                                borderRadius: '8px'
-                              }}
-                            />
+                    <Box sx={{ width: '100%', maxWidth: '100%' }}>
+                      {canEmbedVideo(selectedMedia.url) ? (
+                        <Box sx={{ 
+                          width: '100%', 
+                          aspectRatio: '16/9',
+                          minHeight: '400px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {isDirectVideoUrl(selectedMedia.url) ? (
+                            <Fade in={true} timeout={500}>
+                              <video
+                                controls
+                                preload="metadata"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  maxHeight: '70vh',
+                                  objectFit: 'contain',
+                                  backgroundColor: 'black'
+                                }}
+                                onLoadStart={() => setVideoLoaded(true)}
+                              >
+                                <source src={selectedMedia.url} />
+                                Your browser does not support the video tag.
+                              </video>
+                            </Fade>
+                          ) : !shouldLoadVideo ? (
+                            <Box sx={{ 
+                              textAlign: 'center',
+                              p: 4,
+                              bgcolor: 'rgba(0,0,0,0.9)',
+                              borderRadius: 2,
+                              color: 'white',
+                              border: '2px solid rgba(255,255,255,0.1)'
+                            }}>
+                              <Box sx={{ mb: 3 }}>
+                                {getMediaThumbnail(selectedMedia) && (
+                                  <img
+                                    src={getMediaThumbnail(selectedMedia)!}
+                                    alt="Video thumbnail"
+                                    style={{
+                                      maxWidth: '320px',
+                                      maxHeight: '180px',
+                                      objectFit: 'cover',
+                                      borderRadius: '12px',
+                                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                              <Button
+                                variant="contained"
+                                size="large"
+                                startIcon={<Play size={24} />}
+                                onClick={handleLoadVideo}
+                                sx={{
+                                  bgcolor: 'primary.main',
+                                  color: 'white',
+                                  px: 4,
+                                  py: 1.5,
+                                  fontSize: '1.1rem',
+                                  fontWeight: 600,
+                                  borderRadius: '12px',
+                                  boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)',
+                                  '&:hover': {
+                                    bgcolor: 'primary.dark',
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0 6px 24px rgba(25, 118, 210, 0.5)'
+                                  }
+                                }}
+                              >
+                                Play Video
+                              </Button>
+                              <Typography variant="body2" sx={{ mt: 2, opacity: 0.7 }}>
+                                Click to load the video player with full controls
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Fade in={shouldLoadVideo} timeout={500}>
+                              <iframe
+                                src={getEmbedUrl(selectedMedia.url)!}
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                allowFullScreen
+                                title={selectedMedia.description}
+                                onLoad={() => setVideoLoaded(true)}
+                                style={{
+                                  minHeight: '400px',
+                                  borderRadius: '8px'
+                                }}
+                              />
+                            </Fade>
                           )}
                         </Box>
-                        <Button
-                          variant="contained"
-                          size="large"
-                          startIcon={<Play />}
-                          onClick={handleLoadVideo}
-                          sx={{
-                            bgcolor: 'primary.main',
-                            '&:hover': {
-                              bgcolor: 'primary.dark'
-                            }
-                          }}
-                        >
-                          Load and Play Video
-                        </Button>
-                        <Typography variant="body2" sx={{ mt: 2, opacity: 0.8 }}>
-                          Click to load the video player
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Box sx={{ width: '100%', aspectRatio: '16/9' }}>
-                        {canEmbedVideo(selectedMedia.url) ? (
-                          <Fade in={shouldLoadVideo} timeout={500}>
-                            <iframe
-                              src={getEmbedUrl(selectedMedia.url)!}
-                              width="100%"
-                              height="100%"
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                              title={selectedMedia.description}
-                              onLoad={() => setVideoLoaded(true)}
-                              style={{
-                                minHeight: '400px'
-                              }}
-                            />
-                          </Fade>
-                        ) : (
-                          <Box sx={{ 
-                            textAlign: 'center',
-                            p: 4,
-                            bgcolor: 'rgba(0,0,0,0.8)',
-                            borderRadius: 2,
-                            color: 'white'
-                          }}>
-                            <Typography variant="h6" gutterBottom>
-                              External Video
-                            </Typography>
-                            <Typography variant="body2" paragraph>
-                              This video is hosted externally and cannot be embedded.
-                            </Typography>
-                            <Button
-                              variant="contained"
-                              href={selectedMedia.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              startIcon={<ExternalLink />}
-                            >
-                              Open in New Tab
-                            </Button>
-                          </Box>
-                        )}
-                      </Box>
-                    )}
+                      ) : (
+                        <Box sx={{ 
+                          textAlign: 'center',
+                          p: 4,
+                          bgcolor: 'rgba(0,0,0,0.8)',
+                          borderRadius: 2,
+                          color: 'white'
+                        }}>
+                          <Typography variant="h6" gutterBottom>
+                            External Video
+                          </Typography>
+                          <Typography variant="body2" paragraph>
+                            This video is hosted externally and cannot be embedded.
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            href={selectedMedia.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<ExternalLink />}
+                          >
+                            Open in New Tab
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
                   </Box>
                 ) : (
                   <Box sx={{ 

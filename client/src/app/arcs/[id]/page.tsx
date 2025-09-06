@@ -11,10 +11,11 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Divider,
-  Chip
+  Chip,
+  Tabs,
+  Tab
 } from '@mui/material'
-import { ArrowLeft, BookOpen, Hash, CalendarSearch, Users } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, Eye } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -22,6 +23,8 @@ import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
+import ArcTimeline from '../../../components/ArcTimeline'
+import SpoilerWrapper from '../../../components/SpoilerWrapper'
 
 interface Arc {
   id: number
@@ -29,6 +32,9 @@ interface Arc {
   description: string
   startChapter: number
   endChapter: number
+  order?: number
+  imageFileName?: string
+  imageDisplayName?: string
   createdAt: string
   updatedAt: string
 }
@@ -57,9 +63,8 @@ export default function ArcDetailPage() {
   const [arc, setArc] = useState<Arc | null>(null)
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
-  const [eventsLoading, setEventsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [eventsError, setEventsError] = useState('')
+  const [activeTab, setActiveTab] = useState(0)
   const params = useParams()
 
   // Track page view
@@ -71,7 +76,6 @@ export default function ArcDetailPage() {
       try {
         const id = Array.isArray(params.id) ? params.id[0] : params.id
         setLoading(true)
-        setEventsLoading(true)
         
         // Fetch arc details and arc events in parallel
         const [arcData, eventsGroupedData] = await Promise.all([
@@ -87,10 +91,8 @@ export default function ArcDetailPage() {
         
       } catch (error: unknown) {
         setError(error instanceof Error ? error.message : 'An error occurred')
-        setEventsError('Failed to load arc events')
       } finally {
         setLoading(false)
-        setEventsLoading(false)
       }
     }
 
@@ -98,6 +100,10 @@ export default function ArcDetailPage() {
       fetchArcData()
     }
   }, [params.id])
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue)
+  }
 
   if (loading) {
     return (
@@ -142,352 +148,466 @@ export default function ArcDetailPage() {
           Back to Arcs
         </Button>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <BookOpen size={48} color={theme.palette.usogui.arc} />
-          </Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            {arc.name}
-          </Typography>
-          
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <Chip
-              label={`Chapters ${arc.startChapter}-${arc.endChapter}`}
-              color="secondary"
-              variant="filled"
-              icon={<Hash size={16} />}
-            />
-            <Chip
-              label={`${chapterCount} chapters total`}
-              color="primary"
-              variant="outlined"
-              icon={<BookOpen size={16} />}
-            />
-            {events.length > 0 && (
-              <Chip
-                label={`${events.length} key events`}
-                color="warning"
-                variant="outlined"
-                icon={<CalendarSearch size={16} />}
-              />
-            )}
-          </Box>
-        </Box>
-
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
-            <Card className="gambling-card" sx={{ mb: 4 }}>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>
-                  Story Summary
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  {arc.description}
-                </Typography>
-              </CardContent>
-            </Card>
-
-            {/* Events Section */}
-            <Card className="gambling-card">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <CalendarSearch size={24} color={theme.palette.usogui.event} style={{ marginRight: 8 }} />
-                  <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
-                    Key Events in This Arc
-                  </Typography>
-                </Box>
-
-                {eventsLoading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress size={40} />
-                  </Box>
-                ) : eventsError ? (
-                  <Alert severity="warning" sx={{ mb: 2 }}>
-                    {eventsError}
-                  </Alert>
-                ) : events.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography variant="body1" color="text.secondary" gutterBottom>
-                      No key events have been documented for this arc yet.
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Be the first to contribute by submitting guides about important moments in this storyline!
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Major story moments and turning points in chronological order:
-                    </Typography>
-                    
-                    <Box sx={{ position: 'relative' }}>
-                      {/* Timeline line */}
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          left: '20px',
-                          top: '20px',
-                          bottom: '20px',
-                          width: '2px',
-                          background: `linear-gradient(to bottom, ${theme.palette.usogui.event}, ${theme.palette.primary.main})`,
-                          opacity: 0.3
+        {/* Enhanced Arc Header */}
+        <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={12} md={4} lg={3}>
+                <Box sx={{ 
+                  textAlign: 'center',
+                  position: 'relative'
+                }}>
+                  {arc.imageFileName ? (
+                    <Box sx={{ 
+                      position: 'relative',
+                      display: 'inline-block',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: `linear-gradient(135deg, transparent 0%, ${theme.palette.usogui.arc}15 100%)`,
+                        borderRadius: '16px',
+                        pointerEvents: 'none'
+                      }
+                    }}>
+                      <img 
+                        src={`/api/media/arc/${arc.imageFileName}`}
+                        alt={arc.imageDisplayName || `${arc.name} image`}
+                        style={{ 
+                          width: '100%',
+                          maxWidth: '280px',
+                          height: 'auto',
+                          maxHeight: '320px',
+                          borderRadius: '16px',
+                          boxShadow: `0 12px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)`,
+                          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                          cursor: 'pointer',
+                          objectFit: 'cover'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)'
+                          e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)'
+                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)'
                         }}
                       />
-                      
-                      {events.map((event: Event, index: number) => (
-                        <motion.div
-                          key={event.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                    </Box>
+                  ) : (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center',
+                      height: '280px',
+                      maxWidth: '280px',
+                      margin: '0 auto',
+                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                      borderRadius: '16px',
+                      border: `2px solid ${theme.palette.divider}`,
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: `radial-gradient(circle at 30% 30%, ${theme.palette.usogui.arc}08 0%, transparent 50%)`,
+                        borderRadius: '16px'
+                      }
+                    }}>
+                      <BookOpen size={80} color={theme.palette.text.secondary} style={{ opacity: 0.6 }} />
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={8} lg={9}>
+                <Box sx={{ pl: { md: 2 } }}>
+                  {/* Arc Name with Gradient */}
+                  <Typography 
+                    variant="h2" 
+                    component="h1" 
+                    sx={{ 
+                      mb: 2,
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.usogui.arc} 100%)`,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      color: 'transparent',
+                      fontSize: { xs: '2.5rem', md: '3rem' }
+                    }}
+                  >
+                    {arc.name}
+                  </Typography>
+
+                  {/* Key Information Cards */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Card sx={{ 
+                        p: 2, 
+                        background: `linear-gradient(135deg, ${theme.palette.usogui.arc}08 0%, transparent 100%)`,
+                        border: `1px solid ${theme.palette.usogui.arc}20`,
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: theme.shadows[4]
+                        }
+                      }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          Chapter Range
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'usogui.arc' }}>
+                          {arc.startChapter}-{arc.endChapter}
+                        </Typography>
+                      </Card>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Card sx={{ 
+                        p: 2, 
+                        background: `linear-gradient(135deg, ${theme.palette.secondary.main}08 0%, transparent 100%)`,
+                        border: `1px solid ${theme.palette.secondary.main}20`,
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: theme.shadows[4]
+                        }
+                      }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          Total Chapters
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {chapterCount} chapters
+                        </Typography>
+                      </Card>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Card sx={{ 
+                        p: 2, 
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`,
+                        border: `1px solid ${theme.palette.primary.main}20`,
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: theme.shadows[4]
+                        }
+                      }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          Key Events
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {events.length} events
+                        </Typography>
+                      </Card>
+                    </Grid>
+                  </Grid>
+
+                  {/* Enhanced Stats Chips */}
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                    <Chip 
+                      label={`${events.length} Event${events.length !== 1 ? 's' : ''}`} 
+                      size="medium" 
+                      variant="filled"
+                      color="primary"
+                      sx={{ 
+                        fontWeight: 600,
+                        '& .MuiChip-label': { px: 2 }
+                      }}
+                    />
+                    <Chip 
+                      label={`Arc ${arc.order || 'N/A'}`} 
+                      size="medium" 
+                      variant="filled"
+                      sx={{ 
+                        fontWeight: 600,
+                        backgroundColor: theme.palette.usogui.arc,
+                        color: 'white',
+                        '& .MuiChip-label': { px: 2 }
+                      }}
+                    />
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Tab Navigation */}
+        <Card className="gambling-card" sx={{ mb: 0 }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs 
+              value={activeTab} 
+              onChange={handleTabChange}
+              sx={{ px: 2 }}
+            >
+              <Tab 
+                label="Overview" 
+                icon={<BookOpen size={18} />}
+                iconPosition="start"
+                sx={{ minHeight: 48 }}
+              />
+              <Tab 
+                label="Timeline" 
+                icon={<Calendar size={18} />}
+                iconPosition="start" 
+                sx={{ minHeight: 48 }}
+                disabled={events.length === 0}
+              />
+              <Tab 
+                label="Media" 
+                icon={<Eye size={18} />}
+                iconPosition="start"
+                sx={{ minHeight: 48 }}
+              />
+            </Tabs>
+          </Box>
+
+          {/* Tab Content */}
+          <Box sx={{ p: 0 }}>
+            {/* Overview Tab */}
+            {activeTab === 0 && (
+              <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+                <Grid container spacing={3}>
+                  {/* Main Content - Left Column */}
+                  <Grid item xs={12} lg={8}>
+                    {/* Enhanced About Section */}
+                    <Card className="gambling-card" sx={{ 
+                      mb: 3,
+                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 3,
+                      boxShadow: theme.shadows[2],
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: theme.shadows[6],
+                        transform: 'translateY(-2px)'
+                      }
+                    }}>
+                      <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          mb: 3,
+                          pb: 2,
+                          borderBottom: `2px solid ${theme.palette.divider}`,
+                          position: 'relative',
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            bottom: -2,
+                            left: 0,
+                            width: '60px',
+                            height: '2px',
+                            background: `linear-gradient(90deg, ${theme.palette.usogui.arc} 0%, transparent 100%)`
+                          }
+                        }}>
+                          <BookOpen size={24} style={{ marginRight: 12 }} color={theme.palette.usogui.arc} />
+                          <Typography variant="h4" sx={{ 
+                            fontWeight: 700, 
+                            color: 'usogui.arc',
+                            letterSpacing: '-0.5px'
+                          }}>
+                            About
+                          </Typography>
+                        </Box>
+
+                        <SpoilerWrapper 
+                          chapterNumber={arc.startChapter}
+                          spoilerType="minor"
+                          description="Arc description and overview"
                         >
-                          <Box
-                            sx={{
-                              position: 'relative',
-                              display: 'flex',
-                              mb: 3,
-                              alignItems: 'flex-start'
+                          <Typography variant="body1" sx={{ 
+                            fontSize: { xs: '1rem', md: '1.1rem' },
+                            lineHeight: 1.8,
+                            mb: 3,
+                            color: 'text.primary',
+                            fontWeight: 400
+                          }}>
+                            {arc.description}
+                          </Typography>
+                        </SpoilerWrapper>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Right Column - Additional Info */}
+                  <Grid item xs={12} lg={4}>
+                    {/* Chapter Navigation */}
+                    <Card className="gambling-card" sx={{
+                      background: `linear-gradient(135deg, ${theme.palette.info.main}08 0%, transparent 100%)`,
+                      border: `1px solid ${theme.palette.info.main}15`,
+                      position: 'sticky',
+                      top: 20,
+                      borderRadius: 3,
+                      boxShadow: theme.shadows[2],
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: theme.shadows[6],
+                        transform: 'translateY(-2px)'
+                      }
+                    }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ 
+                          mb: 3,
+                          fontWeight: 700,
+                          color: 'info.main',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          letterSpacing: '-0.3px'
+                        }}>
+                          <BookOpen size={20} />
+                          Chapter Range
+                        </Typography>
+                        
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Button
+                            component={Link}
+                            href={`/chapters/${arc.startChapter}`}
+                            variant="outlined"
+                            color="info"
+                            fullWidth
+                            sx={{ 
+                              borderRadius: '12px',
+                              py: 1.5,
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              fontSize: '0.95rem',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'scale(1.02)',
+                                boxShadow: theme.shadows[4]
+                              }
                             }}
                           >
-                            {/* Timeline dot */}
-                            <Box
-                              sx={{
-                                width: '12px',
-                                height: '12px',
-                                borderRadius: '50%',
-                                backgroundColor: theme.palette.usogui.event,
-                                border: `3px solid ${theme.palette.background.paper}`,
-                                flexShrink: 0,
-                                mt: 1,
-                                mr: 3,
-                                zIndex: 1
-                              }}
-                            />
-                            
-                            <Card 
-                              sx={{ 
-                                flexGrow: 1,
-                                transition: 'all 0.2s ease-in-out',
-                                cursor: 'pointer',
-                                textDecoration: 'none',
-                                '&:hover': {
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: theme.shadows[8]
-                                }
-                              }}
-                              component={Link}
-                              href={`/events/${event.id}`}
-                            >
-                              <CardContent sx={{ pb: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                  <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
-                                    {event.title}
-                                  </Typography>
-                                  <Chip 
-                                    label={`Ch. ${event.chapterNumber}`}
-                                    size="small" 
-                                    color="primary"
-                                    variant="outlined"
-                                  />
-                                </Box>
-                                
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary" 
-                                  sx={{ 
-                                    mb: 2,
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                  }}
-                                >
-                                  {event.description}
-                                </Typography>
+                            Start: Chapter {arc.startChapter}
+                          </Button>
+                          <Button
+                            component={Link}
+                            href={`/chapters/${arc.endChapter}`}
+                            variant="contained"
+                            color="info"
+                            fullWidth
+                            sx={{ 
+                              borderRadius: '12px',
+                              py: 1.5,
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              fontSize: '0.95rem',
+                              boxShadow: theme.shadows[3],
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'scale(1.02)',
+                                boxShadow: theme.shadows[6]
+                              }
+                            }}
+                          >
+                            End: Chapter {arc.endChapter}
+                          </Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
 
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                  <Chip 
-                                    label={event.type}
-                                    size="small"
-                                    color="secondary"
-                                    variant="filled"
-                                  />
-                                  {event.characters?.slice(0, 3).map((character: Character) => (
-                                    <Chip
-                                      key={character.id}
-                                      label={character.name}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                  ))}
-                                  {(event.characters?.length || 0) > 3 && (
-                                    <Chip
-                                      label={`+${(event.characters?.length || 0) - 3} more`}
-                                      size="small"
-                                      variant="outlined"
-                                      color="default"
-                                    />
-                                  )}
-                                </Box>
-                              </CardContent>
-                            </Card>
-                          </Box>
-                        </motion.div>
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Media Gallery Section */}
-            <Card className="gambling-card" sx={{ mt: 4 }}>
-              <CardContent>
-                <MediaGallery 
-                  arcId={arc.id} 
-                  limit={8}
-                  showTitle={true}
+            {/* Timeline Tab */}
+            {activeTab === 1 && events.length > 0 && (
+              <Box>
+                <ArcTimeline
+                  events={events.map(event => ({
+                    id: event.id,
+                    title: event.title,
+                    chapterNumber: event.chapterNumber,
+                    type: event.type as 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution',
+                    characters: event.characters?.map(char => char.name),
+                    description: event.description,
+                    isSpoiler: event.chapterNumber > arc.startChapter
+                  }))}
+                  arcName={arc.name}
+                  startChapter={arc.startChapter}
+                  endChapter={arc.endChapter}
                 />
-              </CardContent>
-            </Card>
-          </Grid>
+              </Box>
+            )}
 
-          <Grid item xs={12} md={4}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Arc Details
-                </Typography>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Start Chapter
-                  </Typography>
-                  <Typography variant="h6" color="primary">
-                    {arc.startChapter}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    End Chapter
-                  </Typography>
-                  <Typography variant="h6" color="secondary">
-                    {arc.endChapter}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Chapters
-                  </Typography>
-                  <Typography variant="h6">
-                    {chapterCount}
-                  </Typography>
-                </Box>
-
-                {events.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Documented Events
-                    </Typography>
-                    <Typography variant="h6" color="warning.main">
-                      {events.length}
-                    </Typography>
-                  </Box>
-                )}
-
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Added to Database
-                  </Typography>
-                  <Typography variant="body1">
-                    {new Date(arc.createdAt).toLocaleDateString()}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Last Updated
-                  </Typography>
-                  <Typography variant="body1">
-                    {new Date(arc.updatedAt).toLocaleDateString()}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-
-            {/* Quick Navigation */}
-            <Card className="gambling-card" sx={{ mt: 2 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Quick Navigation
-                </Typography>
-                
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Button
-                    component={Link}
-                    href={`/chapters?search=${arc.startChapter}`}
-                    variant="outlined"
-                    size="small"
-                    startIcon={<BookOpen size={16} />}
+            {/* Enhanced Media Tab */}
+            {activeTab === 2 && (
+              <Box sx={{ 
+                p: { xs: 2, sm: 3, md: 4 },
+                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
+              }}>
+                {/* Enhanced Media Header */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography 
+                    variant="h4" 
+                    sx={{ 
+                      mb: 2,
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.primary.main} 100%)`,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      color: 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      letterSpacing: '-0.5px'
+                    }}
                   >
-                    View Arc Chapters
-                  </Button>
-                  
-                  <Button
-                    component={Link}
-                    href={`/events?search=${arc.name}`}
-                    variant="outlined"
-                    size="small"
-                    startIcon={<CalendarSearch size={16} />}
+                    <Eye size={32} color={theme.palette.primary.main} />
+                    Media Gallery
+                  </Typography>
+                  <Typography 
+                    variant="body1" 
+                    color="text.secondary" 
+                    sx={{ 
+                      fontSize: '1.1rem',
+                      fontWeight: 500,
+                      maxWidth: '600px'
+                    }}
                   >
-                    All Arc Events
-                  </Button>
-                  
-                  <Button
-                    component={Link}
-                    href={`/characters?search=${arc.name}`}
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Users size={16} />}
-                  >
-                    Arc Characters
-                  </Button>
+                    Explore fan art, videos, and other media related to {arc.name}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
 
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="h6" gutterBottom>
-            Want to contribute?
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-            Help expand this arc&apos;s information by submitting media or guides about key events
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button
-              component={Link}
-              href="/submit-media"
-              variant="outlined"
-              color="primary"
-            >
-              Submit Media
-            </Button>
-            <Button
-              component={Link}
-              href="/submit-guide"
-              variant="outlined"
-              color="secondary"
-            >
-              Write a Guide
-            </Button>
+                {/* Enhanced Media Gallery Container */}
+                <Box sx={{
+                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.02) 100%)`,
+                  borderRadius: 3,
+                  p: { xs: 2, md: 3 },
+                  border: `1px solid ${theme.palette.divider}`,
+                  boxShadow: theme.shadows[1],
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: `radial-gradient(circle at 20% 80%, ${theme.palette.primary.main}03 0%, transparent 50%)`,
+                    borderRadius: 3,
+                    pointerEvents: 'none'
+                  }
+                }}>
+                  <MediaGallery 
+                    arcId={arc.id} 
+                    limit={20}
+                    showTitle={false}
+                    compactMode={false}
+                  />
+                </Box>
+              </Box>
+            )}
           </Box>
-        </Box>
+        </Card>
       </motion.div>
     </Container>
   )

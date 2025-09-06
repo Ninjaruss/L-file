@@ -213,7 +213,7 @@ function QuotesPageContent() {
                             lineHeight: 1.6
                           }}
                         >
-                          "{quote.text}"
+                          &ldquo;{quote.text}&rdquo;
                         </Typography>
 
                         <Typography 

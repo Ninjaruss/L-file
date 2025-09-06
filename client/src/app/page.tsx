@@ -242,7 +242,7 @@ export default function HomePage() {
               <Box display="flex" alignItems="center" justifyContent="center" gap={1} mb={2}>
                 <TrendingUp className="w-6 h-6" color={theme.palette.primary.main} />
                 <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold' }}>
-                  What's Trending
+                  What&apos;s Trending
                 </Typography>
               </Box>
               <Typography variant="body1" color="text.secondary">
