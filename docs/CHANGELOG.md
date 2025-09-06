@@ -10,6 +10,14 @@
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Update admin edit pages to have better layout (put delete button somewhere to not be clicked accidentally)
 
+## 2025-09-06
+### Changes
+- Added tabs and media to gambles
+
+### Notes
+
+
+
 ## 2025-09-05
 ### Changes
 - Fixed syntax errors in arc and character detail pages causing build failures

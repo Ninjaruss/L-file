@@ -4,10 +4,11 @@ import { ArcsService } from './arcs.service';
 import { ArcsController } from './arcs.controller';
 import { Arc } from '../../entities/arc.entity';
 import { Chapter } from '../../entities/chapter.entity';
+import { Gamble } from '../../entities/gamble.entity';
 import { ServicesModule } from '../../services/services.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Arc, Chapter]), ServicesModule],
+  imports: [TypeOrmModule.forFeature([Arc, Chapter, Gamble]), ServicesModule],
   providers: [ArcsService],
   controllers: [ArcsController],
 })

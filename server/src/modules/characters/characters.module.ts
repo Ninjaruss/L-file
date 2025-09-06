@@ -8,7 +8,11 @@ import { ServicesModule } from '../../services/services.module';
 import { PageViewsModule } from '../page-views/page-views.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Character, Gamble]), ServicesModule, PageViewsModule],
+  imports: [
+    TypeOrmModule.forFeature([Character, Gamble]),
+    ServicesModule,
+    PageViewsModule,
+  ],
   providers: [CharactersService],
   controllers: [CharactersController],
 })

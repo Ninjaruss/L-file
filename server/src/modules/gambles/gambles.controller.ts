@@ -140,6 +140,13 @@ export class GamblesController {
     description: 'Limit the number of results',
     example: 10,
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: 'number',
+    description: 'Page number for pagination',
+    example: 1,
+  })
   @ApiResponse({
     status: 200,
     description: 'List of gambles (filtered if parameters provided)',
@@ -192,6 +199,8 @@ export class GamblesController {
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('page') page = '1',
   ) {
+    const pageNum = parseInt(page) || 1;
+    
     // If any filters are provided, use the search functionality
     if (
       gambleName ||
@@ -207,23 +216,18 @@ export class GamblesController {
         teamName,
         chapterId,
         characterId,
-        limit,
+        limit: limit || 12, // Default limit for client
+        page: pageNum,
       });
     }
 
     // Otherwise return paginated gambles
-    const pageNum = parseInt(page) || 1;
     const result = await this.gamblesService.findAll({
       page: pageNum,
-      limit: 100,
+      limit: 12, // Use consistent limit with client
     });
-    // Return a standardized paginated shape: { data, total, page, totalPages }
-    return {
-      data: result.data,
-      total: result.total,
-      page: result.page,
-      totalPages: result.totalPages,
-    };
+    
+    return result;
   }
 
   @Get(':id')

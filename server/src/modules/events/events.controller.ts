@@ -118,7 +118,8 @@ export class EventsController {
   @Get('by-arc/:arcId')
   @ApiOperation({
     summary: 'Get events by arc',
-    description: 'Retrieve all events for a specific arc with optional filtering',
+    description:
+      'Retrieve all events for a specific arc with optional filtering',
   })
   @ApiParam({
     name: 'arcId',

@@ -8,7 +8,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { PageViewsService, TrendingPage } from './page-views.service';
 import { PageType } from '../../entities/page-view.entity';
@@ -115,18 +121,24 @@ export class PageViewsController {
     @Param('pageType') pageType: PageType,
     @Param('pageId') pageId: number,
     @Query('hoursBack') hoursBack?: number,
-  ): Promise<{ uniqueViewCount: number; totalViewCount: number; hoursBack: number }> {
+  ): Promise<{
+    uniqueViewCount: number;
+    totalViewCount: number;
+    hoursBack: number;
+  }> {
     const hours = hoursBack || 24;
     const [uniqueViewCount, totalViewCount] = await Promise.all([
       this.pageViewsService.getUniqueViewCount(pageType, pageId, hours),
       this.pageViewsService.getViewCount(pageType, pageId),
     ]);
-    
+
     return { uniqueViewCount, totalViewCount, hoursBack: hours };
   }
 
   @Get('trending')
-  @ApiOperation({ summary: 'Get trending pages across all types (based on unique views)' })
+  @ApiOperation({
+    summary: 'Get trending pages across all types (based on unique views)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Trending pages retrieved successfully',
@@ -137,10 +149,26 @@ export class PageViewsController {
         properties: {
           pageId: { type: 'number', example: 123 },
           pageType: { type: 'string', enum: Object.values(PageType) },
-          viewCount: { type: 'number', example: 15, description: 'Unique view count' },
-          recentViewCount: { type: 'number', example: 8, description: 'Recent unique view count' },
-          totalViewCount: { type: 'number', example: 42, description: 'Total view count (all visits)' },
-          recentTotalViewCount: { type: 'number', example: 25, description: 'Recent total view count' },
+          viewCount: {
+            type: 'number',
+            example: 15,
+            description: 'Unique view count',
+          },
+          recentViewCount: {
+            type: 'number',
+            example: 8,
+            description: 'Recent unique view count',
+          },
+          totalViewCount: {
+            type: 'number',
+            example: 42,
+            description: 'Total view count (all visits)',
+          },
+          recentTotalViewCount: {
+            type: 'number',
+            example: 25,
+            description: 'Recent total view count',
+          },
         },
       },
     },
@@ -154,7 +182,9 @@ export class PageViewsController {
   }
 
   @Get('trending/by-type')
-  @ApiOperation({ summary: 'Get trending pages grouped by type (based on unique views)' })
+  @ApiOperation({
+    summary: 'Get trending pages grouped by type (based on unique views)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Trending pages by type retrieved successfully',
@@ -167,10 +197,26 @@ export class PageViewsController {
           properties: {
             pageId: { type: 'number', example: 123 },
             pageType: { type: 'string', enum: Object.values(PageType) },
-            viewCount: { type: 'number', example: 15, description: 'Unique view count' },
-            recentViewCount: { type: 'number', example: 8, description: 'Recent unique view count' },
-            totalViewCount: { type: 'number', example: 42, description: 'Total view count (all visits)' },
-            recentTotalViewCount: { type: 'number', example: 25, description: 'Recent total view count' },
+            viewCount: {
+              type: 'number',
+              example: 15,
+              description: 'Unique view count',
+            },
+            recentViewCount: {
+              type: 'number',
+              example: 8,
+              description: 'Recent unique view count',
+            },
+            totalViewCount: {
+              type: 'number',
+              example: 42,
+              description: 'Total view count (all visits)',
+            },
+            recentTotalViewCount: {
+              type: 'number',
+              example: 25,
+              description: 'Recent total view count',
+            },
           },
         },
       },

@@ -198,6 +198,43 @@ export class ArcsController {
     return this.service.getChaptersInArc(id);
   }
 
+  @Get(':id/gambles')
+  @ApiOperation({
+    summary: 'Get gambles in arc',
+    description:
+      "Retrieve all gambles that occur within the arc's chapter range",
+  })
+  @ApiParam({ name: 'id', description: 'Arc ID', example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: 'Gambles in arc retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              name: { type: 'string', example: 'Protoporos' },
+              rules: { type: 'string', example: 'Two players take turns...' },
+              winCondition: { type: 'string', example: 'Last stone loses' },
+              chapterId: { type: 'number', example: 155 },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
+        total: { type: 'number', example: 5 },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Arc not found' })
+  async getGambles(@Param('id') id: number) {
+    return this.service.getGamblesInArc(id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()

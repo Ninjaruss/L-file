@@ -115,7 +115,6 @@ export class Character {
   @ManyToMany(() => Faction, (faction) => faction.characters)
   factions: Faction[];
 
-
   @ApiHideProperty()
   @OneToMany(() => Quote, (quote) => quote.character, {
     nullable: true,

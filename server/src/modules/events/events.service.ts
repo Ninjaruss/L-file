@@ -154,13 +154,16 @@ export class EventsService {
     return query.getMany();
   }
 
-  async findByArc(arcId: number, filters: {
-    title?: string;
-    description?: string;
-    type?: EventType;
-    userProgress?: number;
-    status?: EventStatus;
-  }): Promise<Event[]> {
+  async findByArc(
+    arcId: number,
+    filters: {
+      title?: string;
+      description?: string;
+      type?: EventType;
+      userProgress?: number;
+      status?: EventStatus;
+    },
+  ): Promise<Event[]> {
     const query = this.repo
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
@@ -198,13 +201,16 @@ export class EventsService {
     return query.getMany();
   }
 
-  async findByChapter(chapterNumber: number, filters: {
-    title?: string;
-    description?: string;
-    type?: EventType;
-    userProgress?: number;
-    status?: EventStatus;
-  }): Promise<Event[]> {
+  async findByChapter(
+    chapterNumber: number,
+    filters: {
+      title?: string;
+      description?: string;
+      type?: EventType;
+      userProgress?: number;
+      status?: EventStatus;
+    },
+  ): Promise<Event[]> {
     const query = this.repo
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')

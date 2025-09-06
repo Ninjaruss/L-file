@@ -66,6 +66,11 @@ export class MediaController {
     description: 'Filter by arc ID',
   })
   @ApiQuery({
+    name: 'gambleId',
+    required: false,
+    description: 'Filter by gamble ID',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     description: 'Page number (default: 1)',
@@ -126,6 +131,7 @@ export class MediaController {
     @Query('type') type?: string,
     @Query('characterId') characterId?: number,
     @Query('arcId') arcId?: number,
+    @Query('gambleId') gambleId?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
@@ -133,6 +139,7 @@ export class MediaController {
       type,
       characterId,
       arcId,
+      gambleId,
       page,
       limit,
     });

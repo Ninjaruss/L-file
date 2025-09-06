@@ -11,6 +11,7 @@ import { Character } from './character.entity';
 import { User } from './user.entity';
 import { Event } from './event.entity';
 import { Arc } from './arc.entity';
+import { Gamble } from './gamble.entity';
 import {
   ApiProperty,
   ApiPropertyOptional,
@@ -129,6 +130,21 @@ export class Media {
   })
   @Column({ type: 'int', nullable: true })
   eventId: number;
+
+  @ApiPropertyOptional({
+    description: 'Gamble this media belongs to',
+    type: () => Gamble,
+  })
+  @ManyToOne(() => Gamble, { nullable: true })
+  @JoinColumn({ name: 'gambleId' })
+  gamble: Gamble;
+
+  @ApiPropertyOptional({
+    description: 'ID of the gamble this media belongs to',
+    example: 1,
+  })
+  @Column({ type: 'int', nullable: true })
+  gambleId: number;
 
   @ApiProperty({
     description: 'Current status of the media',

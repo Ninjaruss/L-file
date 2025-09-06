@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { Arc } from '../../entities/arc.entity';
 import { Chapter } from '../../entities/chapter.entity';
+import { Gamble } from '../../entities/gamble.entity';
 import { CreateArcDto } from './dto/create-arc.dto';
 import { UpdateArcImageDto } from './dto/update-arc-image.dto';
 
@@ -11,6 +12,7 @@ export class ArcsService {
   constructor(
     @InjectRepository(Arc) private repo: Repository<Arc>,
     @InjectRepository(Chapter) private chapterRepo: Repository<Chapter>,
+    @InjectRepository(Gamble) private gambleRepo: Repository<Gamble>,
   ) {}
 
   /**
@@ -97,6 +99,45 @@ export class ArcsService {
       },
       order: { number: 'ASC' },
     });
+  }
+
+  async getGamblesInArc(arcId: number) {
+    const arc = await this.repo.findOne({ where: { id: arcId } });
+
+    if (!arc) {
+      throw new NotFoundException(`Arc with id ${arcId} not found`);
+    }
+
+    if (!arc.startChapter || !arc.endChapter) {
+      return { data: [], total: 0 };
+    }
+
+    // Find all chapters in the arc's range
+    const chaptersInArc = await this.chapterRepo.find({
+      where: {
+        number: Between(arc.startChapter, arc.endChapter),
+      },
+      select: ['id', 'number'],
+    });
+
+    const chapterIds = chaptersInArc.map((chapter) => chapter.id);
+
+    if (chapterIds.length === 0) {
+      return { data: [], total: 0 };
+    }
+
+    // Find all gambles that reference chapters in this arc
+    const gambles = await this.gambleRepo.find({
+      where: {
+        chapterId: In(chapterIds),
+      },
+      relations: ['participants'],
+    });
+
+    return {
+      data: gambles,
+      total: gambles.length,
+    };
   }
 
   async updateImage(id: number, imageData: UpdateArcImageDto): Promise<Arc> {

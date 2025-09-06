@@ -25,16 +25,15 @@ import {
 export enum EventType {
   GAMBLE = 'gamble',
   DECISION = 'decision',
-  REVEAL = 'reveal', 
+  REVEAL = 'reveal',
   SHIFT = 'shift',
   RESOLUTION = 'resolution',
 }
 export enum EventStatus {
   DRAFT = 'draft',
-  PENDING_REVIEW = 'pending_review', 
+  PENDING_REVIEW = 'pending_review',
   APPROVED = 'approved',
 }
-
 
 @Entity()
 @Index(['arc'])

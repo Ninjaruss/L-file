@@ -6,12 +6,11 @@ import {
   UpdateDateColumn,
   ManyToMany,
   JoinTable,
+  OneToMany,
 } from 'typeorm';
 import { Character } from './character.entity';
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-} from '@nestjs/swagger';
+import { Media } from './media.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
 export class Gamble {
@@ -40,7 +39,6 @@ export class Gamble {
   @Column({ type: 'text', nullable: true })
   winCondition?: string;
 
-
   @ApiProperty({
     description: 'Chapter number where this gamble takes place',
     example: 45,
@@ -55,6 +53,14 @@ export class Gamble {
   })
   participants?: Character[];
 
+  @ApiPropertyOptional({
+    description: 'Media associated with this gamble',
+    type: () => [Media],
+  })
+  @OneToMany(() => Media, (media) => media.gamble, {
+    cascade: true,
+  })
+  media?: Media[];
 
   @CreateDateColumn()
   createdAt: Date;

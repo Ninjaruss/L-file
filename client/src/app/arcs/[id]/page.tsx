@@ -62,6 +62,7 @@ export default function ArcDetailPage() {
   const theme = useTheme()
   const [arc, setArc] = useState<Arc | null>(null)
   const [events, setEvents] = useState<Event[]>([])
+  const [gambles, setGambles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState(0)
@@ -77,13 +78,15 @@ export default function ArcDetailPage() {
         const id = Array.isArray(params.id) ? params.id[0] : params.id
         setLoading(true)
         
-        // Fetch arc details and arc events in parallel
-        const [arcData, eventsGroupedData] = await Promise.all([
+        // Fetch arc details, arc events, and arc gambles in parallel
+        const [arcData, eventsGroupedData, gamblesData] = await Promise.all([
           api.getArc(Number(id)),
-          api.getEventsGroupedByArc()
+          api.getEventsGroupedByArc(),
+          api.getArcGambles(Number(id))
         ])
         
         setArc(arcData)
+        setGambles(gamblesData.data || [])
         
         // Find events for this specific arc
         const arcGroup = eventsGroupedData.arcs.find((group: ArcGroup) => group.arc.id === Number(id))
@@ -247,7 +250,7 @@ export default function ArcDetailPage() {
 
                   {/* Key Information Cards */}
                   <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <Card sx={{ 
                         p: 2, 
                         background: `linear-gradient(135deg, ${theme.palette.usogui.arc}08 0%, transparent 100%)`,
@@ -267,7 +270,7 @@ export default function ArcDetailPage() {
                       </Card>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <Card sx={{ 
                         p: 2, 
                         background: `linear-gradient(135deg, ${theme.palette.secondary.main}08 0%, transparent 100%)`,
@@ -287,7 +290,7 @@ export default function ArcDetailPage() {
                       </Card>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <Card sx={{ 
                         p: 2, 
                         background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`,
@@ -306,6 +309,26 @@ export default function ArcDetailPage() {
                         </Typography>
                       </Card>
                     </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Card sx={{ 
+                        p: 2, 
+                        background: `linear-gradient(135deg, ${theme.palette.usogui.gamble}08 0%, transparent 100%)`,
+                        border: `1px solid ${theme.palette.usogui.gamble}20`,
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: theme.shadows[4]
+                        }
+                      }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          Gambles
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'usogui.gamble' }}>
+                          {gambles.length} gambles
+                        </Typography>
+                      </Card>
+                    </Grid>
                   </Grid>
 
                   {/* Enhanced Stats Chips */}
@@ -317,6 +340,17 @@ export default function ArcDetailPage() {
                       color="primary"
                       sx={{ 
                         fontWeight: 600,
+                        '& .MuiChip-label': { px: 2 }
+                      }}
+                    />
+                    <Chip 
+                      label={`${gambles.length} Gamble${gambles.length !== 1 ? 's' : ''}`} 
+                      size="medium" 
+                      variant="filled"
+                      sx={{ 
+                        fontWeight: 600,
+                        backgroundColor: theme.palette.usogui.gamble,
+                        color: 'white',
                         '& .MuiChip-label': { px: 2 }
                       }}
                     />

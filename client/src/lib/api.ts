@@ -307,6 +307,13 @@ class ApiClient {
     return this.get<any>(`/arcs/${id}`)
   }
 
+  async getArcGambles(arcId: number) {
+    return this.get<{
+      data: any[]
+      total: number
+    }>(`/arcs/${arcId}/gambles`)
+  }
+
   async getGambles(params?: { page?: number; limit?: number; gambleName?: string }) {
     const searchParams = new URLSearchParams()
     if (params) {

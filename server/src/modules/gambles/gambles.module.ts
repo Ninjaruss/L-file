@@ -7,13 +7,7 @@ import { Character } from '../../entities/character.entity';
 import { Chapter } from '../../entities/chapter.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Gamble,
-      Character,
-      Chapter,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([Gamble, Character, Chapter])],
   controllers: [GamblesController],
   providers: [GamblesService],
   exports: [GamblesService],

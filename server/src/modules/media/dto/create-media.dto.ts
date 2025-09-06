@@ -66,4 +66,10 @@ export class CreateMediaDto {
   })
   @IsOptional()
   eventId?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID of the gamble this media belongs to',
+  })
+  @IsOptional()
+  gambleId?: number;
 }

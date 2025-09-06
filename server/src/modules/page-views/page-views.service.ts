@@ -72,7 +72,11 @@ export class PageViewsService {
     return viewCounts;
   }
 
-  async getUniqueViewCount(pageType: PageType, pageId: number, hoursBack: number = 24): Promise<number> {
+  async getUniqueViewCount(
+    pageType: PageType,
+    pageId: number,
+    hoursBack: number = 24,
+  ): Promise<number> {
     const dateThreshold = new Date();
     dateThreshold.setHours(dateThreshold.getHours() - hoursBack);
 
@@ -134,7 +138,10 @@ export class PageViewsService {
       .createQueryBuilder('pv')
       .select('pv.pageId', 'page_id')
       .addSelect('pv.pageType', 'page_type')
-      .addSelect('COUNT(DISTINCT CASE WHEN pv.ipAddress IS NOT NULL THEN pv.ipAddress END)', 'unique_view_count')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN pv.ipAddress IS NOT NULL THEN pv.ipAddress END)',
+        'unique_view_count',
+      )
       .addSelect('COUNT(*)', 'total_view_count')
       .addSelect(
         `COUNT(DISTINCT CASE WHEN pv.createdAt >= :dateThreshold AND pv.ipAddress IS NOT NULL THEN pv.ipAddress END)`,
@@ -177,7 +184,10 @@ export class PageViewsService {
       .createQueryBuilder('pv')
       .select('pv.pageId', 'page_id')
       .addSelect('pv.pageType', 'page_type')
-      .addSelect('COUNT(DISTINCT CASE WHEN pv.ipAddress IS NOT NULL THEN pv.ipAddress END)', 'unique_view_count')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN pv.ipAddress IS NOT NULL THEN pv.ipAddress END)',
+        'unique_view_count',
+      )
       .addSelect('COUNT(*)', 'total_view_count')
       .addSelect(
         `COUNT(DISTINCT CASE WHEN pv.createdAt >= :dateThreshold AND pv.ipAddress IS NOT NULL THEN pv.ipAddress END)`,

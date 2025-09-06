@@ -130,9 +130,9 @@ export class CharactersService {
   }
 
   async removeImage(id: number): Promise<Character> {
-    const result = await this.repo.update(id, { 
-      imageFileName: null, 
-      imageDisplayName: null 
+    const result = await this.repo.update(id, {
+      imageFileName: null,
+      imageDisplayName: null,
     });
     if (result.affected === 0) {
       throw new NotFoundException(`Character with id ${id} not found`);
@@ -182,7 +182,11 @@ export class CharactersService {
       LIMIT $2 OFFSET $3
     `;
 
-    const result = await this.repo.query(dataQuery, [characterId, limit, offset]);
+    const result = await this.repo.query(dataQuery, [
+      characterId,
+      limit,
+      offset,
+    ]);
 
     const data = result.map((row) => {
       return row;
@@ -211,12 +215,12 @@ export class CharactersService {
     const searchTerm = `%${character.name}%`;
 
     // Build the base query - search both through relationships and text mentions
-    let whereClause = `
+    const whereClause = `
       (ec."characterId" = $1 
        OR LOWER(e.title) LIKE LOWER($2) 
        OR LOWER(e.description) LIKE LOWER($2))
     `;
-    let params = [characterId, searchTerm];
+    const params = [characterId, searchTerm];
 
     // Note: Removed server-side spoiler filtering to allow client-side spoiler wrapping
     // Client will handle spoiler protection with SpoilerWrapper components
@@ -246,7 +250,11 @@ export class CharactersService {
       ORDER BY e."chapterNumber" ASC, e."createdAt" DESC
     `;
 
-    const result = await this.repo.query(paginatedQuery, [...params, limit, offset]);
+    const result = await this.repo.query(paginatedQuery, [
+      ...params,
+      limit,
+      offset,
+    ]);
 
     const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
     const data = result.map((row) => {
@@ -354,7 +362,10 @@ export class CharactersService {
     const guideIds = data.map((guide) => guide.id);
     const viewCounts =
       guideIds.length > 0
-        ? await this.pageViewsService.getUniqueViewCounts(PageType.GUIDE, guideIds)
+        ? await this.pageViewsService.getUniqueViewCounts(
+            PageType.GUIDE,
+            guideIds,
+          )
         : new Map<number, number>();
 
     // Add unique view counts to each guide

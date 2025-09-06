@@ -17,13 +17,13 @@ import {
   Alert,
   Chip
 } from '@mui/material'
-import { Eye, Users, Dices, Trophy, Search } from 'lucide-react'
+import { Eye, Users, Dices, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
-import SpoilerWrapper from '../../components/SpoilerWrapper'
+// import SpoilerWrapper from '../../components/SpoilerWrapper' // Commented out as it's not used
 
 interface Gamble {
   id: number

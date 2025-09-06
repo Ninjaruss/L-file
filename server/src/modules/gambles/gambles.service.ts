@@ -23,15 +23,25 @@ export class GamblesService {
     gamble.chapterId = createGambleDto.chapterId;
 
     // Handle participants if provided
-    if (createGambleDto.participantIds && createGambleDto.participantIds.length > 0) {
-      const participants = await this.charactersRepository.findByIds(createGambleDto.participantIds);
+    if (
+      createGambleDto.participantIds &&
+      createGambleDto.participantIds.length > 0
+    ) {
+      const participants = await this.charactersRepository.findByIds(
+        createGambleDto.participantIds,
+      );
       gamble.participants = participants;
     }
 
     return await this.gamblesRepository.save(gamble);
   }
 
-  async findAll(options?: { page?: number; limit?: number }): Promise<{ data: Gamble[]; total: number; page: number; totalPages: number }> {
+  async findAll(options?: { page?: number; limit?: number }): Promise<{
+    data: Gamble[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const { page = 1, limit = 20 } = options || {};
     const [data, total] = await this.gamblesRepository.findAndCount({
       relations: ['participants'],
@@ -42,7 +52,7 @@ export class GamblesService {
       skip: (page - 1) * limit,
       take: limit,
     });
-    
+
     return {
       data,
       total,
@@ -84,7 +94,7 @@ export class GamblesService {
 
   async update(id: number, updateGambleDto: UpdateGambleDto): Promise<Gamble> {
     const gamble = await this.findOne(id); // Validates existence and loads relations
-    
+
     // Update basic fields
     gamble.name = updateGambleDto.name ?? gamble.name;
     gamble.rules = updateGambleDto.rules ?? gamble.rules;
@@ -94,7 +104,9 @@ export class GamblesService {
     // Handle participants if provided
     if (updateGambleDto.participantIds !== undefined) {
       if (updateGambleDto.participantIds.length > 0) {
-        const participants = await this.charactersRepository.findByIds(updateGambleDto.participantIds);
+        const participants = await this.charactersRepository.findByIds(
+          updateGambleDto.participantIds,
+        );
         gamble.participants = participants;
       } else {
         gamble.participants = [];
@@ -126,8 +138,16 @@ export class GamblesService {
     chapterId?: number;
     characterId?: number;
     limit?: number;
-  }): Promise<Gamble[]> {
-    const query = this.gamblesRepository.createQueryBuilder('gamble')
+    page?: number;
+  }): Promise<{
+    data: Gamble[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const { page = 1, limit = 20 } = filters;
+    const query = this.gamblesRepository
+      .createQueryBuilder('gamble')
       .leftJoinAndSelect('gamble.participants', 'participants');
 
     if (filters.gambleName) {
@@ -137,11 +157,15 @@ export class GamblesService {
     }
 
     if (filters.chapterId) {
-      query.andWhere('gamble.chapterId = :chapterId', { chapterId: filters.chapterId });
+      query.andWhere('gamble.chapterId = :chapterId', {
+        chapterId: filters.chapterId,
+      });
     }
 
     if (filters.characterId) {
-      query.andWhere('participants.id = :characterId', { characterId: filters.characterId });
+      query.andWhere('participants.id = :characterId', {
+        characterId: filters.characterId,
+      });
     }
 
     if (filters.participantName) {
@@ -150,12 +174,23 @@ export class GamblesService {
       });
     }
 
-    if (filters.limit) {
-      query.limit(filters.limit);
-    }
-
     query.orderBy('gamble.chapterId', 'ASC').addOrderBy('gamble.id', 'ASC');
-    return query.getMany();
+
+    // Get total count for pagination
+    const total = await query.getCount();
+    
+    // Apply pagination
+    const data = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findByCharacter(characterId: number): Promise<Gamble[]> {

@@ -35,6 +35,7 @@ export class MediaService {
       character: data.characterId ? ({ id: data.characterId } as any) : null,
       arc: data.arcId ? ({ id: data.arcId } as any) : null,
       event: data.eventId ? ({ id: data.eventId } as any) : null,
+      gamble: data.gambleId ? ({ id: data.gambleId } as any) : null,
       submittedBy: user,
       status: MediaStatus.PENDING,
     });
@@ -48,6 +49,7 @@ export class MediaService {
       characterId?: number;
       arcId?: number;
       eventId?: number;
+      gambleId?: number;
     },
     file: Buffer,
     originalFileName: string,
@@ -78,6 +80,7 @@ export class MediaService {
       character: data.characterId ? ({ id: data.characterId } as any) : null,
       arc: data.arcId ? ({ id: data.arcId } as any) : null,
       event: data.eventId ? ({ id: data.eventId } as any) : null,
+      gamble: data.gambleId ? ({ id: data.gambleId } as any) : null,
       submittedBy: user,
       status: MediaStatus.APPROVED, // Auto-approve uploads by moderators/admins
     });
@@ -92,6 +95,8 @@ export class MediaService {
       status?: string;
       type?: string;
       characterId?: number;
+      arcId?: number;
+      gambleId?: number;
     } = {},
   ): Promise<{
     data: Media[];
@@ -100,11 +105,12 @@ export class MediaService {
     perPage: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 20, status, type, characterId } = filters;
+    const { page = 1, limit = 20, status, type, characterId, arcId, gambleId } = filters;
     const query = this.mediaRepo
       .createQueryBuilder('media')
       .leftJoinAndSelect('media.character', 'character')
       .leftJoinAndSelect('media.arc', 'arc')
+      .leftJoinAndSelect('media.gamble', 'gamble')
       .leftJoinAndSelect('media.submittedBy', 'submittedBy');
 
     // Only filter by approved status if no status filter is provided
@@ -122,6 +128,14 @@ export class MediaService {
       query.andWhere('character.id = :characterId', { characterId });
     }
 
+    if (arcId) {
+      query.andWhere('arc.id = :arcId', { arcId });
+    }
+
+    if (gambleId) {
+      query.andWhere('gamble.id = :gambleId', { gambleId });
+    }
+
     query
       .orderBy('media.createdAt', 'DESC')
       .skip((page - 1) * limit)
@@ -135,7 +149,7 @@ export class MediaService {
   async findOne(id: number): Promise<Media | null> {
     const media = await this.mediaRepo.findOne({
       where: { id },
-      relations: ['character', 'arc', 'submittedBy'],
+      relations: ['character', 'arc', 'gamble', 'submittedBy'],
     });
     if (!media) {
       throw new NotFoundException(`Media with id ${id} not found`);
@@ -146,7 +160,7 @@ export class MediaService {
   async findPending(): Promise<Media[]> {
     return this.mediaRepo.find({
       where: { status: MediaStatus.PENDING },
-      relations: ['character', 'arc', 'submittedBy'],
+      relations: ['character', 'arc', 'gamble', 'submittedBy'],
       order: { createdAt: 'ASC' },
     });
   }
@@ -212,7 +226,7 @@ export class MediaService {
   ): Promise<Media> {
     const media = await this.mediaRepo.findOne({
       where: { id },
-      relations: ['character', 'arc', 'submittedBy'],
+      relations: ['character', 'arc', 'gamble', 'submittedBy'],
     });
     if (!media) {
       throw new NotFoundException(`Media with id ${id} not found`);
@@ -231,6 +245,11 @@ export class MediaService {
     // If arc ID is provided, update the arc relation
     if ('arcId' in updateData) {
       media.arc = updateData.arcId ? ({ id: updateData.arcId } as any) : null;
+    }
+
+    // If gamble ID is provided, update the gamble relation
+    if ('gambleId' in updateData) {
+      media.gamble = updateData.gambleId ? ({ id: updateData.gambleId } as any) : null;
     }
 
     return this.mediaRepo.save(media);
@@ -303,6 +322,7 @@ export class MediaService {
       type?: string;
       characterId?: number;
       arcId?: number;
+      gambleId?: number;
       page?: number;
       limit?: number;
     } = {},
@@ -312,6 +332,7 @@ export class MediaService {
       .createQueryBuilder('media')
       .leftJoinAndSelect('media.character', 'character')
       .leftJoinAndSelect('media.arc', 'arc')
+      .leftJoinAndSelect('media.gamble', 'gamble')
       .leftJoinAndSelect('media.submittedBy', 'submittedBy')
       .where('media.status = :status', { status: MediaStatus.APPROVED })
       .select([
@@ -324,6 +345,8 @@ export class MediaService {
         'character.name',
         'arc.id',
         'arc.name',
+        'gamble.id',
+        'gamble.name',
         'submittedBy.id',
         'submittedBy.username',
       ]);
@@ -339,6 +362,11 @@ export class MediaService {
     if (filters.arcId) {
       query.andWhere('arc.id = :arcId', {
         arcId: filters.arcId,
+      });
+    }
+    if (filters.gambleId) {
+      query.andWhere('gamble.id = :gambleId', {
+        gambleId: filters.gambleId,
       });
     }
 
@@ -363,7 +391,7 @@ export class MediaService {
         id,
         status: MediaStatus.APPROVED,
       },
-      relations: ['character', 'arc', 'submittedBy'],
+      relations: ['character', 'arc', 'gamble', 'submittedBy'],
       select: {
         id: true,
         url: true,
@@ -375,6 +403,10 @@ export class MediaService {
           name: true,
         },
         arc: {
+          id: true,
+          name: true,
+        },
+        gamble: {
           id: true,
           name: true,
         },
