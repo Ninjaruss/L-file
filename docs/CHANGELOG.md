@@ -1,5 +1,7 @@
 # Changelog and notes
 ## TODO:
+- Fix all counters for content (gambles)
+
 - Add highlight of most popular quote, gamble, and character profile picture
 - Add different image profile pictures for characters and adding labeling (update character image based on progressed chapter; subtle chapter progression)
 - Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN); allow character profile picture choice from characters
@@ -14,10 +16,13 @@
 - Completed ArcTimeline component implementation with spoiler protection
 - Streamlined timelines to have modals, spoilers, and event type filtering
 - Updates to the looks of timelines; separation by arcs for characters and split detection for arcs/gambles timelines.
+- Event overhaul completed. Need to double check admin pages are working and look good.
 
 ### Notes
 - I need to start manually asking Claude to summarize long chats to limit use of tokens and continue working on complex features that require continous context. The command seems to be /compact to summarize context.
 - So I made the mistake of asking Claude to create a timeline for gambles based on the timelines of characters and arcs. The result was the original timelines got refactored and not being the look of their original design. I noticed this too late, so I need to step by step revert changes rather than resetting to previous Git save. 
+- Definitely need to look into making sure I understand how state/data is passed around in frontend. I understand the code, but applying that understanding to fixing bugs takes a lot of time. Additionally, Claude seems to make decent design decisions as long as context and half decent prompt is provided. I really like the design of arcs timeline even though it was Claude that refactored it.
+- Might have issues with styling down the line since styling is split between MUI React components (v6) and Tailwind CSS. This is because MUI uses JSS for styling, while Tailwind uses utility classes. I am probably leaving an absolute mess for anyone (me) if I need to edit the styling.
 
 ## 2025-09-04
 ### Changes

@@ -945,69 +945,6 @@ export default function CharacterDetailPage() {
                         </Grid>
                       )}
 
-                      {/* Related Content */}
-                      <Grid item xs={12} lg={quotes.length > 0 ? 6 : 12}>
-                        <Grid container spacing={2}>
-                          {/* Arc Appearances */}
-                          {arcs.length > 0 && (
-                            <Grid item xs={12}>
-                              <Card className="gambling-card" sx={{
-                                background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`,
-                                border: `1px solid ${theme.palette.primary.main}15`,
-                                borderRadius: 3,
-                                boxShadow: theme.shadows[1],
-                                mb: 2,
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  boxShadow: theme.shadows[4],
-                                  transform: 'translateY(-2px)'
-                                }
-                              }}>
-                                <CardContent sx={{ p: 3 }}>
-                                  <Typography variant="h6" sx={{ 
-                                    mb: 2,
-                                    fontWeight: 700,
-                                    color: 'primary.main',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                    letterSpacing: '-0.3px'
-                                  }}>
-                                    <BookOpen size={20} />
-                                    Arc Appearances
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                    {arcs.map((arc) => (
-                                      <Chip
-                                        key={arc.id}
-                                        label={arc.name}
-                                        size="medium"
-                                        component={Link}
-                                        href={`/arcs/${arc.id}`}
-                                        clickable
-                                        color="primary"
-                                        variant="outlined"
-                                        sx={{ 
-                                          textDecoration: 'none',
-                                          borderRadius: '16px',
-                                          fontWeight: 500,
-                                          transition: 'all 0.2s ease',
-                                          '&:hover': { 
-                                            backgroundColor: 'primary.main',
-                                            color: 'white',
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: theme.shadows[4]
-                                          }
-                                        }}
-                                      />
-                                    ))}
-                                  </Box>
-                                </CardContent>
-                              </Card>
-                            </Grid>
-                          )}
-                        </Grid>
-                      </Grid>
                     </Grid>
                   </Grid>
 
@@ -1115,6 +1052,63 @@ export default function CharacterDetailPage() {
                                   </Typography>
                                 </Box>
                               </Box>
+                            ))}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Arc Appearances */}
+                    {arcs.length > 0 && (
+                      <Card className="gambling-card" sx={{
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`,
+                        border: `1px solid ${theme.palette.primary.main}15`,
+                        borderRadius: 3,
+                        boxShadow: theme.shadows[1],
+                        mt: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: theme.shadows[4],
+                          transform: 'translateY(-2px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ 
+                            mb: 2,
+                            fontWeight: 700,
+                            color: 'primary.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            letterSpacing: '-0.3px'
+                          }}>
+                            <BookOpen size={20} />
+                            Arc Appearances
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {arcs.map((arc) => (
+                              <Chip
+                                key={arc.id}
+                                label={arc.name}
+                                size="medium"
+                                component={Link}
+                                href={`/arcs/${arc.id}`}
+                                clickable
+                                color="primary"
+                                variant="outlined"
+                                sx={{ 
+                                  textDecoration: 'none',
+                                  borderRadius: '16px',
+                                  fontWeight: 500,
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': { 
+                                    backgroundColor: 'primary.main',
+                                    color: 'white',
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: theme.shadows[4]
+                                  }
+                                }}
+                              />
                             ))}
                           </Box>
                         </CardContent>

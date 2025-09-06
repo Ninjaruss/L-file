@@ -58,13 +58,70 @@ function getEventTypeColor(type: string | null): "default" | "primary" | "second
   }
 }
 
-// CSS-in-JS styles for performance
+// CSS-in-JS styles for performance with hardware acceleration
 const globalStyles = `
   .timeline-event-highlight {
-    background-color: var(--mui-palette-warning-light) !important;
-    border: 2px solid var(--mui-palette-warning-main) !important;
-    box-shadow: 0 0 8px var(--mui-palette-warning-light) !important;
+    background-color: #ff9800 !important;
+    border: 2px solid #f57c00 !important;
+    box-shadow: 0 0 8px #ffb74d !important;
     transition: all 0.2s ease !important;
+  }
+  
+  @keyframes chipHighlightPulse {
+    0% {
+      transform: scale(1) translateZ(0);
+      box-shadow: 0 0 0 rgba(25, 118, 210, 0.4);
+      background-color: transparent;
+    }
+    25% {
+      transform: scale(1.08) translateZ(0);
+      box-shadow: 0 0 20px rgba(25, 118, 210, 0.6);
+    }
+    50% {
+      transform: scale(1.12) translateZ(0);
+      box-shadow: 0 0 25px rgba(25, 118, 210, 0.8);
+      background-color: #1976d2;
+    }
+    75% {
+      transform: scale(1.08) translateZ(0);
+      box-shadow: 0 0 20px rgba(25, 118, 210, 0.6);
+    }
+    100% {
+      transform: scale(1) translateZ(0);
+      box-shadow: 0 0 0 rgba(25, 118, 210, 0.4);
+      background-color: transparent;
+    }
+  }
+  
+  .chapter-chip-highlight {
+    animation: chipHighlightPulse 1.2s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+    color: white !important;
+    will-change: transform, box-shadow, background-color !important;
+    backface-visibility: hidden !important;
+    perspective: 1000px !important;
+    transform-style: preserve-3d !important;
+  }
+  
+  .chapter-chip-highlight .MuiChip-label {
+    color: white !important;
+    font-weight: 600 !important;
+  }
+
+  .chapter-chip-fade-out {
+    animation: chipHighlightFadeOut 0.5s cubic-bezier(0.4, 0.0, 0.2, 1) forwards !important;
+  }
+
+  @keyframes chipHighlightFadeOut {
+    0% {
+      transform: scale(1.05) translateZ(0);
+      box-shadow: 0 0 20px rgba(25, 118, 210, 0.6);
+      background-color: rgba(25, 118, 210, 0.9);
+    }
+    100% {
+      transform: scale(1) translateZ(0);
+      box-shadow: 0 0 0 rgba(25, 118, 210, 0);
+      background-color: transparent;
+    }
   }
 `
 
@@ -194,7 +251,6 @@ const TimelineEventCard = React.memo(function TimelineEventCard({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        border: `1px solid ${theme.palette.divider}`,
         borderRadius: 1,
         // Performance optimization
         willChange: 'transform',
@@ -230,7 +286,6 @@ const TimelineEventCard = React.memo(function TimelineEventCard({
               transform: 'translateY(-4px)',
               boxShadow: theme.shadows[8],
             },
-            border: `1px solid ${theme.palette.divider}`,
             borderRadius: 2,
             // Performance optimization
             willChange: 'transform',
@@ -402,6 +457,35 @@ const CharacterTimeline = React.memo(function CharacterTimeline({
   }, [])
 
   const scrollToChapter = useCallback((chapterNumber: number) => {
+    // Highlight the clicked chapter chip with optimized animation
+    requestAnimationFrame(() => {
+      const chapterChips = document.querySelectorAll(`[data-chapter="${chapterNumber}"]`)
+      
+      chapterChips.forEach((chip) => {
+        const htmlChip = chip as HTMLElement
+        // Remove any existing animation first to ensure restart
+        htmlChip.classList.remove('chapter-chip-highlight')
+        
+        // Force reflow to restart animation
+        htmlChip.offsetHeight
+        
+        // Add animation class
+        htmlChip.classList.add('chapter-chip-highlight')
+        
+        // Start fade-out after highlight animation completes (1.2s duration)
+        setTimeout(() => {
+          htmlChip.classList.remove('chapter-chip-highlight')
+          htmlChip.classList.add('chapter-chip-fade-out')
+          
+          // Remove fade-out class and reset styles after fade-out completes (0.5s duration)
+          setTimeout(() => {
+            htmlChip.classList.remove('chapter-chip-fade-out')
+            htmlChip.style.willChange = 'auto'
+          }, 500)
+        }, 1200)
+      })
+    })
+
     // Find the event with this chapter and scroll to its arc
     const event = filteredEvents.find(e => e.chapterNumber === chapterNumber)
     if (event) {
@@ -484,6 +568,7 @@ const CharacterTimeline = React.memo(function CharacterTimeline({
               icon={<BookOpen size={16} />}
               onClick={() => scrollToChapter(firstAppearanceChapter)}
               clickable
+              data-chapter={firstAppearanceChapter}
               sx={{ 
                 fontWeight: 'bold',
                 '&:hover': {
@@ -585,6 +670,7 @@ const CharacterTimeline = React.memo(function CharacterTimeline({
                         variant="outlined"
                         clickable
                         onClick={() => scrollToChapter(chapter)}
+                        data-chapter={chapter}
                         sx={{
                           '&:hover': {
                             backgroundColor: 'primary.main',
