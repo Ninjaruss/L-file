@@ -42,7 +42,7 @@ export class AuthDiscordController {
   async discordCallback(@Request() req, @Response() res) {
     // Generate JWT token for the authenticated user
     const loginResult = await this.authService.login(req.user);
-    
+
     // Set refresh token as httpOnly cookie before redirecting
     if (loginResult.refresh_token) {
       res.cookie('refreshToken', loginResult.refresh_token, {
@@ -52,17 +52,19 @@ export class AuthDiscordController {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
     }
-    
+
     // Direct redirect to frontend callback with access token only (refresh token is now in cookie)
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const redirectUrl = `${frontendUrl}/auth/callback?token=${loginResult.access_token}`;
-    
+
     res.redirect(redirectUrl);
   }
 
   @ApiOperation({
     summary: 'Development login bypass',
-    description: 'Development-only endpoint for bypassing Discord authentication. Only works when NODE_ENV=development.',
+    description:
+      'Development-only endpoint for bypassing Discord authentication. Only works when NODE_ENV=development.',
   })
   @ApiResponse({
     status: 200,
@@ -74,10 +76,14 @@ export class AuthDiscordController {
   })
   @Post('dev-login')
   @UseGuards(DevBypassAuthGuard)
-  async devLogin(@Request() req, @Response() res, @Body() body: { asAdmin?: boolean }) {
+  async devLogin(
+    @Request() req,
+    @Response() res,
+    @Body() body: { asAdmin?: boolean },
+  ) {
     // This is handled by the DevBypassAuthGuard and strategy
     const loginResult = await this.authService.login(req.user);
-    
+
     // Set refresh token as httpOnly cookie
     if (loginResult.refresh_token) {
       res.cookie('refreshToken', loginResult.refresh_token, {
@@ -87,7 +93,7 @@ export class AuthDiscordController {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
     }
-    
+
     return res.json(loginResult);
   }
 
@@ -112,7 +118,9 @@ export class AuthDiscordController {
   async logout(@Body() body: { refresh_token?: string }) {
     if (body.refresh_token) {
       // Find user by refresh token and clear it
-      const user = await this.authService['usersService'].findByRefreshToken(body.refresh_token);
+      const user = await this.authService['usersService'].findByRefreshToken(
+        body.refresh_token,
+      );
       if (user) {
         await this.authService['usersService'].clearRefreshToken(user.id);
       }

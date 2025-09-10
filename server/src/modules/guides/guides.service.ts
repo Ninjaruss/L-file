@@ -40,7 +40,8 @@ export class GuidesService {
   ) {}
 
   async create(createGuideDto: CreateGuideDto, author: User): Promise<Guide> {
-    const { tagNames, characterIds, arcId, gambleIds, ...guideData } = createGuideDto;
+    const { tagNames, characterIds, arcId, gambleIds, ...guideData } =
+      createGuideDto;
 
     // Create the guide first - set to PENDING for moderator approval
     const guide = this.guideRepository.create({
@@ -189,8 +190,8 @@ export class GuidesService {
     const guidesWithViewCounts = guides.map((guide) => ({
       ...guide,
       viewCount: viewCounts.get(guide.id) || 0,
-      characterIds: guide.characters ? guide.characters.map(c => c.id) : [],
-      gambleIds: guide.gambles ? guide.gambles.map(g => g.id) : [],
+      characterIds: guide.characters ? guide.characters.map((c) => c.id) : [],
+      gambleIds: guide.gambles ? guide.gambles.map((g) => g.id) : [],
     }));
 
     // Sort by viewCount if requested
@@ -339,7 +340,10 @@ export class GuidesService {
     };
   }
 
-  async findOne(id: number, currentUser?: User): Promise<Guide & { characterIds?: number[], gambleIds?: number[] }> {
+  async findOne(
+    id: number,
+    currentUser?: User,
+  ): Promise<Guide & { characterIds?: number[]; gambleIds?: number[] }> {
     const guide = await this.guideRepository.findOne({
       where: { id },
       relations: ['author', 'tags', 'likes', 'characters', 'arc', 'gambles'],
@@ -364,8 +368,8 @@ export class GuidesService {
     // Add character and gamble IDs for frontend form compatibility
     const guideWithIds = {
       ...guide,
-      characterIds: guide.characters ? guide.characters.map(c => c.id) : [],
-      gambleIds: guide.gambles ? guide.gambles.map(g => g.id) : [],
+      characterIds: guide.characters ? guide.characters.map((c) => c.id) : [],
+      gambleIds: guide.gambles ? guide.gambles.map((g) => g.id) : [],
     };
 
     return guideWithIds;
@@ -442,7 +446,10 @@ export class GuidesService {
     currentUser: User,
   ): Promise<Guide> {
     console.log('=== GUIDE UPDATE DEBUG ===');
-    console.log('Received updateGuideDto:', JSON.stringify(updateGuideDto, null, 2));
+    console.log(
+      'Received updateGuideDto:',
+      JSON.stringify(updateGuideDto, null, 2),
+    );
     console.log('Current user:', currentUser.id, currentUser.username);
 
     const guide = await this.findOne(id, currentUser);
@@ -457,8 +464,15 @@ export class GuidesService {
       throw new ForbiddenException('You can only edit your own guides');
     }
 
-    const { tagNames, authorId, characterIds, arcId, gambleIds, ...guideData } = updateGuideDto;
-    console.log('Extracted fields:', { tagNames, authorId, characterIds, arcId, gambleIds });
+    const { tagNames, authorId, characterIds, arcId, gambleIds, ...guideData } =
+      updateGuideDto;
+    console.log('Extracted fields:', {
+      tagNames,
+      authorId,
+      characterIds,
+      arcId,
+      gambleIds,
+    });
     console.log('Basic guide data:', guideData);
 
     return await this.guideRepository.manager.transaction(async (manager) => {
@@ -473,7 +487,9 @@ export class GuidesService {
         // Check if authorId is being changed (admin only)
         if (authorId !== undefined && authorId !== guide.authorId) {
           if (currentUser.role !== UserRole.ADMIN) {
-            throw new ForbiddenException('Only admins can change guide ownership');
+            throw new ForbiddenException(
+              'Only admins can change guide ownership',
+            );
           }
 
           // Verify the new author exists
@@ -507,7 +523,10 @@ export class GuidesService {
               tags.push(tag);
             }
             guide.tags = tags;
-            console.log('Assigned tags:', tags.map(t => t.name));
+            console.log(
+              'Assigned tags:',
+              tags.map((t) => t.name),
+            );
           } else {
             guide.tags = [];
             console.log('Cleared tags');
@@ -520,13 +539,20 @@ export class GuidesService {
             console.log('Processing character IDs:', characterIds);
             const characters = await characterRepo.findByIds(characterIds);
             if (characters.length !== characterIds.length) {
-              const foundIds = characters.map(c => c.id);
-              const missingIds = characterIds.filter(id => !foundIds.includes(id));
+              const foundIds = characters.map((c) => c.id);
+              const missingIds = characterIds.filter(
+                (id) => !foundIds.includes(id),
+              );
               console.error('Missing character IDs:', missingIds);
-              throw new BadRequestException(`Character IDs not found: ${missingIds.join(', ')}`);
+              throw new BadRequestException(
+                `Character IDs not found: ${missingIds.join(', ')}`,
+              );
             }
             guide.characters = characters;
-            console.log('Assigned characters:', characters.map(c => `${c.id}:${c.name}`));
+            console.log(
+              'Assigned characters:',
+              characters.map((c) => `${c.id}:${c.name}`),
+            );
           } else {
             guide.characters = [];
             console.log('Cleared characters');
@@ -546,8 +572,8 @@ export class GuidesService {
             guide.arcId = arcId;
             console.log('Assigned arc:', `${arc.id}:${arc.name}`);
           } else {
-            guide.arc = null;
-            guide.arcId = null;
+            guide.arc = undefined;
+            guide.arcId = undefined;
             console.log('Cleared arc (arcId was:', arcId, ')');
           }
         }
@@ -558,13 +584,20 @@ export class GuidesService {
             console.log('Processing gamble IDs:', gambleIds);
             const gambles = await gambleRepo.findByIds(gambleIds);
             if (gambles.length !== gambleIds.length) {
-              const foundIds = gambles.map(g => g.id);
-              const missingIds = gambleIds.filter(id => !foundIds.includes(id));
+              const foundIds = gambles.map((g) => g.id);
+              const missingIds = gambleIds.filter(
+                (id) => !foundIds.includes(id),
+              );
               console.error('Missing gamble IDs:', missingIds);
-              throw new BadRequestException(`Gamble IDs not found: ${missingIds.join(', ')}`);
+              throw new BadRequestException(
+                `Gamble IDs not found: ${missingIds.join(', ')}`,
+              );
             }
             guide.gambles = gambles;
-            console.log('Assigned gambles:', gambles.map(g => `${g.id}:${g.name}`));
+            console.log(
+              'Assigned gambles:',
+              gambles.map((g) => `${g.id}:${g.name}`),
+            );
           } else {
             guide.gambles = [];
             console.log('Cleared gambles');
@@ -578,7 +611,14 @@ export class GuidesService {
         // Fetch the updated guide with all relations to ensure React Admin gets complete data
         const updatedGuide = await guideRepo.findOne({
           where: { id: savedGuide.id },
-          relations: ['author', 'tags', 'likes', 'characters', 'arc', 'gambles'],
+          relations: [
+            'author',
+            'tags',
+            'likes',
+            'characters',
+            'arc',
+            'gambles',
+          ],
         });
 
         if (!updatedGuide) {
@@ -588,7 +628,6 @@ export class GuidesService {
         console.log('Returning updated guide with relations');
         console.log('=== END GUIDE UPDATE DEBUG ===');
         return updatedGuide;
-
       } catch (error) {
         console.error('Error in guide update transaction:', error);
         throw error;

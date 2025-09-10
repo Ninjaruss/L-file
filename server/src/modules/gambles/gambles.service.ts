@@ -178,7 +178,7 @@ export class GamblesService {
 
     // Get total count for pagination
     const total = await query.getCount();
-    
+
     // Apply pagination
     const data = await query
       .skip((page - 1) * limit)

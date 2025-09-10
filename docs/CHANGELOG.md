@@ -12,6 +12,8 @@
 ## 2025-09-09
 ### Changes
 - Replaced email register/login with Discord Oauth2 login
+- Fixed arc relation for events/gambles admin pages
+- Fixed guides page to show descriptions and link user profiles
 
 ### Notes
 

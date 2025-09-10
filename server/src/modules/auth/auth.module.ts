@@ -30,8 +30,8 @@ import { EmailModule } from '../email/email.module';
   ],
   controllers: [AuthController, AuthDiscordController, AuthLegacyController],
   providers: [
-    AuthService, 
-    LocalStrategy, 
+    AuthService,
+    LocalStrategy,
     JwtStrategy,
     DiscordStrategy,
     DevBypassStrategy,

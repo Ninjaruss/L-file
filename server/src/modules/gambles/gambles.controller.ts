@@ -200,7 +200,7 @@ export class GamblesController {
     @Query('page') page = '1',
   ) {
     const pageNum = parseInt(page) || 1;
-    
+
     // If any filters are provided, use the search functionality
     if (
       gambleName ||
@@ -226,7 +226,7 @@ export class GamblesController {
       page: pageNum,
       limit: 12, // Use consistent limit with client
     });
-    
+
     return result;
   }
 

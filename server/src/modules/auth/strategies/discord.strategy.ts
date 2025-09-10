@@ -17,7 +17,7 @@ export class DiscordStrategy extends PassportStrategy(Strategy, 'discord') {
       callbackURL: configService.get<string>('DISCORD_CALLBACK_URL')!,
       scope: ['identify', 'email'],
     };
-    
+
     super(options);
   }
 

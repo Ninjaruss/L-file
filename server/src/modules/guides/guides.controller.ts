@@ -758,7 +758,7 @@ export class GuidesController {
     console.log('Raw body received:', JSON.stringify(updateGuideDto, null, 2));
     console.log('User:', user.id, user.username, user.role);
     console.log('=== END CONTROLLER DEBUG ===');
-    
+
     return this.guidesService.update(id, updateGuideDto, user);
   }
 

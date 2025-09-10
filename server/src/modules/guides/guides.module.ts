@@ -13,7 +13,15 @@ import { PageViewsModule } from '../page-views/page-views.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Guide, GuideLike, Tag, User, Character, Arc, Gamble]),
+    TypeOrmModule.forFeature([
+      Guide,
+      GuideLike,
+      Tag,
+      User,
+      Character,
+      Arc,
+      Gamble,
+    ]),
     PageViewsModule,
   ],
   controllers: [GuidesController],

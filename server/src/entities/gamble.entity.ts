@@ -45,6 +45,7 @@ export class Gamble {
   })
   @Column()
   chapterId: number;
+
   @ManyToMany(() => Character)
   @JoinTable({
     name: 'gamble_participants',

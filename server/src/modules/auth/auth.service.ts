@@ -21,20 +21,20 @@ export class AuthService {
   // --- Discord Authentication ---
   async validateDiscordUser(profile: any): Promise<User> {
     const { id: discordId, username: discordUsername, avatar, email } = profile;
-    
+
     // Check if user already exists
     let user = await this.usersService.findByDiscordId(discordId);
-    
+
     if (!user) {
       // Auto-register new Discord user
-      const avatarUrl = avatar 
+      const avatarUrl = avatar
         ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png`
         : null;
-      
+
       // Check if admin Discord ID
       const adminDiscordId = this.configService.get<string>('ADMIN_DISCORD_ID');
       const isAdmin = adminDiscordId && discordId === adminDiscordId;
-      
+
       user = await this.usersService.createDiscordUser({
         discordId,
         discordUsername,
@@ -47,7 +47,7 @@ export class AuthService {
       // Update existing user's Discord info
       await this.usersService.updateDiscordInfo(user.id, {
         discordUsername,
-        discordAvatar: profile.avatar 
+        discordAvatar: profile.avatar
           ? `https://cdn.discordapp.com/avatars/${discordId}/${profile.avatar}.png`
           : null,
       });
@@ -66,9 +66,9 @@ export class AuthService {
     const devUserId = asAdmin ? 'dev-admin-12345' : 'dev-user-12345';
     const username = asAdmin ? 'dev_admin' : 'dev_user';
     const discordUsername = asAdmin ? 'DevAdmin#0000' : 'DevUser#0000';
-    
+
     let user = await this.usersService.findByDiscordId(devUserId);
-    
+
     if (!user) {
       user = await this.usersService.createDiscordUser({
         discordId: devUserId,
@@ -87,9 +87,12 @@ export class AuthService {
         await this.usersService.updateRole(user.id, UserRole.USER);
         user.role = UserRole.USER;
       }
-      
+
       // Update username and email to match the current request
-      if (user.username !== username || user.email !== (asAdmin ? 'dev-admin@localhost' : 'dev-user@localhost')) {
+      if (
+        user.username !== username ||
+        user.email !== (asAdmin ? 'dev-admin@localhost' : 'dev-user@localhost')
+      ) {
         await this.usersService.update(user.id, {
           username: username,
           email: asAdmin ? 'dev-admin@localhost' : 'dev-user@localhost',
@@ -155,18 +158,18 @@ export class AuthService {
     console.log('refreshToken type:', typeof refreshToken);
     console.log('refreshToken length:', refreshToken?.length);
     console.log('refreshToken truthy:', !!refreshToken);
-    
+
     if (!refreshToken) {
       console.log('No refresh token provided, throwing error');
       throw new UnauthorizedException('No refresh token provided');
     }
-    
+
     console.log('Looking for user with refresh token...');
     const user = await this.usersService.findByRefreshToken(refreshToken);
     console.log('User found:', !!user);
-    
+
     if (!user) throw new UnauthorizedException('Invalid refresh token');
-    
+
     const access_token = this.signToken(user);
     return {
       access_token,

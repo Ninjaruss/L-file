@@ -105,7 +105,15 @@ export class MediaService {
     perPage: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 20, status, type, characterId, arcId, gambleId } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      type,
+      characterId,
+      arcId,
+      gambleId,
+    } = filters;
     const query = this.mediaRepo
       .createQueryBuilder('media')
       .leftJoinAndSelect('media.character', 'character')
@@ -249,7 +257,9 @@ export class MediaService {
 
     // If gamble ID is provided, update the gamble relation
     if ('gambleId' in updateData) {
-      media.gamble = updateData.gambleId ? ({ id: updateData.gambleId } as any) : null;
+      media.gamble = updateData.gambleId
+        ? ({ id: updateData.gambleId } as any)
+        : null;
     }
 
     return this.mediaRepo.save(media);

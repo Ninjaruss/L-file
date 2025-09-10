@@ -7,7 +7,10 @@ import { User } from '../../../entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class DevBypassStrategy extends PassportStrategy(Strategy, 'dev-bypass') {
+export class DevBypassStrategy extends PassportStrategy(
+  Strategy,
+  'dev-bypass',
+) {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -18,11 +21,13 @@ export class DevBypassStrategy extends PassportStrategy(Strategy, 'dev-bypass') 
   async validate(req: Request): Promise<User> {
     // Only allow in development
     if (this.configService.get<string>('NODE_ENV') !== 'development') {
-      throw new Error('Development bypass only available in development environment');
+      throw new Error(
+        'Development bypass only available in development environment',
+      );
     }
 
     const isAdmin = req.body?.asAdmin === true;
-    
+
     return await this.authService.validateDevBypass(isAdmin);
   }
 }

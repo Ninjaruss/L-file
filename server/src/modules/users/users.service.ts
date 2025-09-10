@@ -261,10 +261,13 @@ export class UsersService {
     return this.findOne(id);
   }
 
-  async updateDiscordInfo(userId: number, data: {
-    discordUsername: string;
-    discordAvatar: string | null;
-  }): Promise<void> {
+  async updateDiscordInfo(
+    userId: number,
+    data: {
+      discordUsername: string;
+      discordAvatar: string | null;
+    },
+  ): Promise<void> {
     await this.repo.update(userId, {
       discordUsername: data.discordUsername,
       discordAvatar: data.discordAvatar,
@@ -377,9 +380,7 @@ export class UsersService {
         'profileImage.character',
         'favoriteQuote',
         'favoriteQuote.character',
-
         'favoriteGamble',
-        'favoriteGamble.chapter',
       ],
     });
 
@@ -450,7 +451,6 @@ export class UsersService {
     for (const stat of stats) {
       const gamble = await this.gambleRepo.findOne({
         where: { id: stat.gambleId },
-        relations: ['chapter'],
       });
 
       if (gamble) {
