@@ -535,7 +535,7 @@ export class GuidesService {
 
         // Handle arc relation
         if (arcId !== undefined) {
-          if (arcId) {
+          if (arcId && arcId !== null) {
             console.log('Processing arc ID:', arcId);
             const arc = await arcRepo.findOne({ where: { id: arcId } });
             if (!arc) {
@@ -546,9 +546,9 @@ export class GuidesService {
             guide.arcId = arcId;
             console.log('Assigned arc:', `${arc.id}:${arc.name}`);
           } else {
-            guide.arc = undefined;
-            guide.arcId = undefined;
-            console.log('Cleared arc');
+            guide.arc = null;
+            guide.arcId = null;
+            console.log('Cleared arc (arcId was:', arcId, ')');
           }
         }
 

@@ -76,6 +76,61 @@ const GuideStatusField = ({ source }: { source: string }) => {
   )
 }
 
+// Custom field for displaying author from embedded data
+const GuideAuthorField = () => {
+  const record = useRecordContext()
+  if (!record?.author?.username) return <span>-</span>
+  
+  return (
+    <span style={{ fontWeight: '500', color: '#0ea5e9' }}>
+      {record.author.username}
+    </span>
+  )
+}
+
+// Custom field for displaying characters from embedded data
+const GuideCharactersField = () => {
+  const record = useRecordContext()
+  if (!record?.characters?.length) return <span>-</span>
+  
+  return (
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+      {record.characters.map((character: any) => (
+        <Chip
+          key={character.id}
+          label={character.name}
+          size="small"
+          sx={{
+            backgroundColor: 'rgba(225, 29, 72, 0.1)',
+            color: '#f43f5e',
+            fontSize: '0.7rem',
+            height: '20px'
+          }}
+        />
+      ))}
+    </Box>
+  )
+}
+
+// Custom field for displaying arc from embedded data
+const GuideArcField = () => {
+  const record = useRecordContext()
+  if (!record?.arc?.name) return <span>-</span>
+  
+  return (
+    <Chip
+      label={record.arc.name}
+      size="small"
+      sx={{
+        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+        color: '#a855f7',
+        fontSize: '0.7rem',
+        height: '20px'
+      }}
+    />
+  )
+}
+
 const GuideFilter = (props: any) => (
   <Filter {...props}>
     <SelectInput 
@@ -195,67 +250,18 @@ export const GuideList = () => (
           }
         }} 
       />
-      <ReferenceField source="authorId" reference="users" label="Author" sx={{ width: '120px' }}>
-        <TextField 
-          source="username" 
-          sx={{
-            '& span': {
-              fontWeight: '500',
-              color: 'info.main'
-            }
-          }}
-        />
-      </ReferenceField>
+      <Box sx={{ width: '120px' }}>
+        <GuideAuthorField />
+      </Box>
       <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
         <GuideStatusField source="status" />
       </Box>
-      <ReferenceArrayField 
-        source="characterIds" 
-        reference="characters" 
-        label="Characters"
-        sx={{ 
-          maxWidth: '150px',
-          '& .RaReferenceArrayField-ul': {
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '4px',
-            listStyle: 'none',
-            padding: 0,
-            margin: 0
-          }
-        }}
-      >
-        <SingleFieldList linkType={false}>
-          <ChipField 
-            source="name" 
-            size="small"
-            sx={{
-              backgroundColor: 'rgba(225, 29, 72, 0.1)',
-              color: '#f43f5e',
-              fontSize: '0.7rem',
-              height: '20px'
-            }}
-          />
-        </SingleFieldList>
-      </ReferenceArrayField>
-      <ReferenceField 
-        source="arcId" 
-        reference="arcs" 
-        label="Arc"
-        sx={{ width: '100px' }}
-        emptyText=""
-      >
-        <ChipField 
-          source="name" 
-          size="small"
-          sx={{
-            backgroundColor: 'rgba(124, 58, 237, 0.1)',
-            color: '#a855f7',
-            fontSize: '0.7rem',
-            height: '20px'
-          }}
-        />
-      </ReferenceField>
+      <Box sx={{ maxWidth: '150px' }}>
+        <GuideCharactersField />
+      </Box>
+      <Box sx={{ width: '100px' }}>
+        <GuideArcField />
+      </Box>
       <TextField 
         source="rejectionReason" 
         label="Rejection" 

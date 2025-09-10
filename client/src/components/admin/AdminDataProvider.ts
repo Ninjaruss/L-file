@@ -175,20 +175,26 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
       delete guideCleaned.gambleIds
     }
     
-    // Handle arcId - might be an object with id property
+    // Handle arcId - might be an object with id property, or null/empty string for clearing
     try {
-      if (guideCleaned.arcId && typeof guideCleaned.arcId === 'object' && guideCleaned.arcId !== null && 'id' in (guideCleaned.arcId as Record<string, unknown>)) {
-        const id = (guideCleaned.arcId as Record<string, unknown>).id
-        console.log('Extracting arcId from object:', guideCleaned.arcId, 'extracted:', id)
-        guideCleaned.arcId = typeof id === 'number' ? id : Number(id)
+      if (guideCleaned.arcId !== undefined) {
+        if (guideCleaned.arcId && typeof guideCleaned.arcId === 'object' && guideCleaned.arcId !== null && 'id' in (guideCleaned.arcId as Record<string, unknown>)) {
+          const id = (guideCleaned.arcId as Record<string, unknown>).id
+          console.log('Extracting arcId from object:', guideCleaned.arcId, 'extracted:', id)
+          guideCleaned.arcId = typeof id === 'number' ? id : Number(id)
+        } else if (guideCleaned.arcId === null || guideCleaned.arcId === '' || guideCleaned.arcId === 'null') {
+          // Handle clearing the arc relation
+          console.log('Clearing arcId (was:', guideCleaned.arcId, ')')
+          guideCleaned.arcId = null
+        }
       } else if (data.arc && typeof data.arc === 'object' && data.arc !== null && 'id' in (data.arc as Record<string, unknown>)) {
         const id = (data.arc as Record<string, unknown>).id
         console.log('Extracting arcId from data.arc:', data.arc, 'extracted:', id)
         guideCleaned.arcId = typeof id === 'number' ? id : Number(id)
       }
       
-      // Validate arcId is a valid number
-      if (guideCleaned.arcId !== undefined && (isNaN(Number(guideCleaned.arcId)) || guideCleaned.arcId === null)) {
+      // Validate arcId is a valid number or null (for clearing)
+      if (guideCleaned.arcId !== undefined && guideCleaned.arcId !== null && (isNaN(Number(guideCleaned.arcId)))) {
         console.warn('Invalid arcId, removing:', guideCleaned.arcId)
         delete guideCleaned.arcId
       }
