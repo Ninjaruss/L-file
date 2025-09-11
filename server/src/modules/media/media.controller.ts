@@ -12,11 +12,18 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
+import {
+  MediaOwnerType,
+  MediaType,
+  MediaStatus,
+  MediaPurpose,
+} from '../../entities/media.entity';
 import { BackblazeB2Service } from '../../services/backblaze-b2.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -46,43 +53,49 @@ export class MediaController {
 
   @Get('public')
   @ApiOperation({
-    summary: 'Get all approved media (public)',
+    summary: 'Get approved media (public)',
     description:
-      'Publicly accessible endpoint to view all approved media content including fanart and videos',
+      'Publicly accessible endpoint to view approved media items with optional filtering',
   })
   @ApiQuery({
     name: 'type',
     required: false,
-    description: 'Filter by media type (image, video, audio)',
+    description: 'Filter by media type',
+    enum: MediaType,
   })
   @ApiQuery({
-    name: 'characterId',
+    name: 'ownerType',
     required: false,
-    description: 'Filter by character ID',
+    description: 'Filter by owner type',
+    enum: MediaOwnerType,
   })
   @ApiQuery({
-    name: 'arcId',
+    name: 'ownerId',
     required: false,
-    description: 'Filter by arc ID',
+    description: 'Filter by owner ID',
+    type: 'number',
   })
   @ApiQuery({
-    name: 'gambleId',
+    name: 'purpose',
     required: false,
-    description: 'Filter by gamble ID',
+    description: 'Filter by media purpose',
+    enum: MediaPurpose,
   })
   @ApiQuery({
     name: 'page',
     required: false,
-    description: 'Page number (default: 1)',
+    description: 'Page number',
+    type: 'number',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
-    description: 'Items per page (default: 20)',
+    description: 'Items per page',
+    type: 'number',
   })
   @ApiResponse({
     status: 200,
-    description: 'Approved media retrieved successfully',
+    description: 'Media retrieved successfully',
     schema: {
       type: 'object',
       properties: {
@@ -97,18 +110,11 @@ export class MediaController {
                 example: 'https://www.youtube.com/watch?v=example',
               },
               type: { type: 'string', example: 'video' },
-              description: {
-                type: 'string',
-                example: 'Character analysis video',
-              },
-              character: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  name: { type: 'string', example: 'Baku Madarame' },
-                },
-              },
+              description: { type: 'string', example: 'Character analysis video' },
+              ownerType: { type: 'string', example: 'character' },
+              ownerId: { type: 'number', example: 1 },
+              chapterNumber: { type: 'number', example: 45, nullable: true },
+              purpose: { type: 'string', example: 'gallery' },
               submittedBy: {
                 type: 'object',
                 properties: {
@@ -120,26 +126,33 @@ export class MediaController {
             },
           },
         },
-        total: { type: 'number', example: 50 },
+        total: { type: 'number', example: 100 },
         page: { type: 'number', example: 1 },
         perPage: { type: 'number', example: 20 },
-        totalPages: { type: 'number', example: 3 },
+        totalPages: { type: 'number', example: 5 },
       },
     },
   })
   findAllPublic(
     @Query('type') type?: string,
-    @Query('characterId') characterId?: number,
-    @Query('arcId') arcId?: number,
-    @Query('gambleId') gambleId?: number,
+    @Query('ownerType') ownerType?: MediaOwnerType,
+    @Query('ownerId') ownerId?: number,
+    @Query('purpose') purpose?: MediaPurpose,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
+    // Validate ownerId if provided to prevent NaN database errors
+    let validOwnerId: number | undefined;
+    if (ownerId !== undefined) {
+      const parsedId = Number(ownerId);
+      validOwnerId = !isNaN(parsedId) && parsedId > 0 ? parsedId : undefined;
+    }
+
     return this.mediaService.findAllPublic({
       type,
-      characterId,
-      arcId,
-      gambleId,
+      ownerType,
+      ownerId: validOwnerId,
+      purpose,
       page,
       limit,
     });
@@ -192,42 +205,18 @@ export class MediaController {
   // AUTHENTICATED ENDPOINTS - Require login
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
   @ApiOperation({
-    summary: 'Submit media content',
-    description:
-      'Submit video/fanart URL for approval. Content will be reviewed by moderators before being published.',
+    summary: 'Create media submission',
+    description: 'Submit a new media item for review (requires authentication)',
   })
   @ApiBody({
     type: CreateMediaDto,
-    description: 'Media submission data',
-    examples: {
-      fanart: {
-        summary: 'Character fanart submission',
-        value: {
-          url: 'https://www.deviantart.com/artist/usogui-baku-fanart',
-          type: 'image',
-          description: 'Amazing fanart of Baku Madarame from Chapter 45',
-          characterId: 1,
-        },
-      },
-      video: {
-        summary: 'Character analysis video',
-        value: {
-          url: 'https://www.youtube.com/watch?v=character-analysis',
-          type: 'video',
-          description:
-            "Deep dive into Baku's psychology and gambling techniques",
-          characterId: 1,
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 201,
-    description: 'Media submitted successfully for review',
+    description: 'Media created successfully',
     schema: {
       type: 'object',
       properties: {
@@ -239,27 +228,16 @@ export class MediaController {
         type: { type: 'string', example: 'video' },
         description: { type: 'string', example: 'Character analysis video' },
         status: { type: 'string', example: 'pending' },
-        character: {
-          type: 'object',
-          properties: {
-            id: { type: 'number', example: 1 },
-            name: { type: 'string', example: 'Baku Madarame' },
-          },
-        },
         submittedBy: {
           type: 'object',
           properties: {
             id: { type: 'number', example: 1 },
-            username: { type: 'string', example: 'fan123' },
+            username: { type: 'string', example: 'user123' },
           },
         },
         createdAt: { type: 'string', format: 'date-time' },
       },
     },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid URL or unsupported platform',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Body() createMediaDto: CreateMediaDto, @CurrentUser() user: User) {
@@ -267,16 +245,14 @@ export class MediaController {
   }
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({
-    summary: 'Upload media file (moderators/admins only)',
-    description:
-      'Upload image files directly to Backblaze B2 storage. Automatically approved for moderators and admins. Only image files are allowed.',
+    summary: 'Upload media file',
+    description: 'Upload a media file directly to the server (requires authentication)',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
@@ -284,71 +260,45 @@ export class MediaController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Image file to upload (JPEG, PNG, WebP, GIF)',
+          description: 'Media file to upload',
         },
         type: {
           type: 'string',
           enum: ['image', 'video', 'audio'],
-          description:
-            'Type of media content (currently only image supported for uploads)',
+          description: 'Type of media',
+        },
+        ownerType: {
+          type: 'string',
+          enum: Object.values(MediaOwnerType),
+          description: 'Type of entity this media belongs to',
+        },
+        ownerId: {
+          type: 'number',
+          description: 'ID of the entity this media belongs to',
+        },
+        purpose: {
+          type: 'string',
+          enum: Object.values(MediaPurpose),
+          description: 'Purpose of the media',
         },
         description: {
           type: 'string',
-          description: 'Description of the media content',
-          maxLength: 500,
+          description: 'Description of the media',
         },
-        characterId: {
+        chapterNumber: {
           type: 'number',
-          description: 'ID of the character this media belongs to',
-        },
-        arcId: {
-          type: 'number',
-          description: 'ID of the arc this media belongs to',
-        },
-        eventId: {
-          type: 'number',
-          description: 'ID of the event this media belongs to',
+          description: 'Chapter number (optional)',
         },
       },
-      required: ['file', 'type'],
+      required: ['file', 'type', 'ownerType', 'ownerId'],
     },
   })
   @ApiResponse({
     status: 201,
     description: 'Media uploaded successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'number', example: 1 },
-        url: {
-          type: 'string',
-          example: 'https://your-custom-domain.com/media/123456_character.jpg',
-        },
-        fileName: { type: 'string', example: 'media/123456_character.jpg' },
-        isUploaded: { type: 'boolean', example: true },
-        type: { type: 'string', example: 'image' },
-        description: { type: 'string', example: 'Character portrait' },
-        status: { type: 'string', example: 'approved' },
-        createdAt: { type: 'string', format: 'date-time' },
-        submittedBy: {
-          type: 'object',
-          properties: {
-            id: { type: 'number', example: 1 },
-            username: { type: 'string', example: 'moderator' },
-          },
-        },
-      },
-    },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - invalid file or data',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - requires moderator or admin role',
-  })
-  @ApiResponse({ status: 413, description: 'File too large - max 10MB' })
+  @ApiResponse({ status: 400, description: 'Invalid file or parameters' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async uploadMedia(
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadData: UploadMediaDto,
@@ -377,13 +327,7 @@ export class MediaController {
     }
 
     return this.mediaService.createUpload(
-      {
-        type: uploadData.type,
-        description: uploadData.description,
-        characterId: uploadData.characterId,
-        arcId: uploadData.arcId,
-        eventId: uploadData.eventId,
-      },
+      uploadData,
       file.buffer,
       file.originalname,
       file.mimetype,
@@ -393,104 +337,84 @@ export class MediaController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get all media with filtering (authenticated)',
-    description:
-      'Retrieve media content with optional filtering by status, type, and character (requires authentication)',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    description: 'Filter by status (pending, approved, rejected)',
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    description: 'Filter by media type (image, video, audio)',
-  })
-  @ApiQuery({
-    name: 'characterId',
-    required: false,
-    description: 'Filter by character ID',
+    summary: 'Get all media',
+    description: 'Retrieve media with optional filtering and pagination',
   })
   @ApiQuery({
     name: 'page',
     required: false,
-    description: 'Page number (default: 1)',
+    description: 'Page number',
+    type: 'number',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
-    description: 'Items per page (default: 20)',
+    description: 'Items per page',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by status',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by media type',
+    enum: MediaType,
+  })
+  @ApiQuery({
+    name: 'ownerType',
+    required: false,
+    description: 'Filter by owner type',
+    enum: MediaOwnerType,
+  })
+  @ApiQuery({
+    name: 'ownerId',
+    required: false,
+    description: 'Filter by owner ID',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'purpose',
+    required: false,
+    description: 'Filter by media purpose',
+    enum: MediaPurpose,
   })
   @ApiResponse({
     status: 200,
     description: 'Media retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              url: {
-                type: 'string',
-                example: 'https://www.youtube.com/watch?v=example',
-              },
-              type: { type: 'string', example: 'video' },
-              description: {
-                type: 'string',
-                example: 'Character analysis video',
-              },
-              status: { type: 'string', example: 'approved' },
-              character: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  name: { type: 'string', example: 'Baku Madarame' },
-                },
-              },
-              submittedBy: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  username: { type: 'string', example: 'fan123' },
-                },
-              },
-              createdAt: { type: 'string', format: 'date-time' },
-              updatedAt: { type: 'string', format: 'date-time' },
-            },
-          },
-        },
-        total: { type: 'number', example: 50 },
-        page: { type: 'number', example: 1 },
-        perPage: { type: 'number', example: 20 },
-        totalPages: { type: 'number', example: 3 },
-      },
-    },
   })
   async findAll(
     @Query('page') page = '1',
     @Query('limit') limit = '20',
     @Query('status') status?: string,
     @Query('type') type?: string,
-    @Query('characterId') characterId?: string,
+    @Query('ownerType') ownerType?: MediaOwnerType,
+    @Query('ownerId') ownerId?: string,
+    @Query('purpose') purpose?: MediaPurpose,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
-    const characterIdNum = characterId ? parseInt(characterId) : undefined;
+    
+    // Properly validate and parse ownerId to prevent NaN errors
+    let ownerIdNum: number | undefined;
+    if (ownerId) {
+      const parsedId = parseInt(ownerId, 10);
+      // Only use the parsed value if it's a valid positive integer
+      ownerIdNum = !isNaN(parsedId) && parsedId > 0 ? parsedId : undefined;
+    }
 
     const result = await this.mediaService.findAll({
       page: pageNum,
       limit: limitNum,
       status,
       type,
-      characterId: characterIdNum,
+      ownerType,
+      ownerId: ownerIdNum,
+      purpose,
     });
 
     // Return canonical top-level paginated shape used across the API
@@ -665,7 +589,11 @@ export class MediaController {
         },
         type: { type: 'string', enum: ['image', 'video', 'audio'] },
         description: { type: 'string', example: 'Updated description' },
-        characterId: { type: 'number', example: 1 },
+        ownerType: { type: 'string', enum: ['character', 'arc', 'event', 'gamble', 'faction', 'user'] },
+        ownerId: { type: 'number', example: 1 },
+        chapterNumber: { type: 'number', example: 45 },
+        isDefault: { type: 'boolean', example: false },
+        purpose: { type: 'string', enum: ['gallery', 'entity_display'], example: 'gallery' },
         status: { type: 'string', enum: ['pending', 'approved', 'rejected'] },
         rejectionReason: { type: 'string', example: 'Reason for rejection' },
       },
@@ -1009,5 +937,357 @@ export class MediaController {
   })
   bulkRejectSubmissions(@Body() body: { ids: number[]; reason: string }) {
     return this.mediaService.bulkRejectSubmissions(body.ids, body.reason);
+  }
+
+  // NEW POLYMORPHIC ENDPOINTS
+
+  @Get('owner/:ownerType/:ownerId')
+  @ApiOperation({
+    summary: 'Get media for a specific owner',
+    description: 'Retrieve media associated with a specific entity',
+  })
+  @ApiParam({
+    name: 'ownerType',
+    description: 'Type of entity',
+    enum: MediaOwnerType,
+  })
+  @ApiParam({
+    name: 'ownerId',
+    description: 'ID of the entity',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'chapter',
+    required: false,
+    description: 'Chapter number filter',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Media type filter',
+    enum: MediaType,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    type: 'number',
+  })
+  findForOwner(
+    @Param('ownerType') ownerType: MediaOwnerType,
+    @Param('ownerId', ParseIntPipe) ownerId: number,
+    @Query('chapter') chapter?: string,
+    @Query('type') type?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    let chapterNum: number | undefined;
+    if (chapter) {
+      const parsedChapter = parseInt(chapter, 10);
+      chapterNum = !isNaN(parsedChapter) && parsedChapter > 0 ? parsedChapter : undefined;
+    }
+
+    let pageNum: number | undefined;
+    if (page) {
+      const parsedPage = parseInt(page, 10);
+      pageNum = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : undefined;
+    }
+
+    let limitNum: number | undefined;
+    if (limit) {
+      const parsedLimit = parseInt(limit, 10);
+      limitNum = !isNaN(parsedLimit) && parsedLimit > 0 ? parsedLimit : undefined;
+    }
+
+    return this.mediaService.findForOwner(ownerType, ownerId, chapterNum, {
+      type: type as any,
+      page: pageNum,
+      limit: limitNum,
+    });
+  }
+
+  @Get('owner/:ownerType/:ownerId/default')
+  @ApiOperation({
+    summary: 'Get default media for a specific owner',
+    description: 'Retrieve the default media item for an entity',
+  })
+  @ApiParam({
+    name: 'ownerType',
+    description: 'Type of entity',
+    enum: MediaOwnerType,
+  })
+  @ApiParam({
+    name: 'ownerId',
+    description: 'ID of the entity',
+    type: 'number',
+  })
+  getDefaultForOwner(
+    @Param('ownerType') ownerType: MediaOwnerType,
+    @Param('ownerId', ParseIntPipe) ownerId: number,
+  ) {
+    return this.mediaService.getDefaultForOwner(ownerType, ownerId);
+  }
+
+  @Put(':id/set-default')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Set media as default for its owner',
+    description: 'Mark a media item as the default for its associated entity',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Media ID',
+    type: 'number',
+  })
+  setAsDefault(@Param('id', ParseIntPipe) id: number) {
+    return this.mediaService.setAsDefault(id);
+  }
+
+  @Get('entity-display/:ownerType/:ownerId')
+  @ApiOperation({
+    summary: 'Get entity display media for a specific owner',
+    description: 'Retrieve official display media for an entity',
+  })
+  @ApiParam({
+    name: 'ownerType',
+    description: 'Type of entity',
+    enum: MediaOwnerType,
+  })
+  @ApiParam({
+    name: 'ownerId',
+    description: 'ID of the entity',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'chapter',
+    required: false,
+    description: 'Chapter number filter',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Media type filter',
+    enum: MediaType,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    type: 'number',
+  })
+  async findEntityDisplayMedia(
+    @Param('ownerType') ownerType: MediaOwnerType,
+    @Param('ownerId', ParseIntPipe) ownerId: number,
+    @Query('chapter') chapter?: number,
+    @Query('type') type?: MediaType,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.mediaService.findForEntityDisplay(ownerType, ownerId, chapter, {
+      type,
+      page,
+      limit,
+    });
+  }
+
+  @Get('gallery/:ownerType/:ownerId')
+  @ApiOperation({
+    summary: 'Get gallery media for a specific owner',
+    description: 'Retrieve user-uploaded gallery media for an entity',
+  })
+  @ApiParam({
+    name: 'ownerType',
+    description: 'Type of entity',
+    enum: MediaOwnerType,
+  })
+  @ApiParam({
+    name: 'ownerId',
+    description: 'ID of the entity',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'chapter',
+    required: false,
+    description: 'Chapter number filter',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Media type filter',
+    enum: MediaType,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    type: 'number',
+  })
+  async findGalleryMedia(
+    @Param('ownerType') ownerType: MediaOwnerType,
+    @Param('ownerId', ParseIntPipe) ownerId: number,
+    @Query('chapter') chapter?: number,
+    @Query('type') type?: MediaType,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.mediaService.findForGallery(ownerType, ownerId, {
+      chapter,
+      type,
+      page,
+      limit,
+    });
+  }
+
+  @Patch(':id/promote-to-entity-display')
+  @ApiOperation({
+    summary: 'Promote gallery media to entity display',
+    description: 'Convert gallery media to entity display media',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'curator')
+  @ApiParam({
+    name: 'id',
+    description: 'Media ID',
+    type: 'number',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['ownerType', 'ownerId'],
+      properties: {
+        ownerType: {
+          type: 'string',
+          enum: Object.values(MediaOwnerType),
+          description: 'Type of entity to associate with',
+        },
+        ownerId: {
+          type: 'number',
+          description: 'ID of entity to associate with',
+        },
+      },
+    },
+  })
+  async promoteToEntityDisplay(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { ownerType: MediaOwnerType; ownerId: number },
+  ) {
+    return this.mediaService.setAsEntityDisplay(
+      id,
+      body.ownerType,
+      body.ownerId,
+    );
+  }
+
+  @Put(':id/relations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Update media relations',
+    description: 'Update the ownership and relationship details of a media item',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Media ID',
+    type: 'number',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['ownerType', 'ownerId'],
+      properties: {
+        ownerType: {
+          type: 'string',
+          enum: Object.values(MediaOwnerType),
+          description: 'Type of entity to associate with',
+        },
+        ownerId: {
+          type: 'number',
+          description: 'ID of entity to associate with',
+        },
+        chapterNumber: {
+          type: 'number',
+          description: 'Chapter number (optional)',
+        },
+        isDefault: {
+          type: 'boolean',
+          description: 'Whether this should be the default media',
+        },
+      },
+    },
+  })
+  updateMediaRelations(
+    @Param('id', ParseIntPipe) id: number,
+    @Body()
+    body: {
+      ownerType: MediaOwnerType;
+      ownerId: number;
+      chapterNumber?: number;
+      isDefault?: boolean;
+    },
+  ) {
+    return this.mediaService.updateMediaRelations(
+      id,
+      body.ownerType,
+      body.ownerId,
+      body.chapterNumber,
+      body.isDefault,
+    );
+  }
+
+  @Post('migrate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Migrate existing media to polymorphic system',
+    description:
+      'Convert all existing media from old relationship system to new polymorphic system (admin only)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Migration completed',
+    schema: {
+      type: 'object',
+      properties: {
+        migrated: { type: 'number', description: 'Number of items migrated' },
+        failed: {
+          type: 'number',
+          description: 'Number of items that failed to migrate',
+        },
+        errors: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Error messages for failed migrations',
+        },
+      },
+    },
+  })
+  migrateToPolymorphic() {
+    return this.mediaService.migrateToPolymorphic();
   }
 }

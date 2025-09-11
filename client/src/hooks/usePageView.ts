@@ -30,6 +30,13 @@ export function usePageView(pageType: string, pageId: number | string, enabled: 
 
     const recordView = async () => {
       try {
+        // Validate pageId before converting to number
+        const numericPageId = Number(pageId)
+        if (isNaN(numericPageId) || numericPageId <= 0) {
+          console.debug('Invalid page ID for page view tracking:', pageId)
+          return
+        }
+        
         // Mark as recorded before making the API call to prevent race conditions
         recordedRef.current.add(viewKey)
         
@@ -40,7 +47,7 @@ export function usePageView(pageType: string, pageId: number | string, enabled: 
           console.debug('Failed to save recorded page views to storage:', storageError)
         }
         
-        await api.recordPageView(pageType, Number(pageId))
+        await api.recordPageView(pageType, numericPageId)
       } catch (error) {
         // If the API call fails, remove from recorded set so it can be retried
         recordedRef.current.delete(viewKey)

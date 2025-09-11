@@ -26,10 +26,6 @@ export interface Character {
   description: string;
   alternateNames: string[];
   firstAppearanceChapter: number;
-  notableRoles: string[];
-  notableGames: string[];
-  occupation: string;
-  affiliations: string[];
   createdAt: string;
   updatedAt: string;
 }

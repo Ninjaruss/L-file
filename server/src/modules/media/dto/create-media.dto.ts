@@ -6,13 +6,14 @@ import {
   IsString,
   IsUrl,
   Matches,
+  IsNumber,
+  IsBoolean,
 } from 'class-validator';
-
-export enum MediaType {
-  IMAGE = 'image',
-  VIDEO = 'video',
-  AUDIO = 'audio',
-}
+import {
+  MediaType,
+  MediaOwnerType,
+  MediaPurpose,
+} from '../../../entities/media.entity';
 
 export class CreateMediaDto {
   @ApiProperty({
@@ -22,7 +23,7 @@ export class CreateMediaDto {
   @IsNotEmpty()
   @IsUrl()
   @Matches(
-    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|tiktok\.com|vm\.tiktok\.com|deviantart\.com|pixiv\.net|twitter\.com|x\.com|instagram\.com|imgur\.com|i\.imgur\.com|soundcloud\.com)\/.+$|^https?:\/\/[\w\-._~:/?#\[\]@!$&'()*+,;=]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm|mp3|wav|ogg|flac)$/i,
+    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|tiktok\.com|vm\.tiktok\.com|deviantart\.com|pixiv\.net|twitter\.com|x\.com|instagram\.com|imgur\.com|i\.imgur\.com|soundcloud\.com)\/.+$|^https?:\/\/[\w\-._~:\/?#\[\]@!$&'()*+,;=]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm|mp3|wav|ogg|flac)$/i,
     {
       message:
         'URL must be from supported platforms (YouTube, TikTok, Instagram, Twitter, DeviantArt, Pixiv, Imgur, SoundCloud) or a direct media file link',
@@ -49,27 +50,46 @@ export class CreateMediaDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({
-    description: 'ID of the arc this media belongs to',
+  @ApiProperty({
+    description: 'Type of entity this media belongs to',
+    enum: MediaOwnerType,
+    example: MediaOwnerType.CHARACTER,
   })
-  @IsOptional()
-  arcId?: number;
+  @IsEnum(MediaOwnerType)
+  ownerType: MediaOwnerType;
+
+  @ApiProperty({
+    description: 'ID of the entity this media belongs to',
+    example: 1,
+  })
+  @IsNumber()
+  ownerId: number;
 
   @ApiPropertyOptional({
-    description: 'ID of the character this media belongs to',
+    description:
+      'Chapter number for chapter-based progression (mainly for characters)',
+    example: 45,
   })
   @IsOptional()
-  characterId?: number;
+  @IsNumber()
+  chapterNumber?: number;
 
   @ApiPropertyOptional({
-    description: 'ID of the event this media belongs to',
+    description: 'Whether this is the default media for the entity',
+    default: false,
   })
   @IsOptional()
-  eventId?: number;
+  @IsBoolean()
+  isDefault?: boolean;
 
   @ApiPropertyOptional({
-    description: 'ID of the gamble this media belongs to',
+    description:
+      'Purpose of the media - gallery for user uploads or entity display for official entity images',
+    enum: MediaPurpose,
+    default: MediaPurpose.GALLERY,
+    example: MediaPurpose.GALLERY,
   })
   @IsOptional()
-  gambleId?: number;
+  @IsEnum(MediaPurpose)
+  purpose?: MediaPurpose;
 }

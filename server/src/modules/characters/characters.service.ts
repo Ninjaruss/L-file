@@ -8,6 +8,8 @@ import { UpdateCharacterDto } from './dto/update-character.dto';
 import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
 import { PageViewsService } from '../page-views/page-views.service';
 import { PageType } from '../../entities/page-view.entity';
+import { MediaService } from '../media/media.service';
+import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
 
 @Injectable()
 export class CharactersService {
@@ -15,6 +17,7 @@ export class CharactersService {
     @InjectRepository(Character) private repo: Repository<Character>,
     @InjectRepository(Gamble) private gamblesRepository: Repository<Gamble>,
     private readonly pageViewsService: PageViewsService,
+    private readonly mediaService: MediaService,
   ) {}
 
   /**
@@ -65,7 +68,10 @@ export class CharactersService {
     }
 
     if (faction) {
-      qb.andWhere(':faction = ANY(character.affiliations)', { faction });
+      qb.innerJoin('character.factions', 'faction').andWhere(
+        'LOWER(faction.name) LIKE LOWER(:faction)',
+        { faction: `%${faction}%` },
+      );
     }
 
     if (description) {
@@ -115,28 +121,6 @@ export class CharactersService {
     updateCharacterDto: UpdateCharacterDto,
   ): Promise<Character> {
     const result = await this.repo.update(id, updateCharacterDto);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Character with id ${id} not found`);
-    }
-    return this.findOne(id);
-  }
-
-  async updateImage(
-    id: number,
-    updateCharacterImageDto: UpdateCharacterImageDto,
-  ): Promise<Character> {
-    const result = await this.repo.update(id, updateCharacterImageDto);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Character with id ${id} not found`);
-    }
-    return this.findOne(id);
-  }
-
-  async removeImage(id: number): Promise<Character> {
-    const result = await this.repo.update(id, {
-      imageFileName: null,
-      imageDisplayName: null,
-    });
     if (result.affected === 0) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
@@ -423,5 +407,122 @@ export class CharactersService {
       data,
       total,
     };
+  }
+
+  /**
+   * Get entity display media for character thumbnails with spoiler protection
+   */
+  async getCharacterEntityDisplayMedia(
+    characterId: number,
+    userProgress?: number,
+    options: {
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const character = await this.findOne(characterId);
+
+    const result = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.CHARACTER,
+      characterId,
+      undefined, // no chapter filter - we'll handle spoilers separately
+      {
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber > userProgress,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get gallery media for character
+   */
+  async getCharacterGalleryMedia(
+    characterId: number,
+    userProgress?: number,
+    options: {
+      chapter?: number;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const character = await this.findOne(characterId);
+
+    const result = await this.mediaService.findForGallery(
+      MediaOwnerType.CHARACTER,
+      characterId,
+      {
+        chapter: options.chapter,
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber && media.chapterNumber > userProgress,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get the current entity display media for character thumbnail
+   * Returns the default or most recent entity display media
+   */
+  async getCharacterCurrentThumbnail(
+    characterId: number,
+    userProgress?: number,
+  ) {
+    const character = await this.findOne(characterId);
+
+    // First try to get the default entity display media
+    const defaultMedia = await this.mediaService.getDefaultForOwner(
+      MediaOwnerType.CHARACTER,
+      characterId,
+    );
+
+    if (defaultMedia) {
+      const isSpoiler =
+        userProgress !== undefined && defaultMedia.chapterNumber > userProgress;
+
+      return {
+        ...defaultMedia,
+        isSpoiler,
+      };
+    }
+
+    // If no default, get the most recent entity display media
+    const recentMedia = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.CHARACTER,
+      characterId,
+      undefined,
+      { limit: 1 },
+    );
+
+    if (recentMedia.data.length > 0) {
+      const media = recentMedia.data[0];
+      const isSpoiler =
+        userProgress !== undefined && media.chapterNumber > userProgress;
+
+      return {
+        ...media,
+        isSpoiler,
+      };
+    }
+
+    return null;
   }
 }

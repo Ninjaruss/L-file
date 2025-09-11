@@ -6,12 +6,14 @@ import { Character } from '../../entities/character.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { ServicesModule } from '../../services/services.module';
 import { PageViewsModule } from '../page-views/page-views.module';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Character, Gamble]),
     ServicesModule,
     PageViewsModule,
+    MediaModule,
   ],
   providers: [CharactersService],
   controllers: [CharactersController],

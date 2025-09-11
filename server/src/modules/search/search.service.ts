@@ -210,7 +210,6 @@ export class SearchService {
       hasSpoilers: false, // Characters don't have spoiler flags typically
       slug: `character-${character.id}`, // Generate slug from ID
       metadata: {
-        occupation: character.occupation,
         firstAppearanceChapter: character.firstAppearanceChapter,
         alternateNames: character.alternateNames,
       },

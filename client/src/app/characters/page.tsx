@@ -16,7 +16,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  CardMedia,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -31,17 +30,14 @@ import Image from 'next/image'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
 import { motion } from 'motion/react'
+import MediaThumbnail from '../../components/MediaThumbnail'
 
 interface Character {
   id: number
   name: string
-  alternateNames: string[]
+  alternateNames: string[] | null
   description: string
   firstAppearanceChapter: number
-  notableRoles: string[]
-  notableGames: string[]
-  occupation: string
-  affiliations: string[]
   imageFileName?: string
   imageDisplayName?: string
 }
@@ -245,15 +241,14 @@ export default function CharactersPage() {
                       }}
                     >
                       <Box sx={{ position: 'relative' }}>
-                        {character.imageFileName && (
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={`/api/media/character/${character.imageFileName}`}
-                            alt={character.imageDisplayName || character.name}
-                            sx={{ objectFit: 'cover' }}
-                          />
-                        )}
+                        <MediaThumbnail
+                          entityType="character"
+                          entityId={character.id}
+                          entityName={character.name}
+                          maxWidth="100%"
+                          maxHeight="200px"
+                          allowCycling={false}
+                        />
                         {isModeratorOrAdmin && (
                           <IconButton
                             onClick={() => handleEditImage(character)}
@@ -278,7 +273,7 @@ export default function CharactersPage() {
                           {character.name}
                         </Typography>
                         
-                        {character.alternateNames?.length > 0 && (
+                        {character.alternateNames && character.alternateNames.length > 0 && (
                           <Box sx={{ mb: 2 }}>
                             {character.alternateNames.slice(0, 2).map((name) => (
                               <Chip
@@ -306,12 +301,6 @@ export default function CharactersPage() {
                         >
                           {character.description}
                         </Typography>
-
-                        {character.occupation && (
-                          <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
-                            <strong>Occupation:</strong> {character.occupation}
-                          </Typography>
-                        )}
 
                         {character.firstAppearanceChapter && (
                           <Typography variant="body2" color="text.secondary">

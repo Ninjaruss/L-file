@@ -32,6 +32,41 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
         eventCleaned[field] = cleaned[field]
       }
     })
+    
+    // Handle characterIds - ReferenceArrayInput might set this as objects or IDs
+    if (eventCleaned.characterIds && Array.isArray(eventCleaned.characterIds)) {
+      console.log('Processing characterIds for event:', eventCleaned.characterIds)
+      eventCleaned.characterIds = eventCleaned.characterIds.map((c: unknown) => {
+        // If it's already a number, keep it
+        if (typeof c === 'number') return c
+        // If it's a string that can be parsed as number, parse it
+        if (typeof c === 'string' && !isNaN(Number(c))) return Number(c)
+        // If it's an object with id property, extract the id
+        if (typeof c === 'object' && c !== null && 'id' in c) {
+          const id = (c as Record<string, unknown>).id
+          return typeof id === 'number' ? id : Number(id)
+        }
+        console.warn('Unexpected characterId format:', c)
+        return c
+      }).filter(id => {
+        const isValid = id !== null && id !== undefined && !isNaN(Number(id))
+        if (!isValid) console.warn('Filtered out invalid characterId:', id)
+        return isValid
+      })
+      console.log('Processed characterIds for event:', eventCleaned.characterIds)
+    } else if (data.characters && Array.isArray(data.characters)) {
+      // If characterIds doesn't exist but characters does, extract IDs from characters
+      console.log('Extracting characterIds from characters for event:', data.characters)
+      eventCleaned.characterIds = data.characters.map((c: any) => 
+        typeof c === 'object' && c !== null ? c.id : c
+      ).filter((id: any) => {
+        const isValid = id !== null && id !== undefined && !isNaN(Number(id))
+        if (!isValid) console.warn('Filtered out invalid extracted characterId:', id)
+        return isValid
+      })
+      console.log('Extracted characterIds for event:', eventCleaned.characterIds)
+    }
+    
     return eventCleaned
   }
   
@@ -235,9 +270,9 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   }
   
   if (resource === 'media') {
-    // Keep only the fields that are allowed in the media DTOs
+    // Keep only the fields that are allowed in the media DTOs using polymorphic system
     const allowedFields = [
-      'url', 'type', 'description', 'characterId', 'arcId', 'eventId', 'status', 'rejectionReason'
+      'url', 'type', 'description', 'ownerType', 'ownerId', 'chapterNumber', 'isDefault', 'status', 'rejectionReason', 'purpose'
     ]
     
     const mediaCleaned: Record<string, unknown> = {}
@@ -252,6 +287,17 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     delete mediaCleaned.character
     delete mediaCleaned.arc
     delete mediaCleaned.event
+    delete mediaCleaned.gamble
+    delete mediaCleaned.faction
+    delete mediaCleaned.user
+    
+    // Remove legacy relationship fields to prevent conflicts
+    delete mediaCleaned.characterId
+    delete mediaCleaned.arcId
+    delete mediaCleaned.eventId
+    delete mediaCleaned.gambleId
+    delete mediaCleaned.factionId
+    delete mediaCleaned.userId
     
     return mediaCleaned
   }
@@ -395,6 +441,19 @@ export const AdminDataProvider: DataProvider = {
       
       // Ensure the item has an id, using the requested id as fallback
       const item = { ...(data as Record<string, unknown>), id: (data as Record<string, unknown>).id ?? params.id }
+      
+      // Resource-specific data transformations for editing
+      if (resource === 'events') {
+        // Transform characters array to characterIds for the form
+        const itemData = item as any
+        if (itemData.characters && Array.isArray(itemData.characters)) {
+          console.log('Transforming characters to characterIds for event:', itemData.id, itemData.characters)
+          itemData.characterIds = itemData.characters.map((character: any) => 
+            typeof character === 'object' && character !== null ? character.id : character
+          ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
+          console.log('Generated characterIds:', itemData.characterIds)
+        }
+      }
       
       return { data: item as any }
     } catch (error: unknown) {

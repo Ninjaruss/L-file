@@ -6,8 +6,13 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  IsBoolean,
 } from 'class-validator';
-import { MediaType } from '../../../entities/media.entity';
+import {
+  MediaType,
+  MediaOwnerType,
+  MediaPurpose,
+} from '../../../entities/media.entity';
 import { Transform } from 'class-transformer';
 
 export class UploadMediaDto {
@@ -29,32 +34,59 @@ export class UploadMediaDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiPropertyOptional({
-    description: 'ID of the character this media belongs to',
+  @ApiProperty({
+    description: 'Type of entity this media belongs to',
+    enum: MediaOwnerType,
+    example: MediaOwnerType.CHARACTER,
+  })
+  @IsEnum(MediaOwnerType)
+  ownerType: MediaOwnerType;
+
+  @ApiProperty({
+    description: 'ID of the entity this media belongs to',
     example: 1,
   })
-  @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   @IsNumber()
-  characterId?: number;
+  ownerId: number;
 
   @ApiPropertyOptional({
-    description: 'ID of the arc this media belongs to',
-    example: 1,
+    description:
+      'Chapter number for chapter-based progression (mainly for characters)',
+    example: 45,
   })
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   @IsNumber()
-  arcId?: number;
+  chapterNumber?: number;
 
   @ApiPropertyOptional({
-    description: 'ID of the event this media belongs to',
-    example: 1,
+    description: 'Whether this is the default media for the entity',
+    default: false,
   })
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
-  @IsNumber()
-  eventId?: number;
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  isDefault?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Purpose of the media - gallery for user uploads or entity display for official entity images',
+    enum: MediaPurpose,
+    default: MediaPurpose.GALLERY,
+    example: MediaPurpose.GALLERY,
+  })
+  @IsOptional()
+  @IsEnum(MediaPurpose)
+  purpose?: MediaPurpose;
 }
 
 export class UploadCharacterImageDto {

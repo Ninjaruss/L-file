@@ -38,7 +38,7 @@ export const Dashboard = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Welcome to the Usogui Admin Dashboard
+        Welcome to the L-file Admin Dashboard
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Manage all content and users for the Usogui fansite

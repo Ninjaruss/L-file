@@ -6,6 +6,8 @@ import { Chapter } from '../../entities/chapter.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { CreateArcDto } from './dto/create-arc.dto';
 import { UpdateArcImageDto } from './dto/update-arc-image.dto';
+import { MediaService } from '../media/media.service';
+import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
 
 @Injectable()
 export class ArcsService {
@@ -13,6 +15,7 @@ export class ArcsService {
     @InjectRepository(Arc) private repo: Repository<Arc>,
     @InjectRepository(Chapter) private chapterRepo: Repository<Chapter>,
     @InjectRepository(Gamble) private gambleRepo: Repository<Gamble>,
+    private readonly mediaService: MediaService,
   ) {}
 
   /**
@@ -193,5 +196,118 @@ export class ArcsService {
       throw new NotFoundException(`Arc with id ${id} not found after update`);
     }
     return updatedArc;
+  }
+
+  /**
+   * Get entity display media for arc thumbnails with spoiler protection
+   */
+  async getArcEntityDisplayMedia(
+    arcId: number,
+    userProgress?: number,
+    options: {
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const arc = await this.findOne(arcId);
+
+    const result = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.ARC,
+      arcId,
+      undefined,
+      {
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber > userProgress,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get gallery media for arc
+   */
+  async getArcGalleryMedia(
+    arcId: number,
+    userProgress?: number,
+    options: {
+      chapter?: number;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const arc = await this.findOne(arcId);
+
+    const result = await this.mediaService.findForGallery(
+      MediaOwnerType.ARC,
+      arcId,
+      {
+        chapter: options.chapter,
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber && media.chapterNumber > userProgress,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get the current entity display media for arc thumbnail
+   */
+  async getArcCurrentThumbnail(arcId: number, userProgress?: number) {
+    const arc = await this.findOne(arcId);
+
+    // First try to get the default entity display media
+    const defaultMedia = await this.mediaService.getDefaultForOwner(
+      MediaOwnerType.ARC,
+      arcId,
+    );
+
+    if (defaultMedia) {
+      const isSpoiler =
+        userProgress !== undefined && defaultMedia.chapterNumber > userProgress;
+
+      return {
+        ...defaultMedia,
+        isSpoiler,
+      };
+    }
+
+    // If no default, get the most recent entity display media
+    const recentMedia = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.ARC,
+      arcId,
+      undefined,
+      { limit: 1 },
+    );
+
+    if (recentMedia.data.length > 0) {
+      const media = recentMedia.data[0];
+      const isSpoiler =
+        userProgress !== undefined && media.chapterNumber > userProgress;
+
+      return {
+        ...media,
+        isSpoiler,
+      };
+    }
+
+    return null;
   }
 }

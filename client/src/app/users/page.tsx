@@ -95,7 +95,7 @@ export default function UsersPage() {
             Community
           </Typography>
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            Meet the Usogui fansite community members
+            Meet the L-file community members
           </Typography>
         </Box>
 

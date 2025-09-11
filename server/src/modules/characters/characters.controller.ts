@@ -107,22 +107,6 @@ export class CharactersController {
                   'The main protagonist known for his extraordinary gambling skills',
               },
               firstAppearanceChapter: { type: 'number', example: 1 },
-              notableRoles: {
-                type: 'array',
-                items: { type: 'string' },
-                example: ['Kakerou Company CEO', 'Professional Gambler'],
-              },
-              notableGames: {
-                type: 'array',
-                items: { type: 'string' },
-                example: ['17 Steps', 'One-Card Poker'],
-              },
-              occupation: { type: 'string', example: 'Professional Gambler' },
-              affiliations: {
-                type: 'array',
-                items: { type: 'string' },
-                example: ['Kakerou Company', 'Tournament Committee'],
-              },
               createdAt: { type: 'string', format: 'date-time' },
               updatedAt: { type: 'string', format: 'date-time' },
             },
@@ -188,22 +172,6 @@ export class CharactersController {
             'The main protagonist known for his extraordinary gambling skills',
         },
         firstAppearanceChapter: { type: 'number', example: 1 },
-        notableRoles: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Company CEO', 'Professional Gambler'],
-        },
-        notableGames: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['17 Steps', 'One-Card Poker'],
-        },
-        occupation: { type: 'string', example: 'Professional Gambler' },
-        affiliations: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Company', 'Tournament Committee'],
-        },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
@@ -242,22 +210,6 @@ export class CharactersController {
           example: 'A mysterious and intelligent gambler with a dark past',
         },
         firstAppearanceChapter: { type: 'number', example: 1 },
-        notableRoles: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Referee', 'L-file Leader'],
-        },
-        notableGames: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Doubt', 'Ban'],
-        },
-        occupation: { type: 'string', example: 'Referee' },
-        affiliations: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Company', 'L-file'],
-        },
         // series removed
       },
       required: ['name'],
@@ -281,22 +233,6 @@ export class CharactersController {
           example: 'A mysterious and intelligent gambler with a dark past',
         },
         firstAppearanceChapter: { type: 'number', example: 1 },
-        notableRoles: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Referee', 'L-file Leader'],
-        },
-        notableGames: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Doubt', 'Ban'],
-        },
-        occupation: { type: 'string', example: 'Referee' },
-        affiliations: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Company', 'L-file'],
-        },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
@@ -337,22 +273,6 @@ export class CharactersController {
           example: 'Updated description of the main protagonist',
         },
         firstAppearanceChapter: { type: 'number', example: 1 },
-        notableRoles: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Company CEO', 'Professional Gambler'],
-        },
-        notableGames: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['17 Steps', 'One-Card Poker'],
-        },
-        occupation: { type: 'string', example: 'Professional Gambler' },
-        affiliations: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Kakerou Company', 'Tournament Committee'],
-        },
       },
     },
   })
@@ -412,207 +332,6 @@ export class CharactersController {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
     return { message: 'Deleted successfully' };
-  }
-
-  @Put(':id/image')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Update character image',
-    description:
-      'Update character image (moderators/admins only, automatically approved)',
-  })
-  @ApiParam({ name: 'id', description: 'Character ID', example: 1 })
-  @ApiBody({
-    description: 'Character image data',
-    type: UpdateCharacterImageDto,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Character image updated successfully',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - moderator/admin role required',
-  })
-  @ApiResponse({ status: 404, description: 'Character not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  updateImage(
-    @Param('id') id: number,
-    @Body() imageData: UpdateCharacterImageDto,
-  ) {
-    return this.service.updateImage(id, imageData);
-  }
-
-  @Post(':id/upload-image')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Upload character image',
-    description:
-      'Upload image file for character (moderators/admins only, automatically approved)',
-  })
-  @ApiParam({ name: 'id', description: 'Character ID', example: 1 })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Character image file and optional display name',
-    type: 'multipart/form-data',
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Image file (JPEG, PNG, WebP, GIF)',
-        },
-        imageDisplayName: {
-          type: 'string',
-          description: 'Optional display name for the image',
-        },
-      },
-      required: ['file'],
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Character image uploaded successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - invalid file or missing file',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - moderator/admin role required',
-  })
-  @ApiResponse({ status: 404, description: 'Character not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async uploadCharacterImage(
-    @Param('id') id: number,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() data: { imageDisplayName?: string },
-  ) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
-
-    // Validate file type
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-    ];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Only image files (JPEG, PNG, WebP, GIF) are allowed',
-      );
-    }
-
-    // Get existing character to check for old image
-    const existingCharacter = await this.service.findOne(id);
-    if (!existingCharacter) {
-      throw new NotFoundException(`Character with id ${id} not found`);
-    }
-
-    // Generate unique filename with character prefix
-    const timestamp = Date.now();
-    const fileExtension = file.originalname.split('.').pop();
-    const uniqueFileName = `character_${id}_${timestamp}.${fileExtension}`;
-
-    // Upload new file to B2
-    const uploadResult = await this.b2Service.uploadFile(
-      file.buffer,
-      uniqueFileName,
-      file.mimetype,
-      'characters',
-    );
-
-    // Delete old image if it exists
-    if (existingCharacter.imageFileName) {
-      try {
-        // Extract filename from URL if it's a full URL, otherwise use as-is
-        let oldFileName = existingCharacter.imageFileName;
-        if (oldFileName.includes('/')) {
-          const urlParts = oldFileName.split('/');
-          oldFileName = urlParts[urlParts.length - 1];
-          // If it includes the folder path, keep it
-          if (
-            urlParts.length > 1 &&
-            urlParts[urlParts.length - 2] === 'characters'
-          ) {
-            oldFileName = `characters/${oldFileName}`;
-          }
-        }
-        await this.b2Service.deleteFile(oldFileName);
-      } catch (error) {
-        // Log the error but don't fail the upload
-        console.error('Failed to delete old character image:', error);
-      }
-    }
-
-    // Update character with the full image URL
-    const imageData = {
-      imageFileName: uploadResult.url, // Store the full URL
-      imageDisplayName: data.imageDisplayName,
-    };
-
-    return this.service.updateImage(id, imageData);
-  }
-
-  @Delete(':id/image')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Remove character image',
-    description: 'Remove image from character (moderators/admins only)',
-  })
-  @ApiParam({ name: 'id', description: 'Character ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Character image removed successfully',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - moderator/admin role required',
-  })
-  @ApiResponse({ status: 404, description: 'Character not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
-  async removeImage(@Param('id') id: number) {
-    // Get existing character to check for image
-    const existingCharacter = await this.service.findOne(id);
-    if (!existingCharacter) {
-      throw new NotFoundException(`Character with id ${id} not found`);
-    }
-
-    // Delete the image file from B2 if it exists
-    if (existingCharacter.imageFileName) {
-      try {
-        // Extract filename from URL if it's a full URL, otherwise use as-is
-        let fileName = existingCharacter.imageFileName;
-        if (fileName.includes('/')) {
-          const urlParts = fileName.split('/');
-          fileName = urlParts[urlParts.length - 1];
-          // If it includes the folder path, keep it
-          if (
-            urlParts.length > 1 &&
-            urlParts[urlParts.length - 2] === 'characters'
-          ) {
-            fileName = `characters/${fileName}`;
-          }
-        }
-        await this.b2Service.deleteFile(fileName);
-      } catch (error) {
-        // Log the error but don't fail the removal
-        console.error('Failed to delete character image file:', error);
-      }
-    }
-
-    return this.service.removeImage(id);
   }
 
   @Get(':id/gambles')
@@ -816,5 +535,116 @@ export class CharactersController {
   })
   async getCharacterArcs(@Param('id', ParseIntPipe) id: number) {
     return this.service.getCharacterArcs(id);
+  }
+
+  @Get(':id/entity-display-media')
+  @ApiOperation({
+    summary: 'Get entity display media for character',
+    description: 'Retrieve official display media for character thumbnails',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Character ID',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'userProgress',
+    required: false,
+    description: 'User progress (chapter number) for spoiler protection',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    type: 'number',
+  })
+  async getCharacterEntityDisplayMedia(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userProgress') userProgress?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.service.getCharacterEntityDisplayMedia(id, userProgress, {
+      page,
+      limit,
+    });
+  }
+
+  @Get(':id/gallery-media')
+  @ApiOperation({
+    summary: 'Get gallery media for character',
+    description: 'Retrieve user-uploaded gallery media for character',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Character ID',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'userProgress',
+    required: false,
+    description: 'User progress (chapter number) for spoiler protection',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'chapter',
+    required: false,
+    description: 'Chapter number filter',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    type: 'number',
+  })
+  async getCharacterGalleryMedia(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userProgress') userProgress?: number,
+    @Query('chapter') chapter?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.service.getCharacterGalleryMedia(id, userProgress, {
+      chapter,
+      page,
+      limit,
+    });
+  }
+
+  @Get(':id/current-thumbnail')
+  @ApiOperation({
+    summary: 'Get current thumbnail for character',
+    description: 'Get the current entity display media for character thumbnail',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Character ID',
+    type: 'number',
+  })
+  @ApiQuery({
+    name: 'userProgress',
+    required: false,
+    description: 'User progress (chapter number) for spoiler protection',
+    type: 'number',
+  })
+  async getCharacterCurrentThumbnail(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userProgress') userProgress?: number,
+  ) {
+    return this.service.getCharacterCurrentThumbnail(id, userProgress);
   }
 }

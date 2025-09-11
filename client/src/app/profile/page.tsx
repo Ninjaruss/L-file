@@ -471,7 +471,7 @@ export default function ProfilePage() {
                 Activity & Contributions
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Track your contributions to the Usogui fansite community
+                Track your contributions to the L-file community
               </Typography>
 
               <Grid container spacing={3}>

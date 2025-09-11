@@ -4,7 +4,7 @@ import { ClientProviders } from '../providers/ClientProviders'
 import { LayoutWrapper } from '../components/LayoutWrapper'
 
 export const metadata: Metadata = {
-  title: 'Usogui Fansite - Ultimate Gambling Manga Resource',
+  title: 'L-file - Usogui Fan Resource',
   description: 'Complete resource for Usogui manga including characters, arcs, gambles, and fan content',
   keywords: 'Usogui, manga, gambling, Baku Madarame, fansite'
 }

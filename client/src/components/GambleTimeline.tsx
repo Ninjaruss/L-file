@@ -299,46 +299,22 @@ interface GambleTimelineProps {
   arcs: Arc[]
   gambleName: string
   gambleChapter: number
-  participants?: Array<{
-    id: number
-    name: string
-  }>
 }
 
 const GambleTimeline = React.memo(function GambleTimeline({ 
   events, 
   arcs, 
   gambleName, 
-  gambleChapter,
-  participants = [] 
+  gambleChapter
 }: GambleTimelineProps) {
   const theme = useTheme()
   const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(new Set())
   const [showAllEvents, setShowAllEvents] = useState(false)
-  const [viewMode, setViewMode] = useState<'phases' | 'characters'>('characters')
+  // Removed viewMode - always use phases view
   const { userProgress } = useProgress()
   const { settings } = useSpoilerSettings()
 
-  // Get all unique characters from events and participants
-  const allCharacters = useMemo(() => {
-    const characterMap = new Map<number, { id: number; name: string }>()
-    
-    // Add participants first (these are the main gamble participants)
-    participants.forEach(participant => {
-      characterMap.set(participant.id, participant)
-    })
-    
-    // Add characters from events
-    events.forEach(event => {
-      if (event.characters) {
-        event.characters.forEach(character => {
-          characterMap.set(character.id, character)
-        })
-      }
-    })
-    
-    return Array.from(characterMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-  }, [events, participants])
+  // Removed allCharacters - no longer needed for characters view
 
   // Get all unique event types from events with memoization
   const uniqueEventTypes = useMemo(() => {
@@ -466,9 +442,7 @@ const GambleTimeline = React.memo(function GambleTimeline({
     setShowAllEvents(prev => !prev)
   }, [])
 
-  const toggleViewMode = useCallback(() => {
-    setViewMode(prev => prev === 'phases' ? 'characters' : 'phases')
-  }, [])
+  // Removed toggleViewMode - no longer needed
 
   const getPhaseColor = useCallback((phase: string) => {
     switch (phase) {
@@ -480,21 +454,7 @@ const GambleTimeline = React.memo(function GambleTimeline({
     }
   }, [theme])
 
-  // Character-based timeline data
-  const characterTimelineData = useMemo(() => {
-    if (!allCharacters.length) return []
-    
-    // Group events by character participation
-    const sortedEvents = filteredEvents.sort((a, b) => a.chapterNumber - b.chapterNumber)
-    
-    return sortedEvents.map(event => ({
-      event,
-      characterParticipation: allCharacters.map(character => ({
-        character,
-        isParticipating: event.characters?.some(c => c.id === character.id) || false
-      }))
-    }))
-  }, [filteredEvents, allCharacters])
+  // Removed characterTimelineData - no longer needed for characters view
 
   return (
     <Card className="gambling-card">
@@ -506,20 +466,6 @@ const GambleTimeline = React.memo(function GambleTimeline({
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {/* View Mode Toggle */}
-            {allCharacters.length > 0 && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Button
-                  size="small"
-                  variant={viewMode === 'characters' ? 'contained' : 'outlined'}
-                  onClick={toggleViewMode}
-                  sx={{ minWidth: 100 }}
-                >
-                  {viewMode === 'characters' ? 'Characters' : 'Phases'}
-                </Button>
-              </Box>
-            )}
-            
             {/* Event Type Filters */}
             {uniqueEventTypes.length > 0 && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -548,20 +494,10 @@ const GambleTimeline = React.memo(function GambleTimeline({
           </Box>
         </Box>
 
-        {visiblePhases.length === 0 && characterTimelineData.length === 0 ? (
+        {visiblePhases.length === 0 ? (
           <Typography color="textSecondary" sx={{ textAlign: 'center', py: 4 }}>
             No timeline events found for this gamble.
           </Typography>
-        ) : viewMode === 'characters' && allCharacters.length > 0 ? (
-          <CharacterTimelineDisplay 
-            timelineData={characterTimelineData}
-            characters={allCharacters}
-            arcs={arcs}
-            theme={theme}
-            getEventTypeColor={getEventTypeColor}
-            getEventTypeIcon={getEventTypeIcon}
-            getEventTypeLabel={getEventTypeLabel}
-          />
         ) : (
           <TimelineDisplay 
             visiblePhases={visiblePhases}
@@ -587,219 +523,6 @@ const GambleTimeline = React.memo(function GambleTimeline({
   )
 })
 
-// Character-based Timeline Display Component
-const CharacterTimelineDisplay = React.memo(function CharacterTimelineDisplay({
-  timelineData,
-  characters,
-  arcs,
-  theme,
-  getEventTypeColor,
-  getEventTypeIcon,
-  getEventTypeLabel
-}: {
-  timelineData: Array<{
-    event: GambleTimelineEvent
-    characterParticipation: Array<{
-      character: { id: number; name: string }
-      isParticipating: boolean
-    }>
-  }>
-  characters: Array<{ id: number; name: string }>
-  arcs: Arc[]
-  theme: any
-  getEventTypeColor: (type: string) => string
-  getEventTypeIcon: (type: string) => React.ComponentType<{ size?: number }>
-  getEventTypeLabel: (type: string) => string
-}) {
-  return (
-    <Box sx={{ overflowX: 'auto' }}>
-      {/* Character Headers */}
-      <Box sx={{ 
-        display: 'grid',
-        gridTemplateColumns: `120px repeat(${characters.length}, 1fr)`,
-        gap: 1,
-        mb: 2,
-        minWidth: `${120 + characters.length * 200}px`
-      }}>
-        <Box sx={{ 
-          p: 2,
-          backgroundColor: theme.palette.background.default,
-          borderRadius: 1,
-          border: `1px solid ${theme.palette.divider}`
-        }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center' }}>
-            Chapter
-          </Typography>
-        </Box>
-        
-        {characters.map(character => (
-          <Box key={character.id} sx={{
-            p: 2,
-            backgroundColor: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`,
-            borderRadius: 1,
-            border: `1px solid ${theme.palette.primary.main}20`,
-            textAlign: 'center'
-          }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 600,
-                color: 'primary.main',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-              title={character.name}
-            >
-              {character.name}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-
-      {/* Timeline Events */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {timelineData.map(({ event, characterParticipation }, index) => {
-          const arc = arcs.find(a => a.id === event.arcId)
-          const EventIcon = getEventTypeIcon(event.type || 'decision')
-          
-          return (
-            <TimelineSpoilerWrapper key={event.id} event={event}>
-              <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: `120px repeat(${characters.length}, 1fr)`,
-                gap: 1,
-                minWidth: `${120 + characters.length * 200}px`,
-                alignItems: 'stretch'
-              }}>
-                {/* Chapter/Event Info Column */}
-                <Box sx={{
-                  p: 2,
-                  backgroundColor: theme.palette.background.paper,
-                  borderRadius: 1,
-                  border: `1px solid ${theme.palette.divider}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  minHeight: 80
-                }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', mb: 0.5 }}>
-                    Ch. {event.chapterNumber}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                    <EventIcon size={14} />
-                    <Typography variant="caption" color="text.secondary">
-                      {getEventTypeLabel(event.type || 'decision')}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Character Participation Columns */}
-                {characterParticipation.map(({ character, isParticipating }) => (
-                  <Box key={character.id} sx={{
-                    position: 'relative',
-                    minHeight: 80
-                  }}>
-                    {isParticipating ? (
-                      <Card sx={{
-                        height: '100%',
-                        backgroundColor: `linear-gradient(135deg, ${getEventTypeColor(event.type || 'decision')}08 0%, transparent 100%)`,
-                        border: `2px solid ${getEventTypeColor(event.type || 'decision')}30`,
-                        borderRadius: 2,
-                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[4],
-                        }
-                      }}>
-                        <CardContent sx={{ p: 1.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                            <EventIcon size={12} />
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                fontWeight: 600,
-                                color: getEventTypeColor(event.type || 'decision'),
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                flex: 1
-                              }}
-                              title={event.title}
-                            >
-                              {event.title}
-                            </Typography>
-                          </Box>
-                          
-                          {arc && (
-                            <Chip
-                              label={arc.name}
-                              size="small"
-                              variant="outlined"
-                              sx={{ 
-                                height: 18,
-                                fontSize: '0.65rem',
-                                '& .MuiChip-label': { px: 1 }
-                              }}
-                            />
-                          )}
-                          
-                          {event.description && (
-                            <Typography 
-                              variant="caption" 
-                              color="text.secondary"
-                              sx={{
-                                mt: 0.5,
-                                fontSize: '0.7rem',
-                                lineHeight: 1.2,
-                                overflow: 'hidden',
-                                display: '-webkit-box',
-                                WebkitBoxOrient: 'vertical',
-                                WebkitLineClamp: 2,
-                              }}
-                              title={event.description}
-                            >
-                              {event.description}
-                            </Typography>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <Box sx={{
-                        height: '100%',
-                        backgroundColor: theme.palette.background.default,
-                        borderRadius: 2,
-                        border: `1px dashed ${theme.palette.divider}`,
-                        opacity: 0.3
-                      }} />
-                    )}
-                  </Box>
-                ))}
-              </Box>
-            </TimelineSpoilerWrapper>
-          )
-        })}
-      </Box>
-      
-      {/* Legend */}
-      <Box sx={{ mt: 3, p: 2, backgroundColor: theme.palette.background.default, borderRadius: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-          Legend:
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 16, height: 16, backgroundColor: theme.palette.primary.main, borderRadius: 0.5, opacity: 0.2 }} />
-            <Typography variant="caption">Character participated in event</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 16, height: 16, border: `1px dashed ${theme.palette.divider}`, borderRadius: 0.5, opacity: 0.3 }} />
-            <Typography variant="caption">Character not involved</Typography>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  )
-})
 
 export default GambleTimeline
 

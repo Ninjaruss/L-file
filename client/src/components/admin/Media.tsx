@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   List,
   Datagrid,
@@ -20,6 +20,7 @@ import {
   useNotify,
   useRefresh
 } from 'react-admin'
+import { useWatch } from 'react-hook-form'
 import { 
   Box, 
   Chip, 
@@ -68,6 +69,30 @@ const MediaStatusField = ({ source }: { source: string }) => {
   )
 }
 
+const MediaPurposeField = ({ source }: { source: string }) => {
+  const record = useRecordContext()
+  if (!record) return null
+  
+  const purpose = record[source]
+  const color = purpose === 'entity_display' ? 'secondary' : 'primary'
+  const label = purpose === 'entity_display' ? 'Entity Display' : 'Gallery'
+  
+  return (
+    <Chip 
+      label={label} 
+      color={color} 
+      size="small" 
+      sx={{
+        fontWeight: 'bold',
+        textTransform: 'capitalize',
+        fontSize: '0.75rem',
+        height: '28px',
+        minWidth: '80px'
+      }}
+    />
+  )
+}
+
 const MediaFilter = (props: any) => (
   <Filter {...props}>
     <SelectInput 
@@ -78,6 +103,13 @@ const MediaFilter = (props: any) => (
         { id: 'rejected', name: 'Rejected' },
       ]}
       alwaysOn
+    />
+    <SelectInput 
+      source="purpose" 
+      choices={[
+        { id: 'gallery', name: 'Gallery' },
+        { id: 'entity_display', name: 'Entity Display' },
+      ]}
     />
   </Filter>
 )
@@ -147,6 +179,128 @@ const RejectButton = () => {
   )
 }
 
+
+const PolymorphicInfoChip = ({ source }: { source: string }) => {
+  const record = useRecordContext()
+  if (!record) return null
+  
+  if (record.ownerType && record.ownerId) {
+    return (
+      <Chip 
+        label={`${record.ownerType}:${record.ownerId}${record.chapterNumber ? ` (Ch.${record.chapterNumber})` : ''}${record.isDefault ? ' [Default]' : ''}`}
+        color="success" 
+        size="small" 
+        sx={{
+          fontWeight: 'bold',
+          fontSize: '0.7rem',
+          height: '24px',
+          backgroundColor: 'rgba(76, 175, 80, 0.2)',
+          color: '#4caf50'
+        }}
+      />
+    )
+  }
+  
+  
+  return (
+    <Chip 
+      label="No relationship"
+      color="default" 
+      size="small" 
+      sx={{
+        fontWeight: 'bold',
+        fontSize: '0.7rem',
+        height: '24px',
+        backgroundColor: 'rgba(158, 158, 158, 0.2)',
+        color: '#9e9e9e'
+      }}
+    />
+  )
+}
+
+const EntityNameDisplay = () => {
+  const record = useRecordContext()
+  const [entityName, setEntityName] = useState<string>('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchEntityName = async () => {
+      if (!record?.ownerType || !record?.ownerId) {
+        setEntityName('')
+        return
+      }
+
+      setLoading(true)
+      try {
+        let response
+        switch (record.ownerType) {
+          case 'character':
+            response = await api.getCharacters({ limit: 100 })
+            break
+          case 'arc':
+            response = await api.getArcs({ limit: 100 })
+            break
+          case 'event':
+            response = await api.getEvents({ limit: 100 })
+            break
+          case 'gamble':
+            response = await api.getGambles({ limit: 100 })
+            break
+          case 'faction':
+            response = await api.getFactions({ limit: 100 })
+            break
+          case 'user':
+            response = await api.getPublicUsers({ limit: 100 })
+            break
+          default:
+            setEntityName(`Unknown entity type: ${record.ownerType}`)
+            return
+        }
+
+        const entities = response.data || []
+        const entity = entities.find((e: any) => e.id === record.ownerId)
+        
+        if (entity) {
+          const name = entity.name || entity.title || entity.username || `${record.ownerType} ${entity.id}`
+          setEntityName(name)
+        } else {
+          setEntityName(`${record.ownerType} #${record.ownerId} (not found)`)
+        }
+      } catch (error) {
+        console.error('Failed to fetch entity name:', error)
+        setEntityName(`${record.ownerType} #${record.ownerId} (error loading)`)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEntityName()
+  }, [record?.ownerType, record?.ownerId])
+
+  if (loading) {
+    return (
+      <Typography sx={{ 
+        fontWeight: 'bold', 
+        fontSize: '1rem',
+        color: '#dc004e',
+        opacity: 0.7
+      }}>
+        Loading...
+      </Typography>
+    )
+  }
+
+  return (
+    <Typography sx={{ 
+      fontWeight: 'bold', 
+      fontSize: '1rem',
+      color: '#dc004e'
+    }}>
+      {entityName || `${record?.ownerType} #${record?.ownerId}`}
+    </Typography>
+  )
+}
+
 export const MediaList = () => (
   <List filters={<MediaFilter />} filterDefaultValues={{ status: 'pending' }}>
     <Datagrid 
@@ -202,27 +356,31 @@ export const MediaList = () => (
         }} 
       />
       <TextField 
-        source="character.name" 
-        label="Character" 
+        source="ownerType" 
+        label="Owner Type" 
         sx={{ 
           width: '120px',
           '& span': {
             fontWeight: '500',
-            color: 'secondary.main'
+            color: 'secondary.main',
+            textTransform: 'capitalize'
           }
         }} 
       />
       <TextField 
-        source="arc.name" 
-        label="Arc" 
+        source="ownerId" 
+        label="Owner ID" 
         sx={{ 
-          width: '120px',
+          width: '80px',
           '& span': {
             fontWeight: '500',
             color: 'info.main'
           }
         }} 
       />
+      <Box sx={{ width: '150px', display: 'flex', justifyContent: 'center' }}>
+        <PolymorphicInfoChip source="polymorphic" />
+      </Box>
       <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
         <MediaStatusField source="status" />
       </Box>
@@ -251,7 +409,7 @@ export const MediaList = () => (
         sx={{ 
           display: 'flex', 
           gap: 1, 
-          minWidth: '140px',
+          minWidth: '200px',
           justifyContent: 'center',
           '& .MuiButton-root': {
             minWidth: '60px',
@@ -308,6 +466,7 @@ export const MediaApprovalQueue = () => (
           }
         }} 
       />
+      <MediaPurposeField source="purpose" />
       <TextField 
         source="description" 
         sx={{ 
@@ -324,21 +483,22 @@ export const MediaApprovalQueue = () => (
         }} 
       />
       <TextField 
-        source="character.name" 
-        label="Character" 
+        source="ownerType" 
+        label="Owner Type" 
         sx={{ 
           width: '120px',
           '& span': {
             fontWeight: '500',
-            color: 'secondary.main'
+            color: 'secondary.main',
+            textTransform: 'capitalize'
           }
         }} 
       />
       <TextField 
-        source="arc.name" 
-        label="Arc" 
+        source="ownerId" 
+        label="Owner ID" 
         sx={{ 
-          width: '120px',
+          width: '80px',
           '& span': {
             fontWeight: '500',
             color: 'info.main'
@@ -676,7 +836,7 @@ export const MediaShow = () => {
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Character
+                    Owner Type
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ 
@@ -688,21 +848,22 @@ export const MediaShow = () => {
                       <User size={20} />
                     </Avatar>
                     <TextField 
-                      source="character.name" 
+                      source="ownerType" 
                       sx={{ 
                         '& span': { 
                           fontWeight: 'bold', 
                           fontSize: '1rem',
-                          color: '#1976d2'
+                          color: '#1976d2',
+                          textTransform: 'capitalize'
                         }
                       }}
                     />
                   </Box>
                 </Box>
                 
-                <Box>
+                <Box sx={{ mb: 3 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Story Arc
+                    Entity Name
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ 
@@ -713,16 +874,70 @@ export const MediaShow = () => {
                     }}>
                       <BookOpen size={20} />
                     </Avatar>
-                    <TextField 
-                      source="arc.name" 
-                      sx={{ 
-                        '& span': { 
-                          fontWeight: 'bold', 
-                          fontSize: '1rem',
-                          color: '#dc004e'
-                        }
+                    <EntityNameDisplay />
+                  </Box>
+                </Box>
+                
+                {record?.chapterNumber && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Chapter Number
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar sx={{ 
+                        bgcolor: '#f57c00', 
+                        width: 36, 
+                        height: 36,
+                        border: '2px solid rgba(245, 124, 0, 0.5)'
+                      }}>
+                        <BookOpen size={20} />
+                      </Avatar>
+                      <TextField 
+                        source="chapterNumber" 
+                        sx={{ 
+                          '& span': { 
+                            fontWeight: 'bold', 
+                            fontSize: '1rem',
+                            color: '#f57c00'
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+                
+                {record?.isDefault && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Default Media
+                    </Typography>
+                    <Chip 
+                      label="Default"
+                      color="success" 
+                      size="small" 
+                      sx={{
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
+                        height: '28px'
                       }}
                     />
+                  </Box>
+                )}
+
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Purpose
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ 
+                      bgcolor: record?.purpose === 'entity_display' ? '#9c27b0' : '#4caf50', 
+                      width: 36, 
+                      height: 36,
+                      border: `2px solid rgba(${record?.purpose === 'entity_display' ? '156, 39, 176' : '76, 175, 80'}, 0.5)`
+                    }}>
+                      <Image size={20} />
+                    </Avatar>
+                    <MediaPurposeField source="purpose" />
                   </Box>
                 </Box>
               </CardContent>
@@ -814,212 +1029,456 @@ export const MediaShow = () => {
   )
 }
 
-export const MediaEdit = () => (
-  <Edit>
+const EntitySelector = ({ entities, loadingEntities, loadEntities, getEntityChoices, getCurrentEntityKey, record }: any) => {
+  const ownerType = useWatch({ name: 'ownerType' })
+  
+  // Load entities when ownerType changes
+  useEffect(() => {
+    if (ownerType) {
+      const entityKey = ownerType === 'user' ? 'users' : ownerType + 's'
+      loadEntities(entityKey)
+    }
+  }, [ownerType, loadEntities])
+
+  const currentOwnerType = ownerType || record?.ownerType
+  
+  return (
+    <Grid container spacing={3}>
+      <Grid item xs={12} sm={6}>
+        <SelectInput 
+          source="ownerType" 
+          label="Entity Type"
+          choices={[
+            { id: 'character', name: 'Character' },
+            { id: 'arc', name: 'Arc' },
+            { id: 'event', name: 'Event' },
+            { id: 'gamble', name: 'Gamble' },
+            { id: 'faction', name: 'Faction' },
+            { id: 'user', name: 'User' },
+          ]}
+          fullWidth
+          sx={{
+            '& .MuiSelect-select': {
+              backgroundColor: '#0f0f0f'
+            }
+          }}
+        />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <SelectInput 
+          source="ownerId" 
+          label="Select Entity"
+          choices={getEntityChoices(currentOwnerType)}
+          disabled={!currentOwnerType || loadingEntities[getCurrentEntityKey(currentOwnerType)]}
+          fullWidth
+          sx={{
+            '& .MuiSelect-select': {
+              backgroundColor: '#0f0f0f'
+            }
+          }}
+          helperText={
+            loadingEntities[getCurrentEntityKey(currentOwnerType)] 
+              ? `Loading ${currentOwnerType}s...` 
+              : currentOwnerType
+                ? `Select a ${currentOwnerType} from the list` 
+                : 'First select an entity type'
+          }
+        />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <TextInput 
+          source="chapterNumber" 
+          label="Chapter Number"
+          type="number"
+          fullWidth
+          helperText="For chapter-based progression (optional)"
+        />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <SelectInput 
+          source="isDefault" 
+          label="Set as Default"
+          choices={[
+            { id: false, name: 'No' },
+            { id: true, name: 'Yes' },
+          ]}
+          fullWidth
+          sx={{
+            '& .MuiSelect-select': {
+              backgroundColor: '#0f0f0f'
+            }
+          }}
+          helperText="Whether this is the default media for the entity"
+        />
+      </Grid>
+    </Grid>
+  )
+}
+
+
+
+const DynamicEntitySelector = () => {
+  const record = useRecordContext()
+  const ownerType = useWatch({ name: 'ownerType', defaultValue: record?.ownerType })
+
+  if (ownerType === 'character') {
+    return (
+      <ReferenceInput source="ownerId" reference="characters" label="Character">
+        <AutocompleteInput 
+          optionText="name"
+          fullWidth
+          sx={{ 
+            '& .MuiInputBase-root': {
+              backgroundColor: 'rgba(10, 10, 10, 0.8)',
+              color: '#ffffff',
+            }
+          }}
+        />
+      </ReferenceInput>
+    )
+  }
+
+  if (ownerType === 'arc') {
+    return (
+      <ReferenceInput source="ownerId" reference="arcs" label="Arc">
+        <AutocompleteInput 
+          optionText="name"
+          fullWidth
+          sx={{ 
+            '& .MuiInputBase-root': {
+              backgroundColor: 'rgba(10, 10, 10, 0.8)',
+              color: '#ffffff',
+            }
+          }}
+        />
+      </ReferenceInput>
+    )
+  }
+
+  if (ownerType === 'event') {
+    return (
+      <ReferenceInput source="ownerId" reference="events" label="Event">
+        <AutocompleteInput 
+          optionText="title"
+          fullWidth
+          sx={{ 
+            '& .MuiInputBase-root': {
+              backgroundColor: 'rgba(10, 10, 10, 0.8)',
+              color: '#ffffff',
+            }
+          }}
+        />
+      </ReferenceInput>
+    )
+  }
+
+  if (ownerType === 'gamble') {
+    return (
+      <ReferenceInput source="ownerId" reference="gambles" label="Gamble">
+        <AutocompleteInput 
+          optionText="name"
+          fullWidth
+          sx={{ 
+            '& .MuiInputBase-root': {
+              backgroundColor: 'rgba(10, 10, 10, 0.8)',
+              color: '#ffffff',
+            }
+          }}
+        />
+      </ReferenceInput>
+    )
+  }
+
+  if (ownerType === 'faction') {
+    return (
+      <ReferenceInput source="ownerId" reference="factions" label="Faction">
+        <AutocompleteInput 
+          optionText="name"
+          fullWidth
+          sx={{ 
+            '& .MuiInputBase-root': {
+              backgroundColor: 'rgba(10, 10, 10, 0.8)',
+              color: '#ffffff',
+            }
+          }}
+        />
+      </ReferenceInput>
+    )
+  }
+
+  if (ownerType === 'user') {
+    return (
+      <ReferenceInput source="ownerId" reference="users" label="User">
+        <AutocompleteInput 
+          optionText="username"
+          fullWidth
+          sx={{ 
+            '& .MuiInputBase-root': {
+              backgroundColor: 'rgba(10, 10, 10, 0.8)',
+              color: '#ffffff',
+            }
+          }}
+        />
+      </ReferenceInput>
+    )
+  }
+
+  return (
     <Box sx={{ 
-      backgroundColor: '#0a0a0a',
-      minHeight: '100vh',
-      p: 3,
-      '& .RaEdit-main': {
-        backgroundColor: 'transparent'
-      }
+      p: 2, 
+      textAlign: 'center', 
+      color: '#ffffff',
+      backgroundColor: 'rgba(124, 58, 237, 0.1)',
+      borderRadius: '4px',
+      border: '1px dashed #7c3aed'
     }}>
-      <Card 
-        elevation={0}
-        sx={{ 
-          maxWidth: '900px',
-          mx: 'auto',
+      <Typography variant="body2">
+        Select an Entity Type first to choose the specific entity
+      </Typography>
+    </Box>
+  )
+}
+
+export const MediaEdit = () => {
+  return (
+    <Edit>
+      <SimpleForm sx={{ 
+        '& .MuiCardContent-root': {
+          padding: '24px',
           backgroundColor: '#0a0a0a',
-          border: '2px solid #e11d48',
-          borderRadius: 2,
-          boxShadow: '0 0 30px rgba(225, 29, 72, 0.2)'
-        }}
-      >
-        {/* Header */}
-        <Box sx={{
-          background: 'linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%)',
-          p: 3,
-          color: 'white'
+        },
+        '& .MuiFormControl-root': {
+          marginBottom: '16px',
+        }
+      }}>
+        {/* Media Information Section */}
+        <Box sx={{ 
+          mb: 4, 
+          p: 3, 
+          border: '1px solid #e11d48', 
+          borderRadius: '8px',
+          backgroundColor: 'rgba(225, 29, 72, 0.05)',
+          backdropFilter: 'blur(10px)',
         }}>
-          <Typography variant="h4" sx={{ 
-            fontWeight: 'bold', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          <Typography variant="h6" sx={{ 
+            mb: 2, 
+            color: '#e11d48', 
+            fontWeight: 600,
+            fontFamily: '"OPTI Goudy Text", serif'
           }}>
-            <Edit3 size={32} />
-            Edit Media Submission
+            Media Information
           </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9, mt: 1 }}>
-            Update media details and approval status
-          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextInput 
+                source="url" 
+                required 
+                fullWidth 
+                label="Media URL"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <SelectInput 
+                source="type" 
+                choices={[
+                  { id: 'image', name: 'Image' },
+                  { id: 'video', name: 'Video' },
+                  { id: 'audio', name: 'Audio' },
+                ]}
+                required
+                fullWidth
+                label="Media Type"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <SelectInput 
+                source="purpose" 
+                choices={[
+                  { id: 'gallery', name: 'Gallery' },
+                  { id: 'entity_display', name: 'Entity Display' },
+                ]}
+                required
+                fullWidth
+                label="Purpose"
+                helperText="Gallery: User-submitted content | Entity Display: Official entity images"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextInput 
+                source="description" 
+                multiline 
+                rows={4} 
+                fullWidth
+                label="Description"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+          </Grid>
         </Box>
 
-        <CardContent sx={{ p: 4 }}>
-          <SimpleForm sx={{
-            '& .MuiTextField-root': {
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: '#0f0f0f',
-                border: '1px solid rgba(225, 29, 72, 0.3)',
-                '&:hover': {
-                  borderColor: 'rgba(225, 29, 72, 0.5)'
-                },
-                '&.Mui-focused': {
-                  borderColor: '#e11d48'
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  border: 'none'
-                }
-              },
-              '& .MuiInputLabel-root': {
-                color: 'rgba(255, 255, 255, 0.7)',
-                '&.Mui-focused': {
-                  color: '#e11d48'
-                }
-              },
-              '& .MuiInputBase-input': {
-                color: '#ffffff'
-              }
-            },
-            '& .MuiFormControl-root': {
-              mb: 3
-            }
+        {/* Entity Association Section */}
+        <Box sx={{ 
+          mb: 4, 
+          p: 3, 
+          border: '1px solid #7c3aed', 
+          borderRadius: '8px',
+          backgroundColor: 'rgba(124, 58, 237, 0.05)',
+          backdropFilter: 'blur(10px)',
+        }}>
+          <Typography variant="h6" sx={{ 
+            mb: 2, 
+            color: '#7c3aed', 
+            fontWeight: 600,
+            fontFamily: '"OPTI Goudy Text", serif'
           }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Box sx={{ 
-                  p: 3, 
-                  backgroundColor: 'rgba(225, 29, 72, 0.05)', 
-                  borderRadius: 2, 
-                  border: '1px solid rgba(225, 29, 72, 0.2)',
-                  mb: 3
-                }}>
-                  <Typography variant="h6" sx={{ color: '#e11d48', mb: 2, fontWeight: 'bold' }}>
-                    Media Information
-                  </Typography>
-                  <TextInput 
-                    source="url" 
-                    required 
-                    fullWidth
-                    label="Media URL"
-                    helperText="Direct link to the media content"
-                  />
-                  <SelectInput 
-                    source="type" 
-                    choices={[
-                      { id: 'image', name: 'Image' },
-                      { id: 'video', name: 'Video' },
-                      { id: 'audio', name: 'Audio' },
-                    ]}
-                    required
-                    fullWidth
-                    sx={{
-                      '& .MuiSelect-select': {
-                        backgroundColor: '#0f0f0f'
-                      }
-                    }}
-                  />
-                  <TextInput 
-                    source="description" 
-                    multiline 
-                    rows={4} 
-                    fullWidth
-                    label="Description"
-                    helperText="Describe the media content and provide context"
-                  />
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Box sx={{ 
-                  p: 3, 
-                  backgroundColor: 'rgba(25, 118, 210, 0.05)', 
-                  borderRadius: 2, 
-                  border: '1px solid rgba(25, 118, 210, 0.2)',
-                  height: 'fit-content'
-                }}>
-                  <Typography variant="h6" sx={{ color: '#1976d2', mb: 2, fontWeight: 'bold' }}>
-                    Associated Content
-                  </Typography>
-                  <ReferenceInput 
-                    source="characterId" 
-                    reference="characters" 
-                    label="Related Character"
-                    fullWidth
-                  >
-                    <AutocompleteInput 
-                      optionText="name"
-                      sx={{
-                        '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
-                          backgroundColor: '#0f0f0f'
-                        }
-                      }}
-                    />
-                  </ReferenceInput>
-                  <ReferenceInput 
-                    source="arcId" 
-                    reference="arcs" 
-                    label="Related Arc"
-                    fullWidth
-                  >
-                    <AutocompleteInput 
-                      optionText="name"
-                      sx={{
-                        '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
-                          backgroundColor: '#0f0f0f'
-                        }
-                      }}
-                    />
-                  </ReferenceInput>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Box sx={{ 
-                  p: 3, 
-                  backgroundColor: 'rgba(245, 124, 0, 0.05)', 
-                  borderRadius: 2, 
-                  border: '1px solid rgba(245, 124, 0, 0.2)',
-                  height: 'fit-content'
-                }}>
-                  <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
-                    Approval Status
-                  </Typography>
-                  <SelectInput 
-                    source="status" 
-                    choices={[
-                      { id: 'pending', name: 'Pending Review' },
-                      { id: 'approved', name: 'Approved' },
-                      { id: 'rejected', name: 'Rejected' },
-                    ]}
-                    required
-                    fullWidth
-                    sx={{
-                      '& .MuiSelect-select': {
-                        backgroundColor: '#0f0f0f'
-                      }
-                    }}
-                  />
-                  <TextInput 
-                    source="rejectionReason" 
-                    multiline 
-                    rows={3} 
-                    fullWidth
-                    label="Rejection Reason"
-                    helperText="Required when status is rejected"
-                    sx={{ mt: 2 }}
-                  />
-                </Box>
-              </Grid>
+            Entity Association
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <SelectInput 
+                source="ownerType" 
+                label="Entity Type"
+                choices={[
+                  { id: 'character', name: 'Character' },
+                  { id: 'arc', name: 'Arc' },
+                  { id: 'event', name: 'Event' },
+                  { id: 'gamble', name: 'Gamble' },
+                  { id: 'faction', name: 'Faction' },
+                  { id: 'user', name: 'User' },
+                ]}
+                fullWidth
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
             </Grid>
-          </SimpleForm>
-        </CardContent>
-      </Card>
-    </Box>
-  </Edit>
-)
+            <Grid item xs={6}>
+              <DynamicEntitySelector />
+            </Grid>
+            <Grid item xs={6}>
+              <TextInput 
+                source="chapterNumber" 
+                label="Chapter Number"
+                type="number"
+                fullWidth
+                helperText="Optional: For progression-based content"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <SelectInput 
+                source="isDefault" 
+                label="Set as Default"
+                choices={[
+                  { id: false, name: 'No' },
+                  { id: true, name: 'Yes' },
+                ]}
+                fullWidth
+                helperText="Whether this is the default media for the entity"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Moderation Section */}
+        <Box sx={{ 
+          mb: 2, 
+          p: 3, 
+          border: '1px solid #f57c00', 
+          borderRadius: '8px',
+          backgroundColor: 'rgba(245, 124, 0, 0.05)',
+          backdropFilter: 'blur(10px)',
+        }}>
+          <Typography variant="h6" sx={{ 
+            mb: 2, 
+            color: '#f57c00', 
+            fontWeight: 600,
+            fontFamily: '"OPTI Goudy Text", serif'
+          }}>
+            Moderation
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <SelectInput 
+                source="status" 
+                choices={[
+                  { id: 'pending', name: 'Pending Review' },
+                  { id: 'approved', name: 'Approved' },
+                  { id: 'rejected', name: 'Rejected' },
+                ]}
+                required
+                fullWidth
+                label="Status"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextInput 
+                source="rejectionReason" 
+                multiline 
+                rows={3} 
+                fullWidth
+                label="Rejection Reason"
+                helperText="Only required when status is 'Rejected'"
+                sx={{ 
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+                    color: '#ffffff',
+                  }
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </SimpleForm>
+    </Edit>
+  )
+}
 
 export const MediaCreate = () => (
   <Create>
@@ -1035,12 +1494,56 @@ export const MediaCreate = () => (
         required
       />
       <TextInput source="description" multiline rows={4} />
-      <ReferenceInput source="characterId" reference="characters" label="Character">
-        <AutocompleteInput optionText="name" />
-      </ReferenceInput>
-      <ReferenceInput source="arcId" reference="arcs" label="Arc">
-        <AutocompleteInput optionText="name" />
-      </ReferenceInput>
+      
+      {/* Polymorphic relationship fields */}
+      <Typography variant="h6" sx={{ mt: 3, mb: 2, color: 'primary.main' }}>
+        Entity Relationship
+      </Typography>
+      <SelectInput 
+        source="ownerType" 
+        label="Entity Type"
+        choices={[
+          { id: 'character', name: 'Character' },
+          { id: 'arc', name: 'Arc' },
+          { id: 'event', name: 'Event' },
+          { id: 'gamble', name: 'Gamble' },
+          { id: 'faction', name: 'Faction' },
+          { id: 'user', name: 'User' },
+        ]}
+      />
+      <TextInput 
+        source="ownerId" 
+        label="Entity ID"
+        type="number"
+        helperText="ID of the related entity"
+      />
+      <TextInput 
+        source="chapterNumber" 
+        label="Chapter Number"
+        type="number"
+        helperText="For chapter-based progression (optional)"
+      />
+      <SelectInput 
+        source="isDefault" 
+        label="Set as Default"
+        choices={[
+          { id: false, name: 'No' },
+          { id: true, name: 'Yes' },
+        ]}
+        defaultValue={false}
+        helperText="Whether this is the default media for the entity"
+      />
+      <SelectInput 
+        source="purpose" 
+        label="Purpose"
+        choices={[
+          { id: 'gallery', name: 'Gallery' },
+          { id: 'entity_display', name: 'Entity Display' },
+        ]}
+        defaultValue="gallery"
+        helperText="Purpose of the media - gallery for user uploads or entity display for official entity images"
+      />
+      
       <SelectInput 
         source="status" 
         choices={[

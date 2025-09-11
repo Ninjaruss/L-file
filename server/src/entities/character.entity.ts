@@ -52,61 +52,8 @@ export class Character {
   @Column({ type: 'int', nullable: true })
   firstAppearanceChapter: number | null;
 
-  @ApiPropertyOptional({
-    description: 'Notable roles or positions',
-    type: [String],
-    example: ['Kakerou Company CEO', 'Professional Gambler'],
-  })
-  @Column({ type: 'simple-array', nullable: true })
-  notableRoles: string[] | null;
-
-  @ApiPropertyOptional({
-    description: 'Notable games participated in',
-    type: [String],
-    example: ['17 Steps', 'One-Card Poker'],
-  })
-  @Column({ type: 'simple-array', nullable: true })
-  notableGames: string[] | null;
-
-  @ApiPropertyOptional({
-    description: "Character's occupation or profession",
-    example: 'Professional Gambler',
-  })
-  @Column({ type: 'varchar', nullable: true })
-  occupation: string | null;
-
-  @ApiPropertyOptional({
-    description:
-      'Organizations or groups the character is affiliated with (besides factions)',
-    type: [String],
-    example: ['Kakerou Company', 'Tournament Committee'],
-  })
-  @Column({ type: 'simple-array', nullable: true })
-  affiliations: string[] | null;
-
-  @ApiPropertyOptional({
-    description: 'Media associated with the character',
-    type: () => [Media],
-  })
-  @OneToMany(() => Media, (media) => media.character, {
-    nullable: true,
-    cascade: true,
-  })
-  media: Media[];
-
-  @ApiPropertyOptional({
-    description: 'Main character image/portrait filename',
-    example: 'baku-madarame-portrait.webp',
-  })
-  @Column({ type: 'varchar', nullable: true, length: 500 })
-  imageFileName: string | null;
-
-  @ApiPropertyOptional({
-    description: 'Display name for the character image',
-    example: 'Baku Madarame - Official Portrait',
-  })
-  @Column({ type: 'varchar', nullable: true, length: 200 })
-  imageDisplayName: string | null;
+  // Media relationships are now handled polymorphically through the Media entity
+  // with ownerType='character' and ownerId=character.id
 
   @ApiPropertyOptional({
     description: 'Factions the character belongs to',

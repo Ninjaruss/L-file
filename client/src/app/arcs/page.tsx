@@ -16,7 +16,6 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  CardMedia,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -27,11 +26,11 @@ import {
 import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
 import { motion } from 'motion/react'
+import MediaThumbnail from '../../components/MediaThumbnail'
 
 interface Arc {
   id: number
@@ -300,15 +299,14 @@ function ArcsPageContent() {
                       }}
                     >
                       <Box sx={{ position: 'relative' }}>
-                        {arc.imageFileName && (
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={`/api/media/arc/${arc.imageFileName}`}
-                            alt={arc.imageDisplayName || arc.name}
-                            sx={{ objectFit: 'cover' }}
-                          />
-                        )}
+                        <MediaThumbnail
+                          entityType="arc"
+                          entityId={arc.id}
+                          entityName={arc.name}
+                          maxWidth="100%"
+                          maxHeight="200px"
+                          allowCycling={false}
+                        />
                         {isModeratorOrAdmin && (
                           <IconButton
                             onClick={() => handleEditImage(arc)}
@@ -471,12 +469,13 @@ function ArcsPageContent() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   Current Image:
                 </Typography>
-                <Image
-                  src={`/api/media/arc/${selectedArc.imageFileName}`}
-                  alt={selectedArc.imageDisplayName || selectedArc.name}
-                  width={200}
-                  height={200}
-                  style={{ objectFit: 'cover' }}
+                <MediaThumbnail
+                  entityType="arc"
+                  entityId={selectedArc.id}
+                  entityName={selectedArc.name}
+                  maxWidth={200}
+                  maxHeight={200}
+                  allowCycling={false}
                 />
               </Box>
             )}

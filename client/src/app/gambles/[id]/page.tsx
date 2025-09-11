@@ -26,6 +26,7 @@ import { usePageView } from '../../../hooks/usePageView'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
 import GambleTimeline from '../../../components/GambleTimeline'
 import MediaGallery from '../../../components/MediaGallery'
+import MediaThumbnail from '../../../components/MediaThumbnail'
 
 interface Gamble {
   id: number
@@ -67,7 +68,24 @@ export default function GambleDetailsPage() {
     const fetchGamble = async () => {
       try {
         setLoading(true)
-        const response = await api.getGamble(Number(id))
+        
+        const gambleId = Array.isArray(id) ? id[0] : id
+        
+        // Validate that ID is a valid number
+        if (!gambleId || isNaN(Number(gambleId))) {
+          setError('Invalid gamble ID')
+          return
+        }
+        
+        const numericId = Number(gambleId)
+        
+        // Additional safety check for negative or zero IDs
+        if (numericId <= 0) {
+          setError('Invalid gamble ID')
+          return
+        }
+        
+        const response = await api.getGamble(numericId)
         setGamble(response)
       } catch (error: unknown) {
         setError(error instanceof Error ? error.message : 'Failed to fetch gamble details')
@@ -95,16 +113,24 @@ export default function GambleDetailsPage() {
           api.getArcs({ limit: 100 })
         ])
         
-        // Filter events to those related to this gamble's timeline
-        // We'll include events from a few chapters before and after the gamble chapter
+        // Filter events to those directly related to this gamble
+        // First priority: events with matching gambleId
+        // Second priority: events in the same chapter as the gamble
         const gambleChapter = gamble.chapter?.number || gamble.chapterId
-        const chapterRange = 10 // Include events from 10 chapters before and after
         
-        const filteredEvents = eventsResponse.data.filter((event: any) => 
-          event.chapterNumber && 
-          event.chapterNumber >= (gambleChapter - chapterRange) &&
-          event.chapterNumber <= (gambleChapter + chapterRange)
-        )
+        const filteredEvents = eventsResponse.data.filter((event: any) => {
+          // Include events directly linked to this gamble
+          if (event.gambleId === gamble.id) {
+            return true
+          }
+          
+          // Include events in the same chapter as the gamble
+          if (event.chapterNumber === gambleChapter) {
+            return true
+          }
+          
+          return false
+        })
         
         setTimelineEvents(filteredEvents)
         setArcs(arcsResponse.data || [])
@@ -178,32 +204,76 @@ export default function GambleDetailsPage() {
           Back to Gambles
         </Button>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Crown size={48} color={theme.palette.usogui.gamble} />
-          </Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            {gamble.name}
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <Chip
-              label={gamble.chapter 
-                ? `Chapter ${gamble.chapter.number}${gamble.chapter.title ? `: ${gamble.chapter.title}` : ''}`
-                : `Chapter ${gamble.chapterId}`
-              }
-              color="primary"
-              variant="outlined"
-            />
-            {gamble.participants && gamble.participants.length > 0 && (
-              <Chip
-                icon={<Users size={16} />}
-                label={`${gamble.participants.length} Participants`}
-                color="secondary"
-                variant="outlined"
-              />
-            )}
-          </Box>
-        </Box>
+        {/* Enhanced Gamble Header */}
+        <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={12} md={4} lg={3}>
+                <Box sx={{ 
+                  textAlign: 'center',
+                  position: 'relative'
+                }}>
+                  <MediaThumbnail
+                    entityType="gamble"
+                    entityId={gamble.id}
+                    entityName={gamble.name}
+                    allowCycling={true}
+                    maxWidth={280}
+                    maxHeight={320}
+                    className="gamble-thumbnail"
+                  />
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={8} lg={9}>
+                <Box sx={{ pl: { md: 2 } }}>
+                  {/* Gamble Name with Gradient */}
+                  <Typography 
+                    variant="h2" 
+                    component="h1" 
+                    sx={{ 
+                      mb: 2,
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.usogui.gamble} 100%)`,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      color: 'transparent',
+                      fontSize: { xs: '2.5rem', md: '3rem' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2
+                    }}
+                  >
+                    <Crown size={40} color={theme.palette.usogui.gamble} />
+                    {gamble.name}
+                  </Typography>
+                  
+                  {/* Key Information */}
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+                    <Chip
+                      label={gamble.chapter 
+                        ? `Chapter ${gamble.chapter.number}${gamble.chapter.title ? `: ${gamble.chapter.title}` : ''}`
+                        : `Chapter ${gamble.chapterId}`
+                      }
+                      color="primary"
+                      variant="filled"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    {gamble.participants && gamble.participants.length > 0 && (
+                      <Chip
+                        icon={<Users size={16} />}
+                        label={`${gamble.participants.length} Participants`}
+                        color="secondary"
+                        variant="filled"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
 
         {/* Tab Navigation */}
         <Card className="gambling-card" sx={{ mb: 0 }}>
@@ -435,7 +505,6 @@ export default function GambleDetailsPage() {
                   arcs={arcs}
                   gambleName={gamble.name}
                   gambleChapter={gamble.chapter?.number || gamble.chapterId}
-                  participants={gamble.participants || []}
                 />
               </Box>
             )}

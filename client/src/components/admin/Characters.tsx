@@ -29,7 +29,6 @@ export const CharacterList = () => (
     <Datagrid rowClick="show">
       <TextField source="id" />
       <TextField source="name" />
-      <TextField source="occupation" />
       <NumberField source="firstAppearanceChapter" label="First Chapter" />
       <ArrayField source="alternateNames">
         <SingleFieldList linkType={false}>
@@ -51,24 +50,8 @@ export const CharacterShow = () => (
       <TextField source="id" />
       <TextField source="name" />
       <TextField source="description" />
-      <TextField source="occupation" />
       <NumberField source="firstAppearanceChapter" />
       <ArrayField source="alternateNames">
-        <SingleFieldList linkType={false}>
-          <ChipField source="" />
-        </SingleFieldList>
-      </ArrayField>
-      <ArrayField source="notableRoles">
-        <SingleFieldList linkType={false}>
-          <ChipField source="" />
-        </SingleFieldList>
-      </ArrayField>
-      <ArrayField source="notableGames">
-        <SingleFieldList linkType={false}>
-          <ChipField source="" />
-        </SingleFieldList>
-      </ArrayField>
-      <ArrayField source="affiliations">
         <SingleFieldList linkType={false}>
           <ChipField source="" />
         </SingleFieldList>
@@ -169,7 +152,6 @@ export const CharacterEdit = () => (
                   </Typography>
                   <TextInput source="name" required fullWidth />
                   <TextInput source="description" multiline rows={4} fullWidth />
-                  <TextInput source="occupation" fullWidth />
                   <NumberInput source="firstAppearanceChapter" max={539} min={1} fullWidth />
                 </Box>
               </Grid>
@@ -189,11 +171,6 @@ export const CharacterEdit = () => (
                       <TextInput source="" label="Alternate Name" fullWidth />
                     </SimpleFormIterator>
                   </ArrayInput>
-                  <ArrayInput source="notableRoles">
-                    <SimpleFormIterator>
-                      <TextInput source="" label="Notable Role" fullWidth />
-                    </SimpleFormIterator>
-                  </ArrayInput>
                 </Box>
               </Grid>
 
@@ -205,18 +182,8 @@ export const CharacterEdit = () => (
                   border: '1px solid rgba(16, 185, 129, 0.2)'
                 }}>
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
-                    Game & Relations
+                    Relations
                   </Typography>
-                  <ArrayInput source="notableGames">
-                    <SimpleFormIterator>
-                      <TextInput source="" label="Notable Game" fullWidth />
-                    </SimpleFormIterator>
-                  </ArrayInput>
-                  <ArrayInput source="affiliations">
-                    <SimpleFormIterator>
-                      <TextInput source="" label="Affiliation" fullWidth />
-                    </SimpleFormIterator>
-                  </ArrayInput>
                   <ReferenceArrayInput source="factions" reference="factions" label="Factions">
                     <AutocompleteArrayInput 
                       optionText="name"
@@ -230,12 +197,12 @@ export const CharacterEdit = () => (
                 </Box>
               </Grid>
             </Grid>
+            <EditToolbar 
+              resource="characters"
+              confirmTitle="Delete Character"
+              confirmMessage="Are you sure you want to delete this character? This will remove all associated data and cannot be undone."
+            />
           </SimpleForm>
-          <EditToolbar 
-            resource="characters"
-            confirmTitle="Delete Character"
-            confirmMessage="Are you sure you want to delete this character? This will remove all associated data and cannot be undone."
-          />
         </CardContent>
       </Card>
     </Box>
@@ -328,7 +295,6 @@ export const CharacterCreate = () => (
                   </Typography>
                   <TextInput source="name" required fullWidth />
                   <TextInput source="description" multiline rows={4} fullWidth />
-                  <TextInput source="occupation" fullWidth />
                   <NumberInput source="firstAppearanceChapter" max={539} min={1} fullWidth />
                 </Box>
               </Grid>
@@ -348,11 +314,6 @@ export const CharacterCreate = () => (
                       <TextInput source="" label="Alternate Name" fullWidth />
                     </SimpleFormIterator>
                   </ArrayInput>
-                  <ArrayInput source="notableRoles">
-                    <SimpleFormIterator>
-                      <TextInput source="" label="Notable Role" fullWidth />
-                    </SimpleFormIterator>
-                  </ArrayInput>
                 </Box>
               </Grid>
 
@@ -364,18 +325,8 @@ export const CharacterCreate = () => (
                   border: '1px solid rgba(16, 185, 129, 0.2)'
                 }}>
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
-                    Game & Relations
+                    Relations
                   </Typography>
-                  <ArrayInput source="notableGames">
-                    <SimpleFormIterator>
-                      <TextInput source="" label="Notable Game" fullWidth />
-                    </SimpleFormIterator>
-                  </ArrayInput>
-                  <ArrayInput source="affiliations">
-                    <SimpleFormIterator>
-                      <TextInput source="" label="Affiliation" fullWidth />
-                    </SimpleFormIterator>
-                  </ArrayInput>
                   <ReferenceArrayInput source="factions" reference="factions" label="Factions">
                     <AutocompleteArrayInput 
                       optionText="name"

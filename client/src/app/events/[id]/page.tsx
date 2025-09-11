@@ -69,7 +69,24 @@ export default function EventDetailsPage() {
     const fetchEvent = async () => {
       try {
         setLoading(true)
-        const response = await api.getEvent(Number(id))
+        
+        const eventId = Array.isArray(id) ? id[0] : id
+        
+        // Validate that ID is a valid number
+        if (!eventId || isNaN(Number(eventId))) {
+          setError('Invalid event ID')
+          return
+        }
+        
+        const numericId = Number(eventId)
+        
+        // Additional safety check for negative or zero IDs
+        if (numericId <= 0) {
+          setError('Invalid event ID')
+          return
+        }
+        
+        const response = await api.getEvent(numericId)
         setEvent(response)
       } catch (error: unknown) {
         setError(error instanceof Error ? error.message : 'Failed to fetch event details')

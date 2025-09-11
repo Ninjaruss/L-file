@@ -5,6 +5,8 @@ import { Gamble } from '../../entities/gamble.entity';
 import { Character } from '../../entities/character.entity';
 import { CreateGambleDto } from './dto/create-gamble.dto';
 import { UpdateGambleDto } from './dto/update-gamble.dto';
+import { MediaService } from '../media/media.service';
+import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
 
 @Injectable()
 export class GamblesService {
@@ -13,6 +15,7 @@ export class GamblesService {
     private gamblesRepository: Repository<Gamble>,
     @InjectRepository(Character)
     private charactersRepository: Repository<Character>,
+    private readonly mediaService: MediaService,
   ) {}
 
   async create(createGambleDto: CreateGambleDto): Promise<Gamble> {
@@ -216,5 +219,134 @@ export class GamblesService {
     // TODO: Implement proper gamble-team relationship logic
     await this.findOne(id); // Validate gamble exists
     return [];
+  }
+
+  /**
+   * Get entity display media for gamble thumbnails with spoiler protection
+   */
+  async getGambleEntityDisplayMedia(
+    gambleId: number,
+    userProgress?: number,
+    options: {
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const gamble = await this.findOne(gambleId);
+
+    const result = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.GAMBLE,
+      gambleId,
+      undefined,
+      {
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided and media has chapter number
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber
+          ? media.chapterNumber > userProgress
+          : false,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get gallery media for gamble
+   */
+  async getGambleGalleryMedia(
+    gambleId: number,
+    userProgress?: number,
+    options: {
+      chapter?: number;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const gamble = await this.findOne(gambleId);
+
+    const result = await this.mediaService.findForGallery(
+      MediaOwnerType.GAMBLE,
+      gambleId,
+      {
+        chapter: options.chapter,
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided and media has chapter number
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber
+          ? media.chapterNumber > userProgress
+          : false,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get the current entity display media for gamble thumbnail
+   * Default changes to the one with the latest chapter number within user progress
+   */
+  async getGambleCurrentThumbnail(gambleId: number, userProgress?: number) {
+    const gamble = await this.findOne(gambleId);
+
+    // Get all entity display media for this gamble
+    const allMedia = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.GAMBLE,
+      gambleId,
+      undefined,
+      { limit: 100 }, // Get all to find the right one
+    );
+
+    if (allMedia.data.length === 0) {
+      return null;
+    }
+
+    let selectedMedia: any = null;
+
+    if (userProgress !== undefined) {
+      // Find the media with the highest chapter number that doesn't exceed user progress
+      const allowedMedia = allMedia.data.filter(
+        (media) => !media.chapterNumber || media.chapterNumber <= userProgress,
+      );
+
+      if (allowedMedia.length > 0) {
+        // Get the one with the highest chapter number within user progress
+        selectedMedia = allowedMedia.reduce((latest, current) => {
+          const latestChapter = latest.chapterNumber || 0;
+          const currentChapter = current.chapterNumber || 0;
+          return currentChapter > latestChapter ? current : latest;
+        });
+      }
+    } else {
+      // No user progress provided, get default or most recent
+      selectedMedia =
+        allMedia.data.find((media) => media.isDefault) || allMedia.data[0];
+    }
+
+    if (selectedMedia) {
+      const isSpoiler =
+        userProgress !== undefined &&
+        selectedMedia.chapterNumber &&
+        selectedMedia.chapterNumber > userProgress;
+
+      return {
+        ...selectedMedia,
+        isSpoiler,
+      };
+    }
+
+    return null;
   }
 }

@@ -54,14 +54,7 @@ export class Gamble {
   })
   participants?: Character[];
 
-  @ApiPropertyOptional({
-    description: 'Media associated with this gamble',
-    type: () => [Media],
-  })
-  @OneToMany(() => Media, (media) => media.gamble, {
-    cascade: true,
-  })
-  media?: Media[];
+  // Media relationships are now handled polymorphically through ownerType/ownerId
 
   @CreateDateColumn()
   createdAt: Date;

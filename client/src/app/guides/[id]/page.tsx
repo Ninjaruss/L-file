@@ -101,18 +101,35 @@ export default function GuideDetailsPage() {
     const fetchGuide = async () => {
       try {
         setLoading(true)
+        
+        const guideId = Array.isArray(id) ? id[0] : id
+        
+        // Validate that ID is a valid number
+        if (!guideId || isNaN(Number(guideId))) {
+          setError('Invalid guide ID')
+          return
+        }
+        
+        const numericId = Number(guideId)
+        
+        // Additional safety check for negative or zero IDs
+        if (numericId <= 0) {
+          setError('Invalid guide ID')
+          return
+        }
+        
         let response
         if (user) {
           // Try authenticated endpoint first to get full guide data including status
           try {
-            response = await api.getGuideAdmin(Number(id))
+            response = await api.getGuideAdmin(numericId)
           } catch {
             // If authenticated request fails, fall back to public endpoint
-            response = await api.getGuide(Number(id))
+            response = await api.getGuide(numericId)
           }
         } else {
           // Use public endpoint for non-authenticated users
-          response = await api.getGuide(Number(id))
+          response = await api.getGuide(numericId)
         }
         setGuide(response)
         // Set user like status if it's provided by the API
@@ -132,11 +149,11 @@ export default function GuideDetailsPage() {
   }, [id, user])
 
   const handleLikeToggle = async () => {
-    if (!user || liking) return
+    if (!user || liking || !guide) return
     
     setLiking(true)
     try {
-      const response = await api.toggleGuideLike(Number(id))
+      const response = await api.toggleGuideLike(guide.id)
       setUserHasLiked(response.liked)
       if (guide) {
         setGuide({
@@ -201,7 +218,7 @@ export default function GuideDetailsPage() {
         arcId: editForm.arcId || undefined,
         gambleIds: editForm.gambleIds.length > 0 ? editForm.gambleIds : undefined
       }
-      const updatedGuide = await api.updateGuide(Number(id), updateData)
+      const updatedGuide = await api.updateGuide(guide.id, updateData)
       setGuide(updatedGuide)
       setIsEditing(false)
       setError('')

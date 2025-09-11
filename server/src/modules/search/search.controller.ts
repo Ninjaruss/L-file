@@ -91,8 +91,8 @@ export class SearchController {
               metadata: {
                 type: 'object',
                 example: {
-                  occupation: 'Professional Gambler',
                   firstAppearanceChapter: 1,
+                  alternateNames: ['The Emperor', 'Death God'],
                 },
               },
             },

@@ -26,6 +26,7 @@ import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import CharacterTimeline from '../../../components/CharacterTimeline'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import MediaThumbnail from '../../../components/MediaThumbnail'
 import { useProgress } from '../../../providers/ProgressProvider'
 import { useSpoilerSettings } from '../../../hooks/useSpoilerSettings'
 import type { Arc, Event, Gamble, Guide, Quote } from '../../../types'
@@ -36,10 +37,6 @@ interface Character {
   alternateNames: string[] | null
   description: string | null
   firstAppearanceChapter: number | null
-  notableRoles: string[] | null
-  notableGames: string[] | null
-  occupation: string | null
-  affiliations: string[] | null
   imageFileName?: string | null
   imageDisplayName?: string | null
   arcs?: Array<{
@@ -70,7 +67,20 @@ export default function CharacterDetailPage() {
     const fetchCharacterData = async () => {
       try {
         const id = Array.isArray(params.id) ? params.id[0] : params.id
+        
+        // Validate that ID is a valid number
+        if (!id || isNaN(Number(id))) {
+          setError('Invalid character ID')
+          return
+        }
+        
         const characterId = Number(id)
+        
+        // Additional safety check for negative or zero IDs
+        if (characterId <= 0) {
+          setError('Invalid character ID')
+          return
+        }
         
         // Fetch character and related data in parallel
         const [characterData, gamblesData, eventsData, guidesData, quotesData, allArcsData] = await Promise.all([
@@ -158,72 +168,15 @@ export default function CharacterDetailPage() {
                   textAlign: 'center',
                   position: 'relative'
                 }}>
-                  {character.imageFileName ? (
-                    <Box sx={{ 
-                      position: 'relative',
-                      display: 'inline-block',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: `linear-gradient(135deg, transparent 0%, ${theme.palette.primary.main}15 100%)`,
-                        borderRadius: '16px',
-                        pointerEvents: 'none'
-                      }
-                    }}>
-                      <img 
-                        src={`/api/media/character/${character.imageFileName}`}
-                        alt={character.imageDisplayName || `${character.name} portrait`}
-                        style={{ 
-                          width: '100%',
-                          maxWidth: '280px',
-                          height: 'auto',
-                          maxHeight: '320px',
-                          borderRadius: '16px',
-                          boxShadow: `0 12px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)`,
-                          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                          cursor: 'pointer',
-                          objectFit: 'cover'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)'
-                          e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                    </Box>
-                  ) : (
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center',
-                      height: '280px',
-                      maxWidth: '280px',
-                      margin: '0 auto',
-                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-                      borderRadius: '16px',
-                      border: `2px solid ${theme.palette.divider}`,
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: `radial-gradient(circle at 30% 30%, ${theme.palette.primary.main}08 0%, transparent 50%)`,
-                        borderRadius: '16px'
-                      }
-                    }}>
-                      <User size={80} color={theme.palette.text.secondary} style={{ opacity: 0.6 }} />
-                    </Box>
-                  )}
+                  <MediaThumbnail
+                    entityType="character"
+                    entityId={character.id}
+                    entityName={character.name}
+                    allowCycling={true}
+                    maxWidth={280}
+                    maxHeight={320}
+                    className="character-thumbnail"
+                  />
                 </Box>
               </Grid>
               
@@ -310,27 +263,6 @@ export default function CharacterDetailPage() {
                       </Grid>
                     )}
 
-                    {character.occupation && (
-                      <Grid item xs={12} sm={6} md={4}>
-                        <Card sx={{ 
-                          p: 2, 
-                          background: `linear-gradient(135deg, ${theme.palette.secondary.main}08 0%, transparent 100%)`,
-                          border: `1px solid ${theme.palette.secondary.main}20`,
-                          transition: 'transform 0.2s ease',
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: theme.shadows[4]
-                          }
-                        }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            Occupation
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            {character.occupation}
-                          </Typography>
-                        </Card>
-                      </Grid>
-                    )}
                   </Grid>
 
                   {/* Enhanced Stats Chips */}
@@ -506,224 +438,7 @@ export default function CharacterDetailPage() {
                           </Typography>
                         )}
 
-                        {/* Enhanced Character Details */}
-                        {((character.notableRoles && character.notableRoles.length > 0) || 
-                          (character.notableGames && character.notableGames.length > 0) || 
-                          (character.affiliations && character.affiliations.length > 0)) && (
-                          <>
-                            <Divider sx={{ my: 3 }} />
-                            <Grid container spacing={3}>
-                              {character.notableRoles && character.notableRoles.length > 0 && (
-                                <Grid item xs={12} md={6}>
-                                  <Box sx={{
-                                    p: 3,
-                                    borderRadius: 2,
-                                    background: `linear-gradient(135deg, ${theme.palette.primary.main}05 0%, transparent 100%)`,
-                                    border: `1px solid ${theme.palette.primary.main}15`
-                                  }}>
-                                    <Typography variant="h6" sx={{ 
-                                      mb: 2, 
-                                      fontWeight: 600,
-                                      color: 'primary.main',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1
-                                    }}>
-                                      <Crown size={20} />
-                                      Notable Roles
-                                    </Typography>
-                                    {character.firstAppearanceChapter ? (
-                                      <SpoilerWrapper 
-                                        chapterNumber={character.firstAppearanceChapter}
-                                        spoilerType="major"
-                                        description="Character's story roles and significance"
-                                      >
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                          {character.notableRoles.map((role, index) => (
-                                            <Box
-                                              key={index}
-                                              sx={{
-                                                p: 1.5,
-                                                borderRadius: 1,
-                                                backgroundColor: 'rgba(255,255,255,0.05)',
-                                                border: `1px solid ${theme.palette.divider}`,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1
-                                              }}
-                                            >
-                                              <Box sx={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                backgroundColor: 'primary.main'
-                                              }} />
-                                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                {role}
-                                              </Typography>
-                                            </Box>
-                                          ))}
-                                        </Box>
-                                      </SpoilerWrapper>
-                                    ) : (
-                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        {character.notableRoles.map((role, index) => (
-                                          <Box
-                                            key={index}
-                                            sx={{
-                                              p: 1.5,
-                                              borderRadius: 1,
-                                              backgroundColor: 'rgba(255,255,255,0.05)',
-                                              border: `1px solid ${theme.palette.divider}`,
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 1
-                                            }}
-                                          >
-                                            <Box sx={{
-                                              width: 8,
-                                              height: 8,
-                                              borderRadius: '50%',
-                                              backgroundColor: 'primary.main'
-                                            }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                              {role}
-                                            </Typography>
-                                          </Box>
-                                        ))}
-                                      </Box>
-                                    )}
-                                  </Box>
-                                </Grid>
-                              )}
-
-                              {character.notableGames && character.notableGames.length > 0 && (
-                                <Grid item xs={12} md={6}>
-                                  <Box sx={{
-                                    p: 3,
-                                    borderRadius: 2,
-                                    background: `linear-gradient(135deg, ${theme.palette.secondary.main}05 0%, transparent 100%)`,
-                                    border: `1px solid ${theme.palette.secondary.main}15`
-                                  }}>
-                                    <Typography variant="h6" sx={{ 
-                                      mb: 2, 
-                                      fontWeight: 600,
-                                      color: 'secondary.main',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1
-                                    }}>
-                                      <Crown size={20} />
-                                      Notable Gambles
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                      {character.notableGames.map((game) => (
-                                        <Chip
-                                          key={game}
-                                          label={game}
-                                          size="medium"
-                                          color="secondary"
-                                          variant="filled"
-                                          icon={<Crown size={16} />}
-                                          sx={{
-                                            borderRadius: '12px',
-                                            fontWeight: 500,
-                                            '&:hover': {
-                                              transform: 'translateY(-1px)',
-                                              boxShadow: theme.shadows[4]
-                                            }
-                                          }}
-                                        />
-                                      ))}
-                                    </Box>
-                                  </Box>
-                                </Grid>
-                              )}
-
-                              {character.affiliations && character.affiliations.length > 0 && (
-                                <Grid item xs={12}>
-                                  <Box sx={{
-                                    p: 3,
-                                    borderRadius: 2,
-                                    background: `linear-gradient(135deg, ${theme.palette.info.main}05 0%, transparent 100%)`,
-                                    border: `1px solid ${theme.palette.info.main}15`
-                                  }}>
-                                    <Typography variant="h6" sx={{ 
-                                      mb: 2, 
-                                      fontWeight: 600,
-                                      color: 'info.main',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1
-                                    }}>
-                                      <UsersIcon size={20} />
-                                      Affiliations
-                                    </Typography>
-                                    {character.firstAppearanceChapter ? (
-                                      <SpoilerWrapper 
-                                        chapterNumber={character.firstAppearanceChapter}
-                                        spoilerType="major"
-                                        description="Character's group affiliations and alliances"
-                                      >
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                          {character.affiliations.map((affiliation) => (
-                                            <Chip
-                                              key={affiliation}
-                                              label={affiliation}
-                                              size="medium"
-                                              color="info"
-                                              variant="filled"
-                                              icon={<UsersIcon size={16} />}
-                                              component={Link}
-                                              href={`/factions?name=${encodeURIComponent(affiliation)}`}
-                                              clickable
-                                              sx={{ 
-                                                textDecoration: 'none',
-                                                borderRadius: '12px',
-                                                fontWeight: 500,
-                                                transition: 'all 0.2s ease',
-                                                '&:hover': { 
-                                                  transform: 'translateY(-2px)',
-                                                  boxShadow: theme.shadows[6]
-                                                }
-                                              }}
-                                            />
-                                          ))}
-                                        </Box>
-                                      </SpoilerWrapper>
-                                    ) : (
-                                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {character.affiliations.map((affiliation) => (
-                                          <Chip
-                                            key={affiliation}
-                                            label={affiliation}
-                                            size="medium"
-                                            color="info"
-                                            variant="filled"
-                                            icon={<UsersIcon size={16} />}
-                                            component={Link}
-                                            href={`/factions?name=${encodeURIComponent(affiliation)}`}
-                                            clickable
-                                            sx={{ 
-                                              textDecoration: 'none',
-                                              borderRadius: '12px',
-                                              fontWeight: 500,
-                                              transition: 'all 0.2s ease',
-                                              '&:hover': { 
-                                                transform: 'translateY(-2px)',
-                                                boxShadow: theme.shadows[6]
-                                              }
-                                            }}
-                                          />
-                                        ))}
-                                      </Box>
-                                    )}
-                                  </Box>
-                                </Grid>
-                              )}
-                            </Grid>
-                          </>
-                        )}
+                        {/* Enhanced Character Details removed */}
                       </CardContent>
                     </Card>
 

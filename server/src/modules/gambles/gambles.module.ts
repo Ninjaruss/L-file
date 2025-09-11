@@ -5,9 +5,13 @@ import { GamblesService } from './gambles.service';
 import { Gamble } from '../../entities/gamble.entity';
 import { Character } from '../../entities/character.entity';
 import { Chapter } from '../../entities/chapter.entity';
+import { MediaModule } from '../media/media.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Gamble, Character, Chapter])],
+  imports: [
+    TypeOrmModule.forFeature([Gamble, Character, Chapter]),
+    MediaModule,
+  ],
   controllers: [GamblesController],
   providers: [GamblesService],
   exports: [GamblesService],

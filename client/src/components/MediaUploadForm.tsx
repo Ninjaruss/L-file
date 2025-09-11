@@ -20,12 +20,18 @@ interface MediaUploadFormProps {
   onUpload: (file: File, data: {
     type: 'image' | 'video' | 'audio'
     description?: string
-    characterId?: number
-    arcId?: number
-    eventId?: number
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerId: number
+    chapterNumber?: number
+    isDefault?: boolean
+    purpose?: 'gallery' | 'entity_display'
   }) => Promise<void>
   characters: Array<{ id: number; name: string }>
   arcs: Array<{ id: number; name: string }>
+  events: Array<{ id: number; title: string }>
+  gambles: Array<{ id: number; name: string }>
+  factions: Array<{ id: number; name: string }>
+  users: Array<{ id: number; username: string }>
   loading?: boolean
   dataLoading?: boolean
   error?: string
@@ -35,6 +41,10 @@ export default function MediaUploadForm({
   onUpload, 
   characters, 
   arcs, 
+  events,
+  gambles,
+  factions,
+  users,
   loading = false, 
   dataLoading = false,
   error 
@@ -43,8 +53,11 @@ export default function MediaUploadForm({
   const [formData, setFormData] = useState({
     type: 'image' as 'image' | 'video' | 'audio',
     description: '',
-    characterId: null as number | null,
-    arcId: null as number | null,
+    ownerType: '' as 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | '',
+    ownerId: null as number | null,
+    chapterNumber: null as number | null,
+    isDefault: false,
+    purpose: 'gallery' as 'gallery' | 'entity_display',
   })
   const [dragActive, setDragActive] = useState(false)
 
@@ -85,19 +98,27 @@ export default function MediaUploadForm({
     }
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedFile) return
+    
+    // Validate required fields
+    if (!formData.ownerType || !formData.ownerId) {
+      throw new Error('Please select an owner type and owner ID')
+    }
 
     await onUpload(selectedFile, {
       type: formData.type,
       description: formData.description || undefined,
-      characterId: formData.characterId || undefined,
-      arcId: formData.arcId || undefined,
+      ownerType: formData.ownerType,
+      ownerId: formData.ownerId,
+      chapterNumber: formData.chapterNumber || undefined,
+      isDefault: formData.isDefault,
+      purpose: formData.purpose || 'gallery', // Default to gallery
     })
   }
 
@@ -213,48 +234,108 @@ export default function MediaUploadForm({
         />
 
         <FormControl fullWidth sx={{ mb: 2 }} disabled={dataLoading}>
-          <InputLabel>Character (Optional)</InputLabel>
+          <InputLabel>Related Entity (Optional)</InputLabel>
           <Select
-            value={formData.characterId || ''}
-            label="Character (Optional)"
-            onChange={(e) => handleInputChange('characterId', e.target.value || null)}
+            value={formData.ownerType}
+            label="Related Entity (Optional)"
+            onChange={(e) => {
+              handleInputChange('ownerType', e.target.value)
+              handleInputChange('ownerId', null) // Reset owner ID when type changes
+            }}
           >
-            <MenuItem value="">None</MenuItem>
-            {dataLoading ? (
-              <MenuItem value="" disabled>
-                Loading characters...
-              </MenuItem>
-            ) : (
-              characters.map((character) => (
-                <MenuItem key={character.id} value={character.id}>
-                  {character.name}
-                </MenuItem>
-              ))
-            )}
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            <MenuItem value="character">Character</MenuItem>
+            <MenuItem value="arc">Arc</MenuItem>
+            <MenuItem value="event">Event</MenuItem>
+            <MenuItem value="gamble">Gamble</MenuItem>
+            <MenuItem value="faction">Faction</MenuItem>
+            <MenuItem value="user">User</MenuItem>
           </Select>
         </FormControl>
 
-        <FormControl fullWidth sx={{ mb: 3 }} disabled={dataLoading}>
-          <InputLabel>Arc (Optional)</InputLabel>
-          <Select
-            value={formData.arcId || ''}
-            label="Arc (Optional)"
-            onChange={(e) => handleInputChange('arcId', e.target.value || null)}
-          >
-            <MenuItem value="">None</MenuItem>
-            {dataLoading ? (
-              <MenuItem value="" disabled>
-                Loading arcs...
+        {formData.ownerType && (
+          <FormControl fullWidth sx={{ mb: 2 }} disabled={dataLoading}>
+            <InputLabel>Specific Entity</InputLabel>
+            <Select
+              value={formData.ownerId || ''}
+              label="Specific Entity"
+              onChange={(e) => handleInputChange('ownerId', e.target.value || null)}
+            >
+              <MenuItem value="">
+                <em>Choose {formData.ownerType}...</em>
               </MenuItem>
-            ) : (
-              arcs.map((arc) => (
-                <MenuItem key={arc.id} value={arc.id}>
-                  {arc.name}
+              {dataLoading ? (
+                <MenuItem value="" disabled>
+                  Loading...
                 </MenuItem>
-              ))
-            )}
-          </Select>
-        </FormControl>
+              ) : formData.ownerType === 'character' ? (
+                characters.map((character) => (
+                  <MenuItem key={character.id} value={character.id}>
+                    {character.name}
+                  </MenuItem>
+                ))
+              ) : formData.ownerType === 'arc' ? (
+                arcs.map((arc) => (
+                  <MenuItem key={arc.id} value={arc.id}>
+                    {arc.name}
+                  </MenuItem>
+                ))
+              ) : formData.ownerType === 'event' ? (
+                events.map((event) => (
+                  <MenuItem key={event.id} value={event.id}>
+                    {event.title}
+                  </MenuItem>
+                ))
+              ) : formData.ownerType === 'gamble' ? (
+                gambles.map((gamble) => (
+                  <MenuItem key={gamble.id} value={gamble.id}>
+                    {gamble.name}
+                  </MenuItem>
+                ))
+              ) : formData.ownerType === 'faction' ? (
+                factions.map((faction) => (
+                  <MenuItem key={faction.id} value={faction.id}>
+                    {faction.name}
+                  </MenuItem>
+                ))
+              ) : formData.ownerType === 'user' ? (
+                users.map((user) => (
+                  <MenuItem key={user.id} value={user.id}>
+                    {user.username}
+                  </MenuItem>
+                ))
+              ) : null}
+            </Select>
+          </FormControl>
+        )}
+
+        {formData.ownerType && formData.ownerId && (
+          <>
+            <TextField
+              fullWidth
+              type="number"
+              label="Chapter Number (Optional)"
+              value={formData.chapterNumber || ''}
+              onChange={(e) => handleInputChange('chapterNumber', e.target.value ? parseInt(e.target.value) : null)}
+              placeholder="e.g. 45"
+              sx={{ mb: 2 }}
+            />
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Set as Default</InputLabel>
+              <Select
+                value={formData.isDefault.toString()}
+                label="Set as Default"
+                onChange={(e) => handleInputChange('isDefault', e.target.value === 'true')}
+              >
+                <MenuItem value="false">No</MenuItem>
+                <MenuItem value="true">Yes - Make this the default media</MenuItem>
+              </Select>
+            </FormControl>
+          </>
+        )}
 
         <Button
           type="submit"

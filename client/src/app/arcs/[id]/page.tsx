@@ -25,6 +25,7 @@ import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import ArcTimeline from '../../../components/ArcTimeline'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import MediaThumbnail from '../../../components/MediaThumbnail'
 
 interface Arc {
   id: number
@@ -78,18 +79,32 @@ export default function ArcDetailPage() {
         const id = Array.isArray(params.id) ? params.id[0] : params.id
         setLoading(true)
         
+        // Validate that ID is a valid number
+        if (!id || isNaN(Number(id))) {
+          setError('Invalid arc ID')
+          return
+        }
+        
+        const arcId = Number(id)
+        
+        // Additional safety check for negative or zero IDs
+        if (arcId <= 0) {
+          setError('Invalid arc ID')
+          return
+        }
+        
         // Fetch arc details, arc events, and arc gambles in parallel
         const [arcData, eventsGroupedData, gamblesData] = await Promise.all([
-          api.getArc(Number(id)),
+          api.getArc(arcId),
           api.getEventsGroupedByArc(),
-          api.getArcGambles(Number(id))
+          api.getArcGambles(arcId)
         ])
         
         setArc(arcData)
         setGambles(gamblesData.data || [])
         
         // Find events for this specific arc
-        const arcGroup = eventsGroupedData.arcs.find((group: ArcGroup) => group.arc.id === Number(id))
+        const arcGroup = eventsGroupedData.arcs.find((group: ArcGroup) => group.arc.id === arcId)
         setEvents(arcGroup?.events || [])
         
       } catch (error: unknown) {
@@ -160,72 +175,15 @@ export default function ArcDetailPage() {
                   textAlign: 'center',
                   position: 'relative'
                 }}>
-                  {arc.imageFileName ? (
-                    <Box sx={{ 
-                      position: 'relative',
-                      display: 'inline-block',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: `linear-gradient(135deg, transparent 0%, ${theme.palette.usogui.arc}15 100%)`,
-                        borderRadius: '16px',
-                        pointerEvents: 'none'
-                      }
-                    }}>
-                      <img 
-                        src={`/api/media/arc/${arc.imageFileName}`}
-                        alt={arc.imageDisplayName || `${arc.name} image`}
-                        style={{ 
-                          width: '100%',
-                          maxWidth: '280px',
-                          height: 'auto',
-                          maxHeight: '320px',
-                          borderRadius: '16px',
-                          boxShadow: `0 12px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)`,
-                          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                          cursor: 'pointer',
-                          objectFit: 'cover'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)'
-                          e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                    </Box>
-                  ) : (
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center',
-                      height: '280px',
-                      maxWidth: '280px',
-                      margin: '0 auto',
-                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-                      borderRadius: '16px',
-                      border: `2px solid ${theme.palette.divider}`,
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: `radial-gradient(circle at 30% 30%, ${theme.palette.usogui.arc}08 0%, transparent 50%)`,
-                        borderRadius: '16px'
-                      }
-                    }}>
-                      <BookOpen size={80} color={theme.palette.text.secondary} style={{ opacity: 0.6 }} />
-                    </Box>
-                  )}
+                  <MediaThumbnail
+                    entityType="arc"
+                    entityId={arc.id}
+                    entityName={arc.name}
+                    allowCycling={true}
+                    maxWidth={280}
+                    maxHeight={320}
+                    className="arc-thumbnail"
+                  />
                 </Box>
               </Grid>
               

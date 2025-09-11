@@ -13,6 +13,8 @@ interface SpoilerWrapperProps {
   spoilerType?: 'major' | 'minor' | 'outcome'
   description?: string
   className?: string
+  // New prop for backend-determined spoiler status
+  isSpoiler?: boolean
 }
 
 export default function SpoilerWrapper({ 
@@ -20,7 +22,8 @@ export default function SpoilerWrapper({
   chapterNumber, 
   spoilerType = 'major', 
   description,
-  className 
+  className,
+  isSpoiler
 }: SpoilerWrapperProps) {
   const [isRevealed, setIsRevealed] = useState(false)
   const { userProgress } = useProgress()
@@ -30,6 +33,11 @@ export default function SpoilerWrapper({
     // First check if spoiler settings say to show all spoilers
     if (settings.showAllSpoilers) {
       return false
+    }
+
+    // If backend provided spoiler status, use that (it already considers user progress)
+    if (isSpoiler !== undefined) {
+      return isSpoiler
     }
 
     // Determine the effective progress to use for spoiler checking

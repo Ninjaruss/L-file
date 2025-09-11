@@ -27,9 +27,7 @@ const faqData: FAQItem[] = [
     answer: 
     <>
       <p>We understand the desire to read this incredible series! Unfortunately, there is <b>no official English license or release for Usogui</b>. This means no official digital chapters on apps like Viz Manga or Manga Plus, and no official physical volumes in English.
-      For this reason, the primary way the international community has accessed Usogui has been through fan translations.</p>
-
-      <p>The most complete and well-regarded fan translation was done by Team Duwang. Their work was instrumental in bringing Usogui to a global audience. You can search for "Team Duwang Usogui" online to find their releases.</p>
+      For this reason, the primary way the international community has accessed Usogui has been through fan translations. The most complete and well-regarded fan translation was done by Team Duwang.</p>
 
       <Box sx={{ p: 2, mb: 2, borderLeft: '4px solid', borderColor: 'primary.main', bgcolor: 'rgba(25,118,210,0.06)', borderRadius: 1 }}>
         <Typography variant="body2" color="text.primary">
@@ -86,7 +84,7 @@ const faqData: FAQItem[] = [
     answer: (
       <>
         Yes! Registered users can contribute guides and submit fanart/videos through media submissions.  
-        You can <Link href="/register" color="primary">create an account</Link> to start contributing. 
+        You can <Link href="/login" color="primary">login via Discord</Link> to start contributing. 
         All submissions are moderated to maintain quality and accuracy. If you would like to help with data entry, please join the
         <Link href="https://discord.gg/JXeRhV2qpY" color="primary"> Discord</Link>  community.
       </>
@@ -100,9 +98,9 @@ const faqData: FAQItem[] = [
     question: "How do I track my reading progress?",
     answer: (
       <>
-        After <Link href="/register" color="primary">creating an account</Link>, you can mark chapters 
+        After <Link href="/login" color="primary">logging in with Discord</Link>, you can mark chapters 
         as read using the chapter button on the bottom right of the screen. Your progress is saved and synced across devices 
-        when you're logged in. Chapter progress is also tracked locally, so you can keep track even without an account.
+        when you're logged in. Chapter progress is also tracked locally, so you can keep track even without an account!
       </>
     )
   },

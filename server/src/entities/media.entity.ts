@@ -29,10 +29,27 @@ export enum MediaStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
 }
+export enum MediaPurpose {
+  GALLERY = 'gallery', // User-uploaded media for galleries
+  ENTITY_DISPLAY = 'entity_display', // Official images for entity pages
+}
+
+export enum MediaOwnerType {
+  CHARACTER = 'character',
+  ARC = 'arc',
+  EVENT = 'event',
+  GAMBLE = 'gamble',
+  FACTION = 'faction',
+  USER = 'user',
+}
 
 @Entity()
 @Index(['url'], { unique: false }) // Remove unique constraint as we'll have both URLs and filenames
 @Index(['submittedBy'])
+@Index(['ownerType', 'ownerId'])
+@Index(['ownerType', 'ownerId', 'chapterNumber'])
+@Index(['ownerType', 'ownerId', 'isDefault'])
+@Index(['purpose'])
 export class Media {
   @ApiProperty({ description: 'Unique identifier of the media' })
   @PrimaryGeneratedColumn()
@@ -72,6 +89,36 @@ export class Media {
   isUploaded: boolean;
 
   @ApiProperty({
+    description: 'Type of entity this media belongs to',
+    enum: MediaOwnerType,
+    example: MediaOwnerType.CHARACTER,
+  })
+  @Column({ type: 'enum', enum: MediaOwnerType })
+  ownerType: MediaOwnerType;
+
+  @ApiProperty({
+    description: 'ID of the entity this media belongs to',
+    example: 1,
+  })
+  @Column({ type: 'int' })
+  ownerId: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Chapter number for chapter-based progression (mainly for characters)',
+    example: 45,
+  })
+  @Column({ type: 'int', nullable: true })
+  chapterNumber: number;
+
+  @ApiPropertyOptional({
+    description: 'Whether this is the default media for the entity',
+    default: false,
+  })
+  @Column({ type: 'boolean', default: false })
+  isDefault: boolean;
+
+  @ApiProperty({
     description: 'Type of media content',
     enum: MediaType,
     example: MediaType.VIDEO,
@@ -86,66 +133,6 @@ export class Media {
   @Column({ type: 'varchar', nullable: true, length: 500 })
   description: string;
 
-  @ApiHideProperty()
-  @ManyToOne(() => Character, (character) => character.media, {
-    onDelete: 'CASCADE',
-    nullable: true,
-  })
-  @JoinColumn({ name: 'characterId' })
-  character: Character;
-
-  @ApiPropertyOptional({
-    description: 'ID of the character this media belongs to',
-    example: 1,
-  })
-  @Column({ type: 'int', nullable: true })
-  characterId: number;
-
-  @ApiPropertyOptional({
-    description: 'Arc this media belongs to',
-    type: () => Arc,
-  })
-  @ManyToOne(() => Arc, { nullable: true })
-  @JoinColumn({ name: 'arcId' })
-  arc: Arc;
-
-  @ApiPropertyOptional({
-    description: 'ID of the arc this media belongs to',
-    example: 1,
-  })
-  @Column({ type: 'int', nullable: true })
-  arcId: number;
-
-  @ApiPropertyOptional({
-    description: 'Event this media belongs to',
-    type: () => Event,
-  })
-  @ManyToOne(() => Event, { nullable: true })
-  @JoinColumn({ name: 'eventId' })
-  event: Event;
-
-  @ApiPropertyOptional({
-    description: 'ID of the event this media belongs to',
-    example: 1,
-  })
-  @Column({ type: 'int', nullable: true })
-  eventId: number;
-
-  @ApiPropertyOptional({
-    description: 'Gamble this media belongs to',
-    type: () => Gamble,
-  })
-  @ManyToOne(() => Gamble, { nullable: true })
-  @JoinColumn({ name: 'gambleId' })
-  gamble: Gamble;
-
-  @ApiPropertyOptional({
-    description: 'ID of the gamble this media belongs to',
-    example: 1,
-  })
-  @Column({ type: 'int', nullable: true })
-  gambleId: number;
-
   @ApiProperty({
     description: 'Current status of the media',
     enum: MediaStatus,
@@ -153,6 +140,19 @@ export class Media {
   })
   @Column({ type: 'enum', enum: MediaStatus, default: MediaStatus.PENDING })
   status: MediaStatus;
+
+  @ApiProperty({
+    description:
+      'Purpose of the media - gallery for user uploads or entity display for official entity images',
+    enum: MediaPurpose,
+    default: MediaPurpose.GALLERY,
+  })
+  @Column({
+    type: 'enum',
+    enum: MediaPurpose,
+    default: MediaPurpose.GALLERY,
+  })
+  purpose: MediaPurpose;
 
   @ApiPropertyOptional({
     description: 'Reason for rejection if the media was rejected',

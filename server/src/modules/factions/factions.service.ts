@@ -2,10 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Faction } from '../../entities/faction.entity';
+import { MediaService } from '../media/media.service';
+import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
 
 @Injectable()
 export class FactionsService {
-  constructor(@InjectRepository(Faction) private repo: Repository<Faction>) {}
+  constructor(
+    @InjectRepository(Faction) private repo: Repository<Faction>,
+    private readonly mediaService: MediaService,
+  ) {}
 
   /**
    * Sorting: sort (id, name), order (ASC/DESC)
@@ -70,5 +75,134 @@ export class FactionsService {
     if (result.affected === 0)
       throw new NotFoundException(`Faction with ID ${id} not found`);
     return { deleted: true };
+  }
+
+  /**
+   * Get entity display media for faction thumbnails with spoiler protection
+   */
+  async getFactionEntityDisplayMedia(
+    factionId: number,
+    userProgress?: number,
+    options: {
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const faction = await this.findOne(factionId);
+
+    const result = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.FACTION,
+      factionId,
+      undefined,
+      {
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided and media has chapter number
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber
+          ? media.chapterNumber > userProgress
+          : false,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get gallery media for faction
+   */
+  async getFactionGalleryMedia(
+    factionId: number,
+    userProgress?: number,
+    options: {
+      chapter?: number;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const faction = await this.findOne(factionId);
+
+    const result = await this.mediaService.findForGallery(
+      MediaOwnerType.FACTION,
+      factionId,
+      {
+        chapter: options.chapter,
+        page: options.page,
+        limit: options.limit,
+      },
+    );
+
+    // Apply spoiler protection if user progress is provided and media has chapter number
+    if (userProgress !== undefined) {
+      result.data = result.data.map((media) => ({
+        ...media,
+        isSpoiler: media.chapterNumber
+          ? media.chapterNumber > userProgress
+          : false,
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get the current entity display media for faction thumbnail
+   * Default changes to the one with the latest chapter number within user progress
+   */
+  async getFactionCurrentThumbnail(factionId: number, userProgress?: number) {
+    const faction = await this.findOne(factionId);
+
+    // Get all entity display media for this faction
+    const allMedia = await this.mediaService.findForEntityDisplay(
+      MediaOwnerType.FACTION,
+      factionId,
+      undefined,
+      { limit: 100 }, // Get all to find the right one
+    );
+
+    if (allMedia.data.length === 0) {
+      return null;
+    }
+
+    let selectedMedia: any = null;
+
+    if (userProgress !== undefined) {
+      // Find the media with the highest chapter number that doesn't exceed user progress
+      const allowedMedia = allMedia.data.filter(
+        (media) => !media.chapterNumber || media.chapterNumber <= userProgress,
+      );
+
+      if (allowedMedia.length > 0) {
+        // Get the one with the highest chapter number within user progress
+        selectedMedia = allowedMedia.reduce((latest, current) => {
+          const latestChapter = latest.chapterNumber || 0;
+          const currentChapter = current.chapterNumber || 0;
+          return currentChapter > latestChapter ? current : latest;
+        });
+      }
+    } else {
+      // No user progress provided, get default or most recent
+      selectedMedia =
+        allMedia.data.find((media) => media.isDefault) || allMedia.data[0];
+    }
+
+    if (selectedMedia) {
+      const isSpoiler =
+        userProgress !== undefined &&
+        selectedMedia.chapterNumber &&
+        selectedMedia.chapterNumber > userProgress;
+
+      return {
+        ...selectedMedia,
+        isSpoiler,
+      };
+    }
+
+    return null;
   }
 }

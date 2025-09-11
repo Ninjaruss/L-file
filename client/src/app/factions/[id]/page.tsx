@@ -21,6 +21,7 @@ import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import SpoilerWrapper from '../../../components/SpoilerWrapper'
+import MediaThumbnail from '../../../components/MediaThumbnail'
 import { usePageView } from '../../../hooks/usePageView'
 
 interface Faction {
@@ -49,7 +50,20 @@ export default function FactionDetailPage() {
     const fetchFactionData = async () => {
       try {
         const id = Array.isArray(params.id) ? params.id[0] : params.id
+        
+        // Validate that ID is a valid number
+        if (!id || isNaN(Number(id))) {
+          setError('Invalid faction ID')
+          return
+        }
+        
         const factionIdNum = Number(id)
+        
+        // Additional safety check for negative or zero IDs
+        if (factionIdNum <= 0) {
+          setError('Invalid faction ID')
+          return
+        }
         
         // Fetch faction data
         const factionData = await api.getFaction(factionIdNum)
@@ -113,15 +127,54 @@ export default function FactionDetailPage() {
           Back to Factions
         </Button>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Shield size={48} color={theme.palette.secondary.main} />
-          </Box>
-          
-          <Typography variant="h3" component="h1" gutterBottom>
-            {faction.name}
-          </Typography>
-        </Box>
+        {/* Enhanced Faction Header */}
+        <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
+          <CardContent sx={{ p: 4 }}>
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={12} md={4} lg={3}>
+                <Box sx={{ 
+                  textAlign: 'center',
+                  position: 'relative'
+                }}>
+                  <MediaThumbnail
+                    entityType="faction"
+                    entityId={faction.id}
+                    entityName={faction.name}
+                    allowCycling={true}
+                    maxWidth={280}
+                    maxHeight={320}
+                    className="faction-thumbnail"
+                  />
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={8} lg={9}>
+                <Box sx={{ pl: { md: 2 } }}>
+                  {/* Faction Name with Gradient */}
+                  <Typography 
+                    variant="h2" 
+                    component="h1" 
+                    sx={{ 
+                      mb: 2,
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.secondary.main} 100%)`,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      color: 'transparent',
+                      fontSize: { xs: '2.5rem', md: '3rem' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2
+                    }}
+                  >
+                    <Shield size={40} color={theme.palette.secondary.main} />
+                    {faction.name}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
 
         <Grid container spacing={4}>
           <Grid item xs={12} md={8}>

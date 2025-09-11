@@ -58,7 +58,7 @@ function QuotesPageContent() {
         page,
         limit: 12,
         search: search || undefined,
-        characterId: characterId ? parseInt(characterId) : undefined
+        characterId: characterId && !isNaN(Number(characterId)) ? Number(characterId) : undefined
       })
       
       // Transform the API response to match the expected format
@@ -94,10 +94,13 @@ function QuotesPageContent() {
     fetchQuotes(currentPage, searchQuery, characterIdFilter)
     
     // Fetch character name for display
-    if (characterIdFilter && !characterName) {
-      api.getCharacter(parseInt(characterIdFilter))
-        .then(character => setCharacterName(character.name))
-        .catch(() => setCharacterName('Unknown'))
+    if (characterIdFilter && !characterName && !isNaN(Number(characterIdFilter))) {
+      const numericId = Number(characterIdFilter)
+      if (numericId > 0) {
+        api.getCharacter(numericId)
+          .then(character => setCharacterName(character.name))
+          .catch(() => setCharacterName('Unknown'))
+      }
     } else if (!characterIdFilter) {
       setCharacterName(null)
     }

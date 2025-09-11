@@ -34,14 +34,10 @@ interface MediaItem {
   description: string
   fileName?: string
   isUploaded?: boolean
-  character?: {
-    id: number
-    name: string
-  }
-  arc?: {
-    id: number
-    name: string
-  }
+  ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+  ownerId: number
+  chapterNumber?: number
+  purpose: 'gallery' | 'entity_display'
   submittedBy: {
     id: number
     username: string
@@ -50,16 +46,23 @@ interface MediaItem {
 }
 
 interface MediaGalleryProps {
-  characterId?: number
-  arcId?: number
+  ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+  ownerId?: number
+  purpose?: 'gallery' | 'entity_display'
   limit?: number
   showTitle?: boolean
   compactMode?: boolean
   showFilters?: boolean
   allowMultipleTypes?: boolean
+  // Legacy support - will be converted to polymorphic
+  characterId?: number
+  arcId?: number
 }
 
 export default function MediaGallery({ 
+  ownerType,
+  ownerId,
+  purpose,
   characterId, 
   arcId, 
   limit = 12, 
@@ -91,12 +94,32 @@ export default function MediaGallery({
       try {
         setLoading(true)
         
-        // Always attempt to fetch media
+        // Convert legacy props to polymorphic if needed
+        let finalOwnerType = ownerType
+        let finalOwnerId = ownerId
+        
+        if (!finalOwnerType && !finalOwnerId) {
+          if (characterId && !isNaN(characterId) && characterId > 0) {
+            finalOwnerType = 'character'
+            finalOwnerId = characterId
+          } else if (arcId && !isNaN(arcId) && arcId > 0) {
+            finalOwnerType = 'arc' 
+            finalOwnerId = arcId
+          }
+        }
+        
+        // Additional validation for polymorphic props
+        if (finalOwnerId && (isNaN(finalOwnerId) || finalOwnerId <= 0)) {
+          setError('Invalid entity ID for media')
+          return
+        }
+        
         const params = {
           page: 1,
           limit,
-          ...(characterId && { characterId }),
-          ...(arcId && { arcId })
+          ...(finalOwnerType && { ownerType: finalOwnerType }),
+          ...(finalOwnerId && { ownerId: finalOwnerId }),
+          ...(purpose && { purpose })
         }
         
         const response = await api.getApprovedMedia(params)
@@ -112,7 +135,7 @@ export default function MediaGallery({
     }
 
     fetchMedia()
-  }, [characterId, arcId, limit])
+  }, [ownerType, ownerId, purpose, characterId, arcId, limit])
 
   // Apply filters when filter states change
   useEffect(() => {
@@ -123,31 +146,16 @@ export default function MediaGallery({
       filtered = filtered.filter(item => item.type === selectedMediaType)
     }
 
-    // Filter by character (only if not already filtering by characterId prop)
-    if (!characterId && selectedCharacter !== 'all') {
-      filtered = filtered.filter(item => 
-        item.character?.name === selectedCharacter
-      )
-    }
-
-    // Filter by arc (only if not already filtering by arcId prop)
-    if (!arcId && selectedArc !== 'all') {
-      filtered = filtered.filter(item => 
-        item.arc?.name === selectedArc
-      )
-    }
+    // Note: Owner-specific filtering is now handled by the API call
+    // Additional filtering can be added here if needed for specific use cases
 
     setFilteredMedia(filtered)
-  }, [media, selectedMediaType, selectedCharacter, selectedArc, characterId, arcId])
+  }, [media, selectedMediaType])
 
-  // Get unique characters and arcs from media for filter options
-  const availableCharacters = Array.from(
-    new Set(media.filter(item => item.character).map(item => item.character!.name))
-  ).sort()
-  
-  const availableArcs = Array.from(
-    new Set(media.filter(item => item.arc).map(item => item.arc!.name))
-  ).sort()
+  // Since we're now using polymorphic ownership, we don't have separate character/arc objects
+  // These could be populated from API calls if needed for filtering
+  const availableCharacters: string[] = []
+  const availableArcs: string[] = []
 
   const handleMediaClick = (mediaItem: MediaItem) => {
     const mediaIndex = filteredMedia.findIndex(m => m.id === mediaItem.id)
@@ -290,7 +298,7 @@ export default function MediaGallery({
   }
 
   if (media.length === 0) {
-    const contextType = characterId ? 'character' : arcId ? 'arc' : 'content'
+    const contextType = ownerType || (characterId ? 'character' : arcId ? 'arc' : 'content')
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
         <Typography variant="h6" gutterBottom color="text.secondary">
@@ -331,41 +339,7 @@ export default function MediaGallery({
               </FormControl>
             </Grid>
             
-            {!characterId && availableCharacters.length > 0 && (
-              <Grid item xs={12} sm={4}>
-                <FormControl size="small" fullWidth>
-                  <InputLabel>Character</InputLabel>
-                  <Select
-                    value={selectedCharacter}
-                    label="Character"
-                    onChange={(e) => setSelectedCharacter(e.target.value)}
-                  >
-                    <MenuItem value="all">All Characters</MenuItem>
-                    {availableCharacters.map(name => (
-                      <MenuItem key={name} value={name}>{name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            )}
-
-            {!arcId && availableArcs.length > 0 && (
-              <Grid item xs={12} sm={4}>
-                <FormControl size="small" fullWidth>
-                  <InputLabel>Arc</InputLabel>
-                  <Select
-                    value={selectedArc}
-                    label="Arc"
-                    onChange={(e) => setSelectedArc(e.target.value)}
-                  >
-                    <MenuItem value="all">All Arcs</MenuItem>
-                    {availableArcs.map(name => (
-                      <MenuItem key={name} value={name}>{name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            )}
+            {/* Additional filters can be added here if needed */}
           </Grid>
         </Box>
       )}
@@ -492,7 +466,7 @@ export default function MediaGallery({
                     </Typography>
                   </Box>
 
-                  {/* Character/Arc indicators */}
+                  {/* Owner type indicator */}
                   <Box
                     sx={{
                       position: 'absolute',
@@ -505,26 +479,25 @@ export default function MediaGallery({
                       justifyContent: 'flex-start'
                     }}
                   >
-                    {mediaItem.character && (
+                    <Chip
+                      label={`${mediaItem.ownerType} ${mediaItem.ownerId}`}
+                      size="small"
+                      color="primary"
+                      variant="filled"
+                      sx={{
+                        fontSize: '0.7rem',
+                        height: '22px',
+                        backgroundColor: 'rgba(25, 118, 210, 0.95)',
+                        color: 'white',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        fontWeight: 600,
+                        textTransform: 'capitalize'
+                      }}
+                    />
+                    {mediaItem.purpose === 'entity_display' && (
                       <Chip
-                        label={mediaItem.character.name}
-                        size="small"
-                        color="primary"
-                        variant="filled"
-                        sx={{
-                          fontSize: '0.7rem',
-                          height: '22px',
-                          backgroundColor: 'rgba(25, 118, 210, 0.95)',
-                          color: 'white',
-                          backdropFilter: 'blur(10px)',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          fontWeight: 600
-                        }}
-                      />
-                    )}
-                    {mediaItem.arc && (
-                      <Chip
-                        label={mediaItem.arc.name}
+                        label="Official"
                         size="small"
                         color="secondary"
                         variant="filled"
@@ -883,15 +856,17 @@ export default function MediaGallery({
                     <strong>Added:</strong> {new Date(selectedMedia.createdAt).toLocaleDateString()}
                   </Typography>
                   
-                  {selectedMedia.character && (
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Character:</strong> {selectedMedia.character.name}
-                    </Typography>
-                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Owner:</strong> {selectedMedia.ownerType} {selectedMedia.ownerId}
+                  </Typography>
                   
-                  {selectedMedia.arc && (
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Purpose:</strong> {selectedMedia.purpose.replace('_', ' ')}
+                  </Typography>
+                  
+                  {selectedMedia.chapterNumber && (
                     <Typography variant="body2" color="text.secondary">
-                      <strong>Arc:</strong> {selectedMedia.arc.name}
+                      <strong>Chapter:</strong> {selectedMedia.chapterNumber}
                     </Typography>
                   )}
                 </Box>

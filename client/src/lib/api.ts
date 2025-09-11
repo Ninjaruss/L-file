@@ -510,8 +510,23 @@ class ApiClient {
   async submitMedia(data: {
     url: string
     type: 'image' | 'video' | 'audio'
-    characterId?: number
-    arcId?: number
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerId: number
+    chapterNumber?: number
+    isDefault?: boolean
+    purpose?: 'gallery' | 'entity_display'
+    description?: string
+  }) {
+    return this.post<any>('/media', data)
+  }
+
+  async submitMediaPolymorphic(data: {
+    url: string
+    type: 'image' | 'video' | 'audio'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerId: number
+    chapterNumber?: number
+    isDefault?: boolean
     description?: string
   }) {
     return this.post<any>('/media', data)
@@ -532,18 +547,22 @@ class ApiClient {
 
   async uploadMedia(file: File, data: {
     type: 'image' | 'video' | 'audio'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerId: number
+    chapterNumber?: number
+    isDefault?: boolean
+    purpose?: 'gallery' | 'entity_display'
     description?: string
-    characterId?: number
-    arcId?: number
-    eventId?: number
   }) {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('type', data.type)
+    formData.append('ownerType', data.ownerType)
+    formData.append('ownerId', data.ownerId.toString())
     if (data.description) formData.append('description', data.description)
-    if (data.characterId) formData.append('characterId', data.characterId.toString())
-    if (data.arcId) formData.append('arcId', data.arcId.toString())
-    if (data.eventId) formData.append('eventId', data.eventId.toString())
+    if (data.chapterNumber) formData.append('chapterNumber', data.chapterNumber.toString())
+    if (data.isDefault) formData.append('isDefault', data.isDefault.toString())
+    if (data.purpose) formData.append('purpose', data.purpose)
 
     return this.request<any>('/media/upload', {
       method: 'POST',
@@ -889,8 +908,9 @@ class ApiClient {
     page?: number
     limit?: number
     type?: string
-    characterId?: number
-    arcId?: number
+    ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerId?: number
+    purpose?: 'gallery' | 'entity_display'
   }) {
     const searchParams = new URLSearchParams()
     if (params) {
@@ -908,6 +928,101 @@ class ApiClient {
       perPage: number
       totalPages: number
     }>(`/media/public${query ? `?${query}` : ''}`)
+  }
+
+  async getMediaForOwner(
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user',
+    ownerId: number,
+    params?: {
+      chapter?: number
+      type?: string
+      page?: number
+      limit?: number
+    }
+  ) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      perPage: number
+      totalPages: number
+    }>(`/media/owner/${ownerType}/${ownerId}${query ? `?${query}` : ''}`)
+  }
+
+  async getDefaultMediaForOwner(
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user',
+    ownerId: number
+  ) {
+    return this.get<any>(`/media/owner/${ownerType}/${ownerId}/default`)
+  }
+
+  async getEntityDisplayMedia(
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user',
+    ownerId: number,
+    params?: {
+      chapter?: number
+      type?: string
+      page?: number
+      limit?: number
+    }
+  ) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      perPage: number
+      totalPages: number
+    }>(`/media/entity-display/${ownerType}/${ownerId}${query ? `?${query}` : ''}`)
+  }
+
+  async getGalleryMedia(
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user',
+    ownerId: number,
+    params?: {
+      chapter?: number
+      type?: string
+      page?: number
+      limit?: number
+    }
+  ) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      perPage: number
+      totalPages: number
+    }>(`/media/gallery/${ownerType}/${ownerId}${query ? `?${query}` : ''}`)
+  }
+
+  async setMediaAsDefault(mediaId: number) {
+    return this.put<any>(`/media/${mediaId}/set-default`, {})
   }
 
   async createArc(data: any) {

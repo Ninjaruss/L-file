@@ -26,27 +26,6 @@ export class CharacterResponseDto {
   firstAppearanceChapter?: number;
 
   @ApiPropertyOptional({
-    description: 'Notable roles or positions',
-    type: [String],
-  })
-  notableRoles?: string[];
-
-  @ApiPropertyOptional({
-    description: 'Notable games participated in',
-    type: [String],
-  })
-  notableGames?: string[];
-
-  @ApiPropertyOptional({ description: "Character's occupation" })
-  occupation?: string;
-
-  @ApiPropertyOptional({
-    description: 'Other affiliations',
-    type: [String],
-  })
-  affiliations?: string[];
-
-  @ApiPropertyOptional({
     description: 'First major story arc',
     type: () => Arc,
   })

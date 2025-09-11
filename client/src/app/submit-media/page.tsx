@@ -36,17 +36,40 @@ interface Arc {
   name: string
 }
 
+interface Event {
+  id: number
+  title: string
+}
+
+interface Gamble {
+  id: number
+  name: string
+}
+
+interface Faction {
+  id: number
+  name: string
+}
+
+type MediaOwnerType = 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+
 export default function SubmitMediaPage() {
   const { user, loading: authLoading } = useAuth()
   const theme = useTheme()
   const [formData, setFormData] = useState({
     url: '',
-    characterId: null as number | null,
-    arcId: null as number | null,
-    description: ''
+    description: '',
+    ownerType: '' as MediaOwnerType | '',
+    ownerId: null as number | null,
+    chapterNumber: null as number | null,
+    isDefault: false
   })
   const [characters, setCharacters] = useState<Character[]>([])
   const [arcs, setArcs] = useState<Arc[]>([])
+  const [events, setEvents] = useState<Event[]>([])
+  const [gambles, setGambles] = useState<Gamble[]>([])
+  const [factions, setFactions] = useState<Faction[]>([])
+  const [users, setUsers] = useState<{id: number, username: string}[]>([])
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState('')
@@ -58,12 +81,20 @@ export default function SubmitMediaPage() {
     const fetchData = async () => {
       try {
         setDataLoading(true)
-        const [charactersResponse, arcsResponse] = await Promise.all([
+        const [charactersResponse, arcsResponse, eventsResponse, gamblesResponse, factionsResponse, usersResponse] = await Promise.all([
           api.getCharacters({ limit: 100 }),
-          api.getArcs({ limit: 100 })
+          api.getArcs({ limit: 100 }),
+          api.getEvents({ limit: 100 }),
+          api.getGambles({ limit: 100 }),
+          api.getFactions({ limit: 100 }),
+          api.getPublicUsers({ limit: 100 })
         ])
         setCharacters(charactersResponse.data)
         setArcs(arcsResponse.data)
+        setEvents(eventsResponse.data)
+        setGambles(gamblesResponse.data)
+        setFactions(factionsResponse.data)
+        setUsers(usersResponse.data)
       } catch (error) {
         console.error('Failed to fetch data:', error)
       } finally {
@@ -74,7 +105,7 @@ export default function SubmitMediaPage() {
     fetchData()
   }, [])
 
-  const handleInputChange = (field: string, value: string | number | null) => {
+  const handleInputChange = (field: string, value: string | number | boolean | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -93,21 +124,30 @@ export default function SubmitMediaPage() {
 
     try {
       const mediaType = getMediaType(formData.url)
-      await api.submitMedia({
+      
+      // Validate that an owner is selected
+      if (!formData.ownerType || !formData.ownerId) {
+        throw new Error('Please select a related entity (character, arc, event, etc.)')
+      }
+      
+      await api.submitMediaPolymorphic({
         url: formData.url,
         type: mediaType,
-        characterId: formData.characterId || undefined,
-        arcId: formData.arcId || undefined,
+        ownerType: formData.ownerType,
+        ownerId: formData.ownerId,
+        chapterNumber: formData.chapterNumber || undefined,
+        isDefault: formData.isDefault,
         description: formData.description
       })
       setSuccess('Media submitted successfully! It will be reviewed by moderators.')
       setFormData({
         url: '',
-        characterId: null,
-        arcId: null,
-        description: ''
+        description: '',
+        ownerType: '',
+        ownerId: null,
+        chapterNumber: null,
+        isDefault: false
       })
-      // setUrlPreview('')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Failed to submit media')
     } finally {
@@ -117,9 +157,11 @@ export default function SubmitMediaPage() {
   const handleUpload = async (file: File, uploadData: {
     type: 'image' | 'video' | 'audio'
     description?: string
-    characterId?: number
-    arcId?: number
-    eventId?: number
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerId: number
+    chapterNumber?: number
+    isDefault?: boolean
+    purpose?: 'gallery' | 'entity_display'
   }) => {
     setError('')
     setSuccess('')
@@ -265,53 +307,107 @@ export default function SubmitMediaPage() {
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth disabled={dataLoading}>
-                      <InputLabel>Related Character (Optional)</InputLabel>
+                    <FormControl fullWidth disabled={dataLoading} required>
+                      <InputLabel>Related Entity *</InputLabel>
                       <Select
-                        value={formData.characterId || ''}
-                        label="Related Character (Optional)"
-                        onChange={(e) => handleInputChange('characterId', e.target.value || null)}
+                        value={formData.ownerType}
+                        label="Related Entity *"
+                        onChange={(e) => {
+                          handleInputChange('ownerType', e.target.value)
+                          handleInputChange('ownerId', null) // Reset owner ID when type changes
+                        }}
                       >
                         <MenuItem value="">
-                          <em>None</em>
+                          <em>Select entity type...</em>
                         </MenuItem>
-                        {dataLoading ? (
-                          <MenuItem value="" disabled>
-                            Loading characters...
-                          </MenuItem>
-                        ) : (
-                          characters.map((character) => (
-                            <MenuItem key={character.id} value={character.id}>
-                              {character.name}
-                            </MenuItem>
-                          ))
-                        )}
+                        <MenuItem value="character">Character</MenuItem>
+                        <MenuItem value="arc">Arc</MenuItem>
+                        <MenuItem value="event">Event</MenuItem>
+                        <MenuItem value="gamble">Gamble</MenuItem>
+                        <MenuItem value="faction">Faction</MenuItem>
+                        <MenuItem value="user">User</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth disabled={dataLoading}>
-                      <InputLabel>Related Arc (Optional)</InputLabel>
+                    <FormControl fullWidth disabled={dataLoading || !formData.ownerType} required>
+                      <InputLabel>Specific Entity *</InputLabel>
                       <Select
-                        value={formData.arcId || ''}
-                        label="Related Arc (Optional)"
-                        onChange={(e) => handleInputChange('arcId', e.target.value || null)}
+                        value={formData.ownerId || ''}
+                        label="Specific Entity *"
+                        onChange={(e) => handleInputChange('ownerId', e.target.value || null)}
                       >
                         <MenuItem value="">
-                          <em>None</em>
+                          <em>{!formData.ownerType ? 'Select entity type first' : `Choose ${formData.ownerType}...`}</em>
                         </MenuItem>
                         {dataLoading ? (
                           <MenuItem value="" disabled>
-                            Loading arcs...
+                            Loading...
                           </MenuItem>
-                        ) : (
+                        ) : formData.ownerType === 'character' ? (
+                          characters.map((character) => (
+                            <MenuItem key={character.id} value={character.id}>
+                              {character.name}
+                            </MenuItem>
+                          ))
+                        ) : formData.ownerType === 'arc' ? (
                           arcs.map((arc) => (
                             <MenuItem key={arc.id} value={arc.id}>
                               {arc.name}
                             </MenuItem>
                           ))
-                        )}
+                        ) : formData.ownerType === 'event' ? (
+                          events.map((event) => (
+                            <MenuItem key={event.id} value={event.id}>
+                              {event.title}
+                            </MenuItem>
+                          ))
+                        ) : formData.ownerType === 'gamble' ? (
+                          gambles.map((gamble) => (
+                            <MenuItem key={gamble.id} value={gamble.id}>
+                              {gamble.name}
+                            </MenuItem>
+                          ))
+                        ) : formData.ownerType === 'faction' ? (
+                          factions.map((faction) => (
+                            <MenuItem key={faction.id} value={faction.id}>
+                              {faction.name}
+                            </MenuItem>
+                          ))
+                        ) : formData.ownerType === 'user' ? (
+                          users.map((user) => (
+                            <MenuItem key={user.id} value={user.id}>
+                              {user.username}
+                            </MenuItem>
+                          ))
+                        ) : null}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Chapter Number (Optional)"
+                      placeholder="e.g. 45"
+                      value={formData.chapterNumber || ''}
+                      onChange={(e) => handleInputChange('chapterNumber', e.target.value ? parseInt(e.target.value) : null)}
+                      helperText="Associate with a specific chapter"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Set as Default</InputLabel>
+                      <Select
+                        value={formData.isDefault.toString()}
+                        label="Set as Default"
+                        onChange={(e) => handleInputChange('isDefault', e.target.value === 'true')}
+                      >
+                        <MenuItem value="false">No</MenuItem>
+                        <MenuItem value="true">Yes - Make this the default media for this entity</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -335,7 +431,7 @@ export default function SubmitMediaPage() {
                       variant="contained"
                       size="large"
                       fullWidth
-                      disabled={loading || !formData.url}
+                      disabled={loading || !formData.url || !formData.ownerType || !formData.ownerId}
                       startIcon={loading ? <CircularProgress size={20} /> : <Upload size={20} />}
                     >
                       {loading ? 'Submitting...' : 'Submit Media'}
@@ -360,6 +456,10 @@ export default function SubmitMediaPage() {
                   onUpload={handleUpload}
                   characters={characters}
                   arcs={arcs}
+                  events={events}
+                  gambles={gambles}
+                  factions={factions}
+                  users={users}
                   loading={loading}
                   dataLoading={dataLoading}
                   error={error}

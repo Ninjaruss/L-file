@@ -403,12 +403,10 @@ export class GuidesService {
         characters: {
           id: true,
           name: true,
-          imageFileName: true,
         },
         arc: {
           id: true,
           name: true,
-          imageFileName: true,
         },
         gambles: {
           id: true,
