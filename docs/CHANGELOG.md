@@ -8,6 +8,9 @@
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 
+## 2025-09-11
+- Overhauled media to now support polymorphic ownership; added entity purpose
+
 ## 2025-09-10
 ### Changes
 - Fixed arc relation for events/gambles admin pages
