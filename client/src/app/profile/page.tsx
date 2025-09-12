@@ -32,7 +32,7 @@ import {
   Tooltip,
   useTheme
 } from '@mui/material'
-import { User, Settings, Crown, BookOpen, Save, X, Camera, Search, AlertTriangle } from 'lucide-react'
+import { User, Settings, Crown, BookOpen, Save, X, Camera, Search, AlertTriangle, Quote, Dices, Edit } from 'lucide-react'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useAuth } from '../../providers/AuthProvider'
 import { useProgress } from '../../providers/ProgressProvider'
@@ -40,6 +40,9 @@ import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import UserProfileImage from '../../components/UserProfileImage'
+import GambleChip from '../../components/GambleChip'
+import QuoteSelectionPopup from '../../components/QuoteSelectionPopup'
+import GambleSelectionPopup from '../../components/GambleSelectionPopup'
 
 // Profile Picture Spoiler Wrapper - matches CharacterTimeline spoiler behavior
 function ProfilePictureSpoilerWrapper({ 
@@ -177,8 +180,8 @@ export default function ProfilePage() {
     title: string | null
     summary: string | null
   } | null>(null)
-  const [quotes, setQuotes] = useState<Array<{ id: number; text: string; character: string }>>([])
-  const [gambles, setGambles] = useState<Array<{ id: number; name: string; description?: string }>>([])
+  const [quotes, setQuotes] = useState<Array<{ id: number; text: string; character: string; chapterNumber: number }>>([])
+  const [gambles, setGambles] = useState<Array<{ id: number; name: string; rules?: string }>>([])
   const [characterMedia, setCharacterMedia] = useState<Array<{
     id: number
     url: string
@@ -193,6 +196,8 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [profilePictureModalOpen, setProfilePictureModalOpen] = useState(false)
+  const [quoteSelectionOpen, setQuoteSelectionOpen] = useState(false)
+  const [gambleSelectionOpen, setGambleSelectionOpen] = useState(false)
   const [characterSearchTerm, setCharacterSearchTerm] = useState('')
   const [selectedTab, setSelectedTab] = useState(0) // 0 = Discord, 1 = Character Media
 
@@ -225,7 +230,8 @@ export default function ProfilePage() {
         const formattedQuotes = quotesResponse.data.map((quote: any) => ({
           id: quote.id,
           text: quote.text,
-          character: quote.character?.name || 'Unknown'
+          character: quote.character?.name || 'Unknown',
+          chapterNumber: quote.chapter?.number || 0
         }))
         
         // Format gambles for display
@@ -586,6 +592,170 @@ export default function ProfilePage() {
                     </Typography>
                   </Box>
                 </Box>
+
+                {/* Favorites Section */}
+                {(user.favoriteQuoteId || user.favoriteGambleId) && (
+                  <Box sx={{ 
+                    mt: 3, 
+                    p: 2, 
+                    bgcolor: 'action.hover', 
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}>
+                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+                      Favorites
+                    </Typography>
+                    
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: { xs: 'column', md: 'row' }, 
+                      gap: 3,
+                      alignItems: { xs: 'flex-start', md: 'flex-start' }
+                    }}>
+                      {user.favoriteQuoteId && (
+                        <Box sx={{ flex: 1 }}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            mb: 1,
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8 }
+                          }}
+                          onClick={() => setQuoteSelectionOpen(true)}
+                          >
+                            <Quote size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Favorite Quote
+                            </Typography>
+                            <Edit size={12} />
+                          </Box>
+                          <Box sx={{ maxWidth: '400px' }}>
+                            {(() => {
+                              const quote = quotes.find(q => q.id === user.favoriteQuoteId)
+                              return quote ? (
+                                <Box>
+                                  <Typography variant="body2" sx={{ 
+                                    fontStyle: 'italic',
+                                    mb: 1,
+                                    overflow: 'hidden',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    lineHeight: 1.4
+                                  }}>
+                                    "{quote.text}"
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                    <Chip 
+                                      label={quote.character} 
+                                      size="small" 
+                                      variant="outlined"
+                                    />
+                                    <Chip 
+                                      label={`Ch. ${quote.chapterNumber}`} 
+                                      size="small" 
+                                      variant="outlined"
+                                      color="primary"
+                                    />
+                                  </Box>
+                                </Box>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">Loading...</Typography>
+                              )
+                            })()}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {user.favoriteGambleId && (
+                        <Box>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            mb: 1,
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8 }
+                          }}
+                          onClick={() => setGambleSelectionOpen(true)}
+                          >
+                            <Dices size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Favorite Gamble
+                            </Typography>
+                            <Edit size={12} />
+                          </Box>
+                          {(() => {
+                            const gamble = gambles.find(g => g.id === user.favoriteGambleId)
+                            return gamble ? (
+                              <GambleChip gamble={gamble} size="small" />
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">Loading...</Typography>
+                            )
+                          })()}
+                        </Box>
+                      )}
+
+                      {!user.favoriteQuoteId && !user.favoriteGambleId && (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            startIcon={<Quote size={16} />}
+                            onClick={() => setQuoteSelectionOpen(true)}
+                          >
+                            Add Quote
+                          </Button>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            startIcon={<Dices size={16} />}
+                            onClick={() => setGambleSelectionOpen(true)}
+                          >
+                            Add Gamble
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Add Favorites Section if none exist */}
+                {!user.favoriteQuoteId && !user.favoriteGambleId && (
+                  <Box sx={{ 
+                    mt: 3, 
+                    p: 2, 
+                    bgcolor: 'action.hover', 
+                    borderRadius: 2,
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      No favorites selected yet
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mt: 1 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined" 
+                        startIcon={<Quote size={16} />}
+                        onClick={() => setQuoteSelectionOpen(true)}
+                      >
+                        Add Quote
+                      </Button>
+                      <Button 
+                        size="small" 
+                        variant="outlined" 
+                        startIcon={<Dices size={16} />}
+                        onClick={() => setGambleSelectionOpen(true)}
+                      >
+                        Add Gamble
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Box>
           </CardContent>
@@ -654,80 +824,10 @@ export default function ProfilePage() {
                   </Typography>
                 </Box>
 
-                {/* Current Favorites Display */}
-                {(user.favoriteQuoteId || user.favoriteGambleId) && (
-                  <Box sx={{ mb: 3, p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Current Favorites
-                    </Typography>
-                    {user.favoriteQuoteId && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Favorite Quote
-                        </Typography>
-                        <Typography variant="body1">
-                          {(() => {
-                            const quote = quotes.find(q => q.id === user.favoriteQuoteId)
-                            return quote ? `"${quote.text}" - ${quote.character}` : 'Loading...'
-                          })()}
-                        </Typography>
-                      </Box>
-                    )}
-                    {user.favoriteGambleId && (
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Favorite Gamble
-                        </Typography>
-                        <Typography variant="body1">
-                          {(() => {
-                            const gamble = gambles.find(g => g.id === user.favoriteGambleId)
-                            return gamble ? gamble.name : 'Loading...'
-                          })()}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                )}
-
-                <Box sx={{ mb: 3 }}>
-                  <FormControl fullWidth disabled={dataLoading}>
-                    <InputLabel>Favorite Quote</InputLabel>
-                    <Select
-                      value={selectedQuote || ''}
-                      label="Favorite Quote"
-                      onChange={(e) => setSelectedQuote(e.target.value as number)}
-                    >
-                      <MenuItem value="">
-                        <em>None</em>
-                      </MenuItem>
-                      {quotes.map((quote) => (
-                        <MenuItem key={quote.id} value={quote.id}>
-                          &ldquo;{quote.text}&rdquo; - {quote.character}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <FormControl fullWidth disabled={dataLoading}>
-                    <InputLabel>Favorite Gamble</InputLabel>
-                    <Select
-                      value={selectedGamble || ''}
-                      label="Favorite Gamble"
-                      onChange={(e) => setSelectedGamble(e.target.value as number)}
-                    >
-                      <MenuItem value="">
-                        <em>None</em>
-                      </MenuItem>
-                      {gambles.map((gamble) => (
-                        <MenuItem key={gamble.id} value={gamble.id}>
-                          {gamble.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Your favorite quote and gamble can now be managed from the profile header above.
+                  Other preferences and settings will be available here in the future.
+                </Typography>
 
                 <Button
                   variant="contained"
@@ -1159,6 +1259,78 @@ export default function ProfilePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Quote Selection Popup */}
+      <QuoteSelectionPopup
+        open={quoteSelectionOpen}
+        onClose={() => setQuoteSelectionOpen(false)}
+        quotes={quotes}
+        selectedQuoteId={selectedQuote}
+        onSelectQuote={async (quoteId) => {
+          setSelectedQuote(quoteId)
+          
+          // Auto-save the selection with the new value
+          setLoading(true)
+          setError('')
+          setSuccess('')
+
+          try {
+            const updateData: {
+              favoriteQuoteId?: number | null
+            } = {
+              favoriteQuoteId: quoteId
+            }
+
+            console.log('Sending quote update data:', updateData)
+            
+            await api.updateProfile(updateData)
+            await refreshUser()
+            setSuccess('Favorite quote updated successfully!')
+          } catch (error: unknown) {
+            console.error('Quote update error:', error)
+            setError(error instanceof Error ? error.message : 'Failed to update favorite quote')
+          } finally {
+            setLoading(false)
+          }
+        }}
+        loading={loading}
+      />
+
+      {/* Gamble Selection Popup */}
+      <GambleSelectionPopup
+        open={gambleSelectionOpen}
+        onClose={() => setGambleSelectionOpen(false)}
+        gambles={gambles}
+        selectedGambleId={selectedGamble}
+        onSelectGamble={async (gambleId) => {
+          setSelectedGamble(gambleId)
+          
+          // Auto-save the selection with the new value
+          setLoading(true)
+          setError('')
+          setSuccess('')
+
+          try {
+            const updateData: {
+              favoriteGambleId?: number | null
+            } = {
+              favoriteGambleId: gambleId
+            }
+
+            console.log('Sending gamble update data:', updateData)
+            
+            await api.updateProfile(updateData)
+            await refreshUser()
+            setSuccess('Favorite gamble updated successfully!')
+          } catch (error: unknown) {
+            console.error('Gamble update error:', error)
+            setError(error instanceof Error ? error.message : 'Failed to update favorite gamble')
+          } finally {
+            setLoading(false)
+          }
+        }}
+        loading={loading}
+      />
 
     </Container>
   )

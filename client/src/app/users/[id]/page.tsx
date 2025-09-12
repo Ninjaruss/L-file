@@ -16,7 +16,7 @@ import {
   Avatar,
   LinearProgress
 } from '@mui/material'
-import { ArrowLeft, User, Crown, BookOpen, FileText } from 'lucide-react'
+import { ArrowLeft, User, Crown, BookOpen, FileText, Quote, Dices } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -24,6 +24,7 @@ import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import UserProfileImage from '../../../components/UserProfileImage'
+import GambleChip from '../../../components/GambleChip'
 
 interface PublicUser {
   id: number
@@ -279,6 +280,97 @@ export default function UserProfilePage() {
                     </Box>
                   </Box>
                 </Box>
+
+                {/* Favorites Section */}
+                {(favoriteQuote || favoriteGamble) && (
+                  <Box sx={{ 
+                    mt: 3, 
+                    p: 2, 
+                    bgcolor: 'action.hover', 
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}>
+                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+                      Favorites
+                    </Typography>
+                    
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: { xs: 'column', md: 'row' }, 
+                      gap: 3,
+                      alignItems: { xs: 'flex-start', md: 'flex-start' }
+                    }}>
+                      {favoriteQuote && (
+                        <Box sx={{ flex: 1 }}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            mb: 1
+                          }}>
+                            <Quote size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Favorite Quote
+                            </Typography>
+                          </Box>
+                          <Box sx={{ maxWidth: '400px' }}>
+                            <Typography variant="body2" sx={{ 
+                              fontStyle: 'italic',
+                              mb: 1,
+                              overflow: 'hidden',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: 1.4
+                            }}>
+                              "{favoriteQuote.text}"
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                              <Chip 
+                                label={favoriteQuote.character?.name || 'Unknown'} 
+                                size="small" 
+                                variant="outlined"
+                              />
+                              {favoriteQuote.chapterNumber && (
+                                <Chip 
+                                  label={`Ch. ${favoriteQuote.chapterNumber}`} 
+                                  size="small" 
+                                  variant="outlined"
+                                  color="primary"
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {favoriteGamble && (
+                        <Box>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            mb: 1
+                          }}>
+                            <Dices size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Favorite Gamble
+                            </Typography>
+                          </Box>
+                          <GambleChip 
+                            gamble={{
+                              id: favoriteGamble.id,
+                              name: favoriteGamble.name,
+                              rules: favoriteGamble.rules
+                            }} 
+                            size="small" 
+                          />
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Box>
           </CardContent>
@@ -332,62 +424,6 @@ export default function UserProfilePage() {
 
         <Grid container spacing={4}>
           <Grid item xs={12} md={8}>
-            {/* Favorite Items Section */}
-            {(favoriteQuote || favoriteGamble) && (
-              <Card className="gambling-card" sx={{ mb: 4 }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Favorites
-                  </Typography>
-                  
-                  {favoriteQuote && (
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="h6" gutterBottom>
-                        Favorite Quote
-                      </Typography>
-                      <Box sx={{ 
-                        p: 2, 
-                        border: 1, 
-                        borderColor: 'divider', 
-                        borderRadius: 1,
-                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
-                      }}>
-                        <Typography variant="body1" sx={{ fontStyle: 'italic', mb: 1 }}>
-                          "{favoriteQuote.text}"
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          — {favoriteQuote.character?.name || 'Unknown'}, Ch. {favoriteQuote.chapterNumber}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
-
-                  {favoriteGamble && (
-                    <Box>
-                      <Typography variant="h6" gutterBottom>
-                        Favorite Gamble
-                      </Typography>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Typography 
-                            variant="h6" 
-                            component={Link} 
-                            href={`/gambles/${favoriteGamble.id}`}
-                            sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
-                          >
-                            {favoriteGamble.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            {favoriteGamble.rules}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
             {/* User's Guides Section */}
             {guides.length > 0 && (
               <Card className="gambling-card">
