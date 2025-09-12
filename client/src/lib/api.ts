@@ -623,6 +623,14 @@ class ApiClient {
     return this.put<{ message: string; userProgress: number }>('/users/profile/progress', { userProgress })
   }
 
+  async getUserProfileStats() {
+    return this.get<{
+      guidesWritten: number
+      mediaSubmitted: number
+      likesReceived: number
+    }>('/users/profile/stats')
+  }
+
   // Chapter methods
   async getChapters(params?: {
     title?: string

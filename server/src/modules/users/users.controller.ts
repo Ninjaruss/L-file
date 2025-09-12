@@ -775,6 +775,46 @@ export class UsersController {
     };
   }
 
+  @Get('profile/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get current user profile statistics',
+    description:
+      'Get statistics for the current user including guides written, media submitted, and likes received',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile statistics',
+    schema: {
+      type: 'object',
+      properties: {
+        guidesWritten: { 
+          type: 'number', 
+          example: 5,
+          description: 'Number of published guides written by the user'
+        },
+        mediaSubmitted: { 
+          type: 'number', 
+          example: 12,
+          description: 'Total number of media submissions by the user'
+        },
+        likesReceived: { 
+          type: 'number', 
+          example: 28,
+          description: 'Total number of likes received on all published guides'
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getUserProfileStats(
+    @CurrentUser() user: User,
+  ): Promise<{ guidesWritten: number; mediaSubmitted: number; likesReceived: number }> {
+    return this.service.getUserProfileStats(user.id);
+  }
+
 
   // --- Statistics endpoints ---
   @Get('stats/quote-popularity')

@@ -13,10 +13,6 @@ import {
   Button,
   Alert,
   CircularProgress,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,9 +26,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Tooltip,
-  useTheme
+  useTheme,
+  LinearProgress
 } from '@mui/material'
-import { User, Settings, Crown, BookOpen, Save, X, Camera, Search, AlertTriangle, Quote, Dices, Edit } from 'lucide-react'
+import { User, Crown, Save, X, Camera, Search, AlertTriangle, Quote, Dices, Edit, BookOpen } from 'lucide-react'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useAuth } from '../../providers/AuthProvider'
 import { useProgress } from '../../providers/ProgressProvider'
@@ -168,12 +165,11 @@ function ProfilePictureSpoilerWrapper({
 }
 
 export default function ProfilePage() {
-  const { user, refreshUser, logout, loading: authLoading } = useAuth()
-  const { userProgress, updateProgress } = useProgress()
+  const { user, refreshUser, loading: authLoading } = useAuth()
+  const { userProgress } = useProgress()
   const [selectedQuote, setSelectedQuote] = useState<number | null>(null)
   const [selectedGamble, setSelectedGamble] = useState<number | null>(null)
   const [selectedCharacterMedia, setSelectedCharacterMedia] = useState<number | null>(null)
-  const [selectedChapter, setSelectedChapter] = useState<number>(1)
   const [currentChapterInfo, setCurrentChapterInfo] = useState<{
     id: number
     number: number
@@ -190,8 +186,12 @@ export default function ProfilePage() {
     character: { id: number; name: string }
     chapterNumber: number
   }>>([])
+  const [userStats, setUserStats] = useState<{
+    guidesWritten: number
+    mediaSubmitted: number
+    likesReceived: number
+  } | null>(null)
   const [loading, setLoading] = useState(false)
-  const [progressLoading, setProgressLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -217,8 +217,6 @@ export default function ProfilePage() {
         } else {
           setSelectedCharacterMedia(null) // null represents Discord profile (default)
         }
-        
-        setSelectedChapter(userProgress)
 
         // Fetch quotes and gambles from API
         const [quotesResponse, gamblesResponse] = await Promise.all([
@@ -292,6 +290,20 @@ export default function ProfilePage() {
             })
           }
         }
+
+        // Fetch user profile stats
+        try {
+          const userStatsResponse = await api.getUserProfileStats()
+          setUserStats(userStatsResponse)
+        } catch (error) {
+          console.error('Failed to fetch user stats:', error)
+          // Set fallback stats
+          setUserStats({
+            guidesWritten: 0,
+            mediaSubmitted: 0,
+            likesReceived: 0
+          })
+        }
       } catch (error) {
         console.error('Failed to fetch profile data:', error)
         setError('Failed to load profile data. Some features may not work properly.')
@@ -307,79 +319,6 @@ export default function ProfilePage() {
       setDataLoading(false)
     }
   }, [user, userProgress])
-
-  const handleSaveProfile = async () => {
-    setLoading(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      // Prepare the update data based on selection type
-      const updateData: {
-        favoriteQuoteId?: number | null
-        favoriteGambleId?: number | null
-        profilePictureType?: 'discord' | 'character_media' | null
-        selectedCharacterMediaId?: number | null
-      } = {}
-
-      // Add basic preferences only if they have values
-      if (selectedQuote) {
-        updateData.favoriteQuoteId = selectedQuote
-      }
-      if (selectedGamble) {
-        updateData.favoriteGambleId = selectedGamble
-      }
-
-      // Handle profile picture selection
-      if (selectedCharacterMedia === null) {
-        // Discord profile selected
-        updateData.profilePictureType = 'discord'
-        updateData.selectedCharacterMediaId = null
-      } else {
-        // Character media selected
-        updateData.profilePictureType = 'character_media'
-        updateData.selectedCharacterMediaId = selectedCharacterMedia
-      }
-
-      console.log('Sending profile update data:', updateData)
-      
-      const result = await api.updateProfile(updateData)
-      console.log('Profile update result:', result)
-      
-      await refreshUser()
-      setSuccess('Profile updated successfully!')
-    } catch (error: unknown) {
-      console.error('Profile update error:', error)
-      setError(error instanceof Error ? error.message : 'Failed to update profile')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleUpdateProgress = async () => {
-    setProgressLoading(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      await updateProgress(selectedChapter)
-      setSuccess('Reading progress updated successfully!')
-      
-      // Update chapter info after progress change
-      if (selectedChapter) {
-        try {
-          const chapterInfo = await api.getChapterByNumber(selectedChapter)
-          setCurrentChapterInfo(chapterInfo)
-        } catch (error) {
-          console.error('Failed to fetch updated chapter info:', error)
-        }
-      }
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to update reading progress')
-    } finally {
-      setProgressLoading(false)
-    }
-  }
 
   const handleSaveProfilePicture = async () => {
     setLoading(true)
@@ -552,12 +491,6 @@ export default function ProfilePage() {
                     variant="outlined"
                     icon={user.role === 'admin' || user.role === 'moderator' ? <Crown size={16} /> : undefined}
                   />
-                  
-                  <Chip
-                    label={user.isEmailVerified ? 'Verified' : 'Not Verified'}
-                    color={user.isEmailVerified ? 'success' : 'warning'}
-                    size="small"
-                  />
                 </Box>
                 
                 {/* Quick Stats */}
@@ -569,28 +502,69 @@ export default function ProfilePage() {
                 }}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                      {userProgress}
+                      {userStats ? userStats.guidesWritten : dataLoading ? '...' : '0'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Current Chapter
+                      Guides Written
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" color="secondary" sx={{ fontWeight: 'bold' }}>
-                      {Math.round((userProgress / 539) * 100)}%
+                      {userStats ? userStats.mediaSubmitted : dataLoading ? '...' : '0'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Progress
+                      Media Submitted
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" color="info.main" sx={{ fontWeight: 'bold' }}>
-                      {user.role === 'admin' ? '∞' : '0'}
+                      {userStats ? userStats.likesReceived : dataLoading ? '...' : '0'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Contributions
+                      Likes Received
                     </Typography>
                   </Box>
+                </Box>
+
+                {/* Reading Progress Section */}
+                <Box sx={{ mt: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <BookOpen size={20} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                      Reading Progress
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Chapter {userProgress} of 539 ({Math.round((userProgress / 539) * 100)}%)
+                    </Typography>
+                  </Box>
+                  
+                  <LinearProgress
+                    variant="determinate"
+                    value={(userProgress / 539) * 100}
+                    sx={{
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: 'action.hover',
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 5,
+                        background: 'linear-gradient(90deg, #1976d2 0%, #9c27b0 100%)',
+                      },
+                      mb: 2
+                    }}
+                  />
+                  
+                  {currentChapterInfo?.title && (
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        fontStyle: 'italic',
+                        textAlign: 'center'
+                      }}
+                    >
+                      &ldquo;{currentChapterInfo.title}&rdquo;
+                    </Typography>
+                  )}
                 </Box>
 
                 {/* Favorites Section */}
@@ -773,215 +747,47 @@ export default function ProfilePage() {
           </Alert>
         )}
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <User size={24} />
-                  <Typography variant="h5" sx={{ ml: 1 }}>
-                    Account Information
-                  </Typography>
-                </Box>
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Email
-                  </Typography>
-                  <Typography variant="body1">
-                    {user.email}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    User ID
-                  </Typography>
-                  <Typography variant="body1">
-                    #{user.id}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Discord Connection
-                  </Typography>
-                  <Typography variant="body1">
-                    {user.discordId ? 'Connected' : 'Not Connected'}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Settings size={24} />
-                  <Typography variant="h5" sx={{ ml: 1 }}>
-                    Preferences
-                  </Typography>
-                </Box>
-
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Your favorite quote and gamble can now be managed from the profile header above.
-                  Other preferences and settings will be available here in the future.
-                </Typography>
-
-                <Button
-                  variant="contained"
-                  startIcon={loading ? <CircularProgress size={20} /> : <Save size={20} />}
-                  onClick={handleSaveProfile}
-                  disabled={loading || dataLoading}
-                  fullWidth
-                  size="large"
-                >
-                  {loading ? 'Saving...' : dataLoading ? 'Loading...' : 'Save Preferences'}
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <BookOpen size={24} />
-                  <Typography variant="h5" sx={{ ml: 1 }}>
-                    Reading Progress
-                  </Typography>
-                </Box>
-
-                <Grid container spacing={3} sx={{ mb: 4 }}>
-                  <Grid item xs={12} sm={4}>
-                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
-                      <Typography variant="h3" color="primary" gutterBottom>
-                        {userProgress}
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                        Current Chapter
-                      </Typography>
-                      {currentChapterInfo?.title && (
-                        <Typography variant="body2" color="text.secondary" sx={{ 
-                          fontStyle: 'italic',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical'
-                        }}>
-                          &ldquo;{currentChapterInfo.title}&rdquo;
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
-                      <Typography variant="h3" color="secondary" gutterBottom>
-                        {Math.round((userProgress / 539) * 100)}%
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary">
-                        Progress Complete
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
-                      <Typography variant="h3" color="warning.main" gutterBottom>
-                        {539 - userProgress}
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary">
-                        Chapters Remaining
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-
-                <Box sx={{ mb: 3 }}>
-                  <FormControl fullWidth disabled={dataLoading || progressLoading}>
-                    <InputLabel>Update Current Chapter</InputLabel>
-                    <Select
-                      value={selectedChapter}
-                      label="Update Current Chapter"
-                      onChange={(e) => setSelectedChapter(e.target.value as number)}
-                    >
-                      {Array.from({ length: 539 }, (_, i) => i + 1).map((chapter) => (
-                        <MenuItem key={chapter} value={chapter}>
-                          Chapter {chapter}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Select the highest chapter number you have read (1-539)
-                  </Typography>
-                </Box>
-
-                <Button
-                  variant="contained"
-                  startIcon={progressLoading ? <CircularProgress size={20} /> : <BookOpen size={20} />}
-                  onClick={handleUpdateProgress}
-                  disabled={progressLoading || dataLoading}
-                  fullWidth
-                  size="large"
-                  color="secondary"
-                >
-                  {progressLoading ? 'Updating...' : dataLoading ? 'Loading...' : `Update Reading Progress (Chapter ${userProgress})`}
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        <Box sx={{ mt: 4 }}>
-          <Card className="gambling-card">
+        {/* Account Information - Centered */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+          <Card className="gambling-card" sx={{ maxWidth: 600, width: '100%' }}>
             <CardContent>
-              <Typography variant="h5" gutterBottom>
-                Activity & Contributions
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Track your contributions to the L-file community
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <User size={24} />
+                <Typography variant="h5" sx={{ ml: 1 }}>
+                  Account Information
+                </Typography>
+              </Box>
 
               <Grid container spacing={3}>
-                <Grid item xs={6} sm={3}>
+                <Grid item xs={12} sm={4}>
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h4" color="primary">
-                      0
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Email
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Guides Written
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      {user.email}
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+
+                <Grid item xs={12} sm={4}>
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h4" color="secondary">
-                      0
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      User ID
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Media Submitted
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      #{user.id}
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+
+                <Grid item xs={12} sm={4}>
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h4" color="info.main">
-                      0
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Discord Connection
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Comments Made
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h4" color="success.main">
-                      0
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Likes Received
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      {user.discordId ? 'Connected' : 'Not Connected'}
                     </Typography>
                   </Box>
                 </Grid>

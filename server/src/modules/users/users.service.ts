@@ -12,6 +12,8 @@ import { Quote } from '../../entities/quote.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { Character } from '../../entities/character.entity';
 import { Media, MediaStatus, MediaPurpose } from '../../entities/media.entity';
+import { Guide, GuideStatus } from '../../entities/guide.entity';
+import { GuideLike } from '../../entities/guide-like.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
 
@@ -130,6 +132,43 @@ export class UsersService {
         total: mediaStats.reduce((acc, curr) => acc + parseInt(curr.count), 0),
         byStatus: mediaStats,
       },
+    };
+  }
+
+  async getUserProfileStats(id: number) {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    // Get guides written count (published only)
+    const guideRepo = this.repo.manager.getRepository(Guide);
+    const guidesWritten = await guideRepo
+      .createQueryBuilder('guide')
+      .where('guide.authorId = :userId', { userId: id })
+      .andWhere('guide.status = :status', { status: GuideStatus.PUBLISHED })
+      .getCount();
+
+    // Get media submitted count
+    const mediaRepo = this.repo.manager.getRepository(Media);
+    const mediaSubmitted = await mediaRepo
+      .createQueryBuilder('media')
+      .where('media.submittedBy = :userId', { userId: id })
+      .getCount();
+
+    // Get total likes received on user's guides
+    const guideLikeRepo = this.repo.manager.getRepository(GuideLike);
+    const likesReceived = await guideLikeRepo
+      .createQueryBuilder('guideLike')
+      .innerJoin('guideLike.guide', 'guide')
+      .where('guide.authorId = :userId', { userId: id })
+      .andWhere('guide.status = :status', { status: GuideStatus.PUBLISHED })
+      .getCount();
+
+    return {
+      guidesWritten,
+      mediaSubmitted,
+      likesReceived,
     };
   }
 
