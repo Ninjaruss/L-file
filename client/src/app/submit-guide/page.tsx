@@ -315,12 +315,15 @@ Be detailed and informative. Use clear headings and structure your content well.
                                 helperText="Link to the story arc your guide covers"
                               />
                             )}
-                            renderOption={(props, option) => (
-                              <li {...props}>
-                                <BookOpen size={16} style={{ marginRight: 8 }} />
-                                {option.name}
-                              </li>
-                            )}
+                            renderOption={(props, option) => {
+                              const { key, ...otherProps } = props;
+                              return (
+                                <li key={key} {...otherProps}>
+                                  <BookOpen size={16} style={{ marginRight: 8 }} />
+                                  {option.name}
+                                </li>
+                              );
+                            }}
                           />
                         </FormControl>
                       </Grid>

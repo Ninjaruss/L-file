@@ -322,23 +322,21 @@ export class CharactersService {
       throw new NotFoundException(`Character with id ${characterId} not found`);
     }
 
-    // Search for guides that mention the character
+    // Use proper relationship query through guide_characters join table
     const query = `
       SELECT g.*, u.username as author_name, COUNT(*) OVER() as total_count
       FROM guide g
       LEFT JOIN "user" u ON g."authorId" = u.id
+      INNER JOIN guide_characters gc ON g.id = gc."guideId"
       WHERE g.status = 'published' 
-        AND (LOWER(g.title) LIKE LOWER($1) 
-             OR LOWER(g.description) LIKE LOWER($1)
-             OR LOWER(g.content) LIKE LOWER($1))
+        AND gc."characterId" = $1
       ORDER BY g."likeCount" DESC, g."createdAt" DESC
       LIMIT $2 OFFSET $3
     `;
 
-    const searchTerm = `%${character.name}%`;
     const offset = (page - 1) * limit;
 
-    const result = await this.repo.query(query, [searchTerm, limit, offset]);
+    const result = await this.repo.query(query, [characterId, limit, offset]);
 
     const total = result.length > 0 ? parseInt(result[0].total_count) : 0;
     const data = result.map((row) => {
