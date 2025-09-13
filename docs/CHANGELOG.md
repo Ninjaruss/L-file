@@ -10,6 +10,10 @@
 ## 2025-09-13
 - Added faction relation to character detail page and added characters to factions detail page
 - Added support for markdown for descriptions of entities
+- Fixed log in pop up to close properly
+- Hid 401 unauthenticated error when not logged in
+- Fixed display of user profile pictures in guides
+- Added about page and donate button
 
 ## 2025-09-12
 ### Changes 

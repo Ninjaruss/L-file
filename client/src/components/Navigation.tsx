@@ -13,7 +13,7 @@ import {
   Avatar,
   Divider
 } from '@mui/material'
-import { Menu as MenuIcon, User, LogOut, Settings, Crown } from 'lucide-react'
+import { Menu as MenuIcon, User, LogOut, Settings, Crown, BookOpen, Image, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '../providers/AuthProvider'
 
@@ -26,7 +26,15 @@ export const Navigation: React.FC = () => {
     setAnchorEl(event.currentTarget)
   }
 
+  const handleProfileMenuEnter = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
   const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleMenuLeave = () => {
     setAnchorEl(null)
   }
 
@@ -128,8 +136,9 @@ export const Navigation: React.FC = () => {
                 edge="end"
                 aria-label="account of current user"
                 aria-haspopup="true"
-                onClick={handleProfileMenuOpen}
+                onMouseEnter={handleProfileMenuEnter}
                 color="inherit"
+                disableRipple
               >
                 <Avatar src={avatarSrc || undefined} sx={{ width: 32, height: 32 }}>
                   {!avatarSrc && user.username[0].toUpperCase()}
@@ -162,6 +171,7 @@ export const Navigation: React.FC = () => {
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
           onClick={handleMenuClose}
+          onMouseLeave={handleMenuLeave}
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
@@ -169,12 +179,16 @@ export const Navigation: React.FC = () => {
             <User size={16} style={{ marginRight: 8 }} />
             Profile
           </MenuItem>
+          <MenuItem component={Link} href="/about">
+            <Heart size={16} style={{ marginRight: 8 }} />
+            Donate
+          </MenuItem>
           <MenuItem component={Link} href="/submit-guide">
-            <Settings size={16} style={{ marginRight: 8 }} />
+            <BookOpen size={16} style={{ marginRight: 8 }} />
             Submit Guide
           </MenuItem>
           <MenuItem component={Link} href="/submit-media">
-            <Settings size={16} style={{ marginRight: 8 }} />
+            <Image size={16} style={{ marginRight: 8 }} />
             Submit Media
           </MenuItem>
           <Divider />
@@ -204,6 +218,18 @@ export const Navigation: React.FC = () => {
               <MenuItem key="profile" component={Link} href="/profile">
                 <User size={16} style={{ marginRight: 8 }} />
                 Profile
+              </MenuItem>,
+              <MenuItem key="submit-guide" component={Link} href="/submit-guide">
+                <BookOpen size={16} style={{ marginRight: 8 }} />
+                Submit Guide
+              </MenuItem>,
+              <MenuItem key="submit-media" component={Link} href="/submit-media">
+                <Image size={16} style={{ marginRight: 8 }} />
+                Submit Media
+              </MenuItem>,
+              <MenuItem key="donate" component={Link} href="/about">
+                <Heart size={16} style={{ marginRight: 8 }} />
+                Donate
               </MenuItem>,
               (user.role === 'admin' || user.role === 'moderator') && (
                 <MenuItem key="admin" component={Link} href="/admin">

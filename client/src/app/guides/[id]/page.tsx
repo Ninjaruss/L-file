@@ -33,6 +33,7 @@ import { useAuth } from '../../../providers/AuthProvider'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
 import { usePageView } from '../../../hooks/usePageView'
+import AuthorProfileImage from '../../../components/AuthorProfileImage'
 
 interface Guide {
   id: number
@@ -46,6 +47,19 @@ interface Guide {
   author: {
     id: number
     username: string
+    role?: string
+    // Note: Public guides API may not return full profile data
+    // We'll use initials as fallback if profile data is missing
+    profilePictureType?: 'discord' | 'character_media' | null
+    selectedCharacterMediaId?: number | null
+    selectedCharacterMedia?: {
+      id: number
+      url: string
+      fileName?: string
+      description?: string
+    } | null
+    discordId?: string | null
+    discordAvatar?: string | null
   }
   tags: Array<{
     id: number
@@ -65,6 +79,20 @@ interface Guide {
   }>
   createdAt: string
   updatedAt: string
+}
+
+// Helper function to get role badge styling
+const getRoleBadge = (role?: string) => {
+  if (!role) return null
+
+  switch (role) {
+    case 'admin':
+      return { label: 'Admin', color: '#f44336' as const, bgcolor: 'rgba(244, 67, 54, 0.1)' }
+    case 'moderator':
+      return { label: 'Mod', color: '#ff9800' as const, bgcolor: 'rgba(255, 152, 0, 0.1)' }
+    default:
+      return null
+  }
 }
 
 export default function GuideDetailsPage() {
@@ -318,25 +346,47 @@ export default function GuideDetailsPage() {
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar sx={{ width: 32, height: 32, mr: 1 }}>
-                    <User size={16} />
-                  </Avatar>
-                  <Typography 
-                    variant="body1" 
-                    color="text.secondary"
-                    component={Link}
-                    href={`/users/${guide.author.id}`}
-                    sx={{ 
-                      textDecoration: 'none',
-                      '&:hover': { 
-                        color: 'primary.main',
-                        textDecoration: 'underline'
-                      }
-                    }}
-                  >
-                    by {guide.author.username}
-                  </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AuthorProfileImage
+                    author={guide.author}
+                    size={32}
+                    showFallback={true}
+                    className="guide-author-avatar"
+                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      component={Link}
+                      href={`/users/${guide.author.id}`}
+                      sx={{
+                        textDecoration: 'none',
+                        '&:hover': {
+                          color: 'primary.main',
+                          textDecoration: 'underline'
+                        }
+                      }}
+                    >
+                      by {guide.author.username}
+                    </Typography>
+                    {getRoleBadge(guide.author.role) && (
+                      <Chip
+                        label={getRoleBadge(guide.author.role)!.label}
+                        size="small"
+                        sx={{
+                          height: '18px',
+                          fontSize: '0.65rem',
+                          fontWeight: 'bold',
+                          color: getRoleBadge(guide.author.role)!.color,
+                          backgroundColor: getRoleBadge(guide.author.role)!.bgcolor,
+                          border: `1px solid ${getRoleBadge(guide.author.role)!.color}`,
+                          '& .MuiChip-label': {
+                            px: 0.5
+                          }
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>

@@ -59,9 +59,8 @@ export default function UserProfileImage({
   // Character media image
   if (user.profilePictureType === 'character_media' && user.selectedCharacterMedia && !error) {
     const media = user.selectedCharacterMedia
-    const imageUrl = media.url?.startsWith('http') 
-      ? media.url 
-      : `${process.env.NEXT_PUBLIC_API_URL}/media/${media.fileName || media.url}`
+    // Use the URL directly as it's already properly formatted from the API
+    const imageUrl = media.url
 
     return (
       <Avatar

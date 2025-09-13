@@ -25,6 +25,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import { useAuth } from '../../providers/AuthProvider'
+import AuthorProfileImage from '../../components/AuthorProfileImage'
 
 interface Guide {
   id: number
@@ -35,6 +36,19 @@ interface Guide {
   author: {
     id: number
     username: string
+    role?: string
+    // Note: Public guides API may not return full profile data
+    // We'll use initials as fallback if profile data is missing
+    profilePictureType?: 'discord' | 'character_media' | null
+    selectedCharacterMediaId?: number | null
+    selectedCharacterMedia?: {
+      id: number
+      url: string
+      fileName?: string
+      description?: string
+    } | null
+    discordId?: string | null
+    discordAvatar?: string | null
   }
   characters?: Array<{
     id: number
@@ -53,6 +67,20 @@ interface Guide {
   viewCount: number
   createdAt: string
   updatedAt: string
+}
+
+// Helper function to get role badge styling
+const getRoleBadge = (role?: string) => {
+  if (!role) return null
+
+  switch (role) {
+    case 'admin':
+      return { label: 'Admin', color: '#f44336' as const, bgcolor: 'rgba(244, 67, 54, 0.1)' }
+    case 'moderator':
+      return { label: 'Mod', color: '#ff9800' as const, bgcolor: 'rgba(255, 152, 0, 0.1)' }
+    default:
+      return null
+  }
 }
 
 function GuidesPageContent() {
@@ -259,26 +287,47 @@ function GuidesPageContent() {
                         </Typography>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Avatar sx={{ width: 24, height: 24, mr: 1, fontSize: '0.875rem' }}>
-                            {guide.author.username[0].toUpperCase()}
-                          </Avatar>
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            component={Link}
-                            href={`/users/${guide.author.id}`}
-                            sx={{ 
-                              mr: 2,
-                              textDecoration: 'none',
-                              '&:hover': { 
-                                color: 'primary.main',
-                                textDecoration: 'underline'
-                              }
-                            }}
-                          >
-                            by {guide.author.username}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <AuthorProfileImage
+                            author={guide.author}
+                            size={24}
+                            showFallback={true}
+                            className="guide-author-avatar"
+                          />
+                          <Box sx={{ ml: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              component={Link}
+                              href={`/users/${guide.author.id}`}
+                              sx={{
+                                textDecoration: 'none',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                  textDecoration: 'underline'
+                                }
+                              }}
+                            >
+                              by {guide.author.username}
+                            </Typography>
+                            {getRoleBadge(guide.author.role) && (
+                              <Chip
+                                label={getRoleBadge(guide.author.role)!.label}
+                                size="small"
+                                sx={{
+                                  height: '16px',
+                                  fontSize: '0.6rem',
+                                  fontWeight: 'bold',
+                                  color: getRoleBadge(guide.author.role)!.color,
+                                  backgroundColor: getRoleBadge(guide.author.role)!.bgcolor,
+                                  border: `1px solid ${getRoleBadge(guide.author.role)!.color}`,
+                                  '& .MuiChip-label': {
+                                    px: 0.5
+                                  }
+                                }}
+                              />
+                            )}
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
                             <Calendar size={14} />
                             <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
                               {new Date(guide.createdAt).toLocaleDateString()}
