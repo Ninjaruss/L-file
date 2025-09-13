@@ -11,8 +11,11 @@ import {
   SimpleShowLayout,
   ReferenceInput,
   AutocompleteInput,
-  NumberInput
+  NumberInput,
+  FunctionField
 } from 'react-admin'
+import { Typography } from '@mui/material'
+import SpoilerMarkdown from '../SpoilerMarkdown'
 
 export const QuoteList = () => (
   <List>
@@ -47,7 +50,13 @@ export const QuoteEdit = () => (
         <AutocompleteInput optionText="name" isRequired />
       </ReferenceInput>
       <NumberInput source="chapterNumber" required label="Chapter Number" max={539} />
-      <TextInput source="description" multiline rows={2} label="Context/Description" />
+      <TextInput 
+        source="description" 
+        multiline 
+        rows={2} 
+        label="Context/Description" 
+        helperText="Supports Markdown formatting"
+      />
       <NumberInput source="pageNumber" label="Page Number" />
     </SimpleForm>
   </Edit>
@@ -61,7 +70,13 @@ export const QuoteCreate = () => (
         <AutocompleteInput optionText="name" isRequired />
       </ReferenceInput>
       <NumberInput source="chapterNumber" required label="Chapter Number" max={539} />
-      <TextInput source="description" multiline rows={2} label="Context/Description" />
+      <TextInput 
+        source="description" 
+        multiline 
+        rows={2} 
+        label="Context/Description" 
+        helperText="Supports Markdown formatting"
+      />
       <NumberInput source="pageNumber" label="Page Number" />
     </SimpleForm>
   </Create>

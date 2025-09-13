@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from '../../entities/character.entity';
 import { Gamble } from '../../entities/gamble.entity';
+import { Faction } from '../../entities/faction.entity';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
@@ -16,6 +17,7 @@ export class CharactersService {
   constructor(
     @InjectRepository(Character) private repo: Repository<Character>,
     @InjectRepository(Gamble) private gamblesRepository: Repository<Gamble>,
+    @InjectRepository(Faction) private factionRepository: Repository<Faction>,
     private readonly pageViewsService: PageViewsService,
     private readonly mediaService: MediaService,
   ) {}
@@ -46,7 +48,8 @@ export class CharactersService {
       order = 'ASC',
     } = filters;
 
-    const qb = this.repo.createQueryBuilder('character');
+    const qb = this.repo.createQueryBuilder('character')
+      .leftJoinAndSelect('character.factions', 'factions');
 
     if (name) {
       qb.andWhere(
@@ -68,8 +71,8 @@ export class CharactersService {
     }
 
     if (faction) {
-      qb.innerJoin('character.factions', 'faction').andWhere(
-        'LOWER(faction.name) LIKE LOWER(:faction)',
+      qb.andWhere(
+        'LOWER(factions.name) LIKE LOWER(:faction)',
         { faction: `%${faction}%` },
       );
     }
@@ -103,7 +106,10 @@ export class CharactersService {
   }
 
   async findOne(id: number): Promise<Character> {
-    const character = await this.repo.findOne({ where: { id } });
+    const character = await this.repo.findOne({ 
+      where: { id },
+      relations: ['factions']
+    });
 
     if (!character) {
       throw new NotFoundException(`Character with id ${id} not found`);
@@ -112,7 +118,20 @@ export class CharactersService {
   }
 
   async create(createCharacterDto: CreateCharacterDto): Promise<Character> {
-    const character = this.repo.create(createCharacterDto);
+    const { factionIds, ...characterData } = createCharacterDto;
+
+    // Create the character first
+    const character = this.repo.create(characterData);
+
+    // Handle faction relations if provided
+    if (factionIds && factionIds.length > 0) {
+      const factions = await this.factionRepository.findByIds(factionIds);
+      if (factions.length !== factionIds.length) {
+        throw new BadRequestException('One or more faction IDs are invalid');
+      }
+      character.factions = factions;
+    }
+
     return this.repo.save(character);
   }
 
@@ -120,11 +139,35 @@ export class CharactersService {
     id: number,
     updateCharacterDto: UpdateCharacterDto,
   ): Promise<Character> {
-    const result = await this.repo.update(id, updateCharacterDto);
-    if (result.affected === 0) {
+    const character = await this.repo.findOne({ 
+      where: { id },
+      relations: ['factions']
+    });
+    
+    if (!character) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
-    return this.findOne(id);
+
+    const { factionIds, ...characterData } = updateCharacterDto;
+
+    // Update basic character data
+    Object.assign(character, characterData);
+
+    // Handle faction relations if provided
+    if (factionIds !== undefined) {
+      if (factionIds.length > 0) {
+        const factions = await this.factionRepository.findByIds(factionIds);
+        if (factions.length !== factionIds.length) {
+          throw new BadRequestException('One or more faction IDs are invalid');
+        }
+        character.factions = factions;
+      } else {
+        // Clear factions if empty array provided
+        character.factions = [];
+      }
+    }
+
+    return this.repo.save(character);
   }
 
   async remove(id: number): Promise<{ affected: number }> {

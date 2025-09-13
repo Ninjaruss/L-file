@@ -11,12 +11,14 @@ import { Guide, GuideStatus } from './entities/guide.entity';
 import { Character } from './entities/character.entity';
 import { Event } from './entities/event.entity';
 import { Gamble } from './entities/gamble.entity';
+import { UsersService } from './modules/users/users.service';
 
 @ApiTags('app')
 @Controller()
 export class AppController {
   constructor(
     private readonly pageViewsService: PageViewsService,
+    private readonly usersService: UsersService,
     @InjectRepository(Guide)
     private readonly guideRepository: Repository<Guide>,
     @InjectRepository(Character)
@@ -107,96 +109,74 @@ export class AppController {
     };
   }
 
-  @Get('trending')
-  @ApiOperation({ summary: 'Get overall trending pages' })
+  @Get('favorites')
+  @ApiOperation({ 
+    summary: 'Get top 3 favorite quotes, gambles, and character media',
+    description: 'Retrieve the most popular quotes, gambles, and character media based on user favorites'
+  })
   @ApiResponse({
     status: 200,
-    description: 'Trending pages retrieved successfully',
+    description: 'Top favorites data retrieved successfully',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          pageId: { type: 'number' },
-          pageType: { type: 'string' },
-          viewCount: { type: 'number' },
-          recentViewCount: { type: 'number' },
-          title: { type: 'string' },
-          description: { type: 'string' },
+      type: 'object',
+      properties: {
+        favoriteQuotes: {
+          type: 'array',
+          description: 'Top 3 most favorite quotes',
+          items: {
+            type: 'object',
+            properties: {
+              quote: { type: 'object' },
+              userCount: { type: 'number' }
+            }
+          }
         },
-      },
-    },
-  })
-  async getTrendingPages(
-    @Query('limit') limit: number = 10,
-    @Query('daysBack') daysBack: number = 7,
-  ) {
-    const trendingPages = await this.pageViewsService.getTrendingPages(
-      undefined,
-      limit,
-      daysBack,
-    );
-
-    // Enrich with basic entity data
-    const enrichedPages = await Promise.all(
-      trendingPages.map(async (page) => {
-        let title = '';
-        let description = '';
-
-        switch (page.pageType) {
-          case PageType.GUIDE:
-            const guide = await this.guideRepository.findOne({
-              where: { id: page.pageId, status: GuideStatus.PUBLISHED },
-              select: ['title', 'description'],
-            });
-            if (guide) {
-              title = guide.title;
-              description = guide.description;
+        favoriteGambles: {
+          type: 'array', 
+          description: 'Top 3 most favorite gambles',
+          items: {
+            type: 'object',
+            properties: {
+              gamble: { type: 'object' },
+              userCount: { type: 'number' }
             }
-            break;
-          case PageType.CHARACTER:
-            const character = await this.characterRepository.findOne({
-              where: { id: page.pageId },
-              select: ['name', 'description'],
-            });
-            if (character) {
-              title = character.name;
-              description = character.description || '';
+          }
+        },
+        favoriteCharacterMedia: {
+          type: 'array',
+          description: 'Top 3 most used character media for profiles',
+          items: {
+            type: 'object',
+            properties: {
+              media: { type: 'object' },
+              userCount: { type: 'number' }
             }
-            break;
-          case PageType.EVENT:
-            const event = await this.eventRepository.findOne({
-              where: { id: page.pageId },
-              select: ['title', 'description'],
-            });
-            if (event) {
-              title = event.title;
-              description = event.description || '';
-            }
-            break;
-          case PageType.GAMBLE:
-            const gamble = await this.gambleRepository.findOne({
-              where: { id: page.pageId },
-              select: ['name', 'rules'],
-            });
-            if (gamble) {
-              title = gamble.name;
-              description = gamble.rules || '';
-            }
-            break;
+          }
         }
+      }
+    }
+  })
+  async getFavoritesData() {
+    // Get top 3 favorite quotes
+    const quoteStats = await this.usersService.getQuotePopularityStats();
+    const favoriteQuotes = quoteStats.slice(0, 3);
 
-        return {
-          ...page,
-          title,
-          description,
-        };
-      }),
-    );
+    // Get top 3 favorite gambles
+    const gambleStats = await this.usersService.getGamblePopularityStats();
+    const favoriteGambles = gambleStats.slice(0, 3);
 
-    return enrichedPages;
+    // Get top 3 character media stats
+    const characterMediaStats = await this.usersService.getCharacterMediaPopularityStats();
+    const favoriteCharacterMedia = characterMediaStats.slice(0, 3);
+
+    return {
+      favoriteQuotes,
+      favoriteGambles,
+      favoriteCharacterMedia
+    };
   }
 
+  // Helper methods for getting detailed entity data
   private async getGuideDetails(trendingPages: TrendingPage[]) {
     if (trendingPages.length === 0) return [];
 
@@ -204,21 +184,18 @@ export class AppController {
     const guides = await this.guideRepository.find({
       where: { id: In(guideIds), status: GuideStatus.PUBLISHED },
       relations: ['author'],
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        createdAt: true,
-        author: { id: true, username: true },
-      },
     });
 
     return guides.map((guide) => {
-      const trendingData = trendingPages.find((p) => p.pageId === guide.id);
+      const trendingPage = trendingPages.find((p) => p.pageId === guide.id);
       return {
-        ...guide,
-        viewCount: trendingData?.viewCount || 0,
-        recentViewCount: trendingData?.recentViewCount || 0,
+        id: guide.id,
+        title: guide.title,
+        description: guide.description,
+        viewCount: trendingPage?.viewCount || 0,
+        recentViewCount: trendingPage?.recentViewCount || 0,
+        author: { id: guide.author.id, username: guide.author.username },
+        createdAt: guide.createdAt.toISOString(),
       };
     });
   }
@@ -229,15 +206,18 @@ export class AppController {
     const characterIds = trendingPages.map((p) => p.pageId);
     const characters = await this.characterRepository.find({
       where: { id: In(characterIds) },
-      select: ['id', 'name', 'description'],
     });
 
     return characters.map((character) => {
-      const trendingData = trendingPages.find((p) => p.pageId === character.id);
+      const trendingPage = trendingPages.find(
+        (p) => p.pageId === character.id,
+      );
       return {
-        ...character,
-        viewCount: trendingData?.viewCount || 0,
-        recentViewCount: trendingData?.recentViewCount || 0,
+        id: character.id,
+        name: character.name,
+        description: character.description,
+        viewCount: trendingPage?.viewCount || 0,
+        recentViewCount: trendingPage?.recentViewCount || 0,
       };
     });
   }
@@ -248,15 +228,16 @@ export class AppController {
     const eventIds = trendingPages.map((p) => p.pageId);
     const events = await this.eventRepository.find({
       where: { id: In(eventIds) },
-      select: ['id', 'title', 'description'],
     });
 
     return events.map((event) => {
-      const trendingData = trendingPages.find((p) => p.pageId === event.id);
+      const trendingPage = trendingPages.find((p) => p.pageId === event.id);
       return {
-        ...event,
-        viewCount: trendingData?.viewCount || 0,
-        recentViewCount: trendingData?.recentViewCount || 0,
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        viewCount: trendingPage?.viewCount || 0,
+        recentViewCount: trendingPage?.recentViewCount || 0,
       };
     });
   }
@@ -267,15 +248,16 @@ export class AppController {
     const gambleIds = trendingPages.map((p) => p.pageId);
     const gambles = await this.gambleRepository.find({
       where: { id: In(gambleIds) },
-      select: ['id', 'name', 'rules'],
     });
 
     return gambles.map((gamble) => {
-      const trendingData = trendingPages.find((p) => p.pageId === gamble.id);
+      const trendingPage = trendingPages.find((p) => p.pageId === gamble.id);
       return {
-        ...gamble,
-        viewCount: trendingData?.viewCount || 0,
-        recentViewCount: trendingData?.recentViewCount || 0,
+        id: gamble.id,
+        name: gamble.name,
+        rules: gamble.rules,
+        viewCount: trendingPage?.viewCount || 0,
+        recentViewCount: trendingPage?.recentViewCount || 0,
       };
     });
   }

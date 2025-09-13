@@ -18,6 +18,7 @@ import {
 import { ArrowLeft, User, Crown, Calendar, BookOpen, AlertTriangle } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -38,6 +39,11 @@ interface Character {
   firstAppearanceChapter: number | null
   imageFileName?: string | null
   imageDisplayName?: string | null
+  factions?: Array<{
+    id: number
+    name: string
+    description?: string
+  }>
   arcs?: Array<{
     id: number
     name: string
@@ -219,6 +225,40 @@ export default function CharacterDetailPage() {
                                 backgroundColor: 'secondary.main',
                                 color: 'white',
                                 borderColor: 'secondary.main'
+                              }
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Faction Affiliations */}
+                  {character.factions && character.factions.length > 0 && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                        Faction Affiliations:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {character.factions.map((faction) => (
+                          <Chip
+                            key={faction.id}
+                            label={faction.name}
+                            size="medium"
+                            variant="filled"
+                            component={Link}
+                            href={`/factions/${faction.id}`}
+                            clickable
+                            sx={{ 
+                              backgroundColor: '#e91e63',
+                              color: 'white',
+                              borderRadius: '20px',
+                              fontSize: '0.875rem',
+                              textDecoration: 'none',
+                              '&:hover': {
+                                backgroundColor: '#c2185b',
+                                transform: 'translateY(-1px)',
+                                boxShadow: theme.shadows[4]
                               }
                             }}
                           />
@@ -409,28 +449,18 @@ export default function CharacterDetailPage() {
 
                         {character.description && character.firstAppearanceChapter && (
                           <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter}>
-                            <Typography variant="body1" sx={{ 
-                              fontSize: { xs: '1rem', md: '1.1rem' },
-                              lineHeight: 1.8,
-                              mb: 3,
-                              color: 'text.primary',
-                              fontWeight: 400
-                            }}>
-                              {character.description}
-                            </Typography>
+                            <SpoilerMarkdown 
+                              content={character.description}
+                              className="character-description"
+                            />
                           </TimelineSpoilerWrapper>
                         )}
 
                         {character.description && !character.firstAppearanceChapter && (
-                          <Typography variant="body1" sx={{ 
-                            fontSize: { xs: '1rem', md: '1.1rem' },
-                            lineHeight: 1.8,
-                            mb: 3,
-                            color: 'text.primary',
-                            fontWeight: 400
-                          }}>
-                            {character.description}
-                          </Typography>
+                          <SpoilerMarkdown 
+                            content={character.description}
+                            className="character-description"
+                          />
                         )}
 
                         {/* Enhanced Character Details removed */}

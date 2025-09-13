@@ -26,6 +26,7 @@ import {
 import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../components/SpoilerMarkdown'
 import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
@@ -337,18 +338,17 @@ function ArcsPageContent() {
                           )}
                         </Box>
 
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 4,
-                          }}
-                        >
-                          {arc.description}
-                        </Typography>
+                        <div style={{
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 4,
+                        }}>
+                          <SpoilerMarkdown 
+                            content={arc.description}
+                            className="arc-description-preview"
+                          />
+                        </div>
                       </CardContent>
 
                       <CardActions>

@@ -8,8 +8,11 @@ import {
   Show,
   SimpleForm,
   SimpleShowLayout,
-  TextInput
+  TextInput,
+  FunctionField
 } from 'react-admin'
+import { Typography } from '@mui/material'
+import SpoilerMarkdown from '../SpoilerMarkdown'
 
 export const TagList = () => (
   <List>
@@ -26,7 +29,21 @@ export const TagShow = () => (
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="name" />
-      <TextField source="description" />
+      <FunctionField 
+        label="Description" 
+        render={(record: any) => 
+          record.description ? (
+            <SpoilerMarkdown 
+              content={record.description} 
+              className="admin-description"
+            />
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No description
+            </Typography>
+          )
+        }
+      />
     </SimpleShowLayout>
   </Show>
 )
@@ -35,7 +52,12 @@ export const TagEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="name" required />
-      <TextInput source="description" multiline rows={2} />
+      <TextInput 
+        source="description" 
+        multiline 
+        rows={2} 
+        helperText="Supports Markdown formatting"
+      />
     </SimpleForm>
   </Edit>
 )
@@ -44,7 +66,12 @@ export const TagCreate = () => (
   <Create>
     <SimpleForm>
       <TextInput source="name" required />
-      <TextInput source="description" multiline rows={2} />
+      <TextInput 
+        source="description" 
+        multiline 
+        rows={2} 
+        helperText="Supports Markdown formatting"
+      />
     </SimpleForm>
   </Create>
 )

@@ -24,6 +24,7 @@ import {
 import { CalendarSearch, Eye, Calendar, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../components/SpoilerMarkdown'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import type { Event, Arc } from '../../types'
@@ -168,19 +169,18 @@ export default function EventsPage() {
               )}
             </Box>
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                mb: 2,
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: 3,
-              }}
-            >
-              {event.description}
-            </Typography>
+            <div style={{
+              marginBottom: '16px',
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 3,
+            }}>
+              <SpoilerMarkdown 
+                content={event.description}
+                className="event-description-preview"
+              />
+            </div>
 
           </CardContent>
 

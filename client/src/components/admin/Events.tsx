@@ -27,9 +27,11 @@ import {
   TabbedShowLayout,
   Tab,
   FormTab,
-  TabbedForm
+  TabbedForm,
+  FunctionField
 } from 'react-admin'
 import { Box, Typography } from '@mui/material'
+import SpoilerMarkdown from '../SpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 const EVENT_TYPE_CHOICES = [
@@ -225,19 +227,27 @@ export const EventShow = () => (
         
         <Tab label="Description">
           <Box sx={{ p: 3, backgroundColor: '#0a0a0a' }}>
-            <TextField 
-              source="description" 
-              component="pre" 
-              sx={{
-                whiteSpace: 'pre-wrap', 
-                p: 2, 
-                bgcolor: '#0f0f0f', 
-                borderRadius: 1,
-                border: '1px solid rgba(245, 124, 0, 0.3)',
-                fontFamily: 'inherit',
-                lineHeight: 1.6,
-                color: '#ffffff'
-              }} 
+            <FunctionField 
+              source="description"
+              render={(record: any) => 
+                record.description ? (
+                  <Box sx={{
+                    p: 2, 
+                    bgcolor: '#0f0f0f', 
+                    borderRadius: 1,
+                    border: '1px solid rgba(245, 124, 0, 0.3)',
+                  }}>
+                    <SpoilerMarkdown 
+                      content={record.description} 
+                      className="admin-description"
+                    />
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No description
+                  </Typography>
+                )
+              }
             />
           </Box>
         </Tab>
@@ -423,7 +433,7 @@ export const EventEdit = () => (
               rows={6} 
               required 
               fullWidth
-              helperText="Detailed description of what happens in this event"
+              helperText="Detailed description of what happens in this event. Supports Markdown formatting."
             />
           </Box>
         </FormTab>
@@ -614,7 +624,7 @@ export const EventCreate = () => (
               rows={6} 
               required 
               fullWidth
-              helperText="Detailed description of what happens in this event"
+              helperText="Detailed description of what happens in this event. Supports Markdown formatting."
             />
           </Box>
         </FormTab>

@@ -17,6 +17,7 @@ import {
 import { ArrowLeft, Users, Shield, Crown } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -31,6 +32,12 @@ interface Faction {
   description?: string
   createdAt: string
   updatedAt: string
+  characters?: Array<{
+    id: number
+    name: string
+    alternateNames?: string[]
+    firstAppearanceChapter?: number
+  }>
 }
 
 export default function FactionDetailPage() {
@@ -70,9 +77,11 @@ export default function FactionDetailPage() {
         const factionData = await api.getFaction(factionIdNum)
         setFaction(factionData)
 
-        // For now, we'll set empty arrays for related data
+        // Set characters as members
+        setMembers(factionData.characters || [])
+
+        // For now, we'll set empty arrays for other related data
         // In a real implementation, you'd have API endpoints for faction-related data
-        setMembers([])
         setEvents([])
         setGambles([])
       } catch (error: any) {
@@ -188,9 +197,10 @@ export default function FactionDetailPage() {
                   <TimelineSpoilerWrapper 
                     chapterNumber={1}
                   >
-                    <Typography variant="body1" paragraph>
-                      {faction.description}
-                    </Typography>
+                    <SpoilerMarkdown 
+                      content={faction.description}
+                      className="faction-description"
+                    />
                   </TimelineSpoilerWrapper>
                 </CardContent>
               </Card>
@@ -200,42 +210,153 @@ export default function FactionDetailPage() {
             {members.length > 0 && (
               <Card className="gambling-card" sx={{ mt: 4 }}>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h5" gutterBottom>
-                      Known Members
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h5" sx={{ 
+                      fontWeight: 700,
+                      color: 'primary.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      <Users size={24} />
+                      Faction Members ({members.length})
                     </Typography>
                     <Button
                       component={Link}
                       href={`/characters?faction=${faction.name}`}
                       size="small"
+                      variant="outlined"
                       color="primary"
+                      sx={{ borderRadius: '20px' }}
                     >
-                      View All
+                      View All Characters
                     </Button>
                   </Box>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={3}>
                     {members.map((member) => (
                       <Grid item xs={12} sm={6} md={4} key={member.id}>
-                        <Card variant="outlined">
-                          <CardContent sx={{ py: 2 }}>
-                            <Typography 
-                              variant="h6" 
-                              component={Link} 
-                              href={`/characters/${member.id}`}
-                              sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
-                            >
-                              {member.name}
-                            </Typography>
-                            {member.role && (
-                              <Typography variant="body2" color="text.secondary">
-                                {member.role}
+                        <Card 
+                          variant="outlined" 
+                          sx={{ 
+                            transition: 'all 0.3s ease',
+                            '&:hover': { 
+                              transform: 'translateY(-4px)',
+                              boxShadow: theme.shadows[8],
+                              borderColor: 'primary.main'
+                            }
+                          }}
+                        >
+                          <CardContent sx={{ p: 0 }}>
+                            {/* Character Thumbnail */}
+                            <Box sx={{ 
+                              position: 'relative',
+                              width: '100%',
+                              height: 200,
+                              overflow: 'hidden',
+                              borderTopLeftRadius: 'inherit',
+                              borderTopRightRadius: 'inherit'
+                            }}>
+                              <MediaThumbnail
+                                entityType="character"
+                                entityId={member.id}
+                                entityName={member.name}
+                                allowCycling={false}
+                                maxWidth="100%"
+                                maxHeight="100%"
+                                className="character-thumbnail"
+                              />
+                            </Box>
+                            
+                            {/* Character Info */}
+                            <Box sx={{ p: 3 }}>
+                              <Typography 
+                                variant="h6" 
+                                component={Link} 
+                                href={`/characters/${member.id}`}
+                                sx={{ 
+                                  textDecoration: 'none', 
+                                  color: 'primary.main', 
+                                  fontWeight: 600,
+                                  display: 'block',
+                                  mb: 1,
+                                  '&:hover': { textDecoration: 'underline' }
+                                }}
+                              >
+                                {member.name}
                               </Typography>
+                            
+                            {member.alternateNames && member.alternateNames.length > 0 && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                  Also known as:
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                  {member.alternateNames.slice(0, 2).map((name: string, index: number) => (
+                                    <Chip
+                                      key={index}
+                                      label={name}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{ 
+                                        fontSize: '0.7rem',
+                                        height: '20px',
+                                        borderRadius: '10px'
+                                      }}
+                                    />
+                                  ))}
+                                  {member.alternateNames.length > 2 && (
+                                    <Chip
+                                      label={`+${member.alternateNames.length - 2} more`}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{ 
+                                        fontSize: '0.7rem',
+                                        height: '20px',
+                                        borderRadius: '10px',
+                                        opacity: 0.7
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                              </Box>
                             )}
+
+                              {member.firstAppearanceChapter && (
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: 1,
+                                  mt: 1
+                                }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    First appeared in Chapter {member.firstAppearanceChapter}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Box>
                           </CardContent>
                         </Card>
                       </Grid>
                     ))}
                   </Grid>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* No Members Message */}
+            {members.length === 0 && (
+              <Card className="gambling-card" sx={{ mt: 4 }}>
+                <CardContent>
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Users size={48} color={theme.palette.text.secondary} style={{ opacity: 0.5 }} />
+                    <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
+                      No Known Members
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
+                      This faction currently has no associated character members in our database. 
+                      Member relationships may be added as the story progresses.
+                    </Typography>
+                  </Box>
                 </CardContent>
               </Card>
             )}
@@ -264,9 +385,12 @@ export default function FactionDetailPage() {
                                   sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
                           {gamble.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          {gamble.rules}
-                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <SpoilerMarkdown 
+                            content={gamble.rules}
+                            className="faction-gamble-rules"
+                          />
+                        </Box>
                         {gamble.winnerTeam && (
                           <Typography variant="body2" sx={{ mt: 1 }}>
                             <strong>Winner:</strong> {gamble.winnerTeam}
@@ -376,16 +500,14 @@ export default function FactionDetailPage() {
                   </Typography>
                 </Box>
 
-                {members.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Known Members
-                    </Typography>
-                    <Typography variant="body1">
-                      {members.length} members
-                    </Typography>
-                  </Box>
-                )}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Known Members
+                  </Typography>
+                  <Typography variant="body1">
+                    {members.length} {members.length === 1 ? 'member' : 'members'}
+                  </Typography>
+                </Box>
 
                 <Divider sx={{ my: 2 }} />
                 

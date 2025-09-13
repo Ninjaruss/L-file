@@ -531,10 +531,10 @@ export class UsersService {
     const stats = await this.repo
       .createQueryBuilder('user')
       .select('user.favoriteQuoteId', 'quoteId')
-      .addSelect('COUNT(*)', 'userCount')
+      .addSelect('COUNT(*)', 'usercount')
       .where('user.favoriteQuoteId IS NOT NULL')
       .groupBy('user.favoriteQuoteId')
-      .orderBy('userCount', 'DESC')
+      .orderBy('usercount', 'DESC')
       .getRawMany();
 
     const result: Array<{ quote: Quote; userCount: number }> = [];
@@ -548,7 +548,7 @@ export class UsersService {
       if (quote) {
         result.push({
           quote,
-          userCount: parseInt(stat.userCount),
+          userCount: parseInt(stat.usercount),
         });
       }
     }
@@ -562,10 +562,10 @@ export class UsersService {
     const stats = await this.repo
       .createQueryBuilder('user')
       .select('user.favoriteGambleId', 'gambleId')
-      .addSelect('COUNT(*)', 'userCount')
+      .addSelect('COUNT(*)', 'usercount')
       .where('user.favoriteGambleId IS NOT NULL')
       .groupBy('user.favoriteGambleId')
-      .orderBy('userCount', 'DESC')
+      .orderBy('usercount', 'DESC')
       .getRawMany();
 
     const result: Array<{ gamble: Gamble; userCount: number }> = [];
@@ -578,8 +578,65 @@ export class UsersService {
       if (gamble) {
         result.push({
           gamble,
-          userCount: parseInt(stat.userCount),
+          userCount: parseInt(stat.usercount),
         });
+      }
+    }
+
+    return result;
+  }
+
+  async getCharacterMediaPopularityStats(): Promise<
+    Array<{ media: any; userCount: number }>
+  > {
+    const stats = await this.repo
+      .createQueryBuilder('user')
+      .select('user.selectedCharacterMediaId', 'mediaId')
+      .addSelect('COUNT(*)', 'usercount')
+      .where('user.selectedCharacterMediaId IS NOT NULL')
+      .andWhere('user.profilePictureType = :type', { type: ProfilePictureType.CHARACTER_MEDIA })
+      .groupBy('user.selectedCharacterMediaId')
+      .orderBy('usercount', 'DESC')
+      .getRawMany();
+
+    const result: Array<{ media: any; userCount: number }> = [];
+    const mediaRepo = this.repo.manager.getRepository(Media);
+
+    for (const stat of stats) {
+      const media = await mediaRepo.findOne({
+        where: { id: stat.mediaId },
+        relations: ['submittedBy'],
+      });
+
+      if (media && media.ownerType === 'character') {
+        // Get character info for the media
+        const characterRepo = this.repo.manager.getRepository(Character);
+        const character = await characterRepo.findOne({
+          where: { id: media.ownerId },
+        });
+
+        if (character) {
+          result.push({
+            media: {
+              id: media.id,
+              url: media.url,
+              fileName: media.fileName,
+              description: media.description,
+              ownerType: media.ownerType,
+              ownerId: media.ownerId,
+              chapterNumber: media.chapterNumber,
+              character: {
+                id: character.id,
+                name: character.name,
+              },
+              submittedBy: media.submittedBy ? {
+                id: media.submittedBy.id,
+                username: media.submittedBy.username,
+              } : null,
+            },
+            userCount: parseInt(stat.usercount),
+          });
+        }
       }
     }
 

@@ -20,6 +20,7 @@ import {
 import { Eye, Users, Dices, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../components/SpoilerMarkdown'
 import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -230,19 +231,18 @@ function GamblesPageContent() {
                           )}
                         </Box>
 
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            mb: 2,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 3,
-                          }}
-                        >
-                          {gamble.rules}
-                        </Typography>
+                        <div style={{
+                          marginBottom: '16px',
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 3,
+                        }}>
+                          <SpoilerMarkdown 
+                            content={gamble.rules}
+                            className="gamble-rules-preview"
+                          />
+                        </div>
 
                       </CardContent>
 

@@ -16,6 +16,7 @@ import {
 import { ArrowLeft, CalendarSearch, Calendar, Users, BookOpen, Dice6, Tag } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -200,9 +201,10 @@ export default function EventDetailsPage() {
                   Description
                 </Typography>
                 <TimelineSpoilerWrapper chapterNumber={event.chapterNumber}>
-                  <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
-                    {event.description}
-                  </Typography>
+                  <SpoilerMarkdown 
+                    content={event.description}
+                    className="event-description"
+                  />
                 </TimelineSpoilerWrapper>
 
                 {event.gamble && (
@@ -215,13 +217,21 @@ export default function EventDetailsPage() {
                         <Typography variant="h6" gutterBottom>
                           {event.gamble.name}
                         </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Rules:</strong> {event.gamble.rules}
-                        </Typography>
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>Rules:</Typography>
+                          <SpoilerMarkdown 
+                            content={event.gamble.rules}
+                            className="event-gamble-rules"
+                          />
+                        </Box>
                         {event.gamble.winCondition && (
-                          <Typography variant="body2">
-                            <strong>Win Condition:</strong> {event.gamble.winCondition}
-                          </Typography>
+                          <Box>
+                            <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>Win Condition:</Typography>
+                            <SpoilerMarkdown 
+                              content={event.gamble.winCondition}
+                              className="event-gamble-win-condition"
+                            />
+                          </Box>
                         )}
                       </Box>
                     </TimelineSpoilerWrapper>

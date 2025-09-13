@@ -26,6 +26,7 @@ import {
 import { Search, Users, Eye, Edit, Upload, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../components/SpoilerMarkdown'
 import Image from 'next/image'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
@@ -288,19 +289,18 @@ export default function CharactersPage() {
                           </Box>
                         )}
 
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            mb: 2,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 3,
-                          }}
-                        >
-                          {character.description}
-                        </Typography>
+                        <div style={{
+                          marginBottom: '16px',
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 3,
+                        }}>
+                          <SpoilerMarkdown 
+                            content={character.description}
+                            className="character-description-preview"
+                          />
+                        </div>
 
                         {character.firstAppearanceChapter && (
                           <Typography variant="body2" color="text.secondary">

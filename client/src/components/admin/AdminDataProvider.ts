@@ -302,6 +302,56 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     return mediaCleaned
   }
   
+  if (resource === 'characters') {
+    // Keep only the fields that are allowed in the CreateCharacterDto/UpdateCharacterDto
+    const allowedFields = [
+      'name', 'description', 'firstAppearanceChapter', 'alternateNames', 'factionIds'
+    ]
+    
+    const characterCleaned: Record<string, unknown> = {}
+    allowedFields.forEach(field => {
+      if (cleaned[field] !== undefined) {
+        characterCleaned[field] = cleaned[field]
+      }
+    })
+    
+    // Handle factionIds - ReferenceArrayInput might set this as objects or IDs
+    if (characterCleaned.factionIds && Array.isArray(characterCleaned.factionIds)) {
+      console.log('Processing factionIds for character:', characterCleaned.factionIds)
+      characterCleaned.factionIds = characterCleaned.factionIds.map((f: unknown) => {
+        // If it's already a number, keep it
+        if (typeof f === 'number') return f
+        // If it's a string that can be parsed as number, parse it
+        if (typeof f === 'string' && !isNaN(Number(f))) return Number(f)
+        // If it's an object with id property, extract the id
+        if (typeof f === 'object' && f !== null && 'id' in f) {
+          const id = (f as Record<string, unknown>).id
+          return typeof id === 'number' ? id : Number(id)
+        }
+        console.warn('Unexpected factionId format:', f)
+        return f
+      }).filter(id => {
+        const isValid = id !== null && id !== undefined && !isNaN(Number(id))
+        if (!isValid) console.warn('Filtered out invalid factionId:', id)
+        return isValid
+      })
+      console.log('Processed factionIds for character:', characterCleaned.factionIds)
+    } else if (data.factions && Array.isArray(data.factions)) {
+      // If factionIds doesn't exist but factions does, extract IDs from factions
+      console.log('Extracting factionIds from factions for character:', data.factions)
+      characterCleaned.factionIds = data.factions.map((f: any) => 
+        typeof f === 'object' && f !== null ? f.id : f
+      ).filter((id: any) => {
+        const isValid = id !== null && id !== undefined && !isNaN(Number(id))
+        if (!isValid) console.warn('Filtered out invalid extracted factionId:', id)
+        return isValid
+      })
+      console.log('Extracted factionIds for character:', characterCleaned.factionIds)
+    }
+    
+    return characterCleaned
+  }
+  
   if (resource === 'quotes') {
     // Keep only the fields that are allowed in the CreateQuoteDto/UpdateQuoteDto
     const allowedFields = [
@@ -452,6 +502,18 @@ export const AdminDataProvider: DataProvider = {
             typeof character === 'object' && character !== null ? character.id : character
           ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
           console.log('Generated characterIds:', itemData.characterIds)
+        }
+      }
+      
+      if (resource === 'characters') {
+        // Transform factions array to factionIds for the form
+        const itemData = item as any
+        if (itemData.factions && Array.isArray(itemData.factions)) {
+          console.log('Transforming factions to factionIds for character:', itemData.id, itemData.factions)
+          itemData.factionIds = itemData.factions.map((faction: any) => 
+            typeof faction === 'object' && faction !== null ? faction.id : faction
+          ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
+          console.log('Generated factionIds:', itemData.factionIds)
         }
       }
       

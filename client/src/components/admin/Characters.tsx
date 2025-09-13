@@ -18,10 +18,12 @@ import {
   NumberField,
   ReferenceArrayInput,
   AutocompleteArrayInput,
-  ReferenceArrayField
+  ReferenceArrayField,
+  FunctionField
 } from 'react-admin'
-import { Box, Card, CardContent, Typography, Grid } from '@mui/material'
+import { Box, Card, CardContent, Typography, Grid, Chip } from '@mui/material'
 import { User, Edit3, Plus } from 'lucide-react'
+import SpoilerMarkdown from '../SpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 export const CharacterList = () => (
@@ -30,11 +32,26 @@ export const CharacterList = () => (
       <TextField source="id" />
       <TextField source="name" />
       <NumberField source="firstAppearanceChapter" label="First Chapter" />
-      <ArrayField source="alternateNames">
-        <SingleFieldList linkType={false}>
-          <ChipField source="" size="small" />
-        </SingleFieldList>
-      </ArrayField>
+      <FunctionField 
+        label="Alternate Names" 
+        render={(record: any) => (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {(record.alternateNames || []).map((name: string, index: number) => (
+              <Chip
+                key={index}
+                label={name}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                  color: '#1976d2',
+                  fontSize: '0.75rem',
+                  height: '24px'
+                }}
+              />
+            ))}
+          </Box>
+        )}
+      />
       <ArrayField source="factions" label="Factions">
         <SingleFieldList linkType={false}>
           <ChipField source="name" size="small" />
@@ -49,13 +66,41 @@ export const CharacterShow = () => (
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="name" />
-      <TextField source="description" />
+      <FunctionField 
+        label="Description" 
+        render={(record: any) => 
+          record.description ? (
+            <SpoilerMarkdown 
+              content={record.description} 
+              className="admin-description"
+            />
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No description
+            </Typography>
+          )
+        }
+      />
       <NumberField source="firstAppearanceChapter" />
-      <ArrayField source="alternateNames">
-        <SingleFieldList linkType={false}>
-          <ChipField source="" />
-        </SingleFieldList>
-      </ArrayField>
+      <FunctionField 
+        label="Alternate Names" 
+        render={(record: any) => (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {(record.alternateNames || []).map((name: string, index: number) => (
+              <Chip
+                key={index}
+                label={name}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                  color: '#1976d2',
+                  fontSize: '0.75rem'
+                }}
+              />
+            ))}
+          </Box>
+        )}
+      />
       <ArrayField source="factions" label="Factions">
         <SingleFieldList linkType={false}>
           <ChipField source="name" />
@@ -108,36 +153,45 @@ export const CharacterEdit = () => (
         </Box>
 
         <CardContent sx={{ p: 4 }}>
-          <SimpleForm sx={{
-            '& .MuiTextField-root': {
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: '#0f0f0f',
-                border: '1px solid rgba(25, 118, 210, 0.3)',
-                '&:hover': {
-                  borderColor: 'rgba(25, 118, 210, 0.5)'
-                },
-                '&.Mui-focused': {
-                  borderColor: '#1976d2'
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  border: 'none'
-                }
-              },
-              '& .MuiInputLabel-root': {
-                color: 'rgba(255, 255, 255, 0.7)',
-                '&.Mui-focused': {
-                  color: '#1976d2'
-                }
-              },
-              '& .MuiInputBase-input': {
-                color: '#ffffff'
-              }
-            },
-            '& .MuiFormControl-root': {
-              mb: 3
+          <SimpleForm 
+            toolbar={
+              <EditToolbar 
+                resource="characters"
+                confirmTitle="Delete Character"
+                confirmMessage="Are you sure you want to delete this character? This will remove all associated data and cannot be undone."
+              />
             }
-          }}>
+            sx={{
+              '& .MuiTextField-root': {
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0f0f0f',
+                  border: '1px solid rgba(25, 118, 210, 0.3)',
+                  '&:hover': {
+                    borderColor: 'rgba(25, 118, 210, 0.5)'
+                  },
+                  '&.Mui-focused': {
+                    borderColor: '#1976d2'
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none'
+                  }
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: '#1976d2'
+                  }
+                },
+                '& .MuiInputBase-input': {
+                  color: '#ffffff'
+                }
+              },
+              '& .MuiFormControl-root': {
+                mb: 3
+              }
+            }}
+          >
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Box sx={{ 
@@ -151,7 +205,13 @@ export const CharacterEdit = () => (
                     Basic Information
                   </Typography>
                   <TextInput source="name" required fullWidth />
-                  <TextInput source="description" multiline rows={4} fullWidth />
+                  <TextInput 
+                    source="description" 
+                    multiline 
+                    rows={4} 
+                    fullWidth 
+                    helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
+                  />
                   <NumberInput source="firstAppearanceChapter" max={539} min={1} fullWidth />
                 </Box>
               </Grid>
@@ -184,7 +244,7 @@ export const CharacterEdit = () => (
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
                     Relations
                   </Typography>
-                  <ReferenceArrayInput source="factions" reference="factions" label="Factions">
+                  <ReferenceArrayInput source="factionIds" reference="factions" label="Factions">
                     <AutocompleteArrayInput 
                       optionText="name"
                       sx={{
@@ -197,11 +257,6 @@ export const CharacterEdit = () => (
                 </Box>
               </Grid>
             </Grid>
-            <EditToolbar 
-              resource="characters"
-              confirmTitle="Delete Character"
-              confirmMessage="Are you sure you want to delete this character? This will remove all associated data and cannot be undone."
-            />
           </SimpleForm>
         </CardContent>
       </Card>
@@ -294,7 +349,13 @@ export const CharacterCreate = () => (
                     Basic Information
                   </Typography>
                   <TextInput source="name" required fullWidth />
-                  <TextInput source="description" multiline rows={4} fullWidth />
+                  <TextInput 
+                    source="description" 
+                    multiline 
+                    rows={4} 
+                    fullWidth 
+                    helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
+                  />
                   <NumberInput source="firstAppearanceChapter" max={539} min={1} fullWidth />
                 </Box>
               </Grid>
@@ -327,7 +388,7 @@ export const CharacterCreate = () => (
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
                     Relations
                   </Typography>
-                  <ReferenceArrayInput source="factions" reference="factions" label="Factions">
+                  <ReferenceArrayInput source="factionIds" reference="factions" label="Factions">
                     <AutocompleteArrayInput 
                       optionText="name"
                       sx={{

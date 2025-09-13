@@ -17,6 +17,7 @@ import {
 } from '@mui/material'
 import { Search, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
+import SpoilerMarkdown from '../../components/SpoilerMarkdown'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import MediaThumbnail from '../../components/MediaThumbnail'
@@ -175,20 +176,19 @@ export default function FactionsPage() {
                         </Box>
 
                         {faction.description && (
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary"
-                            sx={{ 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 4,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              mb: 2,
-                              flexGrow: 1
-                            }}
-                          >
-                            {faction.description}
-                          </Typography>
+                          <div style={{ 
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            marginBottom: '16px',
+                            flexGrow: 1
+                          }}>
+                            <SpoilerMarkdown 
+                              content={faction.description}
+                              className="faction-description-preview"
+                            />
+                          </div>
                         )}
 
                         {faction.memberCount !== undefined && (

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { SearchBar } from '../components/SearchBar'
 import { TrendingSection } from '../components/TrendingSection'
 import { VolumeCoverSection } from '../components/VolumeCoverSection'
+import { FavoritesSection } from '../components/FavoritesSection'
 import { FAQ } from '../components/FAQ'
 import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
@@ -359,6 +360,9 @@ export default function HomePage() {
             ) : null}
           </motion.div>
         </Box>
+
+        {/* Community Favorites Section */}
+        <FavoritesSection />
 
         {/* FAQ Section */}
         <Box mb={6}>

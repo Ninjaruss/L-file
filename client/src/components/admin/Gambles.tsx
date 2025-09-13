@@ -25,9 +25,11 @@ import {
   CreateButton,
   ExportButton,
   SearchInput,
-  NumberField
+  NumberField,
+  FunctionField
 } from 'react-admin'
 import { Box, Typography } from '@mui/material'
+import SpoilerMarkdown from '../SpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 
@@ -151,37 +153,52 @@ export const GambleShow = () => (
         <Tab label="Game Rules">
           <Box sx={{ p: 3, backgroundColor: '#0a0a0a' }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#ffffff', fontWeight: 'bold' }}>Rules</Typography>
-            <TextField 
-              source="rules" 
-              component="pre" 
-              sx={{
-                whiteSpace: 'pre-wrap', 
-                p: 2, 
-                bgcolor: '#0f0f0f', 
-                borderRadius: 1,
-                border: '1px solid rgba(211, 47, 47, 0.3)',
-                fontFamily: 'inherit',
-                lineHeight: 1.6,
-                mb: 3,
-                color: '#ffffff'
-              }} 
+            <FunctionField 
+              source="rules"
+              render={(record: any) => 
+                record.rules ? (
+                  <Box sx={{
+                    p: 2, 
+                    bgcolor: '#0f0f0f', 
+                    borderRadius: 1,
+                    border: '1px solid rgba(211, 47, 47, 0.3)',
+                    mb: 3
+                  }}>
+                    <SpoilerMarkdown 
+                      content={record.rules} 
+                      className="admin-gamble-rules"
+                    />
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No rules defined
+                  </Typography>
+                )
+              }
             />
             
             <Typography variant="h6" gutterBottom sx={{ color: '#ffffff', fontWeight: 'bold' }}>Win Conditions</Typography>
-            <TextField 
-              source="winCondition" 
-              component="pre" 
-              emptyText="No specific win conditions defined"
-              sx={{
-                whiteSpace: 'pre-wrap', 
-                p: 2, 
-                bgcolor: '#0f0f0f', 
-                borderRadius: 1,
-                border: '1px solid rgba(211, 47, 47, 0.3)',
-                fontFamily: 'inherit',
-                lineHeight: 1.6,
-                color: '#ffffff'
-              }} 
+            <FunctionField 
+              source="winCondition"
+              render={(record: any) => 
+                record.winCondition ? (
+                  <Box sx={{
+                    p: 2, 
+                    bgcolor: '#0f0f0f', 
+                    borderRadius: 1,
+                    border: '1px solid rgba(211, 47, 47, 0.3)',
+                  }}>
+                    <SpoilerMarkdown 
+                      content={record.winCondition} 
+                      className="admin-gamble-win-condition"
+                    />
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No specific win conditions defined
+                  </Typography>
+                )
+              }
             />
           </Box>
         </Tab>
@@ -369,7 +386,7 @@ const GambleEditForm = () => {
             required 
             fullWidth
             label="Game Rules"
-            helperText="Detailed explanation of how the gamble works"
+            helperText="Detailed explanation of how the gamble works. Supports Markdown formatting."
             sx={{ mb: 3 }}
           />
           
@@ -380,7 +397,7 @@ const GambleEditForm = () => {
             rows={4}
             fullWidth
             label="Win Conditions"
-            helperText="What determines victory in this gamble (optional)"
+            helperText="What determines victory in this gamble (optional). Supports Markdown formatting."
           />
         </Box>
       </FormTab>
@@ -551,7 +568,7 @@ export const GambleCreate = () => {
                 required 
                 fullWidth
                 label="Game Rules"
-                helperText="Detailed explanation of how the gamble works"
+                helperText="Detailed explanation of how the gamble works. Supports Markdown formatting."
                 sx={{ mb: 3 }}
               />
               
@@ -562,7 +579,7 @@ export const GambleCreate = () => {
                 rows={4}
                 fullWidth
                 label="Win Conditions"
-                helperText="What determines victory in this gamble (optional)"
+                helperText="What determines victory in this gamble (optional). Supports Markdown formatting."
               />
             </Box>
           </FormTab>

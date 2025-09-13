@@ -1250,6 +1250,55 @@ class ApiClient {
     }>(`/${query ? `?${query}` : ''}`)
   }
 
+  async getFavoritesData() {
+    return this.get<{
+      favoriteQuotes: Array<{
+        quote: {
+          id: number
+          text: string
+          description?: string
+          chapterNumber: number
+          pageNumber?: number
+          character: {
+            id: number
+            name: string
+          }
+        }
+        userCount: number
+      }>
+      favoriteGambles: Array<{
+        gamble: {
+          id: number
+          name: string
+          rules: string
+          winCondition?: string
+          chapterId: number
+        }
+        userCount: number
+      }>
+      favoriteCharacterMedia: Array<{
+        media: {
+          id: number
+          url: string
+          fileName: string
+          description?: string
+          ownerType: string
+          ownerId: number
+          chapterNumber?: number
+          character: {
+            id: number
+            name: string
+          }
+          submittedBy?: {
+            id: number
+            username: string
+          } | null
+        }
+        userCount: number
+      }>
+    }>('/favorites')
+  }
+
   async getTrendingPages(params?: { limit?: number; daysBack?: number }) {
     const searchParams = new URLSearchParams()
     if (params) {

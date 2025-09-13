@@ -10,8 +10,11 @@ import {
   TextInput,
   SimpleShowLayout,
   NumberInput,
-  NumberField
+  NumberField,
+  FunctionField
 } from 'react-admin'
+import { Typography } from '@mui/material'
+import SpoilerMarkdown from '../SpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 export const ArcList = () => (
@@ -31,7 +34,21 @@ export const ArcShow = () => (
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="name" />
-      <TextField source="description" />
+      <FunctionField 
+        label="Description" 
+        render={(record: any) => 
+          record.description ? (
+            <SpoilerMarkdown 
+              content={record.description} 
+              className="admin-description"
+            />
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No description
+            </Typography>
+          )
+        }
+      />
       <NumberField source="startChapter" />
       <NumberField source="endChapter" />
     </SimpleShowLayout>
@@ -48,7 +65,12 @@ export const ArcEdit = () => (
       />}
     >
       <TextInput source="name" required />
-      <TextInput source="description" multiline rows={4} />
+      <TextInput 
+        source="description" 
+        multiline 
+        rows={4} 
+        helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
+      />
       <NumberInput source="startChapter" required />
       <NumberInput source="endChapter" required />
     </SimpleForm>
@@ -59,7 +81,12 @@ export const ArcCreate = () => (
   <Create>
     <SimpleForm>
       <TextInput source="name" required />
-      <TextInput source="description" multiline rows={4} />
+      <TextInput 
+        source="description" 
+        multiline 
+        rows={4} 
+        helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
+      />
       <NumberInput source="startChapter" required />
       <NumberInput source="endChapter" required />
     </SimpleForm>
