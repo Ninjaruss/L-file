@@ -42,7 +42,8 @@ import {
   Button as MuiButton,
   ButtonGroup,
   Toolbar,
-  AppBar
+  AppBar,
+  TextField as MuiTextField
 } from '@mui/material'
 import { 
   Check, 
@@ -350,14 +351,41 @@ const GuideFilterToolbar = () => {
     { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
   ]
   
-  const typeFilters = [
-    { id: 'all', name: 'All Types', icon: '📚' },
-    { id: 'character', name: 'Character Guides', icon: '👤' },
-    { id: 'arc', name: 'Story Arc Guides', icon: '📖' },
-    { id: 'gamble', name: 'Gamble Guides', icon: '🎲' },
-    { id: 'comprehensive', name: 'Multi-Entity Guides', icon: '🔗' },
-    { id: 'general', name: 'General Guides', icon: '📝' }
-  ]
+  const [entitySearch, setEntitySearch] = useState('')
+  const [selectedEntities, setSelectedEntities] = useState<{
+    characters: any[]
+    arcs: any[]
+    gambles: any[]
+  }>({ characters: [], arcs: [], gambles: [] })
+  
+  const [entities, setEntities] = useState<{
+    characters: any[]
+    arcs: any[]
+    gambles: any[]
+  }>({ characters: [], arcs: [], gambles: [] })
+
+  // Load entities on mount
+  useEffect(() => {
+    const loadEntities = async () => {
+      try {
+        const [charactersRes, arcsRes, gamblesRes] = await Promise.all([
+          api.getCharacters({ limit: 100 }),
+          api.getArcs({ limit: 100 }),
+          api.getGambles({ limit: 100 })
+        ])
+        
+        setEntities({
+          characters: charactersRes.data || [],
+          arcs: arcsRes.data || [],
+          gambles: gamblesRes.data || []
+        })
+      } catch (error) {
+        console.error('Error loading entities:', error)
+      }
+    }
+    
+    loadEntities()
+  }, [])
 
   const handleStatusFilter = (status: string) => {
     const newFilters = status === 'all' 
@@ -366,24 +394,53 @@ const GuideFilterToolbar = () => {
     setFilters(newFilters, filterValues)
   }
 
-  const handleTypeFilter = (guideType: string) => {
+  const handleEntityFilter = () => {
     const newFilters = { ...filterValues }
     
-    // Remove any existing type-related filters
-    delete newFilters.guideType
+    // Remove existing entity filters
+    delete newFilters.characterIds
+    delete newFilters.arcIds
+    delete newFilters.gambleIds
     
-    if (guideType === 'all') {
-      // Remove all type filters
-    } else {
-      // Set the guide type filter for client-side filtering
-      newFilters.guideType = guideType
+    // Add selected entity filters
+    if (selectedEntities.characters.length > 0) {
+      newFilters.characterIds = selectedEntities.characters.map(c => c.id).join(',')
+    }
+    if (selectedEntities.arcs.length > 0) {
+      newFilters.arcIds = selectedEntities.arcs.map(a => a.id).join(',')
+    }
+    if (selectedEntities.gambles.length > 0) {
+      newFilters.gambleIds = selectedEntities.gambles.map(g => g.id).join(',')
     }
     
     setFilters(newFilters, filterValues)
   }
 
+  const clearEntityFilters = () => {
+    setSelectedEntities({ characters: [], arcs: [], gambles: [] })
+    const newFilters = { ...filterValues }
+    delete newFilters.characterIds
+    delete newFilters.arcIds
+    delete newFilters.gambleIds
+    setFilters(newFilters, filterValues)
+  }
+
+  const filteredEntities = {
+    characters: entities.characters.filter(c => 
+      c.name.toLowerCase().includes(entitySearch.toLowerCase())
+    ),
+    arcs: entities.arcs.filter(a => 
+      a.name.toLowerCase().includes(entitySearch.toLowerCase())
+    ),
+    gambles: entities.gambles.filter(g => 
+      g.name.toLowerCase().includes(entitySearch.toLowerCase())
+    )
+  }
+
   const currentStatus = filterValues?.status || 'all'
-  const currentType = filterValues?.guideType || 'all'
+  const hasEntityFilters = selectedEntities.characters.length > 0 || 
+                          selectedEntities.arcs.length > 0 || 
+                          selectedEntities.gambles.length > 0
 
   return (
     <Box sx={{
@@ -433,7 +490,7 @@ const GuideFilterToolbar = () => {
         </ButtonGroup>
       </Box>
 
-      {/* Type Filters */}
+      {/* Entity Filters */}
       <Box>
         <Typography variant="subtitle2" sx={{ 
           color: '#7c3aed', 
@@ -441,34 +498,217 @@ const GuideFilterToolbar = () => {
           mb: 1,
           fontSize: '0.9rem'
         }}>
-          📂 Filter by Guide Type
+          � Filter by Related Entities
         </Typography>
-        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-          {typeFilters.map((filter) => (
-            <MuiButton
-              key={filter.id}
-              onClick={() => handleTypeFilter(filter.id)}
-              variant={currentType === filter.id ? 'contained' : 'outlined'}
-              size="small"
-              sx={{
-                borderColor: '#7c3aed',
-                color: currentType === filter.id ? '#fff' : '#7c3aed',
-                backgroundColor: currentType === filter.id ? '#7c3aed' : 'transparent',
-                fontSize: '0.75rem',
-                minWidth: '90px',
-                height: '32px',
-                '&:hover': {
-                  backgroundColor: currentType === filter.id 
-                    ? '#7c3aed' 
-                    : 'rgba(124, 58, 237, 0.1)',
-                  borderColor: '#7c3aed'
-                }
-              }}
-            >
-              {filter.icon} {filter.name}
-            </MuiButton>
-          ))}
-        </ButtonGroup>
+        
+        {/* Entity Search */}
+        <Box sx={{ mb: 2 }}>
+          <MuiTextField
+            label="Search entities..."
+            value={entitySearch}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEntitySearch(e.target.value)}
+            fullWidth
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'rgba(124, 58, 237, 0.05)',
+                '& fieldset': { borderColor: 'rgba(124, 58, 237, 0.3)' },
+                '&:hover fieldset': { borderColor: '#7c3aed' },
+                '&.Mui-focused fieldset': { borderColor: '#7c3aed' }
+              }
+            }}
+          />
+        </Box>
+
+        {/* Entity Selection Lists */}
+        <Grid container spacing={2}>
+          {/* Characters */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
+              👤 Characters ({selectedEntities.characters.length})
+            </Typography>
+            <Box sx={{ 
+              maxHeight: 150, 
+              overflowY: 'auto', 
+              border: '1px solid rgba(124, 58, 237, 0.2)',
+              borderRadius: 1,
+              p: 1,
+              backgroundColor: 'rgba(124, 58, 237, 0.02)'
+            }}>
+              {filteredEntities.characters.slice(0, 10).map((character) => (
+                <Box key={character.id} sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  mb: 0.5,
+                  cursor: 'pointer',
+                  p: 0.5,
+                  borderRadius: 0.5,
+                  backgroundColor: selectedEntities.characters.find(c => c.id === character.id) 
+                    ? 'rgba(124, 58, 237, 0.1)' 
+                    : 'transparent',
+                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
+                }}
+                onClick={() => {
+                  const isSelected = selectedEntities.characters.find(c => c.id === character.id)
+                  if (isSelected) {
+                    setSelectedEntities(prev => ({
+                      ...prev,
+                      characters: prev.characters.filter(c => c.id !== character.id)
+                    }))
+                  } else {
+                    setSelectedEntities(prev => ({
+                      ...prev,
+                      characters: [...prev.characters, character]
+                    }))
+                  }
+                }}>
+                  <Chip
+                    size="small"
+                    label={character.name}
+                    variant={selectedEntities.characters.find(c => c.id === character.id) ? 'filled' : 'outlined'}
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Grid>
+
+          {/* Arcs */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
+              📖 Arcs ({selectedEntities.arcs.length})
+            </Typography>
+            <Box sx={{ 
+              maxHeight: 150, 
+              overflowY: 'auto', 
+              border: '1px solid rgba(124, 58, 237, 0.2)',
+              borderRadius: 1,
+              p: 1,
+              backgroundColor: 'rgba(124, 58, 237, 0.02)'
+            }}>
+              {filteredEntities.arcs.slice(0, 10).map((arc) => (
+                <Box key={arc.id} sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  mb: 0.5,
+                  cursor: 'pointer',
+                  p: 0.5,
+                  borderRadius: 0.5,
+                  backgroundColor: selectedEntities.arcs.find(a => a.id === arc.id) 
+                    ? 'rgba(124, 58, 237, 0.1)' 
+                    : 'transparent',
+                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
+                }}
+                onClick={() => {
+                  const isSelected = selectedEntities.arcs.find(a => a.id === arc.id)
+                  if (isSelected) {
+                    setSelectedEntities(prev => ({
+                      ...prev,
+                      arcs: prev.arcs.filter(a => a.id !== arc.id)
+                    }))
+                  } else {
+                    setSelectedEntities(prev => ({
+                      ...prev,
+                      arcs: [...prev.arcs, arc]
+                    }))
+                  }
+                }}>
+                  <Chip
+                    size="small"
+                    label={arc.name}
+                    variant={selectedEntities.arcs.find(a => a.id === arc.id) ? 'filled' : 'outlined'}
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Grid>
+
+          {/* Gambles */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
+              🎲 Gambles ({selectedEntities.gambles.length})
+            </Typography>
+            <Box sx={{ 
+              maxHeight: 150, 
+              overflowY: 'auto', 
+              border: '1px solid rgba(124, 58, 237, 0.2)',
+              borderRadius: 1,
+              p: 1,
+              backgroundColor: 'rgba(124, 58, 237, 0.02)'
+            }}>
+              {filteredEntities.gambles.slice(0, 10).map((gamble) => (
+                <Box key={gamble.id} sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  mb: 0.5,
+                  cursor: 'pointer',
+                  p: 0.5,
+                  borderRadius: 0.5,
+                  backgroundColor: selectedEntities.gambles.find(g => g.id === gamble.id) 
+                    ? 'rgba(124, 58, 237, 0.1)' 
+                    : 'transparent',
+                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
+                }}
+                onClick={() => {
+                  const isSelected = selectedEntities.gambles.find(g => g.id === gamble.id)
+                  if (isSelected) {
+                    setSelectedEntities(prev => ({
+                      ...prev,
+                      gambles: prev.gambles.filter(g => g.id !== gamble.id)
+                    }))
+                  } else {
+                    setSelectedEntities(prev => ({
+                      ...prev,
+                      gambles: [...prev.gambles, gamble]
+                    }))
+                  }
+                }}>
+                  <Chip
+                    size="small"
+                    label={gamble.name}
+                    variant={selectedEntities.gambles.find(g => g.id === gamble.id) ? 'filled' : 'outlined'}
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Filter Actions */}
+        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+          <MuiButton
+            onClick={handleEntityFilter}
+            variant="contained"
+            size="small"
+            disabled={!hasEntityFilters}
+            sx={{
+              backgroundColor: '#7c3aed',
+              '&:hover': { backgroundColor: '#6d28d9' },
+              fontSize: '0.75rem'
+            }}
+          >
+            Apply Entity Filters
+          </MuiButton>
+          <MuiButton
+            onClick={clearEntityFilters}
+            variant="outlined"
+            size="small"
+            disabled={!hasEntityFilters}
+            sx={{
+              borderColor: '#7c3aed',
+              color: '#7c3aed',
+              '&:hover': { 
+                borderColor: '#6d28d9',
+                backgroundColor: 'rgba(124, 58, 237, 0.05)'
+              },
+              fontSize: '0.75rem'
+            }}
+          >
+            Clear Filters
+          </MuiButton>
+        </Box>
       </Box>
     </Box>
   )

@@ -1170,7 +1170,18 @@ class ApiClient {
   }
 
   // Admin guide methods (authenticated)
-  async getGuidesAdmin(params?: { page?: number; limit?: number; search?: string; status?: string; authorId?: number; sortBy?: string; sortOrder?: string }) {
+  async getGuidesAdmin(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    status?: string; 
+    authorId?: number; 
+    sortBy?: string; 
+    sortOrder?: string;
+    characterIds?: string;
+    arcIds?: string;
+    gambleIds?: string;
+  }) {
     const searchParams = new URLSearchParams()
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

@@ -99,6 +99,9 @@ export class GuidesService {
       status,
       authorId,
       tag,
+      characterIds,
+      arcIds, 
+      gambleIds,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
       page = 1,
@@ -153,6 +156,30 @@ export class GuidesService {
 
     if (tag) {
       queryBuilder.andWhere('tags.name = :tag', { tag });
+    }
+
+    // Filter by character IDs
+    if (characterIds) {
+      const charIds = characterIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (charIds.length > 0) {
+        queryBuilder.andWhere('characters.id IN (:...charIds)', { charIds });
+      }
+    }
+
+    // Filter by arc IDs
+    if (arcIds) {
+      const arcIdArray = arcIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (arcIdArray.length > 0) {
+        queryBuilder.andWhere('arc.id IN (:...arcIdArray)', { arcIdArray });
+      }
+    }
+
+    // Filter by gamble IDs
+    if (gambleIds) {
+      const gambleIdArray = gambleIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (gambleIdArray.length > 0) {
+        queryBuilder.andWhere('gambles.id IN (:...gambleIdArray)', { gambleIdArray });
+      }
     }
 
     // For sorting by viewCount, we need a different approach since it's not in the entity anymore

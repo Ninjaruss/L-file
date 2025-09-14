@@ -39,6 +39,30 @@ export class GuideQueryDto {
   tag?: string;
 
   @ApiPropertyOptional({
+    description: 'Filter guides by character IDs (comma-separated)',
+    example: '1,2,3',
+  })
+  @IsOptional()
+  @IsString()
+  characterIds?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter guides by arc IDs (comma-separated)',
+    example: '1,2',
+  })
+  @IsOptional()
+  @IsString()
+  arcIds?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter guides by gamble IDs (comma-separated)',
+    example: '1,2,3',
+  })
+  @IsOptional()
+  @IsString()
+  gambleIds?: string;
+
+  @ApiPropertyOptional({
     description:
       'Sort by field (id, createdAt, updatedAt, viewCount, likeCount, title, description, authorId)',
     example: 'likeCount',
