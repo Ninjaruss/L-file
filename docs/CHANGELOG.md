@@ -16,6 +16,7 @@
 - Added about page and donate button
 - Pending items counter added for guides/media
 - Cleaned up quotes page and gamble detail page
+- Updated media page to use better filters and truncate urls
 
 ## 2025-09-12
 ### Changes 

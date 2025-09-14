@@ -18,7 +18,8 @@ import {
   useRecordContext,
   useNotify,
   useRefresh,
-  useListContext
+  useListContext,
+  FunctionField
 } from 'react-admin'
 import { useWatch } from 'react-hook-form'
 import { 
@@ -430,7 +431,7 @@ const MediaFilterToolbar = () => {
 
   const handleStatusFilter = (status: string) => {
     const newFilters = status === 'all' 
-      ? { ...filterValues, status: undefined }
+      ? { ...filterValues, status: 'all' }
       : { ...filterValues, status }
     setFilters(newFilters, filterValues)
   }
@@ -723,8 +724,7 @@ const EntityNameDisplay = () => {
 
 export const MediaList = () => (
   <List 
-    filterDefaultValues={{ status: 'pending' }}
-    sort={{ field: 'ownerType', order: 'ASC' }}
+    filterDefaultValues={{ status: 'all' }}
     perPage={25}
     sx={{
       '& .RaList-content': {
@@ -769,13 +769,13 @@ export const MediaList = () => (
         }
       }}
     >
-      <TextField source="id" sx={{ width: '50px', fontSize: '0.85rem' }} />
+      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
       
       {/* Entity Information - Priority Section */}
       <EntityInfoField />
       
       {/* Media Preview */}
-      <MediaPreviewField source="type" />
+      <MediaPreviewField source="url" />
       
       {/* Media Details - Truncated URL */}
       <TruncatedUrlField />
@@ -790,6 +790,7 @@ export const MediaList = () => (
       
       <TextField 
         source="description" 
+        sortable
         sx={{ 
           maxWidth: '200px',
           '& span': {
@@ -804,8 +805,38 @@ export const MediaList = () => (
         }} 
       />
 
-      {/* Submission Details */}
-      <SubmissionDetailsField />
+      {/* Submission Details - User & Date */}
+      <FunctionField
+        label="Submitted By"
+        sortBy="user"
+        render={(record: any) => (
+          <Box sx={{
+            width: '140px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            <Typography sx={{
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              color: 'primary.main'
+            }}>
+              {record?.submittedBy?.username || 'Unknown'}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+          </Box>
+        )}
+      />
 
       {/* Chapter Info (if applicable) */}
       <ChapterInfoField />
@@ -834,7 +865,7 @@ export const MediaList = () => (
 )
 
 export const MediaApprovalQueue = () => (
-  <List filter={{ status: 'pending' }} title="Media Approval Queue" sort={{ field: 'createdAt', order: 'ASC' }}>
+  <List filter={{ status: 'pending' }} title="Media Approval Queue">
     <Datagrid
       rowClick="show"
       sx={{
@@ -859,7 +890,7 @@ export const MediaApprovalQueue = () => (
         }
       }}
     >
-      <TextField source="id" sx={{ width: '50px', fontSize: '0.85rem' }} />
+      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
 
       {/* Priority Display */}
       <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
@@ -880,7 +911,7 @@ export const MediaApprovalQueue = () => (
       <EntityInfoField />
 
       {/* Media Preview */}
-      <MediaPreviewField source="type" />
+      <MediaPreviewField source="url" />
 
       {/* Media Details - Truncated URL */}
       <TruncatedUrlField />
@@ -890,6 +921,7 @@ export const MediaApprovalQueue = () => (
 
       <TextField
         source="description"
+        sortable
         sx={{
           maxWidth: '180px',
           '& span': {
@@ -904,8 +936,38 @@ export const MediaApprovalQueue = () => (
         }}
       />
 
-      {/* Submission Details */}
-      <SubmissionDetailsField />
+      {/* Submission Details - User & Date */}
+      <FunctionField
+        label="Submitted By"
+        sortBy="user"
+        render={(record: any) => (
+          <Box sx={{
+            width: '140px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            <Typography sx={{
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              color: 'primary.main'
+            }}>
+              {record?.submittedBy?.username || 'Unknown'}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+          </Box>
+        )}
+      />
 
       {/* Priority Actions */}
       <Box
@@ -934,7 +996,6 @@ export const MediaDraftManager = () => (
   <List
     filter={{ status: 'draft' }}
     title="Draft Media Submissions"
-    sort={{ field: 'updatedAt', order: 'DESC' }}
     perPage={50}
   >
     <Datagrid
@@ -961,7 +1022,7 @@ export const MediaDraftManager = () => (
         }
       }}
     >
-      <TextField source="id" sx={{ width: '50px', fontSize: '0.85rem' }} />
+      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
 
       {/* Draft Status */}
       <Box sx={{ width: '90px', display: 'flex', justifyContent: 'center' }}>
@@ -982,7 +1043,7 @@ export const MediaDraftManager = () => (
       <EntityInfoField />
 
       {/* Media Preview */}
-      <MediaPreviewField source="type" />
+      <MediaPreviewField source="url" />
 
       {/* Media Details - Truncated URL for drafts */}
       <TruncatedUrlField />
@@ -992,6 +1053,7 @@ export const MediaDraftManager = () => (
 
       <TextField
         source="description"
+        sortable
         sx={{
           maxWidth: '200px',
           '& span': {
@@ -1007,36 +1069,49 @@ export const MediaDraftManager = () => (
         }}
       />
 
-      {/* Author & Last Modified */}
-      <Box sx={{
-        width: '130px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.5
-      }}>
-        <Typography sx={{
-          fontSize: '0.75rem',
-          fontWeight: '500',
-          color: 'primary.main'
-        }}>
-          {/* Using record context for submittedBy */}
-        </Typography>
-        <Typography sx={{
-          fontSize: '0.7rem',
-          color: 'text.secondary'
-        }}>
-          Last modified
-        </Typography>
-        <DateField
-          source="updatedAt"
-          sx={{
-            '& span': {
+      {/* Author & Last Modified - Sortable by User */}
+      <FunctionField
+        label="Author"
+        sortBy="user"
+        render={(record: any) => (
+          <Box sx={{
+            width: '130px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            <Typography sx={{
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              color: 'primary.main'
+            }}>
+              {record?.submittedBy?.username || 'Unknown'}
+            </Typography>
+            <Typography sx={{
               fontSize: '0.7rem',
               color: 'text.secondary'
-            }
-          }}
-        />
-      </Box>
+            }}>
+              Created: {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              Modified: {record?.updatedAt ? new Date(record.updatedAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+          </Box>
+        )}
+      />
 
       {/* Edit Actions */}
       <Box

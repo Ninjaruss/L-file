@@ -103,6 +103,8 @@ export class MediaService {
       ownerType?: MediaOwnerType;
       ownerId?: number;
       purpose?: MediaPurpose;
+      sort?: string;
+      order?: 'ASC' | 'DESC';
     } = {},
   ): Promise<{
     data: Media[];
@@ -119,17 +121,21 @@ export class MediaService {
       ownerType,
       ownerId,
       purpose,
+      sort,
+      order = 'DESC',
     } = filters;
     const query = this.mediaRepo
       .createQueryBuilder('media')
       .leftJoinAndSelect('media.submittedBy', 'submittedBy');
 
-    // Only filter by approved status if no status filter is provided
-    if (status) {
+    // Filter by status - 'all' means no status filtering
+    if (status && status !== 'all') {
       query.where('media.status = :status', { status });
-    } else {
+    } else if (!status) {
+      // Default behavior when no status specified - show only approved
       query.where('media.status = :status', { status: MediaStatus.APPROVED });
     }
+    // If status === 'all', don't add any status filter to show all media
 
     if (type) {
       query.andWhere('media.type = :type', { type });
@@ -147,8 +153,25 @@ export class MediaService {
       query.andWhere('media.purpose = :purpose', { purpose });
     }
 
-    query
-      .orderBy('media.createdAt', 'DESC')
+    // Dynamic sorting
+    const sortField = sort || 'createdAt';
+    const sortOrder = order || 'DESC';
+    
+    // Map frontend field names to database field names
+    const fieldMap: Record<string, string> = {
+      id: 'media.id',
+      type: 'media.type',
+      description: 'media.description',
+      status: 'media.status',
+      createdAt: 'media.createdAt',
+      updatedAt: 'media.updatedAt',
+      ownerType: 'media.ownerType',
+      ownerId: 'media.ownerId',
+      user: 'submittedBy.username'
+    };
+    
+    const dbField = fieldMap[sortField] || 'media.createdAt';
+    query.orderBy(dbField, sortOrder)
       .skip((page - 1) * limit)
       .take(limit);
 

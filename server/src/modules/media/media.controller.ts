@@ -387,6 +387,18 @@ export class MediaController {
     description: 'Filter by media purpose',
     enum: MediaPurpose,
   })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    description: 'Field to sort by',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    description: 'Sort order (ASC or DESC)',
+    type: 'string',
+  })
   @ApiResponse({
     status: 200,
     description: 'Media retrieved successfully',
@@ -399,6 +411,8 @@ export class MediaController {
     @Query('ownerType') ownerType?: MediaOwnerType,
     @Query('ownerId') ownerId?: string,
     @Query('purpose') purpose?: MediaPurpose,
+    @Query('sort') sort?: string,
+    @Query('order') order?: 'ASC' | 'DESC',
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
@@ -419,6 +433,8 @@ export class MediaController {
       ownerType,
       ownerId: ownerIdNum,
       purpose,
+      sort,
+      order,
     });
 
     // Return canonical top-level paginated shape used across the API
