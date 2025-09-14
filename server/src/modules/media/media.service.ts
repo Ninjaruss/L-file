@@ -164,43 +164,59 @@ export class MediaService {
     }
 
     // Handle entity-based filtering
-    const entityFilters: Array<{ ownerType: MediaOwnerType; ids: number[] }> = [];
-    
+    const entityFilters: Array<{ ownerType: MediaOwnerType; ids: number[] }> =
+      [];
+
     if (characterIds) {
-      const ids = characterIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const ids = characterIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (ids.length > 0) {
         entityFilters.push({ ownerType: MediaOwnerType.CHARACTER, ids });
       }
     }
-    
+
     if (arcIds) {
-      const ids = arcIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const ids = arcIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (ids.length > 0) {
         entityFilters.push({ ownerType: MediaOwnerType.ARC, ids });
       }
     }
-    
+
     if (eventIds) {
-      const ids = eventIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const ids = eventIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (ids.length > 0) {
         entityFilters.push({ ownerType: MediaOwnerType.EVENT, ids });
       }
     }
-    
+
     if (gambleIds) {
-      const ids = gambleIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const ids = gambleIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (ids.length > 0) {
         entityFilters.push({ ownerType: MediaOwnerType.GAMBLE, ids });
       }
     }
-    
+
     if (factionIds) {
-      const ids = factionIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const ids = factionIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (ids.length > 0) {
         entityFilters.push({ ownerType: MediaOwnerType.FACTION, ids });
       }
     }
-    
+
     // Apply entity filters using OR logic between different entity types
     if (entityFilters.length > 0) {
       const entityConditions = entityFilters.map((filter, index) => {
@@ -209,14 +225,14 @@ export class MediaService {
         query.setParameter(`${paramPrefix}Ids`, filter.ids);
         return `(media.ownerType = :${paramPrefix}OwnerType AND media.ownerId IN (:...${paramPrefix}Ids))`;
       });
-      
+
       query.andWhere(`(${entityConditions.join(' OR ')})`);
     }
 
     // Dynamic sorting
     const sortField = sort || 'createdAt';
     const sortOrder = order || 'DESC';
-    
+
     // Map frontend field names to database field names
     const fieldMap: Record<string, string> = {
       id: 'media.id',
@@ -227,11 +243,12 @@ export class MediaService {
       updatedAt: 'media.updatedAt',
       ownerType: 'media.ownerType',
       ownerId: 'media.ownerId',
-      user: 'submittedBy.username'
+      user: 'submittedBy.username',
     };
-    
+
     const dbField = fieldMap[sortField] || 'media.createdAt';
-    query.orderBy(dbField, sortOrder)
+    query
+      .orderBy(dbField, sortOrder)
       .skip((page - 1) * limit)
       .take(limit);
 

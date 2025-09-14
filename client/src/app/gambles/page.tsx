@@ -29,6 +29,7 @@ import MediaThumbnail from '../../components/MediaThumbnail'
 interface Gamble {
   id: number
   name: string
+  description?: string
   rules: string
   winCondition?: string
   chapterId: number
@@ -217,7 +218,7 @@ function GamblesPageContent() {
                         <Typography variant="h6" component="h2" gutterBottom>
                           {gamble.name}
                         </Typography>
-                        
+
                         <Box sx={{ mb: 2 }}>
                           {gamble.participants && gamble.participants.length > 0 && (
                             <Chip
@@ -231,18 +232,30 @@ function GamblesPageContent() {
                           )}
                         </Box>
 
-                        <div style={{
-                          marginBottom: '16px',
+                        <Box sx={{
+                          mb: 2,
                           overflow: 'hidden',
                           display: '-webkit-box',
                           WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 3,
                         }}>
-                          <SpoilerMarkdown 
-                            content={gamble.rules}
-                            className="gamble-rules-preview"
+                          <SpoilerMarkdown
+                            content={gamble.description || gamble.rules}
+                            className="gamble-description-preview"
+                            sx={{
+                              '& p': {
+                                color: 'text.secondary',
+                                lineHeight: 1.4,
+                                fontSize: '0.875rem',
+                                margin: 0
+                              },
+                              '& *': {
+                                color: 'text.secondary !important',
+                                fontSize: '0.875rem !important'
+                              }
+                            }}
                           />
-                        </div>
+                        </Box>
 
                       </CardContent>
 

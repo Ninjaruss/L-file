@@ -54,6 +54,37 @@ export const GambleList = () => (
   >
     <Datagrid rowClick="show" sx={{ '& .RaDatagrid-headerCell': { fontWeight: 600 } }}>
       <TextField source="name" sx={{ fontWeight: 500 }} />
+      <FunctionField
+        label="Description"
+        render={(record: any) => {
+          // Use description if available, otherwise fallback to rules
+          let displayText = record.description
+
+          if (!displayText || displayText.trim() === '') {
+            displayText = record.rules || 'No description available'
+          }
+
+          return (
+            <Box sx={{ maxWidth: '300px' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  fontSize: '0.8rem',
+                  color: displayText === 'No description available' ? 'text.disabled' : 'text.secondary',
+                  lineHeight: 1.3,
+                  fontStyle: displayText === 'No description available' ? 'italic' : 'normal'
+                }}
+              >
+                {displayText}
+              </Typography>
+            </Box>
+          )
+        }}
+      />
       <NumberField source="chapterId" label="Ch." />
       <ArrayField source="participants" label="Participants">
         <SingleFieldList linkType={false}>
@@ -124,6 +155,31 @@ export const GambleShow = () => (
                 }
               }} 
             />
+            
+            <Box sx={{
+              p: 2,
+              bgcolor: '#0f0f0f',
+              borderRadius: 1,
+              border: '1px solid rgba(211, 47, 47, 0.3)',
+              mb: 3
+            }}>
+              <Typography variant="subtitle2" color="#d32f2f" fontWeight="bold" gutterBottom>Description</Typography>
+              <FunctionField
+                source="description"
+                render={(record: any) =>
+                  record.description ? (
+                    <SpoilerMarkdown
+                      content={record.description}
+                      className="admin-gamble-description"
+                    />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      No description provided
+                    </Typography>
+                  )
+                }
+              />
+            </Box>
             
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 3, mb: 3 }}>
               <Box sx={{
@@ -356,20 +412,30 @@ const GambleEditForm = () => {
       <FormTab label="Basic Info">
         <Box sx={{ maxWidth: 600, p: 3, backgroundColor: '#0a0a0a' }}>
           <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', mb: 2, fontWeight: 'bold' }}>Gamble Details</Typography>
-          <TextInput 
-            source="name" 
-            required 
-            fullWidth 
+          <TextInput
+            source="name"
+            required
+            fullWidth
             sx={{ mb: 3 }}
             helperText="Name or title of this gamble"
           />
-          
-          <NumberInput 
-            source="chapterId" 
-            label="Chapter Number" 
-            required 
+
+          <TextInput
+            source="description"
+            multiline
+            rows={3}
+            fullWidth
+            label="Description"
+            helperText="Brief description of this gamble (optional). Supports Markdown formatting."
+            sx={{ mb: 3 }}
+          />
+
+          <NumberInput
+            source="chapterId"
+            label="Chapter Number"
+            required
             min={1}
-            max={539} 
+            max={539}
             helperText="Chapter where this gamble occurs (1-539)"
             sx={{ width: '200px' }}
           />
@@ -538,20 +604,30 @@ export const GambleCreate = () => {
           <FormTab label="Basic Info">
             <Box sx={{ maxWidth: 600, p: 3, backgroundColor: '#0a0a0a' }}>
               <Typography variant="h6" gutterBottom sx={{ color: '#16a34a', mb: 2, fontWeight: 'bold' }}>New Gamble</Typography>
-              <TextInput 
-                source="name" 
-                required 
-                fullWidth 
+              <TextInput
+                source="name"
+                required
+                fullWidth
                 sx={{ mb: 3 }}
                 helperText="Name or title of this gamble"
               />
-              
-              <NumberInput 
-                source="chapterId" 
-                label="Chapter Number" 
-                required 
+
+              <TextInput
+                source="description"
+                multiline
+                rows={3}
+                fullWidth
+                label="Description"
+                helperText="Brief description of this gamble (optional). Supports Markdown formatting."
+                sx={{ mb: 3 }}
+              />
+
+              <NumberInput
+                source="chapterId"
+                label="Chapter Number"
+                required
                 min={1}
-                max={539} 
+                max={539}
                 helperText="Chapter where this gamble occurs (1-539)"
                 sx={{ width: '200px' }}
               />

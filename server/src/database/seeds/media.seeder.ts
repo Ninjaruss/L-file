@@ -131,7 +131,8 @@ export class MediaSeeder implements Seeder {
       {
         url: 'https://www.pixiv.net/en/artworks/poker-tournament-art',
         type: MediaType.IMAGE,
-        description: 'Artistic representation of the high-stakes poker tournament',
+        description:
+          'Artistic representation of the high-stakes poker tournament',
         ownerType: MediaOwnerType.GAMBLE,
         ownerId: pokerTournament?.id || 2,
         status: MediaStatus.APPROVED,

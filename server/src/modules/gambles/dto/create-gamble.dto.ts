@@ -9,6 +9,14 @@ export class CreateGambleDto {
   @IsString()
   name: string;
 
+  @ApiPropertyOptional({
+    description: 'Brief description of the gamble',
+    example: 'A high-stakes card game where each player draws one card',
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiProperty({
     description: 'Detailed rules of the game',
     example:

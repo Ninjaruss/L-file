@@ -594,7 +594,9 @@ export class UsersService {
       .select('user.selectedCharacterMediaId', 'mediaId')
       .addSelect('COUNT(*)', 'usercount')
       .where('user.selectedCharacterMediaId IS NOT NULL')
-      .andWhere('user.profilePictureType = :type', { type: ProfilePictureType.CHARACTER_MEDIA })
+      .andWhere('user.profilePictureType = :type', {
+        type: ProfilePictureType.CHARACTER_MEDIA,
+      })
       .groupBy('user.selectedCharacterMediaId')
       .orderBy('usercount', 'DESC')
       .getRawMany();
@@ -629,10 +631,12 @@ export class UsersService {
                 id: character.id,
                 name: character.name,
               },
-              submittedBy: media.submittedBy ? {
-                id: media.submittedBy.id,
-                username: media.submittedBy.username,
-              } : null,
+              submittedBy: media.submittedBy
+                ? {
+                    id: media.submittedBy.id,
+                    username: media.submittedBy.username,
+                  }
+                : null,
             },
             userCount: parseInt(stat.usercount),
           });

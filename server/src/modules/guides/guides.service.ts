@@ -100,7 +100,7 @@ export class GuidesService {
       authorId,
       tag,
       characterIds,
-      arcIds, 
+      arcIds,
       gambleIds,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
@@ -160,7 +160,10 @@ export class GuidesService {
 
     // Filter by character IDs
     if (characterIds) {
-      const charIds = characterIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const charIds = characterIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (charIds.length > 0) {
         queryBuilder.andWhere('characters.id IN (:...charIds)', { charIds });
       }
@@ -168,7 +171,10 @@ export class GuidesService {
 
     // Filter by arc IDs
     if (arcIds) {
-      const arcIdArray = arcIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const arcIdArray = arcIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (arcIdArray.length > 0) {
         queryBuilder.andWhere('arc.id IN (:...arcIdArray)', { arcIdArray });
       }
@@ -176,9 +182,14 @@ export class GuidesService {
 
     // Filter by gamble IDs
     if (gambleIds) {
-      const gambleIdArray = gambleIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      const gambleIdArray = gambleIds
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
       if (gambleIdArray.length > 0) {
-        queryBuilder.andWhere('gambles.id IN (:...gambleIdArray)', { gambleIdArray });
+        queryBuilder.andWhere('gambles.id IN (:...gambleIdArray)', {
+          gambleIdArray,
+        });
       }
     }
 
@@ -188,7 +199,15 @@ export class GuidesService {
       queryBuilder.orderBy('guide.createdAt', sortOrder);
     } else {
       // Apply sorting for other valid fields - ADMIN ENDPOINT
-      const validSortFields = ['id', 'createdAt', 'updatedAt', 'likeCount', 'title', 'description', 'authorId'];
+      const validSortFields = [
+        'id',
+        'createdAt',
+        'updatedAt',
+        'likeCount',
+        'title',
+        'description',
+        'authorId',
+      ];
       if (validSortFields.includes(sortBy)) {
         queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
       } else {
@@ -300,7 +319,15 @@ export class GuidesService {
       queryBuilder.orderBy('guide.createdAt', sortOrder);
     } else {
       // Apply sorting for other valid fields - PUBLIC ENDPOINT
-      const validSortFields = ['id', 'createdAt', 'updatedAt', 'likeCount', 'title', 'description', 'authorId'];
+      const validSortFields = [
+        'id',
+        'createdAt',
+        'updatedAt',
+        'likeCount',
+        'title',
+        'description',
+        'authorId',
+      ];
       if (validSortFields.includes(sortBy)) {
         queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
       } else {
@@ -760,7 +787,14 @@ export class GuidesService {
       .where('guide.status = :status', { status: GuideStatus.PENDING });
 
     // Apply sorting - PENDING GUIDES
-    const validSortFields = ['id', 'createdAt', 'updatedAt', 'title', 'description', 'authorId'];
+    const validSortFields = [
+      'id',
+      'createdAt',
+      'updatedAt',
+      'title',
+      'description',
+      'authorId',
+    ];
     if (validSortFields.includes(sortBy)) {
       queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
     } else {

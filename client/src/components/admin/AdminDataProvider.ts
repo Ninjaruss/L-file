@@ -73,7 +73,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   if (resource === 'gambles') {
     // Keep only the fields that are allowed in the CreateGambleDto/UpdateGambleDto
     const allowedFields = [
-      'name', 'rules', 'winCondition', 'chapterId', 'participantIds'
+      'name', 'description', 'rules', 'winCondition', 'chapterId', 'participantIds'
     ]
     
     const gambleCleaned: Record<string, unknown> = {}

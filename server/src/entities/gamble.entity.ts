@@ -25,6 +25,13 @@ export class Gamble {
   @Column()
   name: string;
 
+  @ApiPropertyOptional({
+    description: 'Brief description of the gamble',
+    example: 'A strategic gambling game played with stones',
+  })
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
   @ApiProperty({
     description: 'Rules of the gamble',
     example: 'Two players take turns removing stones from a pile...',

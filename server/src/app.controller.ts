@@ -110,9 +110,10 @@ export class AppController {
   }
 
   @Get('favorites')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get top 3 favorite quotes, gambles, and character media',
-    description: 'Retrieve the most popular quotes, gambles, and character media based on user favorites'
+    description:
+      'Retrieve the most popular quotes, gambles, and character media based on user favorites',
   })
   @ApiResponse({
     status: 200,
@@ -127,20 +128,20 @@ export class AppController {
             type: 'object',
             properties: {
               quote: { type: 'object' },
-              userCount: { type: 'number' }
-            }
-          }
+              userCount: { type: 'number' },
+            },
+          },
         },
         favoriteGambles: {
-          type: 'array', 
+          type: 'array',
           description: 'Top 3 most favorite gambles',
           items: {
             type: 'object',
             properties: {
               gamble: { type: 'object' },
-              userCount: { type: 'number' }
-            }
-          }
+              userCount: { type: 'number' },
+            },
+          },
         },
         favoriteCharacterMedia: {
           type: 'array',
@@ -149,12 +150,12 @@ export class AppController {
             type: 'object',
             properties: {
               media: { type: 'object' },
-              userCount: { type: 'number' }
-            }
-          }
-        }
-      }
-    }
+              userCount: { type: 'number' },
+            },
+          },
+        },
+      },
+    },
   })
   async getFavoritesData() {
     // Get top 3 favorite quotes
@@ -166,13 +167,14 @@ export class AppController {
     const favoriteGambles = gambleStats.slice(0, 3);
 
     // Get top 3 character media stats
-    const characterMediaStats = await this.usersService.getCharacterMediaPopularityStats();
+    const characterMediaStats =
+      await this.usersService.getCharacterMediaPopularityStats();
     const favoriteCharacterMedia = characterMediaStats.slice(0, 3);
 
     return {
       favoriteQuotes,
       favoriteGambles,
-      favoriteCharacterMedia
+      favoriteCharacterMedia,
     };
   }
 
@@ -209,9 +211,7 @@ export class AppController {
     });
 
     return characters.map((character) => {
-      const trendingPage = trendingPages.find(
-        (p) => p.pageId === character.id,
-      );
+      const trendingPage = trendingPages.find((p) => p.pageId === character.id);
       return {
         id: character.id,
         name: character.name,

@@ -68,6 +68,7 @@ export interface Round {
 export interface Gamble {
   id: number;
   name: string;
+  description?: string;
   rules: string;
   winCondition?: string;
   chapterId: number;

@@ -11,6 +11,7 @@ export class GambleSeeder implements Seeder {
     const gambles = [
       {
         name: 'Protoporos',
+        description: 'A strategic stone-removal game from ancient times',
         rules:
           'A game involving removing stones from piles. Players take turns removing any number of stones from a single pile. The objective varies depending on the specific variant being played.',
         winCondition:
@@ -19,6 +20,7 @@ export class GambleSeeder implements Seeder {
       },
       {
         name: 'Poker Tournament',
+        description: "High-stakes Texas Hold'em poker tournament",
         rules:
           "Standard Texas Hold'em poker with high stakes. Each player receives two hole cards and must make the best five-card hand using any combination of their hole cards and the community cards.",
         winCondition:
@@ -27,6 +29,7 @@ export class GambleSeeder implements Seeder {
       },
       {
         name: 'Russian Roulette Variant',
+        description: 'A deadly psychological game of chance and strategy',
         rules:
           'A deadly variant of Russian Roulette using a special mechanism. Players take turns with specific rules that determine the outcome based on psychological and strategic elements.',
         winCondition:
@@ -35,6 +38,8 @@ export class GambleSeeder implements Seeder {
       },
       {
         name: 'Card Matching Game',
+        description:
+          'Complex card game involving memory and psychological manipulation',
         rules:
           'A complex card game involving memory, strategy, and psychological manipulation. Players must match cards while predicting opponent moves.',
         winCondition:

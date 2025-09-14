@@ -32,6 +32,7 @@ import MediaThumbnail from '../../../components/MediaThumbnail'
 interface Gamble {
   id: number
   name: string
+  description?: string
   rules: string
   winCondition?: string
   chapterId: number
@@ -248,7 +249,7 @@ export default function GambleDetailsPage() {
                     <Crown size={40} color={theme.palette.usogui.gamble} />
                     {gamble.name}
                   </Typography>
-                  
+
                   {/* Key Information */}
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                     <Chip
@@ -325,6 +326,47 @@ export default function GambleDetailsPage() {
                       }
                     }}>
                       <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                        {/* About Section */}
+                        {gamble.description && (
+                          <>
+                            <Box sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: 3,
+                              pb: 2,
+                              borderBottom: `2px solid ${theme.palette.divider}`,
+                              position: 'relative',
+                              '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: -2,
+                                left: 0,
+                                width: '60px',
+                                height: '2px',
+                                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, transparent 100%)`
+                              }
+                            }}>
+                              <BookOpen size={24} style={{ marginRight: 12 }} color={theme.palette.primary.main} />
+                              <Typography variant="h4" sx={{
+                                fontWeight: 700,
+                                color: 'primary.main',
+                                letterSpacing: '-0.5px'
+                              }}>
+                                About
+                              </Typography>
+                            </Box>
+
+                            <Typography variant="body1" sx={{
+                              mb: 4,
+                              lineHeight: 1.6,
+                              fontSize: '1.1rem'
+                            }}>
+                              {gamble.description}
+                            </Typography>
+                          </>
+                        )}
+
+                        {/* Rules Section */}
                         <Box sx={{
                           display: 'flex',
                           alignItems: 'center',

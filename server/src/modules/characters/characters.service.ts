@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from '../../entities/character.entity';
@@ -48,7 +52,8 @@ export class CharactersService {
       order = 'ASC',
     } = filters;
 
-    const qb = this.repo.createQueryBuilder('character')
+    const qb = this.repo
+      .createQueryBuilder('character')
       .leftJoinAndSelect('character.factions', 'factions');
 
     if (name) {
@@ -71,10 +76,9 @@ export class CharactersService {
     }
 
     if (faction) {
-      qb.andWhere(
-        'LOWER(factions.name) LIKE LOWER(:faction)',
-        { faction: `%${faction}%` },
-      );
+      qb.andWhere('LOWER(factions.name) LIKE LOWER(:faction)', {
+        faction: `%${faction}%`,
+      });
     }
 
     if (description) {
@@ -106,9 +110,9 @@ export class CharactersService {
   }
 
   async findOne(id: number): Promise<Character> {
-    const character = await this.repo.findOne({ 
+    const character = await this.repo.findOne({
       where: { id },
-      relations: ['factions']
+      relations: ['factions'],
     });
 
     if (!character) {
@@ -139,11 +143,11 @@ export class CharactersService {
     id: number,
     updateCharacterDto: UpdateCharacterDto,
   ): Promise<Character> {
-    const character = await this.repo.findOne({ 
+    const character = await this.repo.findOne({
       where: { id },
-      relations: ['factions']
+      relations: ['factions'],
     });
-    
+
     if (!character) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }

@@ -844,10 +844,10 @@ export const GuideList = () => (
         }} 
       />
       
-      <TextField 
-        source="description" 
+      <TextField
+        source="description"
         sortable
-        sx={{ 
+        sx={{
           maxWidth: '250px',
           '& span': {
             display: '-webkit-box',
@@ -858,7 +858,7 @@ export const GuideList = () => (
             color: 'text.secondary',
             lineHeight: 1.2
           }
-        }} 
+        }}
       />
 
       {/* Guide Type & Related Entities */}

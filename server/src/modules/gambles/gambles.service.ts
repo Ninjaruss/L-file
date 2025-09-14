@@ -21,6 +21,7 @@ export class GamblesService {
   async create(createGambleDto: CreateGambleDto): Promise<Gamble> {
     const gamble = new Gamble();
     gamble.name = createGambleDto.name;
+    gamble.description = createGambleDto.description;
     gamble.rules = createGambleDto.rules;
     gamble.winCondition = createGambleDto.winCondition;
     gamble.chapterId = createGambleDto.chapterId;
@@ -100,6 +101,7 @@ export class GamblesService {
 
     // Update basic fields
     gamble.name = updateGambleDto.name ?? gamble.name;
+    gamble.description = updateGambleDto.description ?? gamble.description;
     gamble.rules = updateGambleDto.rules ?? gamble.rules;
     gamble.winCondition = updateGambleDto.winCondition ?? gamble.winCondition;
     gamble.chapterId = updateGambleDto.chapterId ?? gamble.chapterId;
