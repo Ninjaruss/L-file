@@ -399,6 +399,36 @@ export class MediaController {
     description: 'Sort order (ASC or DESC)',
     type: 'string',
   })
+  @ApiQuery({
+    name: 'characterIds',
+    required: false,
+    description: 'Comma-separated list of character IDs to filter by',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'arcIds',
+    required: false,
+    description: 'Comma-separated list of arc IDs to filter by',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'eventIds',
+    required: false,
+    description: 'Comma-separated list of event IDs to filter by',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'gambleIds',
+    required: false,
+    description: 'Comma-separated list of gamble IDs to filter by',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'factionIds',
+    required: false,
+    description: 'Comma-separated list of faction IDs to filter by',
+    type: 'string',
+  })
   @ApiResponse({
     status: 200,
     description: 'Media retrieved successfully',
@@ -413,6 +443,11 @@ export class MediaController {
     @Query('purpose') purpose?: MediaPurpose,
     @Query('sort') sort?: string,
     @Query('order') order?: 'ASC' | 'DESC',
+    @Query('characterIds') characterIds?: string,
+    @Query('arcIds') arcIds?: string,
+    @Query('eventIds') eventIds?: string,
+    @Query('gambleIds') gambleIds?: string,
+    @Query('factionIds') factionIds?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
@@ -435,6 +470,11 @@ export class MediaController {
       purpose,
       sort,
       order,
+      characterIds,
+      arcIds,
+      eventIds,
+      gambleIds,
+      factionIds,
     });
 
     // Return canonical top-level paginated shape used across the API

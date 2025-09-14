@@ -9,6 +9,7 @@
 ### Changes
 - Updated guides admin page to look like the media admin page
 - Updated media/guide endpoints to allow sorting 
+- Search and filter by entity added to both media/guide admin pages
 
 ## 2025-09-13
 ### Changes

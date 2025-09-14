@@ -105,6 +105,11 @@ export class MediaService {
       purpose?: MediaPurpose;
       sort?: string;
       order?: 'ASC' | 'DESC';
+      characterIds?: string;
+      arcIds?: string;
+      eventIds?: string;
+      gambleIds?: string;
+      factionIds?: string;
     } = {},
   ): Promise<{
     data: Media[];
@@ -123,6 +128,11 @@ export class MediaService {
       purpose,
       sort,
       order = 'DESC',
+      characterIds,
+      arcIds,
+      eventIds,
+      gambleIds,
+      factionIds,
     } = filters;
     const query = this.mediaRepo
       .createQueryBuilder('media')
@@ -151,6 +161,56 @@ export class MediaService {
 
     if (purpose) {
       query.andWhere('media.purpose = :purpose', { purpose });
+    }
+
+    // Handle entity-based filtering
+    const entityFilters: Array<{ ownerType: MediaOwnerType; ids: number[] }> = [];
+    
+    if (characterIds) {
+      const ids = characterIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        entityFilters.push({ ownerType: MediaOwnerType.CHARACTER, ids });
+      }
+    }
+    
+    if (arcIds) {
+      const ids = arcIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        entityFilters.push({ ownerType: MediaOwnerType.ARC, ids });
+      }
+    }
+    
+    if (eventIds) {
+      const ids = eventIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        entityFilters.push({ ownerType: MediaOwnerType.EVENT, ids });
+      }
+    }
+    
+    if (gambleIds) {
+      const ids = gambleIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        entityFilters.push({ ownerType: MediaOwnerType.GAMBLE, ids });
+      }
+    }
+    
+    if (factionIds) {
+      const ids = factionIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        entityFilters.push({ ownerType: MediaOwnerType.FACTION, ids });
+      }
+    }
+    
+    // Apply entity filters using OR logic between different entity types
+    if (entityFilters.length > 0) {
+      const entityConditions = entityFilters.map((filter, index) => {
+        const paramPrefix = `entityType${index}`;
+        query.setParameter(`${paramPrefix}OwnerType`, filter.ownerType);
+        query.setParameter(`${paramPrefix}Ids`, filter.ids);
+        return `(media.ownerType = :${paramPrefix}OwnerType AND media.ownerId IN (:...${paramPrefix}Ids))`;
+      });
+      
+      query.andWhere(`(${entityConditions.join(' OR ')})`);
     }
 
     // Dynamic sorting
