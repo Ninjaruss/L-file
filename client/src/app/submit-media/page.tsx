@@ -74,28 +74,28 @@ export default function SubmitMediaPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [activeTab, setActiveTab] = useState(0)
-  // const [urlPreview, setUrlPreview] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setDataLoading(true)
         const [charactersResponse, arcsResponse, eventsResponse, gamblesResponse, factionsResponse, usersResponse] = await Promise.all([
-          api.getCharacters({ limit: 100 }),
-          api.getArcs({ limit: 100 }),
-          api.getEvents({ limit: 100 }),
-          api.getGambles({ limit: 100 }),
+          api.getCharacters({ limit: 500 }),
+          api.getArcs({ limit: 200 }),
+          api.getEvents({ limit: 200 }),
+          api.getGambles({ limit: 500 }),
           api.getFactions({ limit: 100 }),
-          api.getPublicUsers({ limit: 100 })
+          api.getPublicUsers({ limit: 200 })
         ])
-        setCharacters(charactersResponse.data)
-        setArcs(arcsResponse.data)
-        setEvents(eventsResponse.data)
-        setGambles(gamblesResponse.data)
-        setFactions(factionsResponse.data)
-        setUsers(usersResponse.data)
+        setCharacters(charactersResponse.data || [])
+        setArcs(arcsResponse.data || [])
+        setEvents(eventsResponse.data || [])
+        setGambles(gamblesResponse.data || [])
+        setFactions(factionsResponse.data || [])
+        setUsers(usersResponse.data || [])
       } catch (error) {
         console.error('Failed to fetch data:', error)
+        setError('Failed to load form data. Please refresh the page.')
       } finally {
         setDataLoading(false)
       }
@@ -109,48 +109,73 @@ export default function SubmitMediaPage() {
       ...prev,
       [field]: value
     }))
+  }
 
-    // if (field === 'url') {
-    //   setUrlPreview(value)
-    // }
+  const validateForm = () => {
+    if (!formData.url.trim()) {
+      return 'Media URL is required'
+    }
+    if (!isValidUrl(formData.url)) {
+      return 'Please enter a valid URL'
+    }
+    if (!formData.ownerType) {
+      return 'Please select a related entity type'
+    }
+    if (!formData.ownerId) {
+      return 'Please select a specific entity'
+    }
+    return null
+  }
+
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
     setSuccess('')
+
+    const validationError = validateForm()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setLoading(true)
 
     try {
       const mediaType = getMediaType(formData.url)
       
-      // Validate that an owner is selected
-      if (!formData.ownerType || !formData.ownerId) {
-        throw new Error('Please select a related entity (character, arc, event, etc.)')
-      }
-      
       await api.submitMediaPolymorphic({
-        url: formData.url,
+        url: formData.url.trim(),
         type: mediaType,
-        ownerType: formData.ownerType,
-        ownerId: formData.ownerId,
+        ownerType: formData.ownerType as MediaOwnerType,
+        ownerId: formData.ownerId!,
         chapterNumber: formData.chapterNumber || undefined,
-        description: formData.description
+        description: formData.description.trim() || undefined
       })
-      setSuccess('Media submitted successfully! It will be reviewed by moderators.')
+      
+      setSuccess('Media submitted successfully! It will be reviewed by moderators before appearing on the site.')
       setFormData({
         url: '',
         description: '',
         ownerType: '',
         ownerId: null,
         chapterNumber: null,
-          })
+      })
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to submit media')
+      setError(error instanceof Error ? error.message : 'Failed to submit media. Please try again.')
     } finally {
       setLoading(false)
     }
   }
+
   const handleUpload = async (file: File, uploadData: {
     type: 'image' | 'video' | 'audio'
     description?: string
@@ -167,45 +192,79 @@ export default function SubmitMediaPage() {
       await api.uploadMedia(file, uploadData)
       setSuccess('Media uploaded successfully! It has been automatically approved.')
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to upload media')
-      throw error // Re-throw to handle in the upload form
+      setError(error instanceof Error ? error.message : 'Failed to upload media. Please try again.')
+      throw error
     } finally {
       setLoading(false)
     }
   }
 
   const getMediaType = (url: string): 'image' | 'video' | 'audio' => {
-    if (url.includes('youtube.com') || url.includes('youtu.be') || 
-        url.includes('tiktok.com') || url.includes('vm.tiktok.com')) {
+    const lowerUrl = url.toLowerCase()
+    
+    // Video platforms
+    if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be') || 
+        lowerUrl.includes('tiktok.com') || lowerUrl.includes('vm.tiktok.com') ||
+        lowerUrl.includes('vimeo.com') || lowerUrl.includes('twitch.tv')) {
       return 'video'
     }
-    if (url.includes('soundcloud.com')) {
+    
+    // Audio platforms
+    if (lowerUrl.includes('soundcloud.com') || lowerUrl.includes('spotify.com') ||
+        lowerUrl.includes('apple.com/music')) {
       return 'audio'
     }
-    if (url.includes('twitter.com') || url.includes('x.com') || 
-        url.includes('instagram.com') || url.includes('deviantart.com') ||
-        url.includes('pixiv.net') || url.includes('imgur.com')) {
+    
+    // Image platforms and social media
+    if (lowerUrl.includes('twitter.com') || lowerUrl.includes('x.com') || 
+        lowerUrl.includes('instagram.com') || lowerUrl.includes('deviantart.com') ||
+        lowerUrl.includes('pixiv.net') || lowerUrl.includes('imgur.com') ||
+        lowerUrl.includes('artstation.com') || lowerUrl.includes('pinterest.com')) {
       return 'image'
     }
-    if (url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    
+    // File extensions
+    if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i)) {
       return 'image'
     }
-    if (url.match(/\.(mp4|mov|avi|webm)$/i)) {
+    if (lowerUrl.match(/\.(mp4|mov|avi|webm|mkv|flv)(\?|$)/i)) {
       return 'video'
     }
-    if (url.match(/\.(mp3|wav|ogg|flac)$/i)) {
+    if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac|m4a)(\?|$)/i)) {
       return 'audio'
     }
-    // Default to image for most social media and art platforms
+    
+    // Default to image for most cases
     return 'image'
   }
 
-  const getMediaTypeForIcon = (url: string) => {
+  const getMediaTypeIcon = (url: string) => {
     const type = getMediaType(url)
-    if (type === 'video') return 'video'
-    if (type === 'audio') return 'audio'
-    if (type === 'image') return 'image'
-    return 'link'
+    switch (type) {
+      case 'video': return <Video size={20} />
+      case 'audio': return <Music size={20} />
+      case 'image': return <Image size={20} />
+      default: return <LinkIcon size={20} />
+    }
+  }
+
+  const getEntityOptions = () => {
+    switch (formData.ownerType) {
+      case 'character':
+        return characters.map(item => ({ id: item.id, name: item.name }))
+      case 'arc':
+        return arcs.map(item => ({ id: item.id, name: item.name }))
+      case 'event':
+        return events.map(item => ({ id: item.id, name: item.title }))
+      case 'gamble':
+        return gambles.map(item => ({ id: item.id, name: item.name }))
+      case 'faction':
+        return factions.map(item => ({ id: item.id, name: item.name }))
+      case 'user':
+        return users.map(item => ({ id: item.id, name: item.username }))
+      default:
+        return []
+    }
   }
 
   if (authLoading) {
@@ -227,6 +286,8 @@ export default function SubmitMediaPage() {
       </Container>
     )
   }
+
+  const isFormValid = !validateForm()
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -261,7 +322,7 @@ export default function SubmitMediaPage() {
 
         <Card className="gambling-card">
           <CardContent>
-            {/* Show tabs for moderators/admins */}
+            {/* Tabs for moderators/admins */}
             {(user.role === 'moderator' || user.role === 'admin') && (
               <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
                 <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
@@ -275,6 +336,7 @@ export default function SubmitMediaPage() {
             {activeTab === 0 && (
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={3}>
+                  {/* Media URL */}
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -283,25 +345,23 @@ export default function SubmitMediaPage() {
                       value={formData.url}
                       onChange={(e) => handleInputChange('url', e.target.value)}
                       required
-                      helperText="Link to fanart, video, or other media (YouTube, TikTok, Instagram, Twitter, DeviantArt, Pixiv, Imgur, SoundCloud, direct links, etc.)"
+                      error={formData.url.length > 0 && !isValidUrl(formData.url)}
+                      helperText={
+                        formData.url.length > 0 && !isValidUrl(formData.url)
+                          ? 'Please enter a valid URL'
+                          : 'Link to fanart, video, or other media (YouTube, TikTok, Instagram, Twitter, DeviantArt, Pixiv, Imgur, SoundCloud, direct links, etc.)'
+                      }
                       InputProps={{
                         startAdornment: (
                           <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                            {getMediaTypeForIcon(formData.url) === 'video' ? (
-                              <Video size={20} />
-                            ) : getMediaTypeForIcon(formData.url) === 'audio' ? (
-                              <Music size={20} />
-                            ) : getMediaTypeForIcon(formData.url) === 'image' ? (
-                              <Image size={20} />
-                            ) : (
-                              <LinkIcon size={20} />
-                            )}
+                            {formData.url ? getMediaTypeIcon(formData.url) : <LinkIcon size={20} />}
                           </Box>
                         )
                       }}
                     />
                   </Grid>
 
+                  {/* Entity Selection */}
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth disabled={dataLoading} required>
                       <InputLabel>Related Entity *</InputLabel>
@@ -310,7 +370,7 @@ export default function SubmitMediaPage() {
                         label="Related Entity *"
                         onChange={(e) => {
                           handleInputChange('ownerType', e.target.value)
-                          handleInputChange('ownerId', null) // Reset owner ID when type changes
+                          handleInputChange('ownerId', null)
                         }}
                       >
                         <MenuItem value="">
@@ -341,66 +401,38 @@ export default function SubmitMediaPage() {
                           <MenuItem value="" disabled>
                             Loading...
                           </MenuItem>
-                        ) : formData.ownerType === 'character' ? (
-                          characters.map((character) => (
-                            <MenuItem key={character.id} value={character.id}>
-                              {character.name}
+                        ) : (
+                          getEntityOptions().map((entity) => (
+                            <MenuItem key={entity.id} value={entity.id}>
+                              {entity.name}
                             </MenuItem>
                           ))
-                        ) : formData.ownerType === 'arc' ? (
-                          arcs.map((arc) => (
-                            <MenuItem key={arc.id} value={arc.id}>
-                              {arc.name}
-                            </MenuItem>
-                          ))
-                        ) : formData.ownerType === 'event' ? (
-                          events.map((event) => (
-                            <MenuItem key={event.id} value={event.id}>
-                              {event.title}
-                            </MenuItem>
-                          ))
-                        ) : formData.ownerType === 'gamble' ? (
-                          gambles.map((gamble) => (
-                            <MenuItem key={gamble.id} value={gamble.id}>
-                              {gamble.name}
-                            </MenuItem>
-                          ))
-                        ) : formData.ownerType === 'faction' ? (
-                          factions.map((faction) => (
-                            <MenuItem key={faction.id} value={faction.id}>
-                              {faction.name}
-                            </MenuItem>
-                          ))
-                        ) : formData.ownerType === 'user' ? (
-                          users.map((user) => (
-                            <MenuItem key={user.id} value={user.id}>
-                              {user.username}
-                            </MenuItem>
-                          ))
-                        ) : null}
+                        )}
                       </Select>
                     </FormControl>
                   </Grid>
 
+                  {/* Optional Chapter Number */}
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       type="number"
                       label="Chapter Number (Optional)"
-                      placeholder="e.g. 45"
+                      placeholder="e.g., 45"
                       value={formData.chapterNumber || ''}
                       onChange={(e) => handleInputChange('chapterNumber', e.target.value ? parseInt(e.target.value) : null)}
-                      helperText="Associate with a specific chapter"
+                      helperText="Associate with a specific chapter if relevant"
+                      inputProps={{ min: 1 }}
                     />
                   </Grid>
 
-
+                  {/* Description */}
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
                       multiline
                       rows={4}
-                      label="Description"
+                      label="Description (Optional)"
                       placeholder="Describe this media, credit the artist if known, or provide context..."
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
@@ -408,13 +440,14 @@ export default function SubmitMediaPage() {
                     />
                   </Grid>
 
+                  {/* Submit Button */}
                   <Grid item xs={12}>
                     <Button
                       type="submit"
                       variant="contained"
                       size="large"
                       fullWidth
-                      disabled={loading || !formData.url || !formData.ownerType || !formData.ownerId}
+                      disabled={loading || !isFormValid}
                       startIcon={loading ? <CircularProgress size={20} /> : <Upload size={20} />}
                     >
                       {loading ? 'Submitting...' : 'Submit Media'}
@@ -460,6 +493,7 @@ export default function SubmitMediaPage() {
               <br />• Always credit the original artist when possible
               <br />• Media will be reviewed by moderators before appearing on the site
               <br />• Inappropriate or copyrighted content will be removed
+              <br />• Supported platforms: YouTube, TikTok, Instagram, Twitter/X, DeviantArt, Pixiv, Imgur, SoundCloud, and direct file links
             </Typography>
           </Alert>
         </Box>

@@ -171,6 +171,42 @@ export const theme = createTheme({
           backgroundColor: 'transparent'
         }
       }
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          border: '1px solid rgba(225, 29, 72, 0.3)',
+          backdropFilter: 'blur(10px)'
+        }
+      }
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          border: '1px solid rgba(225, 29, 72, 0.3)',
+          backdropFilter: 'blur(10px)'
+        }
+      }
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          color: '#ffffff',
+          '&:hover': {
+            backgroundColor: 'rgba(225, 29, 72, 0.15)'
+          },
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(225, 29, 72, 0.2)',
+            '&:hover': {
+              backgroundColor: 'rgba(225, 29, 72, 0.25)'
+            }
+          }
+        }
+      }
     }
   }
 })

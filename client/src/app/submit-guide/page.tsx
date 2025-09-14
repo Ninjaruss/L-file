@@ -67,17 +67,46 @@ export default function SubmitGuidePage() {
     }))
   }
 
+  const validateForm = () => {
+    if (!formData.title.trim()) {
+      return 'Title is required'
+    }
+    if (formData.title.length < 5) {
+      return 'Title must be at least 5 characters long'
+    }
+    if (!formData.description.trim()) {
+      return 'Description is required'
+    }
+    if (formData.description.length < 20) {
+      return 'Description must be at least 20 characters long'
+    }
+    if (!formData.content.trim()) {
+      return 'Content is required'
+    }
+    if (formData.content.length < 100) {
+      return 'Content must be at least 100 characters long'
+    }
+    return null
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
     setSuccess('')
+
+    const validationError = validateForm()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setLoading(true)
 
     try {
       await api.createGuide({
-        title: formData.title,
-        description: formData.description,
-        content: formData.content,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        content: formData.content.trim(),
         tags: formData.tags,
         characterIds: formData.characterIds.length > 0 ? formData.characterIds : undefined,
         arcId: formData.arcId || undefined,
@@ -94,7 +123,7 @@ export default function SubmitGuidePage() {
         gambleIds: []
       })
     } catch (error: any) {
-      setError(error.message || 'Failed to submit guide')
+      setError(error.message || 'Failed to submit guide. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -111,9 +140,9 @@ export default function SubmitGuidePage() {
     const loadData = async () => {
       try {
         const [charactersRes, arcsRes, gamblesRes] = await Promise.all([
-          api.getCharacters({ limit: 1000 }),
-          api.getArcs({ limit: 1000 }),
-          api.getGambles({ limit: 1000 })
+          api.getCharacters({ limit: 500 }),
+          api.getArcs({ limit: 200 }),
+          api.getGambles({ limit: 500 })
         ])
         
         setCharacters(charactersRes.data || [])
@@ -121,6 +150,7 @@ export default function SubmitGuidePage() {
         setGambles(gamblesRes.data || [])
       } catch (error) {
         console.error('Error loading data:', error)
+        setError('Failed to load form data. Please refresh the page.')
       } finally {
         setLoadingData(false)
       }
@@ -148,6 +178,8 @@ export default function SubmitGuidePage() {
       </Container>
     )
   }
+
+  const isFormValid = !validateForm()
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -184,18 +216,25 @@ export default function SubmitGuidePage() {
           <CardContent>
             <form onSubmit={handleSubmit}>
               <Grid container spacing={3}>
+                {/* Title */}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Guide Title"
-                    placeholder="e.g., &apos;Understanding the Rules of Air Poker&apos; or &apos;Character Analysis: Baku Madarame&apos;"
+                    placeholder="e.g., 'Understanding the Rules of Air Poker' or 'Character Analysis: Baku Madarame'"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                     required
-                    helperText="Choose a clear, descriptive title for your guide"
+                    error={formData.title.length > 0 && formData.title.length < 5}
+                    helperText={
+                      formData.title.length > 0 && formData.title.length < 5
+                        ? 'Title must be at least 5 characters long'
+                        : 'Choose a clear, descriptive title for your guide (minimum 5 characters)'
+                    }
                   />
                 </Grid>
 
+                {/* Description */}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -206,10 +245,16 @@ export default function SubmitGuidePage() {
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     required
-                    helperText="Write a compelling description (10-1000 characters) that summarizes your guide"
+                    error={formData.description.length > 0 && formData.description.length < 20}
+                    helperText={
+                      formData.description.length > 0 && formData.description.length < 20
+                        ? 'Description must be at least 20 characters long'
+                        : `Write a compelling description that summarizes your guide (${formData.description.length}/20+ characters)`
+                    }
                   />
                 </Grid>
 
+                {/* Content */}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -217,7 +262,7 @@ export default function SubmitGuidePage() {
                     rows={12}
                     label="Guide Content"
                     placeholder="Write your guide here. You can include:
-                    
+
 • Analysis of characters, gambles, or story arcs
 • Explanations of complex gambling rules
 • Theories about plot developments
@@ -228,10 +273,16 @@ Be detailed and informative. Use clear headings and structure your content well.
                     value={formData.content}
                     onChange={(e) => handleInputChange('content', e.target.value)}
                     required
-                    helperText="Minimum 50 characters. Use line breaks to structure your content."
+                    error={formData.content.length > 0 && formData.content.length < 100}
+                    helperText={
+                      formData.content.length > 0 && formData.content.length < 100
+                        ? 'Content must be at least 100 characters long'
+                        : `Write your detailed guide content (${formData.content.length}/100+ characters)`
+                    }
                   />
                 </Grid>
 
+                {/* Related Content Section */}
                 <Grid item xs={12}>
                   <Box sx={{ 
                     p: 3, 
@@ -252,6 +303,7 @@ Be detailed and informative. Use clear headings and structure your content well.
                     </Typography>
                     
                     <Grid container spacing={3}>
+                      {/* Characters */}
                       <Grid item xs={12} md={4}>
                         <FormControl fullWidth>
                           <Autocomplete
@@ -271,17 +323,17 @@ Be detailed and informative. Use clear headings and structure your content well.
                               />
                             )}
                             renderOption={(props, option) => {
-                              const { key, ...otherProps } = props;
+                              const { key, ...otherProps } = props
                               return (
                                 <li key={key} {...otherProps}>
                                   <Users size={16} style={{ marginRight: 8 }} />
                                   {option.name}
                                 </li>
-                              );
+                              )
                             }}
                             renderTags={(value, getTagProps) =>
                               value.map((option, index) => {
-                                const { key, ...tagProps } = getTagProps({ index });
+                                const { key, ...tagProps } = getTagProps({ index })
                                 return (
                                   <Chip
                                     key={key}
@@ -291,13 +343,14 @@ Be detailed and informative. Use clear headings and structure your content well.
                                     size="small"
                                     icon={<Users size={14} />}
                                   />
-                                );
+                                )
                               })
                             }
                           />
                         </FormControl>
                       </Grid>
 
+                      {/* Arc */}
                       <Grid item xs={12} md={4}>
                         <FormControl fullWidth>
                           <Autocomplete
@@ -316,18 +369,19 @@ Be detailed and informative. Use clear headings and structure your content well.
                               />
                             )}
                             renderOption={(props, option) => {
-                              const { key, ...otherProps } = props;
+                              const { key, ...otherProps } = props
                               return (
                                 <li key={key} {...otherProps}>
                                   <BookOpen size={16} style={{ marginRight: 8 }} />
                                   {option.name}
                                 </li>
-                              );
+                              )
                             }}
                           />
                         </FormControl>
                       </Grid>
 
+                      {/* Gambles */}
                       <Grid item xs={12} md={4}>
                         <FormControl fullWidth>
                           <Autocomplete
@@ -346,15 +400,18 @@ Be detailed and informative. Use clear headings and structure your content well.
                                 helperText="Link to gambles analyzed in your guide"
                               />
                             )}
-                            renderOption={(props, option) => (
-                              <li {...props}>
-                                <Dice6 size={16} style={{ marginRight: 8 }} />
-                                {option.name}
-                              </li>
-                            )}
+                            renderOption={(props, option) => {
+                              const { key, ...otherProps } = props
+                              return (
+                                <li key={key} {...otherProps}>
+                                  <Dice6 size={16} style={{ marginRight: 8 }} />
+                                  {option.name}
+                                </li>
+                              )
+                            }}
                             renderTags={(value, getTagProps) =>
                               value.map((option, index) => {
-                                const { key, ...tagProps } = getTagProps({ index });
+                                const { key, ...tagProps } = getTagProps({ index })
                                 return (
                                   <Chip
                                     key={key}
@@ -364,7 +421,7 @@ Be detailed and informative. Use clear headings and structure your content well.
                                     size="small"
                                     icon={<Dice6 size={14} />}
                                   />
-                                );
+                                )
                               })
                             }
                           />
@@ -374,6 +431,7 @@ Be detailed and informative. Use clear headings and structure your content well.
                   </Box>
                 </Grid>
 
+                {/* Tags */}
                 <Grid item xs={12}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle1" gutterBottom>
@@ -416,13 +474,14 @@ Be detailed and informative. Use clear headings and structure your content well.
                   </Box>
                 </Grid>
 
+                {/* Submit Button */}
                 <Grid item xs={12}>
                   <Button
                     type="submit"
                     variant="contained"
                     size="large"
                     fullWidth
-                    disabled={loading || !formData.title || !formData.description || !formData.content || formData.description.length < 10 || formData.content.length < 50}
+                    disabled={loading || !isFormValid}
                     startIcon={loading ? <CircularProgress size={20} /> : <Send size={20} />}
                   >
                     {loading ? 'Submitting...' : 'Submit Guide'}

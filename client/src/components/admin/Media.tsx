@@ -14,11 +14,11 @@ import {
   SelectInput,
   ReferenceInput,
   AutocompleteInput,
-  Filter,
   Button,
   useRecordContext,
   useNotify,
-  useRefresh
+  useRefresh,
+  useListContext
 } from 'react-admin'
 import { useWatch } from 'react-hook-form'
 import { 
@@ -30,7 +30,10 @@ import {
   CardHeader, 
   Grid, 
   Avatar,
-  Button as MuiButton
+  Button as MuiButton,
+  ButtonGroup,
+  Toolbar,
+  AppBar
 } from '@mui/material'
 import { 
   Check, 
@@ -41,29 +44,118 @@ import {
   Calendar, 
   Volume2, 
   ExternalLink, 
-  Link as LinkIcon,
-  Edit3
+  Link as LinkIcon
 } from 'lucide-react'
 import { api } from '../../lib/api'
+
+const TruncatedUrlField = () => {
+  const record = useRecordContext()
+  if (!record?.url) return null
+
+  // Function to truncate URL intelligently
+  const truncateUrl = (url: string, maxLength: number = 30) => {
+    if (url.length <= maxLength) return url
+    
+    // Try to keep the domain and show ... in the middle
+    const urlObj = new URL(url)
+    const domain = urlObj.hostname
+    const path = urlObj.pathname + urlObj.search
+    
+    if (domain.length + 10 >= maxLength) {
+      // If domain is too long, just truncate from the end
+      return url.substring(0, maxLength - 3) + '...'
+    }
+    
+    // Show domain + truncated path
+    const availableForPath = maxLength - domain.length - 6 // 6 for "https://" and "..."
+    if (path.length > availableForPath) {
+      const truncatedPath = path.substring(0, availableForPath) + '...'
+      return `${domain}${truncatedPath}`
+    }
+    
+    return url
+  }
+
+  const displayUrl = truncateUrl(record.url)
+
+  return (
+    <Box sx={{ 
+      maxWidth: '150px',
+      overflow: 'hidden',
+      '& a': {
+        fontWeight: 'bold',
+        color: 'primary.main',
+        textDecoration: 'none',
+        fontSize: '0.75rem',
+        display: 'block',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        '&:hover': { 
+          textDecoration: 'underline',
+          // Show full URL on hover
+          '&::after': {
+            content: `"${record.url}"`,
+            position: 'absolute',
+            bottom: '100%',
+            left: '0',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '0.7rem',
+            whiteSpace: 'nowrap',
+            zIndex: 1000,
+            pointerEvents: 'none',
+            maxWidth: '300px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }
+        }
+      }
+    }}>
+      <a href={record.url} target="_blank" rel="noopener noreferrer" title={record.url}>
+        {displayUrl}
+      </a>
+    </Box>
+  )
+}
 
 const MediaStatusField = ({ source }: { source: string }) => {
   const record = useRecordContext()
   if (!record) return null
-  
+
   const status = record[source]
-  const color = status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'warning'
-  
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'approved': return 'success'
+      case 'rejected': return 'error'
+      case 'draft': return 'info'
+      default: return 'warning'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'approved': return '✅'
+      case 'rejected': return '❌'
+      case 'draft': return '📝'
+      case 'pending': return '⏳'
+      default: return '❓'
+    }
+  }
+
   return (
-    <Chip 
-      label={status} 
-      color={color} 
-      size="small" 
+    <Chip
+      label={`${getStatusIcon(status)} ${status}`}
+      color={getStatusColor(status)}
+      size="small"
       sx={{
         fontWeight: 'bold',
         textTransform: 'uppercase',
         fontSize: '0.75rem',
         height: '28px',
-        minWidth: '80px'
+        minWidth: '85px'
       }}
     />
   )
@@ -93,26 +185,354 @@ const MediaPurposeField = ({ source }: { source: string }) => {
   )
 }
 
-const MediaFilter = (props: any) => (
-  <Filter {...props}>
-    <SelectInput 
-      source="status" 
-      choices={[
-        { id: 'pending', name: 'Pending' },
-        { id: 'approved', name: 'Approved' },
-        { id: 'rejected', name: 'Rejected' },
-      ]}
-      alwaysOn
-    />
-    <SelectInput 
-      source="purpose" 
-      choices={[
-        { id: 'gallery', name: 'Gallery' },
-        { id: 'entity_display', name: 'Entity Display' },
-      ]}
-    />
-  </Filter>
-)
+const MediaPreviewField = ({ source }: { source: string }) => {
+  const record = useRecordContext()
+  if (!record?.url) return null
+
+  switch (record.type) {
+    case 'image':
+      return (
+        <Box sx={{ width: '80px', display: 'flex', justifyContent: 'center' }}>
+          <img
+            src={record.url}
+            alt="Media preview"
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'cover',
+              borderRadius: '4px',
+              border: '2px solid #e11d48'
+            }}
+          />
+        </Box>
+      )
+    case 'video':
+      return (
+        <Box sx={{ width: '80px', display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{
+            width: 60,
+            height: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0f0f0f',
+            borderRadius: '4px',
+            border: '2px solid #e11d48'
+          }}>
+            <Volume2 size={24} color="#e11d48" />
+          </Box>
+        </Box>
+      )
+    case 'audio':
+      return (
+        <Box sx={{ width: '80px', display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{
+            width: 60,
+            height: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0f0f0f',
+            borderRadius: '4px',
+            border: '2px solid #e11d48'
+          }}>
+            <Volume2 size={24} color="#e11d48" />
+          </Box>
+        </Box>
+      )
+    default:
+      return (
+        <Box sx={{ width: '80px', display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{
+            width: 60,
+            height: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0f0f0f',
+            borderRadius: '4px',
+            border: '2px solid #e11d48'
+          }}>
+            <ExternalLink size={24} color="#e11d48" />
+          </Box>
+        </Box>
+      )
+  }
+}
+
+const EntityInfoField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  const getEntityTypeColor = (type: string) => {
+    switch(type) {
+      case 'character': return { bg: 'rgba(76, 175, 80, 0.2)', color: '#4caf50' }
+      case 'arc': return { bg: 'rgba(255, 152, 0, 0.2)', color: '#ff9800' }
+      case 'event': return { bg: 'rgba(156, 39, 176, 0.2)', color: '#9c27b0' }
+      case 'gamble': return { bg: 'rgba(244, 67, 54, 0.2)', color: '#f44336' }
+      case 'faction': return { bg: 'rgba(63, 81, 181, 0.2)', color: '#3f51b5' }
+      default: return { bg: 'rgba(158, 158, 158, 0.2)', color: '#9e9e9e' }
+    }
+  }
+
+  const colors = getEntityTypeColor(record.ownerType)
+
+  return (
+    <Box sx={{ width: '180px' }}>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        p: 1,
+        borderRadius: 1,
+        backgroundColor: 'rgba(25, 118, 210, 0.05)',
+        border: '1px solid rgba(25, 118, 210, 0.2)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            size="small"
+            label={record.ownerType || 'Unknown'}
+            sx={{
+              backgroundColor: colors.bg,
+              color: colors.color,
+              fontWeight: 'bold',
+              textTransform: 'capitalize',
+              fontSize: '0.75rem'
+            }}
+          />
+          <Typography variant="caption" sx={{
+            fontWeight: 'bold',
+            color: 'text.secondary',
+            fontSize: '0.7rem'
+          }}>
+            #{record.ownerId || 'N/A'}
+          </Typography>
+        </Box>
+        <Box sx={{ minHeight: '20px' }}>
+          <EntityNameDisplay />
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+const MediaTypeField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  const getTypeColor = (type: string) => {
+    switch(type) {
+      case 'image': return { bg: 'rgba(76, 175, 80, 0.1)', color: '#4caf50' }
+      case 'video': return { bg: 'rgba(255, 152, 0, 0.1)', color: '#ff9800' }
+      case 'audio': return { bg: 'rgba(156, 39, 176, 0.1)', color: '#9c27b0' }
+      default: return { bg: 'rgba(158, 158, 158, 0.1)', color: '#9e9e9e' }
+    }
+  }
+
+  const colors = getTypeColor(record.type)
+
+  return (
+    <Box sx={{ width: '140px', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      <Chip
+        size="small"
+        label={record.type || 'Unknown'}
+        sx={{
+          fontWeight: '500',
+          textTransform: 'capitalize',
+          backgroundColor: colors.bg,
+          color: colors.color,
+          fontSize: '0.7rem'
+        }}
+      />
+      <MediaPurposeField source="purpose" />
+    </Box>
+  )
+}
+
+const SubmissionDetailsField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  return (
+    <Box sx={{
+      width: '140px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 0.5
+    }}>
+      <Typography sx={{
+        fontSize: '0.75rem',
+        fontWeight: '500',
+        color: 'primary.main'
+      }}>
+        {record.submittedBy?.username || 'Unknown'}
+      </Typography>
+      <Typography sx={{
+        fontSize: '0.7rem',
+        color: 'text.secondary'
+      }}>
+        {record.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : ''}
+      </Typography>
+    </Box>
+  )
+}
+
+const ChapterInfoField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  return (
+    <Box sx={{ width: '80px', textAlign: 'center' }}>
+      {record.chapterNumber ? (
+        <Chip
+          size="small"
+          label={`Ch.${record.chapterNumber}`}
+          sx={{
+            backgroundColor: 'rgba(245, 124, 0, 0.1)',
+            color: '#f57c00',
+            fontWeight: 'bold',
+            fontSize: '0.7rem'
+          }}
+        />
+      ) : (
+        <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled' }}>
+          -
+        </Typography>
+      )}
+    </Box>
+  )
+}
+
+// Custom Filter Toolbar Component
+const MediaFilterToolbar = () => {
+  const { filterValues, setFilters } = useListContext()
+  
+  const statusFilters = [
+    { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
+    { id: 'pending', name: 'Pending', color: '#f57c00', icon: '⏳' },
+    { id: 'approved', name: 'Approved', color: '#4caf50', icon: '✅' },
+    { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
+  ]
+  
+  const entityFilters = [
+    { id: 'all', name: 'All Entities', icon: '🌐' },
+    { id: 'character', name: 'Characters', icon: '👤' },
+    { id: 'arc', name: 'Arcs', icon: '📖' },
+    { id: 'event', name: 'Events', icon: '⚡' },
+    { id: 'gamble', name: 'Gambles', icon: '🎲' },
+    { id: 'faction', name: 'Factions', icon: '🏛️' }
+  ]
+
+  const handleStatusFilter = (status: string) => {
+    const newFilters = status === 'all' 
+      ? { ...filterValues, status: undefined }
+      : { ...filterValues, status }
+    setFilters(newFilters, filterValues)
+  }
+
+  const handleEntityFilter = (ownerType: string) => {
+    const newFilters = ownerType === 'all'
+      ? { ...filterValues, ownerType: undefined }
+      : { ...filterValues, ownerType }
+    setFilters(newFilters, filterValues)
+  }
+
+  const currentStatus = filterValues?.status || 'all'
+  const currentEntity = filterValues?.ownerType || 'all'
+
+  return (
+    <Box sx={{
+      backgroundColor: 'rgba(10, 10, 10, 0.95)',
+      borderRadius: '8px 8px 0 0', // Only round top corners
+      border: '1px solid rgba(225, 29, 72, 0.2)',
+      borderBottom: 'none', // Remove bottom border to connect with table
+      mb: 0,
+      p: 2,
+      backdropFilter: 'blur(8px)'
+    }}>
+      {/* Status Filters */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ 
+          color: '#e11d48', 
+          fontWeight: 'bold', 
+          mb: 1,
+          fontSize: '0.9rem'
+        }}>
+          🎯 Filter by Status
+        </Typography>
+        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+          {statusFilters.map((filter) => (
+            <MuiButton
+              key={filter.id}
+              onClick={() => handleStatusFilter(filter.id)}
+              variant={currentStatus === filter.id ? 'contained' : 'outlined'}
+              size="small"
+              sx={{
+                borderColor: filter.color,
+                color: currentStatus === filter.id ? '#fff' : filter.color,
+                backgroundColor: currentStatus === filter.id ? filter.color : 'transparent',
+                fontSize: '0.75rem',
+                minWidth: '80px',
+                height: '32px',
+                '&:hover': {
+                  backgroundColor: currentStatus === filter.id 
+                    ? filter.color 
+                    : `${filter.color}20`,
+                  borderColor: filter.color
+                }
+              }}
+            >
+              {filter.icon} {filter.name}
+            </MuiButton>
+          ))}
+        </ButtonGroup>
+      </Box>
+
+      {/* Entity Type Filters */}
+      <Box>
+        <Typography variant="subtitle2" sx={{ 
+          color: '#7c3aed', 
+          fontWeight: 'bold', 
+          mb: 1,
+          fontSize: '0.9rem'
+        }}>
+          📂 Filter by Entity Type
+        </Typography>
+        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+          {entityFilters.map((filter) => (
+            <MuiButton
+              key={filter.id}
+              onClick={() => handleEntityFilter(filter.id)}
+              variant={currentEntity === filter.id ? 'contained' : 'outlined'}
+              size="small"
+              sx={{
+                borderColor: '#7c3aed',
+                color: currentEntity === filter.id ? '#fff' : '#7c3aed',
+                backgroundColor: currentEntity === filter.id ? '#7c3aed' : 'transparent',
+                fontSize: '0.75rem',
+                minWidth: '80px',
+                height: '32px',
+                '&:hover': {
+                  backgroundColor: currentEntity === filter.id 
+                    ? '#7c3aed' 
+                    : 'rgba(124, 58, 237, 0.1)',
+                  borderColor: '#7c3aed'
+                }
+              }}
+            >
+              {filter.icon} {filter.name}
+            </MuiButton>
+          ))}
+        </ButtonGroup>
+      </Box>
+    </Box>
+  )
+}
 
 const ApproveButton = () => {
   const record = useRecordContext()
@@ -302,120 +722,107 @@ const EntityNameDisplay = () => {
 }
 
 export const MediaList = () => (
-  <List filters={<MediaFilter />} filterDefaultValues={{ status: 'pending' }}>
+  <List 
+    filterDefaultValues={{ status: 'pending' }}
+    sort={{ field: 'ownerType', order: 'ASC' }}
+    perPage={25}
+    sx={{
+      '& .RaList-content': {
+        '& > *:not(:last-child)': {
+          marginBottom: 0 // Remove spacing between filter toolbar and table
+        }
+      }
+    }}
+  >
+    <MediaFilterToolbar />
     <Datagrid 
       rowClick="show"
       sx={{
+        marginTop: 0,
+        borderRadius: '0 0 8px 8px', // Only round bottom corners to connect with toolbar
+        border: '1px solid rgba(225, 29, 72, 0.2)',
+        borderTop: 'none', // Remove top border to connect with toolbar
+        overflow: 'hidden',
+        '& .RaDatagrid-table': {
+          borderRadius: 0, // Remove any internal border radius
+        },
         '& .RaDatagrid-headerCell': {
           fontWeight: 'bold',
-          fontSize: '0.9rem'
+          fontSize: '0.9rem',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          borderBottom: '2px solid #e11d48',
+          borderTop: 'none' // Remove top border from header
         },
         '& .RaDatagrid-rowCell': {
-          padding: '12px 8px',
+          padding: '14px 10px',
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+          borderBottom: '1px solid rgba(225, 29, 72, 0.2)'
+        },
+        // Group rows by entity type with alternating backgrounds
+        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
+          backgroundColor: 'rgba(225, 29, 72, 0.05)'
+        },
+        '& .RaDatagrid-tbody tr:hover': {
+          backgroundColor: 'rgba(225, 29, 72, 0.15) !important'
         }
       }}
     >
-      <TextField source="id" sx={{ width: '60px' }} />
-      <Box sx={{ 
-        maxWidth: '200px',
-        '& a': {
-          fontWeight: 'bold',
-          color: 'primary.main',
-          textDecoration: 'none',
-          '&:hover': { textDecoration: 'underline' }
-        }
-      }}>
-        <UrlField source="url" />
+      <TextField source="id" sx={{ width: '50px', fontSize: '0.85rem' }} />
+      
+      {/* Entity Information - Priority Section */}
+      <EntityInfoField />
+      
+      {/* Media Preview */}
+      <MediaPreviewField source="type" />
+      
+      {/* Media Details - Truncated URL */}
+      <TruncatedUrlField />
+
+      {/* Type & Purpose Combined */}
+      <MediaTypeField />
+
+      {/* Status - Prominent Display */}
+      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+        <MediaStatusField source="status" />
       </Box>
-      <TextField 
-        source="type" 
-        sx={{ 
-          width: '80px',
-          '& span': {
-            fontWeight: '500',
-            textTransform: 'capitalize',
-            backgroundColor: 'action.hover',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '0.8rem'
-          }
-        }} 
-      />
+      
       <TextField 
         source="description" 
         sx={{ 
-          maxWidth: '250px',
+          maxWidth: '200px',
           '& span': {
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            fontSize: '0.85rem',
-            color: 'text.secondary'
+            fontSize: '0.8rem',
+            color: 'text.secondary',
+            lineHeight: 1.2
           }
         }} 
       />
-      <TextField 
-        source="ownerType" 
-        label="Owner Type" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontWeight: '500',
-            color: 'secondary.main',
-            textTransform: 'capitalize'
-          }
-        }} 
-      />
-      <TextField 
-        source="ownerId" 
-        label="Owner ID" 
-        sx={{ 
-          width: '80px',
-          '& span': {
-            fontWeight: '500',
-            color: 'info.main'
-          }
-        }} 
-      />
-      <Box sx={{ width: '150px', display: 'flex', justifyContent: 'center' }}>
-        <PolymorphicInfoChip source="polymorphic" />
-      </Box>
-      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
-        <MediaStatusField source="status" />
-      </Box>
-      <TextField 
-        source="submittedBy.username" 
-        label="Submitted By" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontSize: '0.85rem',
-            color: 'text.secondary'
-          }
-        }} 
-      />
-      <DateField 
-        source="createdAt" 
-        label="Created" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontSize: '0.8rem'
-          }
-        }} 
-      />
+
+      {/* Submission Details */}
+      <SubmissionDetailsField />
+
+      {/* Chapter Info (if applicable) */}
+      <ChapterInfoField />
+      
+      {/* Actions */}
       <Box 
         sx={{ 
           display: 'flex', 
           gap: 1, 
-          minWidth: '200px',
+          minWidth: '160px',
           justifyContent: 'center',
           '& .MuiButton-root': {
-            minWidth: '60px',
-            padding: '6px 12px',
+            minWidth: '65px',
+            padding: '6px 14px',
             fontSize: '0.75rem',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
           }
         }}
       >
@@ -427,115 +834,90 @@ export const MediaList = () => (
 )
 
 export const MediaApprovalQueue = () => (
-  <List filter={{ status: 'pending' }} title="Media Approval Queue">
-    <Datagrid 
+  <List filter={{ status: 'pending' }} title="Media Approval Queue" sort={{ field: 'createdAt', order: 'ASC' }}>
+    <Datagrid
       rowClick="show"
       sx={{
         '& .RaDatagrid-headerCell': {
           fontWeight: 'bold',
-          fontSize: '0.9rem'
+          fontSize: '0.9rem',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          borderBottom: '2px solid #f57c00'
         },
         '& .RaDatagrid-rowCell': {
           padding: '12px 8px',
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+          borderBottom: '1px solid rgba(245, 124, 0, 0.2)'
+        },
+        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
+          backgroundColor: 'rgba(245, 124, 0, 0.05)'
+        },
+        '& .RaDatagrid-tbody tr:hover': {
+          backgroundColor: 'rgba(245, 124, 0, 0.15) !important'
         }
       }}
     >
-      <TextField source="id" sx={{ width: '60px' }} />
-      <Box sx={{ 
-        maxWidth: '250px',
-        '& a': {
-          fontWeight: 'bold',
-          color: 'primary.main',
-          textDecoration: 'none',
-          '&:hover': { textDecoration: 'underline' }
-        }
-      }}>
-        <UrlField source="url" />
+      <TextField source="id" sx={{ width: '50px', fontSize: '0.85rem' }} />
+
+      {/* Priority Display */}
+      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+        <Chip
+          label="PENDING"
+          color="warning"
+          size="small"
+          sx={{
+            fontWeight: 'bold',
+            fontSize: '0.7rem',
+            backgroundColor: '#fff3e0',
+            color: '#f57c00'
+          }}
+        />
       </Box>
-      <TextField 
-        source="type" 
-        sx={{ 
-          width: '80px',
-          '& span': {
-            fontWeight: '500',
-            textTransform: 'capitalize',
-            backgroundColor: 'action.hover',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '0.8rem'
-          }
-        }} 
-      />
-      <MediaPurposeField source="purpose" />
-      <TextField 
-        source="description" 
-        sx={{ 
-          maxWidth: '300px',
+
+      {/* Entity Information - Condensed */}
+      <EntityInfoField />
+
+      {/* Media Preview */}
+      <MediaPreviewField source="type" />
+
+      {/* Media Details - Truncated URL */}
+      <TruncatedUrlField />
+
+      {/* Type & Purpose Combined */}
+      <MediaTypeField />
+
+      <TextField
+        source="description"
+        sx={{
+          maxWidth: '180px',
           '& span': {
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            fontSize: '0.85rem',
+            fontSize: '0.8rem',
             color: 'text.secondary',
-            lineHeight: 1.3
+            lineHeight: 1.2
           }
-        }} 
+        }}
       />
-      <TextField 
-        source="ownerType" 
-        label="Owner Type" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontWeight: '500',
-            color: 'secondary.main',
-            textTransform: 'capitalize'
-          }
-        }} 
-      />
-      <TextField 
-        source="ownerId" 
-        label="Owner ID" 
-        sx={{ 
-          width: '80px',
-          '& span': {
-            fontWeight: '500',
-            color: 'info.main'
-          }
-        }} 
-      />
-      <TextField 
-        source="submittedBy.username" 
-        label="Submitted By" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontSize: '0.85rem',
-            color: 'text.secondary'
-          }
-        }} 
-      />
-      <DateField 
-        source="createdAt" 
-        label="Submitted" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontSize: '0.8rem'
-          }
-        }} 
-      />
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          gap: 1.5, 
+
+      {/* Submission Details */}
+      <SubmissionDetailsField />
+
+      {/* Priority Actions */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
           minWidth: '160px',
           justifyContent: 'center',
           '& .MuiButton-root': {
-            minWidth: '70px',
-            padding: '8px 16px',
-            fontSize: '0.8rem',
+            minWidth: '65px',
+            padding: '8px 14px',
+            fontSize: '0.75rem',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }
@@ -543,6 +925,147 @@ export const MediaApprovalQueue = () => (
       >
         <ApproveButton />
         <RejectButton />
+      </Box>
+    </Datagrid>
+  </List>
+)
+
+export const MediaDraftManager = () => (
+  <List
+    filter={{ status: 'draft' }}
+    title="Draft Media Submissions"
+    sort={{ field: 'updatedAt', order: 'DESC' }}
+    perPage={50}
+  >
+    <Datagrid
+      rowClick="edit"
+      sx={{
+        '& .RaDatagrid-headerCell': {
+          fontWeight: 'bold',
+          fontSize: '0.9rem',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          borderBottom: '2px solid #2196f3'
+        },
+        '& .RaDatagrid-rowCell': {
+          padding: '10px 8px',
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+          borderBottom: '1px solid rgba(33, 150, 243, 0.2)'
+        },
+        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
+          backgroundColor: 'rgba(33, 150, 243, 0.05)'
+        },
+        '& .RaDatagrid-tbody tr:hover': {
+          backgroundColor: 'rgba(33, 150, 243, 0.15) !important'
+        }
+      }}
+    >
+      <TextField source="id" sx={{ width: '50px', fontSize: '0.85rem' }} />
+
+      {/* Draft Status */}
+      <Box sx={{ width: '90px', display: 'flex', justifyContent: 'center' }}>
+        <Chip
+          label="DRAFT"
+          size="small"
+          sx={{
+            fontWeight: 'bold',
+            fontSize: '0.7rem',
+            backgroundColor: '#e3f2fd',
+            color: '#1976d2',
+            border: '1px solid #bbdefb'
+          }}
+        />
+      </Box>
+
+      {/* Entity Information - Compact for drafts */}
+      <EntityInfoField />
+
+      {/* Media Preview */}
+      <MediaPreviewField source="type" />
+
+      {/* Media Details - Truncated URL for drafts */}
+      <TruncatedUrlField />
+
+      {/* Type & Purpose */}
+      <MediaTypeField />
+
+      <TextField
+        source="description"
+        sx={{
+          maxWidth: '200px',
+          '& span': {
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            fontSize: '0.8rem',
+            color: 'text.secondary',
+            lineHeight: 1.3,
+            fontStyle: 'italic'
+          }
+        }}
+      />
+
+      {/* Author & Last Modified */}
+      <Box sx={{
+        width: '130px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5
+      }}>
+        <Typography sx={{
+          fontSize: '0.75rem',
+          fontWeight: '500',
+          color: 'primary.main'
+        }}>
+          {/* Using record context for submittedBy */}
+        </Typography>
+        <Typography sx={{
+          fontSize: '0.7rem',
+          color: 'text.secondary'
+        }}>
+          Last modified
+        </Typography>
+        <DateField
+          source="updatedAt"
+          sx={{
+            '& span': {
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }
+          }}
+        />
+      </Box>
+
+      {/* Edit Actions */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          minWidth: '120px',
+          justifyContent: 'center',
+          '& .MuiButton-root': {
+            minWidth: '60px',
+            padding: '6px 12px',
+            fontSize: '0.7rem',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }
+        }}
+      >
+        <Button
+          label="Edit"
+          onClick={() => {/* Navigate to edit */}}
+          color="primary"
+          startIcon={<LinkIcon size={16} />}
+        />
+        <Button
+          label="Submit"
+          onClick={() => {/* Submit for review */}}
+          color="secondary"
+          startIcon={<Check size={16} />}
+        />
       </Box>
     </Datagrid>
   </List>
