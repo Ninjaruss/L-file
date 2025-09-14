@@ -79,7 +79,7 @@ export class GuidesController {
     name: 'sortBy',
     required: false,
     description:
-      'Sort by field (createdAt, updatedAt, viewCount, likeCount, title)',
+      'Sort by field (id, createdAt, updatedAt, viewCount, likeCount, title, description, authorId)',
     example: 'viewCount',
   })
   @ApiQuery({
@@ -386,7 +386,7 @@ export class GuidesController {
     name: 'sortBy',
     required: false,
     description:
-      'Sort by field (createdAt, updatedAt, viewCount, likeCount, title)',
+      'Sort by field (id, createdAt, updatedAt, viewCount, likeCount, title, description, authorId)',
     example: 'createdAt',
   })
   @ApiQuery({

@@ -7,7 +7,13 @@
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 
+## 2025-09-14
+### Changes
+- Updated guides admin page to look like the media admin page
+- Updated media/guide endpoints to allow sorting 
+
 ## 2025-09-13
+### Changes
 - Added faction relation to character detail page and added characters to factions detail page
 - Added support for markdown for descriptions of entities
 - Fixed log in pop up to close properly

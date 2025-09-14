@@ -404,14 +404,15 @@ export const AdminDataProvider: DataProvider = {
       }
     }
     
-    // Base query parameters - filter out invalid values
+    // Base query parameters - filter out invalid values and client-side only filters
     const cleanFilter: Record<string, string> = {}
     if (params.filter) {
       Object.keys(params.filter).forEach(key => {
         const value = params.filter[key]
-        // Skip undefined, null, empty strings, NaN, and "NaN" values
+        // Skip undefined, null, empty strings, NaN, "NaN" values, and client-side only filters
         if (value !== undefined && value !== null && value !== '' && 
-            !Number.isNaN(value) && value !== 'NaN') {
+            !Number.isNaN(value) && value !== 'NaN' &&
+            key !== 'guideType') { // Skip guideType as it's handled client-side
           cleanFilter[key] = String(value)
         }
       })
@@ -438,12 +439,62 @@ export const AdminDataProvider: DataProvider = {
       
       // Handle different response structures
       const responseData = (response as Record<string, unknown>)?.data ?? response
-      const items = Array.isArray(responseData) ? responseData : (responseData as Record<string, unknown>)?.data || []
-      const total = (response as Record<string, unknown>)?.total ?? (responseData as Record<string, unknown>)?.total ?? (items as Record<string, unknown>[]).length
+      let items = Array.isArray(responseData) ? responseData : (responseData as Record<string, unknown>)?.data || []
+      const originalTotal = (response as Record<string, unknown>)?.total ?? (responseData as Record<string, unknown>)?.total ?? (items as Record<string, unknown>[]).length
+      
+      // Apply client-side filtering for guides if guideType filter is present
+      if (resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all') {
+        const guideType = params.filter.guideType as string
+        console.log(`Filtering guides by type: ${guideType}`)
+        console.log(`Total guides before filtering: ${(items as any[]).length}`)
+        
+        items = (items as any[]).filter((guide: any) => {
+          const hasCharacters = guide.characters && guide.characters.length > 0
+          const hasArc = guide.arc && guide.arc.name
+          const hasGambles = guide.gambles && guide.gambles.length > 0
+          
+          let shouldInclude = false
+          switch (guideType) {
+            case 'character':
+              // Character guides: primarily about characters (may have other entities)
+              shouldInclude = hasCharacters
+              break
+            case 'arc':
+              // Arc guides: have arcs (may or may not have characters/gambles)
+              shouldInclude = hasArc
+              break
+            case 'gamble':
+              // Gamble guides: have gambles (may or may not have characters/arcs)
+              shouldInclude = hasGambles
+              break
+            case 'comprehensive':
+              // Multi-entity guides: have at least 2 different types of entities
+              const entityCount = (hasCharacters ? 1 : 0) + (hasArc ? 1 : 0) + (hasGambles ? 1 : 0)
+              shouldInclude = entityCount >= 2
+              break
+            case 'general':
+              // General guides: have neither characters, arcs, nor gambles
+              shouldInclude = !hasCharacters && !hasArc && !hasGambles
+              break
+            default:
+              shouldInclude = true
+          }
+          
+          if (shouldInclude) {
+            console.log(`Including guide: ${guide.title} (characters: ${hasCharacters}, arc: ${hasArc}, gambles: ${hasGambles})`)
+          }
+          
+          return shouldInclude
+        })
+        
+        console.log(`Total guides after filtering: ${(items as any[]).length}`)
+      }
       
       return {
         data: (items as any[]).map((item: any) => ({ ...item, id: item.id })),
-        total: total as number,
+        total: resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all' 
+          ? (items as any[]).length // Use filtered count for guides with type filter
+          : originalTotal as number, // Use original total for other cases
       }
     } catch (error: unknown) {
       console.error(`Error in getList for ${resource}:`, error)

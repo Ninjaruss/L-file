@@ -40,7 +40,7 @@ export class GuideQueryDto {
 
   @ApiPropertyOptional({
     description:
-      'Sort by field (createdAt, updatedAt, viewCount, likeCount, title)',
+      'Sort by field (id, createdAt, updatedAt, viewCount, likeCount, title, description, authorId)',
     example: 'likeCount',
     default: 'createdAt',
   })

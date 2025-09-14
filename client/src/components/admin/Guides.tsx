@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   List,
   Datagrid,
@@ -26,7 +26,9 @@ import {
   useNotify,
   useRefresh,
   Filter,
-  Loading
+  Loading,
+  useListContext,
+  FunctionField
 } from 'react-admin'
 import { 
   Box, 
@@ -36,7 +38,11 @@ import {
   CardContent, 
   CardHeader, 
   Grid, 
-  Avatar 
+  Avatar,
+  Button as MuiButton,
+  ButtonGroup,
+  Toolbar,
+  AppBar
 } from '@mui/material'
 import { 
   Check, 
@@ -47,7 +53,11 @@ import {
   Heart, 
   Calendar, 
   Clock,
-  Edit3
+  Edit3,
+  BookOpen,
+  Users,
+  Target,
+  Star
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -56,95 +66,413 @@ import { api } from '../../lib/api'
 const GuideStatusField = ({ source }: { source: string }) => {
   const record = useRecordContext()
   if (!record) return null
-  
+
   const status = record[source]
-  const color = status === 'published' ? 'success' : status === 'rejected' ? 'error' : 'warning'
-  
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'published': return 'success'
+      case 'rejected': return 'error'
+      case 'draft': return 'info'
+      default: return 'warning'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'published': return '✅'
+      case 'rejected': return '❌'
+      case 'draft': return '📝'
+      case 'pending': return '⏳'
+      default: return '❓'
+    }
+  }
+
   return (
-    <Chip 
-      label={status} 
-      color={color} 
-      size="small" 
+    <Chip
+      label={`${getStatusIcon(status)} ${status}`}
+      color={getStatusColor(status)}
+      size="small"
       sx={{
         fontWeight: 'bold',
         textTransform: 'uppercase',
         fontSize: '0.75rem',
         height: '28px',
-        minWidth: '80px'
+        minWidth: '100px'
       }}
     />
   )
 }
 
-// Custom field for displaying author from embedded data
-const GuideAuthorField = () => {
+const GuideTypeField = () => {
   const record = useRecordContext()
-  if (!record?.author?.username) return <span>-</span>
-  
-  return (
-    <span style={{ fontWeight: '500', color: '#0ea5e9' }}>
-      {record.author.username}
-    </span>
-  )
-}
+  if (!record) return null
 
-// Custom field for displaying characters from embedded data
-const GuideCharactersField = () => {
-  const record = useRecordContext()
-  if (!record?.characters?.length) return <span>-</span>
-  
+  const getTypeColor = (hasCharacters: boolean, hasArc: boolean, hasGambles: boolean) => {
+    // All three types
+    if (hasCharacters && hasArc && hasGambles) return { bg: 'rgba(233, 30, 99, 0.1)', color: '#e91e63' }
+    // Two types
+    if (hasCharacters && hasArc) return { bg: 'rgba(156, 39, 176, 0.1)', color: '#9c27b0' }
+    if (hasCharacters && hasGambles) return { bg: 'rgba(63, 81, 181, 0.1)', color: '#3f51b5' }
+    if (hasArc && hasGambles) return { bg: 'rgba(255, 87, 34, 0.1)', color: '#ff5722' }
+    // Single types
+    if (hasCharacters) return { bg: 'rgba(76, 175, 80, 0.1)', color: '#4caf50' }
+    if (hasArc) return { bg: 'rgba(255, 152, 0, 0.1)', color: '#ff9800' }
+    if (hasGambles) return { bg: 'rgba(244, 67, 54, 0.1)', color: '#f44336' }
+    // General
+    return { bg: 'rgba(158, 158, 158, 0.1)', color: '#9e9e9e' }
+  }
+
+  const hasCharacters = record.characters && record.characters.length > 0
+  const hasArc = record.arc && record.arc.name
+  const hasGambles = record.gambles && record.gambles.length > 0
+  const colors = getTypeColor(hasCharacters, hasArc, hasGambles)
+
+  let label = 'General'
+  if (hasCharacters && hasArc && hasGambles) label = 'Character + Arc + Gamble'
+  else if (hasCharacters && hasArc) label = 'Character + Arc'
+  else if (hasCharacters && hasGambles) label = 'Character + Gamble'
+  else if (hasArc && hasGambles) label = 'Arc + Gamble'
+  else if (hasCharacters) label = 'Character'
+  else if (hasArc) label = 'Arc'
+  else if (hasGambles) label = 'Gamble'
+
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-      {record.characters.map((character: any) => (
-        <Chip
-          key={character.id}
-          label={character.name}
-          size="small"
-          sx={{
-            backgroundColor: 'rgba(225, 29, 72, 0.1)',
-            color: '#f43f5e',
-            fontSize: '0.7rem',
-            height: '20px'
-          }}
-        />
-      ))}
+    <Box sx={{ width: '150px', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      <Chip
+        size="small"
+        label={label}
+        sx={{
+          fontWeight: '500',
+          textTransform: 'capitalize',
+          backgroundColor: colors.bg,
+          color: colors.color,
+          fontSize: '0.7rem'
+        }}
+      />
     </Box>
   )
 }
 
-// Custom field for displaying arc from embedded data
-const GuideArcField = () => {
+const GuidePreviewField = () => {
   const record = useRecordContext()
-  if (!record?.arc?.name) return <span>-</span>
-  
+  if (!record) return null
+
   return (
-    <Chip
-      label={record.arc.name}
-      size="small"
-      sx={{
-        backgroundColor: 'rgba(124, 58, 237, 0.1)',
-        color: '#a855f7',
-        fontSize: '0.7rem',
-        height: '20px'
-      }}
-    />
+    <Box sx={{ width: '80px', display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{
+        width: 60,
+        height: 60,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0f0f0f',
+        borderRadius: '4px',
+        border: '2px solid #e11d48'
+      }}>
+        <FileText size={24} color="#e11d48" />
+      </Box>
+    </Box>
   )
 }
 
-const GuideFilter = (props: any) => (
-  <Filter {...props}>
-    <SelectInput 
-      source="status" 
-      choices={[
-        { id: 'draft', name: 'Draft' },
-        { id: 'pending', name: 'Pending' },
-        { id: 'published', name: 'Published' },
-        { id: 'rejected', name: 'Rejected' },
-      ]}
-      alwaysOn
-    />
-  </Filter>
-)
+const GuideAuthorDetailsField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  return (
+    <Box sx={{
+      width: '140px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 0.5
+    }}>
+      <Typography sx={{
+        fontSize: '0.75rem',
+        fontWeight: '500',
+        color: 'primary.main'
+      }}>
+        {record.author?.username || record.submittedBy?.username || 'Unknown'}
+      </Typography>
+      <Typography sx={{
+        fontSize: '0.7rem',
+        color: 'text.secondary'
+      }}>
+        {record.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : ''}
+      </Typography>
+    </Box>
+  )
+}
+
+const GuideEngagementField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  return (
+    <Box sx={{ width: '80px', textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+          <Eye size={12} color="#666" />
+          <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
+            {record.viewCount || 0}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+          <Heart size={12} color="#e11d48" />
+          <Typography sx={{ fontSize: '0.7rem', color: '#e11d48' }}>
+            {record.likeCount || 0}
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+const GuideRelatedEntitiesField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  return (
+    <Box sx={{ width: '200px' }}>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        p: 1,
+        borderRadius: 1,
+        backgroundColor: 'rgba(25, 118, 210, 0.05)',
+        border: '1px solid rgba(25, 118, 210, 0.2)'
+      }}>
+        {/* Characters */}
+        {record.characters && record.characters.length > 0 && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {record.characters.slice(0, 3).map((character: any) => (
+              <Chip
+                key={character.id}
+                label={character.name}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                  color: '#4caf50',
+                  fontSize: '0.65rem',
+                  height: '18px'
+                }}
+              />
+            ))}
+            {record.characters.length > 3 && (
+              <Chip
+                label={`+${record.characters.length - 3}`}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(158, 158, 158, 0.2)',
+                  color: '#9e9e9e',
+                  fontSize: '0.65rem',
+                  height: '18px'
+                }}
+              />
+            )}
+          </Box>
+        )}
+        
+        {/* Arc */}
+        {record.arc && record.arc.name && (
+          <Box>
+            <Chip
+              label={record.arc.name}
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                color: '#ff9800',
+                fontSize: '0.65rem',
+                height: '18px'
+              }}
+            />
+          </Box>
+        )}
+        
+        {/* Gambles */}
+        {record.gambles && record.gambles.length > 0 && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
+            {record.gambles.slice(0, 2).map((gamble: any) => (
+              <Chip
+                key={gamble.id}
+                label={gamble.name || `Gamble ${gamble.id}`}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                  color: '#9c27b0',
+                  fontSize: '0.65rem',
+                  height: '18px'
+                }}
+              />
+            ))}
+            {record.gambles.length > 2 && (
+              <Chip
+                label={`+${record.gambles.length - 2}`}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                  color: '#9c27b0',
+                  fontSize: '0.65rem',
+                  height: '18px'
+                }}
+              />
+            )}
+          </Box>
+        )}
+        
+        {/* No entities */}
+        {(!record.characters || record.characters.length === 0) && 
+         (!record.arc || !record.arc.name) && 
+         (!record.gambles || record.gambles.length === 0) && (
+          <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', fontStyle: 'italic' }}>
+            No related entities
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  )
+}
+
+// Custom Filter Toolbar Component
+const GuideFilterToolbar = () => {
+  const { filterValues, setFilters } = useListContext()
+  
+  const statusFilters = [
+    { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
+    { id: 'pending', name: 'Pending', color: '#f57c00', icon: '⏳' },
+    { id: 'published', name: 'Published', color: '#4caf50', icon: '✅' },
+    { id: 'draft', name: 'Draft', color: '#2196f3', icon: '📝' },
+    { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
+  ]
+  
+  const typeFilters = [
+    { id: 'all', name: 'All Types', icon: '📚' },
+    { id: 'character', name: 'Character Guides', icon: '👤' },
+    { id: 'arc', name: 'Story Arc Guides', icon: '📖' },
+    { id: 'gamble', name: 'Gamble Guides', icon: '🎲' },
+    { id: 'comprehensive', name: 'Multi-Entity Guides', icon: '🔗' },
+    { id: 'general', name: 'General Guides', icon: '📝' }
+  ]
+
+  const handleStatusFilter = (status: string) => {
+    const newFilters = status === 'all' 
+      ? { ...filterValues, status: undefined }
+      : { ...filterValues, status }
+    setFilters(newFilters, filterValues)
+  }
+
+  const handleTypeFilter = (guideType: string) => {
+    const newFilters = { ...filterValues }
+    
+    // Remove any existing type-related filters
+    delete newFilters.guideType
+    
+    if (guideType === 'all') {
+      // Remove all type filters
+    } else {
+      // Set the guide type filter for client-side filtering
+      newFilters.guideType = guideType
+    }
+    
+    setFilters(newFilters, filterValues)
+  }
+
+  const currentStatus = filterValues?.status || 'all'
+  const currentType = filterValues?.guideType || 'all'
+
+  return (
+    <Box sx={{
+      backgroundColor: 'rgba(10, 10, 10, 0.95)',
+      borderRadius: '8px 8px 0 0',
+      border: '1px solid rgba(225, 29, 72, 0.2)',
+      borderBottom: 'none',
+      mb: 0,
+      p: 2,
+      backdropFilter: 'blur(8px)'
+    }}>
+      {/* Status Filters */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ 
+          color: '#e11d48', 
+          fontWeight: 'bold', 
+          mb: 1,
+          fontSize: '0.9rem'
+        }}>
+          📊 Filter by Status
+        </Typography>
+        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+          {statusFilters.map((filter) => (
+            <MuiButton
+              key={filter.id}
+              onClick={() => handleStatusFilter(filter.id)}
+              variant={currentStatus === filter.id ? 'contained' : 'outlined'}
+              size="small"
+              sx={{
+                borderColor: filter.color,
+                color: currentStatus === filter.id ? '#fff' : filter.color,
+                backgroundColor: currentStatus === filter.id ? filter.color : 'transparent',
+                fontSize: '0.75rem',
+                minWidth: '90px',
+                height: '32px',
+                '&:hover': {
+                  backgroundColor: currentStatus === filter.id 
+                    ? filter.color 
+                    : `${filter.color}20`,
+                  borderColor: filter.color
+                }
+              }}
+            >
+              {filter.icon} {filter.name}
+            </MuiButton>
+          ))}
+        </ButtonGroup>
+      </Box>
+
+      {/* Type Filters */}
+      <Box>
+        <Typography variant="subtitle2" sx={{ 
+          color: '#7c3aed', 
+          fontWeight: 'bold', 
+          mb: 1,
+          fontSize: '0.9rem'
+        }}>
+          📂 Filter by Guide Type
+        </Typography>
+        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+          {typeFilters.map((filter) => (
+            <MuiButton
+              key={filter.id}
+              onClick={() => handleTypeFilter(filter.id)}
+              variant={currentType === filter.id ? 'contained' : 'outlined'}
+              size="small"
+              sx={{
+                borderColor: '#7c3aed',
+                color: currentType === filter.id ? '#fff' : '#7c3aed',
+                backgroundColor: currentType === filter.id ? '#7c3aed' : 'transparent',
+                fontSize: '0.75rem',
+                minWidth: '90px',
+                height: '32px',
+                '&:hover': {
+                  backgroundColor: currentType === filter.id 
+                    ? '#7c3aed' 
+                    : 'rgba(124, 58, 237, 0.1)',
+                  borderColor: '#7c3aed'
+                }
+              }}
+            >
+              {filter.icon} {filter.name}
+            </MuiButton>
+          ))}
+        </ButtonGroup>
+      </Box>
+    </Box>
+  )
+}
 
 const ApproveGuideButton = () => {
   const record = useRecordContext()
@@ -165,7 +493,7 @@ const ApproveGuideButton = () => {
     }
   }
   
-  if (record?.status !== 'pending') return null
+  if (record?.status === 'published') return null
   
   return (
     <Button 
@@ -199,7 +527,7 @@ const RejectGuideButton = () => {
     }
   }
   
-  if (record?.status !== 'pending') return null
+  if (record?.status === 'rejected') return null
   
   return (
     <Button 
@@ -212,32 +540,73 @@ const RejectGuideButton = () => {
 }
 
 export const GuideList = () => (
-  <List filters={<GuideFilter />} filterDefaultValues={{ status: 'pending' }}>
+  <List 
+    filterDefaultValues={{ status: 'all' }}
+    perPage={25}
+    sx={{
+      '& .RaList-content': {
+        '& > *:not(:last-child)': {
+          marginBottom: 0
+        }
+      }
+    }}
+  >
+    <GuideFilterToolbar />
     <Datagrid 
       rowClick="show"
       sx={{
+        marginTop: 0,
+        borderRadius: '0 0 8px 8px',
+        border: '1px solid rgba(225, 29, 72, 0.2)',
+        borderTop: 'none',
+        overflow: 'hidden',
+        '& .RaDatagrid-table': {
+          borderRadius: 0,
+        },
         '& .RaDatagrid-headerCell': {
           fontWeight: 'bold',
-          fontSize: '0.9rem'
+          fontSize: '0.9rem',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          borderBottom: '2px solid #e11d48',
+          borderTop: 'none'
         },
         '& .RaDatagrid-rowCell': {
-          padding: '12px 8px',
+          padding: '14px 10px',
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+          borderBottom: '1px solid rgba(225, 29, 72, 0.2)'
+        },
+        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
+          backgroundColor: 'rgba(225, 29, 72, 0.05)'
+        },
+        '& .RaDatagrid-tbody tr:hover': {
+          backgroundColor: 'rgba(225, 29, 72, 0.15) !important'
         }
       }}
     >
-      <TextField source="id" sx={{ width: '60px' }} />
+      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
+      
+      {/* Guide Preview */}
+      <GuidePreviewField />
+      
+      {/* Title & Description */}
       <TextField 
         source="title" 
+        sortable
         sx={{ 
           maxWidth: '200px',
           '& span': {
             fontWeight: 'bold',
-            color: 'primary.main'
+            color: 'primary.main',
+            fontSize: '0.85rem'
           }
         }} 
       />
+      
       <TextField 
         source="description" 
+        sortable
         sx={{ 
           maxWidth: '250px',
           '& span': {
@@ -245,58 +614,73 @@ export const GuideList = () => (
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            fontSize: '0.85rem',
-            color: 'text.secondary'
+            fontSize: '0.8rem',
+            color: 'text.secondary',
+            lineHeight: 1.2
           }
         }} 
       />
-      <Box sx={{ width: '120px' }}>
-        <GuideAuthorField />
-      </Box>
-      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+
+      {/* Guide Type & Related Entities */}
+      <GuideRelatedEntitiesField />
+
+      {/* Type Classification */}
+      <GuideTypeField />
+
+      {/* Status - Prominent Display */}
+      <Box sx={{ width: '110px', display: 'flex', justifyContent: 'center' }}>
         <GuideStatusField source="status" />
       </Box>
-      <Box sx={{ maxWidth: '150px' }}>
-        <GuideCharactersField />
-      </Box>
-      <Box sx={{ width: '100px' }}>
-        <GuideArcField />
-      </Box>
-      <TextField 
-        source="rejectionReason" 
-        label="Rejection" 
-        sx={{ 
-          maxWidth: '150px',
-          '& span': {
-            fontSize: '0.8rem',
-            color: 'error.main',
-            fontStyle: 'italic'
-          }
-        }} 
+
+      {/* Author & Submission Details */}
+      <FunctionField
+        label="Author"
+        sortBy="authorId"
+        render={(record: any) => (
+          <Box sx={{
+            width: '140px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            <Typography sx={{
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              color: 'primary.main'
+            }}>
+              {record?.author?.username || record?.submittedBy?.username || 'Unknown'}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+          </Box>
+        )}
       />
-      <NumberField source="viewCount" label="Views" sx={{ width: '70px', textAlign: 'center' }} />
-      <NumberField source="likeCount" label="Likes" sx={{ width: '70px', textAlign: 'center' }} />
-      <DateField 
-        source="createdAt" 
-        label="Created" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontSize: '0.8rem'
-          }
-        }} 
-      />
+
+      {/* Engagement Metrics */}
+      <GuideEngagementField />
+      
+      {/* Actions */}
       <Box 
         sx={{ 
           display: 'flex', 
           gap: 1, 
-          minWidth: '140px',
+          minWidth: '160px',
           justifyContent: 'center',
           '& .MuiButton-root': {
-            minWidth: '60px',
-            padding: '6px 12px',
+            minWidth: '65px',
+            padding: '6px 14px',
             fontSize: '0.75rem',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
           }
         }}
       >
@@ -308,76 +692,139 @@ export const GuideList = () => (
 )
 
 export const GuideApprovalQueue = () => (
-  <List filter={{ status: 'pending' }} title="Guide Approval Queue">
+  <List filter={{ status: 'pending' }} title="Guide Approval Queue" perPage={25}>
     <Datagrid 
       rowClick="show"
       sx={{
+        borderRadius: '8px',
+        border: '1px solid rgba(225, 29, 72, 0.2)',
+        overflow: 'hidden',
         '& .RaDatagrid-headerCell': {
           fontWeight: 'bold',
-          fontSize: '0.9rem'
+          fontSize: '0.9rem',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          borderBottom: '2px solid #f57c00'
         },
         '& .RaDatagrid-rowCell': {
-          padding: '12px 8px',
+          padding: '14px 10px',
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+          borderBottom: '1px solid rgba(245, 124, 0, 0.2)'
+        },
+        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
+          backgroundColor: 'rgba(245, 124, 0, 0.05)'
+        },
+        '& .RaDatagrid-tbody tr:hover': {
+          backgroundColor: 'rgba(245, 124, 0, 0.15) !important'
         }
       }}
     >
-      <TextField source="id" sx={{ width: '60px' }} />
+      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
+
+      {/* Priority Display */}
+      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+        <Chip
+          label="🔥 PENDING"
+          color="warning"
+          size="small"
+          sx={{
+            fontWeight: 'bold',
+            fontSize: '0.7rem',
+            backgroundColor: '#fff3e0',
+            color: '#f57c00',
+            animation: 'pulse 2s infinite'
+          }}
+        />
+      </Box>
+
+      {/* Guide Preview */}
+      <GuidePreviewField />
+
+      {/* Title & Description - More space for pending guides */}
       <TextField 
         source="title" 
+        sortable
         sx={{ 
-          maxWidth: '250px',
+          maxWidth: '220px',
           '& span': {
             fontWeight: 'bold',
-            color: 'primary.main'
+            color: 'primary.main',
+            fontSize: '0.9rem'
           }
         }} 
       />
+      
       <TextField 
         source="description" 
+        sortable
         sx={{ 
-          maxWidth: '300px',
+          maxWidth: '280px',
           '& span': {
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            fontSize: '0.85rem',
+            fontSize: '0.8rem',
             color: 'text.secondary',
             lineHeight: 1.3
           }
         }} 
       />
-      <ReferenceField source="authorId" reference="users" label="Author" sx={{ width: '120px' }}>
-        <TextField 
-          source="username" 
-          sx={{
-            '& span': {
+
+      {/* Related Entities - Condensed for approval queue */}
+      <GuideRelatedEntitiesField />
+
+      {/* Type Classification */}
+      <GuideTypeField />
+
+      {/* Author & Submission Details */}
+      <FunctionField
+        label="Author"
+        sortBy="authorId"
+        render={(record: any) => (
+          <Box sx={{
+            width: '140px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            <Typography sx={{
+              fontSize: '0.75rem',
               fontWeight: '500',
-              color: 'info.main'
-            }
-          }}
-        />
-      </ReferenceField>
-      <DateField 
-        source="createdAt" 
-        label="Submitted" 
-        sx={{ 
-          width: '120px',
-          '& span': {
-            fontSize: '0.8rem'
-          }
-        }} 
+              color: 'primary.main'
+            }}>
+              {record?.author?.username || record?.submittedBy?.username || 'Unknown'}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+          </Box>
+        )}
       />
+
+      {/* Engagement Metrics */}
+      <GuideEngagementField />
+
+      {/* Priority Actions */}
       <Box 
         sx={{ 
           display: 'flex', 
-          gap: 1.5, 
+          gap: 1, 
           minWidth: '160px',
           justifyContent: 'center',
           '& .MuiButton-root': {
-            minWidth: '70px',
+            minWidth: '65px',
             padding: '8px 16px',
-            fontSize: '0.8rem',
+            fontSize: '0.75rem',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }
@@ -385,6 +832,177 @@ export const GuideApprovalQueue = () => (
       >
         <ApproveGuideButton />
         <RejectGuideButton />
+      </Box>
+    </Datagrid>
+  </List>
+)
+
+export const GuideDraftManager = () => (
+  <List
+    filter={{ status: 'draft' }}
+    title="Draft Guide Submissions"
+    perPage={50}
+  >
+    <Datagrid
+      rowClick="edit"
+      sx={{
+        borderRadius: '8px',
+        border: '1px solid rgba(225, 29, 72, 0.2)',
+        overflow: 'hidden',
+        '& .RaDatagrid-headerCell': {
+          fontWeight: 'bold',
+          fontSize: '0.9rem',
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          color: '#ffffff',
+          borderBottom: '2px solid #2196f3'
+        },
+        '& .RaDatagrid-rowCell': {
+          padding: '12px 10px',
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+          borderBottom: '1px solid rgba(33, 150, 243, 0.2)'
+        },
+        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
+          backgroundColor: 'rgba(33, 150, 243, 0.05)'
+        },
+        '& .RaDatagrid-tbody tr:hover': {
+          backgroundColor: 'rgba(33, 150, 243, 0.15) !important'
+        }
+      }}
+    >
+      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
+
+      {/* Draft Status */}
+      <Box sx={{ width: '90px', display: 'flex', justifyContent: 'center' }}>
+        <Chip
+          label="📝 DRAFT"
+          size="small"
+          sx={{
+            fontWeight: 'bold',
+            fontSize: '0.7rem',
+            backgroundColor: '#e3f2fd',
+            color: '#1976d2',
+            border: '1px solid #bbdefb'
+          }}
+        />
+      </Box>
+
+      {/* Guide Preview */}
+      <GuidePreviewField />
+
+      {/* Title & Description - More space for drafts */}
+      <TextField 
+        source="title" 
+        sortable
+        sx={{ 
+          maxWidth: '200px',
+          '& span': {
+            fontWeight: 'bold',
+            color: 'primary.main',
+            fontSize: '0.85rem'
+          }
+        }} 
+      />
+      
+      <TextField 
+        source="description" 
+        sortable
+        sx={{ 
+          maxWidth: '250px',
+          '& span': {
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            fontSize: '0.8rem',
+            color: 'text.secondary',
+            lineHeight: 1.3,
+            fontStyle: 'italic'
+          }
+        }} 
+      />
+
+      {/* Related Entities - Compact for drafts */}
+      <GuideRelatedEntitiesField />
+
+      {/* Type Classification */}
+      <GuideTypeField />
+
+      {/* Author & Last Modified */}
+      <FunctionField
+        label="Author"
+        sortBy="authorId"
+        render={(record: any) => (
+          <Box sx={{
+            width: '130px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            <Typography sx={{
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              color: 'primary.main'
+            }}>
+              {record?.author?.username || record?.submittedBy?.username || 'Unknown'}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              Created: {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.7rem',
+              color: 'text.secondary'
+            }}>
+              Modified: {record?.updatedAt ? new Date(record.updatedAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : ''}
+            </Typography>
+          </Box>
+        )}
+      />
+
+      {/* Engagement Metrics */}
+      <GuideEngagementField />
+
+      {/* Edit Actions */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          minWidth: '140px',
+          justifyContent: 'center',
+          '& .MuiButton-root': {
+            minWidth: '65px',
+            padding: '6px 12px',
+            fontSize: '0.7rem',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }
+        }}
+      >
+        <Button
+          label="Edit"
+          onClick={() => {/* Navigate to edit */}}
+          color="primary"
+          startIcon={<Edit3 size={16} />}
+        />
+        <Button
+          label="Submit"
+          onClick={() => {/* Submit for review */}}
+          color="secondary"
+          startIcon={<Check size={16} />}
+        />
       </Box>
     </Datagrid>
   </List>

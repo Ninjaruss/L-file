@@ -90,13 +90,24 @@ class ApiClient {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`
       }
       
-      const error = new Error(errorMessage)
-      ;(error as any).status = response.status
-      ;(error as any).details = errorDetails
-      ;(error as any).url = url
-      ;(error as any).method = options.method || 'GET'
+      // Create a more robust error object
+      class APIError extends Error {
+        public status: number
+        public details: any
+        public url: string
+        public method: string
+        
+        constructor(message: string, status: number, details: any, url: string, method: string) {
+          super(message)
+          this.name = 'APIError'
+          this.status = status
+          this.details = details
+          this.url = url
+          this.method = method
+        }
+      }
       
-      throw error
+      throw new APIError(errorMessage, response.status, errorDetails, url, options.method || 'GET')
     }
 
     // Handle 204 No Content responses

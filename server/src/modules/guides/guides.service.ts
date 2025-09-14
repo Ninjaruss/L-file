@@ -160,8 +160,8 @@ export class GuidesService {
       // We'll sort by createdAt for now and handle viewCount sorting later
       queryBuilder.orderBy('guide.createdAt', sortOrder);
     } else {
-      // Apply sorting for other valid fields
-      const validSortFields = ['createdAt', 'updatedAt', 'likeCount', 'title'];
+      // Apply sorting for other valid fields - ADMIN ENDPOINT
+      const validSortFields = ['id', 'createdAt', 'updatedAt', 'likeCount', 'title', 'description', 'authorId'];
       if (validSortFields.includes(sortBy)) {
         queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
       } else {
@@ -272,8 +272,8 @@ export class GuidesService {
       // We'll sort by createdAt for now and handle viewCount sorting later
       queryBuilder.orderBy('guide.createdAt', sortOrder);
     } else {
-      // Apply sorting for other valid fields
-      const validSortFields = ['createdAt', 'updatedAt', 'likeCount', 'title'];
+      // Apply sorting for other valid fields - PUBLIC ENDPOINT
+      const validSortFields = ['id', 'createdAt', 'updatedAt', 'likeCount', 'title', 'description', 'authorId'];
       if (validSortFields.includes(sortBy)) {
         queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
       } else {
@@ -732,8 +732,8 @@ export class GuidesService {
       .leftJoinAndSelect('guide.tags', 'tags')
       .where('guide.status = :status', { status: GuideStatus.PENDING });
 
-    // Apply sorting
-    const validSortFields = ['createdAt', 'updatedAt', 'title'];
+    // Apply sorting - PENDING GUIDES
+    const validSortFields = ['id', 'createdAt', 'updatedAt', 'title', 'description', 'authorId'];
     if (validSortFields.includes(sortBy)) {
       queryBuilder.orderBy(`guide.${sortBy}`, sortOrder);
     } else {
