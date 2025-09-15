@@ -20,9 +20,10 @@ import { UserList, UserEdit, UserShow } from '../../components/admin/Users'
 import { QuoteList, QuoteEdit, QuoteCreate, QuoteShow } from '../../components/admin/Quotes'
 import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
 import { FactionList, FactionEdit, FactionCreate } from '../../components/admin/Factions'
+import { BadgeList, BadgeEdit, BadgeCreate, BadgeShow } from '../../components/admin/Badges'
 
 // Icons
-import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield } from 'lucide-react'
+import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Award } from 'lucide-react'
 
 // Convert icons to components
 const UsersIcon = () => <Users />
@@ -34,6 +35,7 @@ const ImageIcon = () => <Image />
 const QuoteIcon = () => <Quote />
 const TagIcon = () => <Tag />
 const ShieldIcon = () => <Shield />
+const AwardIcon = () => <Award />
 
 export default function AdminApp() {
   return (
@@ -121,6 +123,14 @@ export default function AdminApp() {
         edit={FactionEdit}
         create={FactionCreate}
         icon={ShieldIcon}
+      />
+      <Resource
+        name="badges"
+        list={BadgeList}
+        edit={BadgeEdit}
+        create={BadgeCreate}
+        show={BadgeShow}
+        icon={AwardIcon}
       />
     </Admin>
     </ThemeProvider>

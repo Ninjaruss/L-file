@@ -44,6 +44,8 @@ export class UsersService {
         'user.selectedCharacterMedia',
         'selectedCharacterMedia',
       )
+      .leftJoinAndSelect('user.badges', 'userBadges')
+      .leftJoinAndSelect('userBadges.badge', 'badge')
       .skip(skip)
       .take(limit);
 
@@ -56,8 +58,18 @@ export class UsersService {
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
-    // Fetch character information for each user's selected character media
+    // Process each user to filter active badges for list view and add character info
     for (const user of data) {
+      // Filter to show only active, non-expired badges in the list view
+      if (user.badges) {
+        const now = new Date();
+        user.badges = user.badges.filter(userBadge => 
+          userBadge.isActive && 
+          (!userBadge.expiresAt || userBadge.expiresAt > now)
+        );
+      }
+
+      // Fetch character information for selected character media
       if (
         user.selectedCharacterMedia &&
         user.selectedCharacterMedia.ownerType === 'character'
@@ -82,7 +94,10 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.repo.findOne({ where: { id } });
+    const user = await this.repo.findOne({ 
+      where: { id },
+      relations: ['badges', 'badges.badge', 'badges.awardedBy', 'badges.revokedBy']
+    });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
@@ -677,6 +692,12 @@ export class UsersService {
         characterMedia: totalWithCharacterMedia,
       },
     };
+  }
+
+  async updateCustomTitle(userId: number, customTitle: string | null): Promise<User> {
+    const user = await this.findOne(userId);
+    user.customTitle = customTitle;
+    return this.repo.save(user);
   }
 
   // --- Delete user ---

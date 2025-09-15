@@ -1,3 +1,5 @@
+import { User } from './resources';
+
 export interface Arc {
   id: number;
   name: string;
@@ -41,6 +43,59 @@ export interface Event {
   gamble?: Gamble;
   createdAt: string;
   updatedAt: string;
+}
+
+export enum BadgeType {
+  SUPPORTER = 'supporter',
+  ACTIVE_SUPPORTER = 'active_supporter',
+  SPONSOR = 'sponsor',
+  CUSTOM = 'custom',
+}
+
+export interface Badge {
+  id: number;
+  name: string;
+  description: string | null;
+  type: BadgeType;
+  icon: string;
+  color: string;
+  backgroundColor: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  isManuallyAwardable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserBadge {
+  id: number;
+  userId: number;
+  badgeId: number;
+  awardedAt: string;
+  expiresAt: string | null;
+  year: number | null;
+  reason: string | null;
+  isActive: boolean;
+  revokedAt?: string | null;
+  revokedReason?: string | null;
+  awardedByUserId?: number | null;
+  revokedByUserId?: number | null;
+  revokedBy?: User | null;
+  badge: Badge;
+  metadata?: any;
+}
+
+export interface Donation {
+  id: number;
+  userId: number | null;
+  amount: number;
+  currency: string;
+  donationDate: string;
+  provider: 'kofi' | 'manual';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  message: string | null;
+  donorName: string | null;
+  isAnonymous: boolean;
 }
 
 export interface Faction {

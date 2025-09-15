@@ -40,6 +40,7 @@ import UserProfileImage from '../../components/UserProfileImage'
 import GambleChip from '../../components/GambleChip'
 import QuoteSelectionPopup from '../../components/QuoteSelectionPopup'
 import GambleSelectionPopup from '../../components/GambleSelectionPopup'
+import UserBadges from '../../components/UserBadges'
 
 // Profile Picture Spoiler Wrapper - matches CharacterTimeline spoiler behavior
 function ProfilePictureSpoilerWrapper({ 
@@ -494,7 +495,7 @@ export default function ProfilePage() {
                   </Typography>
                   
                   <Chip
-                    label={user.role === 'admin' ? 'Administrator' : 
+                    label={user.role === 'admin' ? 'Administrator' :
                            user.role === 'moderator' ? 'Moderator' : 'Member'}
                     color={user.role === 'admin' ? 'error' : user.role === 'moderator' ? 'warning' : 'default'}
                     variant="outlined"
@@ -502,6 +503,11 @@ export default function ProfilePage() {
                     size="medium"
                     sx={{ fontWeight: 'bold' }}
                   />
+                </Box>
+
+                {/* User Badges */}
+                <Box sx={{ mb: 2 }}>
+                  <UserBadges userId={user.id} size="md" maxDisplay={6} />
                 </Box>
                 
                 {/* Improved Quick Stats */}

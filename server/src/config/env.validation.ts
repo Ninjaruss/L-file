@@ -60,6 +60,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsIn(['true', 'false'])
   ENABLE_SCHEMA_SYNC?: string;
+
+  @IsString()
+  @IsOptional()
+  KOFI_WEBHOOK_TOKEN?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

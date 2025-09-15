@@ -13,6 +13,8 @@ import { Event } from './event.entity';
 import { Quote } from './quote.entity';
 import { Gamble } from './gamble.entity';
 import { Media } from './media.entity';
+import { UserBadge } from './user-badge.entity';
+import { Donation } from './donation.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum UserRole {
@@ -24,6 +26,10 @@ export enum UserRole {
 export enum ProfilePictureType {
   DISCORD = 'discord',
   CHARACTER_MEDIA = 'character_media',
+  PREMIUM_CHARACTER_MEDIA = 'premium_character_media',
+  EXCLUSIVE_ARTWORK = 'exclusive_artwork',
+  ANIMATED_AVATAR = 'animated_avatar',
+  CUSTOM_FRAME = 'custom_frame',
 }
 
 @Entity()
@@ -134,6 +140,13 @@ export class User {
   selectedCharacterMediaId: number | null;
 
   @ApiPropertyOptional({
+    description: 'Custom title displayed under username (for active supporters)',
+    example: 'Usogui Superfan',
+  })
+  @Column({ type: 'varchar', nullable: true, length: 50 })
+  customTitle: string | null;
+
+  @ApiPropertyOptional({
     description: "User's favorite quote object",
     type: () => Quote,
   })
@@ -159,6 +172,17 @@ export class User {
 
   @OneToMany(() => Event, (event) => event.createdBy)
   submittedEvents: Event[];
+
+  @OneToMany(() => UserBadge, (userBadge) => userBadge.user)
+  badges: UserBadge[];
+
+  // Computed property for frontend compatibility
+  get userBadges(): UserBadge[] {
+    return this.badges || [];
+  }
+
+  @OneToMany(() => Donation, (donation) => donation.user)
+  donations: Donation[];
 
   @CreateDateColumn()
   createdAt: Date;

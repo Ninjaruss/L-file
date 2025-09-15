@@ -3,7 +3,7 @@
 - Redis based rate limiting with caching middle ware for responses; add cache headers to specific routes
 - Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN)
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
-- Replace SpoilerMarkdown with
+- Quality control of admin page sorting and display of fields; improved ux if needed for all pages
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Donation linking to badges; badge system with perks
 
@@ -11,6 +11,7 @@
 ### Chagnes
 - Replaced all markdown components into enhanced version (support for entity embeds and spoilers)
 - Embedded entity support editing added to guide admin page
+- Added badge system with support for Ko-fi and expiration of badge
 
 ## 2025-09-14
 ### Changes

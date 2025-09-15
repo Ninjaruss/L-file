@@ -1,6 +1,7 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { getDatabaseConfig } from './config/database.config';
 import { validate } from './config/env.validation';
 import { ArcsModule } from './modules/arcs/arcs.module';
@@ -20,6 +21,9 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 import { MediaModule } from './modules/media/media.module';
 import { GuidesModule } from './modules/guides/guides.module';
 import { PageViewsModule } from './modules/page-views/page-views.module';
+import { BadgesModule } from './modules/badges/badges.module';
+import { DonationsModule } from './modules/donations/donations.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 import { AppController } from './app.controller';
 import { Guide } from './entities/guide.entity';
 import { Character } from './entities/character.entity';
@@ -34,6 +38,8 @@ import { Logger } from '@nestjs/common';
       envFilePath: '.env',
       validate,
     }),
+
+    ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -78,6 +84,9 @@ import { Logger } from '@nestjs/common';
     MediaModule,
     GuidesModule,
     PageViewsModule,
+    BadgesModule,
+    DonationsModule,
+    TasksModule,
   ],
   controllers: [AppController],
 })

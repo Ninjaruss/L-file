@@ -8,7 +8,7 @@ interface UserProfileImageProps {
   user: {
     id: number
     username: string
-    profilePictureType?: 'discord' | 'character_media' | null
+    profilePictureType?: 'discord' | 'character_media' | 'premium_character_media' | 'animated_avatar' | 'custom_frame' | 'exclusive_artwork' | null
     selectedCharacterMediaId?: number | null
     selectedCharacterMedia?: {
       id: number

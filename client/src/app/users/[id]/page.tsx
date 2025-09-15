@@ -22,6 +22,7 @@ import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import UserProfileImage from '../../../components/UserProfileImage'
 import GambleChip from '../../../components/GambleChip'
+import UserBadges from '../../../components/UserBadges'
 
 interface PublicUser {
   id: number
@@ -263,7 +264,7 @@ export default function UserProfilePage() {
                   </Typography>
                   
                   <Chip
-                    label={user.role === 'admin' ? 'Admin' : 
+                    label={user.role === 'admin' ? 'Admin' :
                            user.role === 'moderator' ? 'Mod' : 'Member'}
                     color={user.role === 'admin' ? 'error' : user.role === 'moderator' ? 'warning' : 'primary'}
                     icon={user.role === 'admin' || user.role === 'moderator' ? <Crown size={14} /> : undefined}
@@ -273,6 +274,11 @@ export default function UserProfilePage() {
                       boxShadow: 1
                     }}
                   />
+                </Box>
+
+                {/* User Badges */}
+                <Box sx={{ mb: 2 }}>
+                  <UserBadges userId={user.id} size="md" maxDisplay={6} />
                 </Box>
 
                 {/* Improved Quick Stats */}

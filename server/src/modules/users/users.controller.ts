@@ -32,10 +32,16 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 
+import { BadgesService } from '../badges/badges.service';
+import { UpdateCustomTitleDto } from '../badges/dto/award-badge.dto';
+
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly service: UsersService) {}
+  constructor(
+    private readonly service: UsersService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   // Public users listing endpoint (no authentication required)
   @Get('public')
@@ -903,5 +909,70 @@ export class UsersController {
   })
   async getProfileCustomizationStats() {
     return this.service.getProfileCustomizationStats();
+  }
+
+  // --- Badge-related endpoints ---
+  @Get(':id/badges')
+  @ApiOperation({ summary: 'Get user active badges' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'List of active user badges' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserBadges(@Param('id', ParseIntPipe) id: number) {
+    return this.badgesService.getUserActiveBadges(id);
+  }
+
+  @Get(':id/badges/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all user badges including revoked ones (Admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'List of all user badges including revoked ones' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  async getAllUserBadges(@Param('id', ParseIntPipe) id: number) {
+    return this.badgesService.getAllUserBadges(id);
+  }
+
+  @Patch('profile/custom-title')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update custom title',
+    description: 'Update custom title (requires active supporter badge)',
+  })
+  @ApiBody({ type: UpdateCustomTitleDto })
+  @ApiResponse({ status: 200, description: 'Custom title updated successfully' })
+  @ApiResponse({ status: 403, description: 'Active supporter badge required' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateCustomTitle(
+    @CurrentUser() user: User,
+    @Body() updateCustomTitleDto: UpdateCustomTitleDto,
+  ) {
+    const hasActiveBadge = await this.badgesService.hasActiveSupporterBadge(user.id);
+    
+    if (!hasActiveBadge) {
+      throw new NotFoundException('Active supporter badge required to set custom title');
+    }
+
+    await this.service.updateCustomTitle(user.id, updateCustomTitleDto.customTitle);
+    return { message: 'Custom title updated successfully' };
+  }
+
+  @Delete('profile/custom-title')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Remove custom title',
+    description: 'Remove the current custom title',
+  })
+  @ApiResponse({ status: 200, description: 'Custom title removed successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async removeCustomTitle(@CurrentUser() user: User) {
+    await this.service.updateCustomTitle(user.id, null);
+    return { message: 'Custom title removed successfully' };
   }
 }

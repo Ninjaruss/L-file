@@ -26,8 +26,9 @@ interface User {
   discordUsername?: string | null
   discordAvatar?: string | null
   // Profile picture fields
-  profilePictureType?: 'discord' | 'character_media' | null
+  profilePictureType?: 'discord' | 'character_media' | 'premium_character_media' | 'animated_avatar' | 'custom_frame' | 'exclusive_artwork' | null
   selectedCharacterMediaId?: number | null
+  customTitle?: string | null
   // Full relation objects
   selectedCharacterMedia?: {
     id: number
@@ -397,7 +398,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Open in popup window instead of new tab for better communication
     const popup = window.open(
-      `${API_BASE_URL}/api/auth/discord`, 
+      `${API_BASE_URL}/auth/discord`, 
       'discord-login',
       'width=500,height=600,scrollbars=yes,resizable=yes'
     )

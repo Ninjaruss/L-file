@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import UserProfileImage from '../../components/UserProfileImage'
+import UserBadges from '../../components/UserBadges'
 
 interface PublicUser {
   id: number
@@ -190,12 +191,17 @@ export default function UsersPage() {
 
                           <Box sx={{ mb: 2 }}>
                             <Chip
-                              label={user.role === 'admin' ? 'Admin' : 
+                              label={user.role === 'admin' ? 'Admin' :
                                      user.role === 'moderator' ? 'Mod' : 'Member'}
                               size="small"
                               color={user.role === 'admin' ? 'error' : user.role === 'moderator' ? 'warning' : 'default'}
                               icon={user.role === 'admin' || user.role === 'moderator' ? <Crown size={14} /> : <User size={14} />}
                             />
+                          </Box>
+
+                          {/* User Badges */}
+                          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+                            <UserBadges userId={user.id} size="sm" maxDisplay={4} />
                           </Box>
 
                           <Box sx={{ width: '100%', mb: 2 }}>

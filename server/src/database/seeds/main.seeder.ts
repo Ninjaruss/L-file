@@ -12,6 +12,7 @@ import { TagSeeder } from './tag.seeder';
 import { MediaSeeder } from './media.seeder';
 import { GambleSeeder } from './gamble.seeder';
 import { GuideSeeder } from './guide.seeder';
+import { BadgeSeeder } from './badge.seeder';
 import { Logger } from '@nestjs/common';
 import chalk from 'chalk';
 
@@ -28,6 +29,7 @@ export class MainSeeder {
     const seeders: Seeder[] = [
       // Core data - must be seeded first
       new UserSeeder(this.dataSource), // Users for content attribution
+      new BadgeSeeder(this.dataSource), // Badge system
 
       // Content structure
       new ArcSeeder(this.dataSource), // Story arcs with chapter ranges
@@ -80,6 +82,7 @@ export class MainSeeder {
       this.logger.log(chalk.blue('   - Character quotes and memorable lines'));
       this.logger.log(chalk.blue('   - Community media submissions'));
       this.logger.log(chalk.blue('   - User-generated guides and tutorials'));
+      this.logger.log(chalk.blue('   - Badge system with supporter rewards'));
       this.logger.log(chalk.blue('   - Content tags and categorization'));
       return true;
     } else {

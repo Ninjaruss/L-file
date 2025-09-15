@@ -436,11 +436,33 @@ export const AdminDataProvider: DataProvider = {
 
     try {
       const response = await api.get<unknown>(`/${resource}?${new URLSearchParams(query).toString()}`)
-      
+
       // Handle different response structures
       const responseData = (response as Record<string, unknown>)?.data ?? response
       let items = Array.isArray(responseData) ? responseData : (responseData as Record<string, unknown>)?.data || []
       const originalTotal = (response as Record<string, unknown>)?.total ?? (responseData as Record<string, unknown>)?.total ?? (items as Record<string, unknown>[]).length
+
+      // Special handling for users to include badges
+      if (resource === 'users' && Array.isArray(items)) {
+        try {
+          items = await Promise.all((items as any[]).map(async (user: any) => {
+            try {
+              const badgesResponse = await api.get<unknown>(`/users/${user.id}/badges/all`).catch(() => null)
+              const badgesData = badgesResponse ? ((badgesResponse as Record<string, unknown>)?.data ?? badgesResponse) : []
+
+              return {
+                ...user,
+                userBadges: Array.isArray(badgesData) ? badgesData : []
+              }
+            } catch (error) {
+              console.warn(`Failed to fetch badges for user ${user.id}:`, error)
+              return { ...user, userBadges: [] }
+            }
+          }))
+        } catch (error) {
+          console.warn('Failed to fetch badges for users:', error)
+        }
+      }
       
       // Apply client-side filtering for guides if guideType filter is present
       if (resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all') {
@@ -511,11 +533,11 @@ export const AdminDataProvider: DataProvider = {
       try {
         const response = await api.get<unknown>(`/media/${params.id}`)
         const data = (response as Record<string, unknown>)?.data ?? response
-        
+
         if (!data) {
           throw new HttpError('No data returned from server', 404)
         }
-        
+
         const item = { ...(data as Record<string, unknown>), id: (data as Record<string, unknown>).id ?? params.id }
         return { data: item as any }
       } catch (error: unknown) {
@@ -523,6 +545,38 @@ export const AdminDataProvider: DataProvider = {
         const err = error as { status?: number; name?: string; message?: string }
         throw new HttpError(
           err.message || 'Failed to fetch media item',
+          err.status || (err.name === 'TypeError' ? 500 : 404),
+          error
+        )
+      }
+    }
+
+    // Special handling for users to include badges
+    if (resource === 'users') {
+      try {
+        const [userResponse, badgesResponse] = await Promise.all([
+          api.get<unknown>(`/users/${params.id}`),
+          api.get<unknown>(`/users/${params.id}/badges/all`).catch(() => null) // Don't fail if badges endpoint fails
+        ])
+
+        const userData = (userResponse as Record<string, unknown>)?.data ?? userResponse
+        const badgesData = badgesResponse ? ((badgesResponse as Record<string, unknown>)?.data ?? badgesResponse) : []
+
+        if (!userData) {
+          throw new HttpError('No data returned from server', 404)
+        }
+
+        const item = {
+          ...(userData as Record<string, unknown>),
+          id: (userData as Record<string, unknown>).id ?? params.id,
+          userBadges: Array.isArray(badgesData) ? badgesData : []
+        }
+        return { data: item as any }
+      } catch (error: unknown) {
+        console.error('Error in getOne for users:', error)
+        const err = error as { status?: number; name?: string; message?: string }
+        throw new HttpError(
+          err.message || 'Failed to fetch user',
           err.status || (err.name === 'TypeError' ? 500 : 404),
           error
         )
@@ -667,15 +721,31 @@ export const AdminDataProvider: DataProvider = {
 
   create: async (resource, params) => {
     try {
+      // Special handling for badge awarding
+      if (resource === 'badges/award') {
+        const awardData = {
+          userId: params.data.userId,
+          badgeId: params.data.badgeId,
+          reason: params.data.reason || null,
+          metadata: params.data.year ? { year: params.data.year } : null,
+        }
+
+        console.log('Awarding badge:', awardData)
+        const response = await api.post<unknown>('/badges/award', awardData)
+        const data = (response as Record<string, unknown>)?.data ?? response
+
+        return { data: { id: Date.now(), ...awardData, ...(data as Record<string, unknown>) } as any }
+      }
+
       // Clean the create data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
-      
+
       if (resource === 'gambles') {
         console.log('=== GAMBLE CREATE DEBUG ===')
         console.log('Original params.data:', params.data)
         console.log('Cleaned data being sent:', cleanedData)
       }
-      
+
       const response = await api.post<unknown>(`/${resource}`, cleanedData)
       
       const data = (response as Record<string, unknown>)?.data ?? response
