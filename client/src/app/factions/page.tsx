@@ -17,7 +17,7 @@ import {
 } from '@mui/material'
 import { Search, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import MediaThumbnail from '../../components/MediaThumbnail'
@@ -184,9 +184,11 @@ export default function FactionsPage() {
                             marginBottom: '16px',
                             flexGrow: 1
                           }}>
-                            <SpoilerMarkdown 
+                            <EnhancedSpoilerMarkdown
                               content={faction.description}
                               className="faction-description-preview"
+                              enableEntityEmbeds={true}
+                              compactEntityCards={true}
                             />
                           </div>
                         )}

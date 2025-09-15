@@ -369,61 +369,66 @@ export default function MediaThumbnail({
       {/* Cycling controls - outside spoiler wrapper */}
       {allowCycling && allEntityMedia.length > 1 && (
         <>
-          <IconButton
-            onClick={handlePrevious}
-            sx={{
-              position: 'absolute',
-              left: 8,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              bgcolor: 'rgba(0, 0, 0, 0.6)',
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'rgba(0, 0, 0, 0.8)',
-              },
-              zIndex: 30,
-            }}
-            size="small"
-          >
-            <ChevronLeft size={20} />
-          </IconButton>
+          {/* Only show controls if not in compact/inline mode or if container is large enough */}
+          {(!inline && (typeof maxWidth !== 'number' || maxWidth > 64) && (typeof maxHeight !== 'number' || maxHeight > 64)) && (
+            <>
+              <IconButton
+                onClick={handlePrevious}
+                sx={{
+                  position: 'absolute',
+                  left: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.6)',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.8)',
+                  },
+                  zIndex: 30,
+                }}
+                size="small"
+              >
+                <ChevronLeft size={20} />
+              </IconButton>
 
-          <IconButton
-            onClick={handleNext}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              bgcolor: 'rgba(0, 0, 0, 0.6)',
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'rgba(0, 0, 0, 0.8)',
-              },
-              zIndex: 30,
-            }}
-            size="small"
-          >
-            <ChevronRight size={20} />
-          </IconButton>
+              <IconButton
+                onClick={handleNext}
+                sx={{
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.6)',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.8)',
+                  },
+                  zIndex: 30,
+                }}
+                size="small"
+              >
+                <ChevronRight size={20} />
+              </IconButton>
 
-          {/* Media counter */}
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 8,
-              right: 8,
-              bgcolor: 'rgba(0, 0, 0, 0.6)',
-              color: 'white',
-              px: 1,
-              py: 0.5,
-              borderRadius: 1,
-              fontSize: '0.75rem',
-              zIndex: 30,
-            }}
-          >
-            {currentIndex + 1} / {allEntityMedia.length}
-          </Box>
+              {/* Media counter - only show for larger displays, not for inline entity embeds */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  bgcolor: 'rgba(0, 0, 0, 0.6)',
+                  color: 'white',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontSize: '0.75rem',
+                  zIndex: 30,
+                }}
+              >
+                {currentIndex + 1} / {allEntityMedia.length}
+              </Box>
+            </>
+          )}
         </>
       )}
     </Box>

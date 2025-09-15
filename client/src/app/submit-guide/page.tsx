@@ -290,22 +290,7 @@ export default function SubmitGuidePage() {
                           multiline
                           rows={16}
                           label="Guide Content"
-                          placeholder="Write your guide here. You can include:
-
-• Analysis of characters, gambles, or story arcs
-• Explanations of complex gambling rules
-• Theories about plot developments
-• Comparisons between different elements
-• Tips for new readers
-• Entity embeds like {{character:1}} or {{arc:5:Tower Arc}}
-
-Be detailed and informative. Use clear headings and structure your content well.
-
-Entity Embed Examples:
-• {{character:1}} - Links to character #1
-• {{arc:5:Tower Arc}} - Links to arc #5 with custom text
-• {{gamble:12}} - Links to gamble #12
-• {{guide:3}} - Links to another guide"
+                          placeholder="Write your guide here. Use Markdown for formatting and embed entities using {{entity_type:entity_id}} syntax. You may use entity embed search above to insert embeds."
                           value={formData.content}
                           onChange={(e) => handleInputChange('content', e.target.value)}
                           required

@@ -17,7 +17,7 @@ import {
 import { ArrowLeft, Users, Shield, Crown } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -197,9 +197,11 @@ export default function FactionDetailPage() {
                   <TimelineSpoilerWrapper 
                     chapterNumber={1}
                   >
-                    <SpoilerMarkdown 
+                    <EnhancedSpoilerMarkdown
                       content={faction.description}
                       className="faction-description"
+                      enableEntityEmbeds={true}
+                      compactEntityCards={false}
                     />
                   </TimelineSpoilerWrapper>
                 </CardContent>
@@ -386,9 +388,11 @@ export default function FactionDetailPage() {
                           {gamble.name}
                         </Typography>
                         <Box sx={{ mt: 1 }}>
-                          <SpoilerMarkdown 
+                          <EnhancedSpoilerMarkdown
                             content={gamble.rules}
                             className="faction-gamble-rules"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={true}
                           />
                         </Box>
                         {gamble.winnerTeam && (

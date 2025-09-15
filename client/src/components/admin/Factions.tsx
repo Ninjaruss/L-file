@@ -10,7 +10,6 @@ import {
   FunctionField
 } from 'react-admin'
 import { Typography } from '@mui/material'
-import SpoilerMarkdown from '../SpoilerMarkdown'
 
 export const FactionList = () => (
   <List>

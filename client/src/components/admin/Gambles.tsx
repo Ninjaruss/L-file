@@ -29,7 +29,7 @@ import {
   FunctionField
 } from 'react-admin'
 import { Box, Typography } from '@mui/material'
-import SpoilerMarkdown from '../SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 
@@ -168,9 +168,11 @@ export const GambleShow = () => (
                 source="description"
                 render={(record: any) =>
                   record.description ? (
-                    <SpoilerMarkdown
+                    <EnhancedSpoilerMarkdown
                       content={record.description}
                       className="admin-gamble-description"
+                      enableEntityEmbeds={true}
+                      compactEntityCards={true}
                     />
                   ) : (
                     <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
@@ -220,9 +222,11 @@ export const GambleShow = () => (
                     border: '1px solid rgba(211, 47, 47, 0.3)',
                     mb: 3
                   }}>
-                    <SpoilerMarkdown 
-                      content={record.rules} 
+                    <EnhancedSpoilerMarkdown
+                      content={record.rules}
                       className="admin-gamble-rules"
+                      enableEntityEmbeds={true}
+                      compactEntityCards={true}
                     />
                   </Box>
                 ) : (
@@ -244,9 +248,11 @@ export const GambleShow = () => (
                     borderRadius: 1,
                     border: '1px solid rgba(211, 47, 47, 0.3)',
                   }}>
-                    <SpoilerMarkdown 
-                      content={record.winCondition} 
+                    <EnhancedSpoilerMarkdown
+                      content={record.winCondition}
                       className="admin-gamble-win-condition"
+                      enableEntityEmbeds={true}
+                      compactEntityCards={true}
                     />
                   </Box>
                 ) : (

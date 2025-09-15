@@ -23,7 +23,7 @@ import {
 } from 'react-admin'
 import { Box, Card, CardContent, Typography, Grid, Chip } from '@mui/material'
 import { User, Edit3, Plus } from 'lucide-react'
-import SpoilerMarkdown from '../SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 export const CharacterList = () => (
@@ -70,9 +70,11 @@ export const CharacterShow = () => (
         label="Description" 
         render={(record: any) => 
           record.description ? (
-            <SpoilerMarkdown 
-              content={record.description} 
+            <EnhancedSpoilerMarkdown
+              content={record.description}
               className="admin-description"
+              enableEntityEmbeds={true}
+              compactEntityCards={true}
             />
           ) : (
             <Typography variant="body2" color="text.secondary">

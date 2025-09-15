@@ -18,7 +18,7 @@ import {
 import { ArrowLeft, BookOpen, Calendar, Eye } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -413,9 +413,11 @@ export default function ArcDetailPage() {
                         <TimelineSpoilerWrapper 
                           chapterNumber={arc.startChapter}
                         >
-                          <SpoilerMarkdown 
+                          <EnhancedSpoilerMarkdown
                             content={arc.description}
                             className="arc-description"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={false}
                           />
                         </TimelineSpoilerWrapper>
                       </CardContent>

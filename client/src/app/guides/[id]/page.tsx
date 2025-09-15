@@ -11,7 +11,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Avatar,
   Divider,
   TextField,
   Dialog,
@@ -24,14 +23,14 @@ import {
   MenuItem,
   Autocomplete
 } from '@mui/material'
-import { ArrowLeft, FileText, Calendar, ThumbsUp, User, Heart, Edit, Save, X, Users, BookOpen, Dice6 } from 'lucide-react'
+import { ArrowLeft, FileText, Calendar, ThumbsUp, Heart, Edit, Save, X, Users, BookOpen, Dice6 } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
 import { useAuth } from '../../../providers/AuthProvider'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
-import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { usePageView } from '../../../hooks/usePageView'
 import AuthorProfileImage from '../../../components/AuthorProfileImage'
 
@@ -583,8 +582,10 @@ export default function GuideDetailsPage() {
               }
             }}>
               <TimelineSpoilerWrapper>
-                <SpoilerMarkdown 
+                <EnhancedSpoilerMarkdown
                   content={guide.content}
+                  enableEntityEmbeds={true}
+                  compactEntityCards={false}
                 />
               </TimelineSpoilerWrapper>
             </Box>

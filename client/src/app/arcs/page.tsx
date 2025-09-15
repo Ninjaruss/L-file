@@ -26,7 +26,7 @@ import {
 import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
@@ -344,9 +344,11 @@ function ArcsPageContent() {
                           WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 4,
                         }}>
-                          <SpoilerMarkdown 
+                          <EnhancedSpoilerMarkdown
                             content={arc.description}
                             className="arc-description-preview"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={true}
                           />
                         </div>
                       </CardContent>

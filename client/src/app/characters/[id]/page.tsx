@@ -18,7 +18,7 @@ import {
 import { ArrowLeft, User, Crown, Calendar, BookOpen, AlertTriangle } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -449,17 +449,21 @@ export default function CharacterDetailPage() {
 
                         {character.description && character.firstAppearanceChapter && (
                           <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter}>
-                            <SpoilerMarkdown 
+                            <EnhancedSpoilerMarkdown
                               content={character.description}
                               className="character-description"
+                              enableEntityEmbeds={true}
+                              compactEntityCards={false}
                             />
                           </TimelineSpoilerWrapper>
                         )}
 
                         {character.description && !character.firstAppearanceChapter && (
-                          <SpoilerMarkdown 
+                          <EnhancedSpoilerMarkdown
                             content={character.description}
                             className="character-description"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={false}
                           />
                         )}
 

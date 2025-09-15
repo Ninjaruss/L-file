@@ -226,26 +226,6 @@ For more details, see {{guide:3:Gambling Rules Guide}} and {{chapter:150}}.`
               />
             ))}
           </Box>
-
-          {/* Preview Section */}
-          {showPreview && (
-            <Box sx={{ mt: 3 }}>
-              <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle2" gutterBottom>
-                Preview Example:
-              </Typography>
-              <Card sx={{ 
-                p: 2, 
-                backgroundColor: 'rgba(0,0,0,0.02)',
-                border: `1px solid ${theme.palette.divider}`
-              }}>
-                <EnhancedSpoilerMarkdown 
-                  content={exampleContent}
-                  compactEntityCards={true}
-                />
-              </Card>
-            </Box>
-          )}
         </CardContent>
       </Card>
 

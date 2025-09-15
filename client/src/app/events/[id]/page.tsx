@@ -16,7 +16,7 @@ import {
 import { ArrowLeft, CalendarSearch, Calendar, Users, BookOpen, Dice6, Tag } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -201,9 +201,11 @@ export default function EventDetailsPage() {
                   Description
                 </Typography>
                 <TimelineSpoilerWrapper chapterNumber={event.chapterNumber}>
-                  <SpoilerMarkdown 
+                  <EnhancedSpoilerMarkdown
                     content={event.description}
                     className="event-description"
+                    enableEntityEmbeds={true}
+                    compactEntityCards={false}
                   />
                 </TimelineSpoilerWrapper>
 
@@ -219,17 +221,21 @@ export default function EventDetailsPage() {
                         </Typography>
                         <Box sx={{ mb: 1 }}>
                           <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>Rules:</Typography>
-                          <SpoilerMarkdown 
+                          <EnhancedSpoilerMarkdown
                             content={event.gamble.rules}
                             className="event-gamble-rules"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={true}
                           />
                         </Box>
                         {event.gamble.winCondition && (
                           <Box>
                             <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>Win Condition:</Typography>
-                            <SpoilerMarkdown 
+                            <EnhancedSpoilerMarkdown
                               content={event.gamble.winCondition}
                               className="event-gamble-win-condition"
+                              enableEntityEmbeds={true}
+                              compactEntityCards={true}
                             />
                           </Box>
                         )}

@@ -30,29 +30,32 @@ import {
   useListContext,
   FunctionField
 } from 'react-admin'
-import { 
-  Box, 
-  Chip, 
-  Typography, 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  Grid, 
+import { useFormContext } from 'react-hook-form'
+import {
+  Box,
+  Chip,
+  Typography,
+  Card,
+  CardContent,
+  CardHeader,
+  Grid,
   Avatar,
   Button as MuiButton,
   ButtonGroup,
   Toolbar,
   AppBar,
-  TextField as MuiTextField
+  TextField as MuiTextField,
+  Tab,
+  Tabs
 } from '@mui/material'
-import { 
-  Check, 
-  X, 
-  FileText, 
-  User, 
-  Eye, 
-  Heart, 
-  Calendar, 
+import {
+  Check,
+  X,
+  FileText,
+  User,
+  Eye,
+  Heart,
+  Calendar,
   Clock,
   Edit3,
   BookOpen,
@@ -63,6 +66,8 @@ import {
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { api } from '../../lib/api'
+import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
+import EntityEmbedHelperWithSearch from '../EntityEmbedHelperWithSearch'
 
 const GuideStatusField = ({ source }: { source: string }) => {
   const record = useRecordContext()
@@ -452,6 +457,35 @@ const GuideFilterToolbar = () => {
       p: 2,
       backdropFilter: 'blur(8px)'
     }}>
+      {/* General Text Search */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{
+          color: '#10b981',
+          fontWeight: 'bold',
+          mb: 1,
+          fontSize: '0.9rem'
+        }}>
+          🔍 Search Guides
+        </Typography>
+        <MuiTextField
+          label="Search by title, description, or author..."
+          fullWidth
+          size="small"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'rgba(16, 185, 129, 0.05)',
+              '& fieldset': { borderColor: 'rgba(16, 185, 129, 0.3)' },
+              '&:hover fieldset': { borderColor: '#10b981' },
+              '&.Mui-focused fieldset': { borderColor: '#10b981' }
+            }
+          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const newFilters = { ...filterValues, q: e.target.value || undefined }
+            setFilters(newFilters, filterValues)
+          }}
+        />
+      </Box>
+
       {/* Status Filters */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="subtitle2" sx={{ 
@@ -1477,9 +1511,11 @@ const GuideShowContent = () => {
                       }
                     }
                   }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {record.content}
-                    </ReactMarkdown>
+                    <EnhancedSpoilerMarkdown
+                      content={record.content}
+                      enableEntityEmbeds={true}
+                      compactEntityCards={false}
+                    />
                   </Box>
                 </CardContent>
               </Card>
@@ -1768,9 +1804,238 @@ export const GuideShow = () => {
   )
 }
 
+// Custom content input component with tabs
+const ContentInputWithPreview = () => {
+  const [activeTab, setActiveTab] = useState(0)
+  const record = useRecordContext()
+  const { setValue, getValues, watch } = useFormContext()
+  const [textAreaRef, setTextAreaRef] = useState<HTMLTextAreaElement | null>(null)
+  const contentValue = watch('content')
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue)
+  }
+
+  const handleInsertEmbed = (embedCode: string) => {
+    if (textAreaRef) {
+      const currentValue = getValues().content || ''
+      const cursorPosition = textAreaRef.selectionStart || currentValue.length
+      const newValue =
+        currentValue.slice(0, cursorPosition) +
+        embedCode +
+        currentValue.slice(cursorPosition)
+
+      setValue('content', newValue, { shouldDirty: true, shouldValidate: true })
+
+      // Focus back to textarea and position cursor after the inserted embed
+      setTimeout(() => {
+        textAreaRef.focus()
+        textAreaRef.setSelectionRange(
+          cursorPosition + embedCode.length,
+          cursorPosition + embedCode.length
+        )
+      }, 100)
+    } else {
+      // Fallback: just append to the end
+      const currentValue = getValues().content || ''
+      setValue('content', currentValue + embedCode, { shouldDirty: true, shouldValidate: true })
+    }
+  }
+
+  return (
+    <Box sx={{
+      p: 3,
+      backgroundColor: 'rgba(124, 58, 237, 0.05)',
+      borderRadius: 2,
+      border: '1px solid rgba(124, 58, 237, 0.2)',
+      mb: 3
+    }}>
+      <Typography variant="h6" sx={{ color: '#7c3aed', mb: 2, fontWeight: 'bold' }}>
+        Guide Content
+      </Typography>
+
+      <EntityEmbedHelperWithSearch
+        onInsertEmbed={handleInsertEmbed}
+      />
+
+      <Card sx={{ mt: 2, border: '1px solid rgba(124, 58, 237, 0.3)' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab label="Write" icon={<FileText size={16} />} iconPosition="start" />
+            <Tab label="Preview" icon={<Eye size={16} />} iconPosition="start" />
+          </Tabs>
+        </Box>
+
+        <CardContent>
+          {activeTab === 0 ? (
+            <TextInput
+              source="content"
+              multiline
+              rows={15}
+              required
+              fullWidth
+              label="Content (Markdown Supported)"
+              helperText="Write your guide content using Markdown formatting and entity embeds"
+              sx={{
+                '& .MuiInputBase-input': {
+                  fontFamily: 'monospace',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.6
+                }
+              }}
+              inputProps={{
+                ref: (ref: HTMLTextAreaElement) => setTextAreaRef(ref)
+              }}
+            />
+          ) : (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Preview
+              </Typography>
+              <Box sx={{
+                border: '1px solid rgba(124, 58, 237, 0.2)',
+                borderRadius: 1,
+                p: 2,
+                minHeight: '400px',
+                backgroundColor: 'rgba(124, 58, 237, 0.02)'
+              }}>
+                {contentValue ? (
+                  <EnhancedSpoilerMarkdown
+                    content={contentValue}
+                    compactEntityCards={false}
+                    enableEntityEmbeds={true}
+                  />
+                ) : (
+                  <Typography color="text.secondary" fontStyle="italic">
+                    Start writing your guide to see the preview with entity embeds...
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  )
+}
+
+// Content input component for create page (no existing content)
+const ContentInputWithPreviewCreate = () => {
+  const [activeTab, setActiveTab] = useState(0)
+  const { setValue, getValues, watch } = useFormContext()
+  const [textAreaRef, setTextAreaRef] = useState<HTMLTextAreaElement | null>(null)
+  const contentValue = watch('content')
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue)
+  }
+
+  const handleInsertEmbed = (embedCode: string) => {
+    if (textAreaRef) {
+      const currentValue = getValues().content || ''
+      const cursorPosition = textAreaRef.selectionStart || currentValue.length
+      const newValue =
+        currentValue.slice(0, cursorPosition) +
+        embedCode +
+        currentValue.slice(cursorPosition)
+
+      setValue('content', newValue, { shouldDirty: true, shouldValidate: true })
+
+      // Focus back to textarea and position cursor after the inserted embed
+      setTimeout(() => {
+        textAreaRef.focus()
+        textAreaRef.setSelectionRange(
+          cursorPosition + embedCode.length,
+          cursorPosition + embedCode.length
+        )
+      }, 100)
+    } else {
+      // Fallback: just append to the end
+      const currentValue = getValues().content || ''
+      setValue('content', currentValue + embedCode, { shouldDirty: true, shouldValidate: true })
+    }
+  }
+
+  return (
+    <Box sx={{
+      p: 3,
+      backgroundColor: 'rgba(124, 58, 237, 0.05)',
+      borderRadius: 2,
+      border: '1px solid rgba(124, 58, 237, 0.2)',
+      mb: 3
+    }}>
+      <Typography variant="h6" sx={{ color: '#7c3aed', mb: 2, fontWeight: 'bold' }}>
+        Guide Content
+      </Typography>
+
+      <EntityEmbedHelperWithSearch
+        onInsertEmbed={handleInsertEmbed}
+      />
+
+      <Card sx={{ mt: 2, border: '1px solid rgba(124, 58, 237, 0.3)' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab label="Write" icon={<FileText size={16} />} iconPosition="start" />
+            <Tab label="Preview" icon={<Eye size={16} />} iconPosition="start" />
+          </Tabs>
+        </Box>
+
+        <CardContent>
+          {activeTab === 0 ? (
+            <TextInput
+              source="content"
+              multiline
+              rows={12}
+              required
+              fullWidth
+              label="Content (Markdown Supported)"
+              helperText="Write your guide content using Markdown formatting and entity embeds"
+              sx={{
+                '& .MuiInputBase-input': {
+                  fontFamily: 'monospace',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.6
+                }
+              }}
+              inputProps={{
+                ref: (ref: HTMLTextAreaElement) => setTextAreaRef(ref)
+              }}
+            />
+          ) : (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Preview
+              </Typography>
+              <Box sx={{
+                border: '1px solid rgba(124, 58, 237, 0.2)',
+                borderRadius: 1,
+                p: 2,
+                minHeight: '300px',
+                backgroundColor: 'rgba(124, 58, 237, 0.02)'
+              }}>
+                {contentValue ? (
+                  <EnhancedSpoilerMarkdown
+                    content={contentValue}
+                    compactEntityCards={false}
+                    enableEntityEmbeds={true}
+                  />
+                ) : (
+                  <Typography color="text.secondary" fontStyle="italic">
+                    Start writing your guide to see the preview with entity embeds...
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  )
+}
+
 export const GuideEdit = () => {
   const { permissions } = usePermissions()
-  
+
   return (
     <Edit>
       <Box sx={{ 
@@ -1876,33 +2141,7 @@ export const GuideEdit = () => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Box sx={{ 
-                    p: 3, 
-                    backgroundColor: 'rgba(124, 58, 237, 0.05)', 
-                    borderRadius: 2, 
-                    border: '1px solid rgba(124, 58, 237, 0.2)',
-                    mb: 3
-                  }}>
-                    <Typography variant="h6" sx={{ color: '#7c3aed', mb: 2, fontWeight: 'bold' }}>
-                      Guide Content
-                    </Typography>
-                    <TextInput 
-                      source="content" 
-                      multiline 
-                      rows={15} 
-                      required 
-                      fullWidth
-                      label="Content (Markdown Supported)"
-                      helperText="Write your guide content using Markdown formatting"
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          fontFamily: 'monospace',
-                          fontSize: '0.9rem',
-                          lineHeight: 1.6
-                        }
-                      }}
-                    />
-                  </Box>
+                  <ContentInputWithPreview />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -2133,18 +2372,7 @@ export const GuideCreate = () => (
               </Grid>
 
               <Grid item xs={12}>
-                <Box sx={{ 
-                  p: 3, 
-                  backgroundColor: 'rgba(124, 58, 237, 0.05)', 
-                  borderRadius: 2, 
-                  border: '1px solid rgba(124, 58, 237, 0.2)',
-                  mb: 3
-                }}>
-                  <Typography variant="h6" sx={{ color: '#7c3aed', mb: 2, fontWeight: 'bold' }}>
-                    Guide Content
-                  </Typography>
-                  <TextInput source="content" multiline rows={12} required fullWidth />
-                </Box>
+                <ContentInputWithPreviewCreate />
               </Grid>
 
               <Grid item xs={12} md={6}>

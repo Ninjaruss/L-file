@@ -14,7 +14,7 @@ import {
   FunctionField
 } from 'react-admin'
 import { Typography } from '@mui/material'
-import SpoilerMarkdown from '../SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 export const ArcList = () => (
@@ -38,9 +38,11 @@ export const ArcShow = () => (
         label="Description" 
         render={(record: any) => 
           record.description ? (
-            <SpoilerMarkdown 
-              content={record.description} 
+            <EnhancedSpoilerMarkdown
+              content={record.description}
               className="admin-description"
+              enableEntityEmbeds={true}
+              compactEntityCards={true}
             />
           ) : (
             <Typography variant="body2" color="text.secondary">

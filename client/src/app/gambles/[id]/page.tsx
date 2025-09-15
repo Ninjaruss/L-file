@@ -19,7 +19,7 @@ import {
 import { ArrowLeft, Crown, Users, Trophy, Calendar, BookOpen } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { useParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { motion } from 'motion/react'
@@ -394,9 +394,11 @@ export default function GambleDetailsPage() {
                           </Typography>
                         </Box>
 
-                        <SpoilerMarkdown 
+                        <EnhancedSpoilerMarkdown
                           content={gamble.rules}
                           className="gamble-rules"
+                          enableEntityEmbeds={true}
+                          compactEntityCards={false}
                         />
 
                         {gamble.winCondition && (
@@ -416,9 +418,11 @@ export default function GambleDetailsPage() {
                                 Win Condition
                               </Typography>
                             </Box>
-                            <SpoilerMarkdown 
+                            <EnhancedSpoilerMarkdown
                               content={gamble.winCondition}
                               className="gamble-win-condition"
+                              enableEntityEmbeds={true}
+                              compactEntityCards={false}
                             />
                           </>
                         )}

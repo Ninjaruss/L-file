@@ -24,7 +24,7 @@ import {
 import { CalendarSearch, Eye, Calendar, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import type { Event, Arc } from '../../types'
@@ -176,9 +176,11 @@ export default function EventsPage() {
               WebkitBoxOrient: 'vertical',
               WebkitLineClamp: 3,
             }}>
-              <SpoilerMarkdown 
+              <EnhancedSpoilerMarkdown
                 content={event.description}
                 className="event-description-preview"
+                enableEntityEmbeds={true}
+                compactEntityCards={true}
               />
             </div>
 

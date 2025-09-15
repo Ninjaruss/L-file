@@ -3,8 +3,14 @@
 - Redis based rate limiting with caching middle ware for responses; add cache headers to specific routes
 - Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN)
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
-- Improve markdown to support custom cards for data (characters, factions, events)
+- Replace SpoilerMarkdown with
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
+- Donation linking to badges; badge system with perks
+
+## 2025-09-15
+### Chagnes
+- Replaced all markdown components into enhanced version (support for entity embeds and spoilers)
+- Embedded entity support editing added to guide admin page
 
 ## 2025-09-14
 ### Changes

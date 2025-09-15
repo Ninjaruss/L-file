@@ -31,7 +31,7 @@ import {
   FunctionField
 } from 'react-admin'
 import { Box, Typography } from '@mui/material'
-import SpoilerMarkdown from '../SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
 const EVENT_TYPE_CHOICES = [
@@ -237,9 +237,11 @@ export const EventShow = () => (
                     borderRadius: 1,
                     border: '1px solid rgba(245, 124, 0, 0.3)',
                   }}>
-                    <SpoilerMarkdown 
-                      content={record.description} 
+                    <EnhancedSpoilerMarkdown
+                      content={record.description}
                       className="admin-description"
+                      enableEntityEmbeds={true}
+                      compactEntityCards={true}
                     />
                   </Box>
                 ) : (

@@ -26,7 +26,7 @@ import {
 import { Search, Users, Eye, Edit, Upload, X } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import Image from 'next/image'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
@@ -296,9 +296,11 @@ export default function CharactersPage() {
                           WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 3,
                         }}>
-                          <SpoilerMarkdown 
+                          <EnhancedSpoilerMarkdown
                             content={character.description}
                             className="character-description-preview"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={true}
                           />
                         </div>
 

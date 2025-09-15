@@ -20,7 +20,7 @@ import {
 import { Eye, Users, Dices, Search } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
-import SpoilerMarkdown from '../../components/SpoilerMarkdown'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
@@ -239,9 +239,11 @@ function GamblesPageContent() {
                           WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 3,
                         }}>
-                          <SpoilerMarkdown
+                          <EnhancedSpoilerMarkdown
                             content={gamble.description || gamble.rules}
                             className="gamble-description-preview"
+                            enableEntityEmbeds={true}
+                            compactEntityCards={true}
                           />
                         </Box>
 
