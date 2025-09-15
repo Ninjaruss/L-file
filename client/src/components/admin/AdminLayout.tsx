@@ -98,14 +98,20 @@ const PendingCounter = () => {
       borderRadius: 1,
       display: 'flex',
       alignItems: 'center',
-      gap: 0.5
-    }}>
+      gap: 0.5,
+      cursor: 'pointer',
+      '&:hover': {
+        bgcolor: 'warning.dark'
+      }
+    }}
+    title={`${pendingCounts.guides} pending guides, ${pendingCounts.media} pending media submissions`}
+    >
       <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-        {totalPending} PENDING
+        {totalPending} PENDING APPROVAL
       </Typography>
       {(pendingCounts.guides > 0 || pendingCounts.media > 0) && (
         <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.9 }}>
-          ({pendingCounts.guides}G, {pendingCounts.media}M)
+          ({pendingCounts.guides} guides, {pendingCounts.media} media)
         </Typography>
       )}
     </Box>

@@ -503,7 +503,7 @@ const MediaFilterToolbar = () => {
 
   const statusFilters = [
     { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
-    { id: 'pending', name: 'Pending', color: '#f57c00', icon: '⏳' },
+    { id: 'pending', name: 'Pending Review', color: '#f57c00', icon: '⏳' },
     { id: 'approved', name: 'Approved', color: '#4caf50', icon: '✅' },
     { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
   ]
@@ -1418,14 +1418,14 @@ export const MediaApprovalQueue = () => (
       <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
 
       {/* Priority Display */}
-      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ width: '120px', display: 'flex', justifyContent: 'center' }}>
         <Chip
-          label="PENDING"
+          label="AWAITING REVIEW"
           color="warning"
           size="small"
           sx={{
             fontWeight: 'bold',
-            fontSize: '0.7rem',
+            fontSize: '0.65rem',
             backgroundColor: '#fff3e0',
             color: '#f57c00'
           }}

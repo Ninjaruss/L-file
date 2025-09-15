@@ -350,7 +350,7 @@ const GuideFilterToolbar = () => {
   
   const statusFilters = [
     { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
-    { id: 'pending', name: 'Pending', color: '#f57c00', icon: '⏳' },
+    { id: 'pending', name: 'Pending Review', color: '#f57c00', icon: '⏳' },
     { id: 'published', name: 'Published', color: '#4caf50', icon: '✅' },
     { id: 'draft', name: 'Draft', color: '#2196f3', icon: '📝' },
     { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
@@ -997,14 +997,14 @@ export const GuideApprovalQueue = () => (
       <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
 
       {/* Priority Display */}
-      <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ width: '140px', display: 'flex', justifyContent: 'center' }}>
         <Chip
-          label="🔥 PENDING"
+          label="🔥 NEEDS APPROVAL"
           color="warning"
           size="small"
           sx={{
             fontWeight: 'bold',
-            fontSize: '0.7rem',
+            fontSize: '0.65rem',
             backgroundColor: '#fff3e0',
             color: '#f57c00',
             animation: 'pulse 2s infinite'
@@ -2390,7 +2390,7 @@ export const GuideCreate = () => (
                   </ReferenceInput>
                   <SelectInput source="status" choices={[
                     { id: 'draft', name: 'Draft' },
-                    { id: 'pending', name: 'Pending' },
+                    { id: 'pending', name: 'Pending Review' },
                     { id: 'published', name: 'Published' },
                     { id: 'rejected', name: 'Rejected' }
                   ]} defaultValue="pending" />
