@@ -26,6 +26,7 @@ interface MediaThumbnailProps {
   showGallery?: boolean
   maxWidth?: string | number
   maxHeight?: string | number
+  inline?: boolean
 }
 
 export default function MediaThumbnail({
@@ -37,6 +38,7 @@ export default function MediaThumbnail({
   showGallery = false,
   maxWidth = 300,
   maxHeight = 300,
+  inline = false,
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
   const [allEntityMedia, setAllEntityMedia] = useState<MediaItem[]>([])
@@ -181,37 +183,73 @@ export default function MediaThumbnail({
     )
   }
 
-  const renderEmptyState = () => (
-    <Box
-      sx={{
-        width: maxWidth,
-        height: maxHeight,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'grey.50',
-        borderRadius: '8px',
-        border: '2px dashed',
-        borderColor: 'grey.300',
-      }}
-    >
-      <Box textAlign="center">
-        <ImageIcon size={48} color="grey" />
-        <Typography variant="body2" color="text.secondary" mt={1}>
-          No thumbnail available
-        </Typography>
+  const renderEmptyState = () => {
+    // Check if this is a small container (likely inline/compact)
+    const isSmallContainer = (typeof maxWidth === 'number' && maxWidth <= 32) || 
+                            (typeof maxHeight === 'number' && maxHeight <= 32)
+    
+    if (isSmallContainer) {
+      // For small containers, just show a simple icon without text
+      return (
+        <Box
+          component={inline ? "span" : "div"}
+          sx={{
+            width: maxWidth,
+            height: maxHeight,
+            display: inline ? 'inline-flex' : 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'grey.100',
+            borderRadius: '4px',
+            border: '1px solid',
+            borderColor: 'grey.300',
+          }}
+        >
+          <ImageIcon size={16} color="grey" />
+        </Box>
+      )
+    }
+
+    // For larger containers, show the full empty state with text
+    return (
+      <Box
+        component={inline ? "span" : "div"}
+        sx={{
+          width: maxWidth,
+          height: maxHeight,
+          display: inline ? 'inline-flex' : 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'grey.50',
+          borderRadius: '8px',
+          border: '2px dashed',
+          borderColor: 'grey.300',
+        }}
+      >
+        <Box component={inline ? "span" : "div"} textAlign="center">
+          <ImageIcon size={48} color="grey" />
+          <Typography 
+            component={inline ? "span" : "p"}
+            variant="body2" 
+            color="text.secondary" 
+            mt={1}
+          >
+            No thumbnail available
+          </Typography>
+        </Box>
       </Box>
-    </Box>
-  )
+    )
+  }
 
   if (loading) {
     return (
       <Box
+        component={inline ? "span" : "div"}
         className={className}
         sx={{
           width: maxWidth,
           height: maxHeight,
-          display: 'flex',
+          display: inline ? 'inline-flex' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -224,18 +262,23 @@ export default function MediaThumbnail({
   if (error) {
     return (
       <Box
+        component={inline ? "span" : "div"}
         className={className}
         sx={{
           width: maxWidth,
           height: maxHeight,
-          display: 'flex',
+          display: inline ? 'inline-flex' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: 'error.light',
           borderRadius: '8px',
         }}
       >
-        <Typography variant="body2" color="error.main">
+        <Typography 
+          component={inline ? "span" : "p"}
+          variant="body2" 
+          color="error.main"
+        >
           {error}
         </Typography>
       </Box>
@@ -248,37 +291,54 @@ export default function MediaThumbnail({
 
   const mediaContent = (
     <Box
+      component={inline ? "span" : "div"}
       sx={{
         width: '100%',
         height: '100%',
       }}
     >
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentThumbnail.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          style={{ width: '100%', height: '100%' }}
-        >
-          {renderMediaContent(currentThumbnail)}
-        </motion.div>
+        {inline ? (
+          <motion.span
+            key={currentThumbnail.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ width: '100%', height: '100%', display: 'inline-block' }}
+          >
+            {renderMediaContent(currentThumbnail)}
+          </motion.span>
+        ) : (
+          <motion.div
+            key={currentThumbnail.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            {renderMediaContent(currentThumbnail)}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Chapter indicator */}
       {currentThumbnail.chapterNumber && (
         <Box
+          component={inline ? "span" : "div"}
           sx={{
             position: 'absolute',
-            bottom: 8,
-            left: 8,
-            bgcolor: 'rgba(0, 0, 0, 0.6)',
+            bottom: (maxHeight && Number(maxHeight) <= 32) ? 2 : 8,
+            left: (maxWidth && Number(maxWidth) <= 32) ? 2 : 8,
+            bgcolor: 'rgba(0, 0, 0, 0.7)',
             color: 'white',
-            px: 1,
-            py: 0.5,
-            borderRadius: 1,
-            fontSize: '0.75rem',
+            px: (maxWidth && Number(maxWidth) <= 32) ? 0.25 : 1,
+            py: (maxHeight && Number(maxHeight) <= 32) ? 0.125 : 0.5,
+            borderRadius: (maxWidth && Number(maxWidth) <= 32) ? 0.5 : 1,
+            fontSize: (maxWidth && Number(maxWidth) <= 32) ? '0.5rem' : '0.75rem',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
           }}
         >
           Ch. {currentThumbnail.chapterNumber}
@@ -290,11 +350,13 @@ export default function MediaThumbnail({
   // Use the same spoiler wrapper as CharacterTimeline, but controls are outside
   return (
     <Box
+      component={inline ? "span" : "div"}
       className={className}
       sx={{
         position: 'relative',
         width: maxWidth,
         height: maxHeight,
+        display: inline ? 'inline-block' : 'block',
       }}
     >
       <MediaSpoilerWrapper 

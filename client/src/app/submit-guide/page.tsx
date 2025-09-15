@@ -14,13 +14,17 @@ import {
   Grid,
   Chip,
   Autocomplete,
-  FormControl
+  FormControl,
+  Tab,
+  Tabs
 } from '@mui/material'
-import { FileText, Send, Plus, X, Users, BookOpen, Dice6 } from 'lucide-react'
+import { FileText, Send, Plus, X, Users, BookOpen, Dice6, Eye } from 'lucide-react'
 import { useTheme } from '@mui/material/styles'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
+import EntityEmbedHelperWithSearch from '../../components/EntityEmbedHelperWithSearch'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 
 export default function SubmitGuidePage() {
   const theme = useTheme()
@@ -42,6 +46,8 @@ export default function SubmitGuidePage() {
   const [arcs, setArcs] = useState<Array<{id: number, name: string}>>([])
   const [gambles, setGambles] = useState<Array<{id: number, name: string}>>([])
   const [loadingData, setLoadingData] = useState(true)
+  const [activeTab, setActiveTab] = useState(0)
+  const [showPreview, setShowPreview] = useState(false)
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -134,6 +140,17 @@ export default function SubmitGuidePage() {
       event.preventDefault()
       addTag()
     }
+  }
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue)
+  }
+
+  const handleInsertEmbed = (embedCode: string) => {
+    setFormData(prev => ({
+      ...prev,
+      content: prev.content + embedCode
+    }))
   }
 
   useEffect(() => {
@@ -254,32 +271,78 @@ export default function SubmitGuidePage() {
                   />
                 </Grid>
 
-                {/* Content */}
+                {/* Enhanced Content Section with Entity Embeds */}
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={12}
-                    label="Guide Content"
-                    placeholder="Write your guide here. You can include:
+                  <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
+                  
+                  <Card className="gambling-card">
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                      <Tabs value={activeTab} onChange={handleTabChange}>
+                        <Tab label="Write" icon={<FileText size={16} />} iconPosition="start" />
+                        <Tab label="Preview" icon={<Eye size={16} />} iconPosition="start" />
+                      </Tabs>
+                    </Box>
+                    
+                    <CardContent>
+                      {activeTab === 0 ? (
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={16}
+                          label="Guide Content"
+                          placeholder="Write your guide here. You can include:
 
 • Analysis of characters, gambles, or story arcs
 • Explanations of complex gambling rules
 • Theories about plot developments
 • Comparisons between different elements
 • Tips for new readers
+• Entity embeds like {{character:1}} or {{arc:5:Tower Arc}}
 
-Be detailed and informative. Use clear headings and structure your content well."
-                    value={formData.content}
-                    onChange={(e) => handleInputChange('content', e.target.value)}
-                    required
-                    error={formData.content.length > 0 && formData.content.length < 100}
-                    helperText={
-                      formData.content.length > 0 && formData.content.length < 100
-                        ? 'Content must be at least 100 characters long'
-                        : `Write your detailed guide content (${formData.content.length}/100+ characters)`
-                    }
-                  />
+Be detailed and informative. Use clear headings and structure your content well.
+
+Entity Embed Examples:
+• {{character:1}} - Links to character #1
+• {{arc:5:Tower Arc}} - Links to arc #5 with custom text
+• {{gamble:12}} - Links to gamble #12
+• {{guide:3}} - Links to another guide"
+                          value={formData.content}
+                          onChange={(e) => handleInputChange('content', e.target.value)}
+                          required
+                          error={formData.content.length > 0 && formData.content.length < 100}
+                          helperText={
+                            formData.content.length > 0 && formData.content.length < 100
+                              ? 'Content must be at least 100 characters long'
+                              : `Write your detailed guide content with entity embeds (${formData.content.length}/100+ characters)`
+                          }
+                        />
+                      ) : (
+                        <Box>
+                          <Typography variant="h6" gutterBottom>
+                            Preview
+                          </Typography>
+                          <Box sx={{ 
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 1,
+                            p: 2,
+                            minHeight: '400px',
+                            backgroundColor: 'rgba(0,0,0,0.02)'
+                          }}>
+                            {formData.content ? (
+                              <EnhancedSpoilerMarkdown 
+                                content={formData.content}
+                                compactEntityCards={false}
+                              />
+                            ) : (
+                              <Typography color="text.secondary" fontStyle="italic">
+                                Start writing your guide to see the preview with entity embeds...
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
                 </Grid>
 
                 {/* Related Content Section */}
@@ -498,8 +561,11 @@ Be detailed and informative. Use clear headings and structure your content well.
               <strong>Guide Writing Tips:</strong>
               <br />• Be thorough and informative
               <br />• Use clear headings and structure
+              <br />• Use entity embeds to reference characters, arcs, gambles, etc. (e.g., <code>{'{{character:1}}'}</code>)
+              <br />• Add custom text to embeds for context (e.g., <code>{'{{character:1:the protagonist}}'}</code>)
               <br />• Avoid major spoilers unless clearly marked
               <br />• Cite sources when referencing specific chapters
+              <br />• Use the Preview tab to see how your entity embeds will look
               <br />• Proofread before submitting
               <br />• Guides will be reviewed before publication
             </Typography>
