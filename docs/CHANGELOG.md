@@ -14,6 +14,7 @@
 - Added badge system with support for Ko-fi and expiration of badge
 - Fixed issues with badge system from admin pages
 - Added custom role display to user profile if active supporter badge is active
+- Redesign of navbar; categories to group content pages and search bar
 
 ## 2025-09-14
 ### Changes

@@ -13,7 +13,7 @@ import {
   CircularProgress,
   Typography
 } from '@mui/material'
-import { Search, BookOpen, Users, Crown, Zap } from 'lucide-react'
+import { Search, BookOpen, Users, Crown, Zap, Shield, FileText, Dices } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { api } from '../lib/api'
 import { useAuth } from '../providers/AuthProvider'
@@ -45,12 +45,16 @@ export const SearchBar: React.FC = () => {
     switch (type) {
       case 'character':
         return <Users size={16} />
+      case 'faction':
+        return <Shield size={16} />
       case 'arc':
         return <BookOpen size={16} />
       case 'gamble':
-        return <Crown size={16} />
+        return <Dices size={16} />
       case 'event':
         return <Zap size={16} />
+      case 'chapter':
+        return <FileText size={16} />
       default:
         return <Search size={16} />
     }
@@ -60,12 +64,16 @@ export const SearchBar: React.FC = () => {
     switch (type) {
       case 'character':
         return '#1976d2' // theme.palette.usogui.character
+      case 'faction':
+        return '#9c27b0' // purple for factions
       case 'arc':
         return '#dc004e' // theme.palette.usogui.arc
       case 'gamble':
         return '#d32f2f' // theme.palette.usogui.gamble
       case 'event':
         return '#f57c00' // theme.palette.usogui.event
+      case 'chapter':
+        return '#607d8b' // blue-gray for chapters
       case 'guide':
         return '#388e3c' // theme.palette.usogui.guide
       case 'media':
@@ -91,7 +99,27 @@ export const SearchBar: React.FC = () => {
         undefined,
         userProgress
       )
-      setResults(response.results)
+
+      // Sort results by priority: characters, factions, arcs, gambles, events, chapters
+      const priorityOrder = ['character', 'faction', 'arc', 'gamble', 'event', 'chapter']
+      const sortedResults = response.results.sort((a, b) => {
+        const aPriority = priorityOrder.indexOf(a.type)
+        const bPriority = priorityOrder.indexOf(b.type)
+
+        // If both types are in priority list, sort by priority
+        if (aPriority !== -1 && bPriority !== -1) {
+          return aPriority - bPriority
+        }
+
+        // If only one is in priority list, prioritize it
+        if (aPriority !== -1) return -1
+        if (bPriority !== -1) return 1
+
+        // If neither is in priority list, maintain original order
+        return 0
+      })
+
+      setResults(sortedResults)
       setShowResults(true)
     } catch (error) {
       console.error('Search failed:', error)
@@ -135,7 +163,7 @@ export const SearchBar: React.FC = () => {
       <TextField
         fullWidth
         variant="outlined"
-        placeholder="Search characters, arcs, gambles, events..."
+        placeholder="Discover characters, arcs, gambles, events, and more..."
         value={query}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}

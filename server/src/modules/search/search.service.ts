@@ -6,6 +6,7 @@ import { Character } from '../../entities/character.entity';
 import { Event } from '../../entities/event.entity';
 import { Arc } from '../../entities/arc.entity';
 import { Gamble } from '../../entities/gamble.entity';
+import { Faction } from '../../entities/faction.entity';
 import { SearchQueryDto, SearchType } from './dto/search-query.dto';
 import { SearchResultDto, SearchResultItemDto } from './dto/search-result.dto';
 
@@ -22,6 +23,8 @@ export class SearchService {
     private arcRepository: Repository<Arc>,
     @InjectRepository(Gamble)
     private gambleRepository: Repository<Gamble>,
+    @InjectRepository(Faction)
+    private factionRepository: Repository<Faction>,
   ) {}
 
   async search(searchQuery: SearchQueryDto): Promise<SearchResultDto> {
@@ -77,6 +80,11 @@ export class SearchService {
         results = gambleResults.results;
         total = gambleResults.total;
         break;
+      case SearchType.FACTIONS:
+        const factionResults = await this.searchFactions(query, offset, limit);
+        results = factionResults.results;
+        total = factionResults.total;
+        break;
       case SearchType.ALL:
       default:
         const allResults = await this.searchAll(
@@ -102,35 +110,163 @@ export class SearchService {
   }
 
   async getSuggestions(query: string): Promise<string[]> {
-    // Simple implementation - you can enhance this with more sophisticated algorithms
     const suggestions: string[] = [];
 
-    // Get character name suggestions
-    const characters = await this.characterRepository
-      .createQueryBuilder('character')
-      .where('character.name ILIKE :query', { query: `%${query}%` })
-      .limit(5)
-      .getMany();
+    // Get suggestions from all entity types in priority order: characters, factions, arcs, gambles, events, chapters
+    const [characters, factions, arcs, gambles, events, chapters] = await Promise.all([
+      // Characters
+      this.characterRepository
+        .createQueryBuilder('character')
+        .where('character.name ILIKE :query', { query: `%${query}%` })
+        .orderBy(
+          `CASE 
+            WHEN character.name ILIKE :exactQuery THEN 1
+            WHEN character.name ILIKE :startQuery THEN 2
+            ELSE 3
+          END`,
+          'ASC',
+        )
+        .addOrderBy('character.name', 'ASC')
+        .setParameters({ 
+          query: `%${query}%`, 
+          exactQuery: query, 
+          startQuery: `${query}%` 
+        })
+        .limit(2)
+        .getMany(),
+      
+      // Factions
+      this.factionRepository
+        .createQueryBuilder('faction')
+        .where('faction.name ILIKE :query', { query: `%${query}%` })
+        .orderBy(
+          `CASE 
+            WHEN faction.name ILIKE :exactQuery THEN 1
+            WHEN faction.name ILIKE :startQuery THEN 2
+            ELSE 3
+          END`,
+          'ASC',
+        )
+        .addOrderBy('faction.name', 'ASC')
+        .setParameters({ 
+          query: `%${query}%`, 
+          exactQuery: query, 
+          startQuery: `${query}%` 
+        })
+        .limit(2)
+        .getMany(),
+      
+      // Arcs
+      this.arcRepository
+        .createQueryBuilder('arc')
+        .where('arc.name ILIKE :query', { query: `%${query}%` })
+        .orderBy(
+          `CASE 
+            WHEN arc.name ILIKE :exactQuery THEN 1
+            WHEN arc.name ILIKE :startQuery THEN 2
+            ELSE 3
+          END`,
+          'ASC',
+        )
+        .addOrderBy('arc.name', 'ASC')
+        .setParameters({ 
+          query: `%${query}%`, 
+          exactQuery: query, 
+          startQuery: `${query}%` 
+        })
+        .limit(2)
+        .getMany(),
+      
+      // Gambles
+      this.gambleRepository
+        .createQueryBuilder('gamble')
+        .where('gamble.name ILIKE :query', { query: `%${query}%` })
+        .orderBy(
+          `CASE 
+            WHEN gamble.name ILIKE :exactQuery THEN 1
+            WHEN gamble.name ILIKE :startQuery THEN 2
+            ELSE 3
+          END`,
+          'ASC',
+        )
+        .addOrderBy('gamble.name', 'ASC')
+        .setParameters({ 
+          query: `%${query}%`, 
+          exactQuery: query, 
+          startQuery: `${query}%` 
+        })
+        .limit(1)
+        .getMany(),
+      
+      // Events
+      this.eventRepository
+        .createQueryBuilder('event')
+        .where('event.title ILIKE :query', { query: `%${query}%` })
+        .orderBy(
+          `CASE 
+            WHEN event.title ILIKE :exactQuery THEN 1
+            WHEN event.title ILIKE :startQuery THEN 2
+            ELSE 3
+          END`,
+          'ASC',
+        )
+        .addOrderBy('event.title', 'ASC')
+        .setParameters({ 
+          query: `%${query}%`, 
+          exactQuery: query, 
+          startQuery: `${query}%` 
+        })
+        .limit(1)
+        .getMany(),
+      
+      // Chapters
+      this.chapterRepository
+        .createQueryBuilder('chapter')
+        .where('chapter.title ILIKE :query', { query: `%${query}%` })
+        .orderBy(
+          `CASE 
+            WHEN chapter.title ILIKE :exactQuery THEN 1
+            WHEN chapter.title ILIKE :startQuery THEN 2
+            ELSE 3
+          END`,
+          'ASC',
+        )
+        .addOrderBy('chapter.title', 'ASC')
+        .setParameters({ 
+          query: `%${query}%`, 
+          exactQuery: query, 
+          startQuery: `${query}%` 
+        })
+        .limit(1)
+        .getMany(),
+    ]);
 
-    characters.forEach((char) => {
-      suggestions.push(char.name);
-    });
+    // Add suggestions in priority order
+    characters.forEach((char) => suggestions.push(char.name));
+    factions.forEach((faction) => suggestions.push(faction.name));
+    arcs.forEach((arc) => suggestions.push(arc.name));
+    gambles.forEach((gamble) => suggestions.push(gamble.name));
+    events.forEach((event) => suggestions.push(event.title || 'Unknown Event'));
+    chapters.forEach((chapter) => suggestions.push(chapter.title || `Chapter ${chapter.number}`));
 
-    return suggestions;
+    // Remove duplicates and limit to 8 suggestions
+    return Array.from(new Set(suggestions)).slice(0, 8);
   }
 
   async getContentTypes(): Promise<{ type: string; count: number }[]> {
-    const [chapterCount, characterCount, eventCount, arcCount, gambleCount] =
+    const [chapterCount, characterCount, eventCount, arcCount, gambleCount, factionCount] =
       await Promise.all([
         this.chapterRepository.count(),
         this.characterRepository.count(),
         this.eventRepository.count(),
         this.arcRepository.count(),
         this.gambleRepository.count(),
+        this.factionRepository.count(),
       ]);
 
     return [
       { type: 'characters', count: characterCount },
+      { type: 'factions', count: factionCount },
       { type: 'arcs', count: arcCount },
       { type: 'gambles', count: gambleCount },
       { type: 'chapters', count: chapterCount },
@@ -158,7 +294,21 @@ export class SearchService {
     }
 
     const [chapters, total] = await queryBuilder
-      .orderBy('chapter.number', 'ASC')
+      .orderBy(
+        `CASE 
+          WHEN chapter.title ILIKE :exactQuery THEN 1
+          WHEN chapter.title ILIKE :startQuery THEN 2
+          WHEN chapter.title ILIKE :query THEN 3
+          ELSE 4
+        END`,
+        'ASC',
+      )
+      .addOrderBy('chapter.number', 'ASC')
+      .setParameters({ 
+        query: `%${query}%`, 
+        exactQuery: query, 
+        startQuery: `${query}%` 
+      })
       .offset(offset)
       .limit(limit)
       .getManyAndCount();
@@ -184,19 +334,30 @@ export class SearchService {
       .createQueryBuilder('character')
       .where(
         `(
+          character.name ILIKE :likeQuery OR
+          character.description ILIKE :likeQuery OR
+          character."alternateNames" ILIKE :likeQuery OR
           to_tsvector('english', character.name) @@ plainto_tsquery('english', :query) OR
-          to_tsvector('english', character.description) @@ plainto_tsquery('english', :query) OR
-          character."alternateNames" ILIKE :likeQuery
+          to_tsvector('english', character.description) @@ plainto_tsquery('english', :query)
         )`,
         { query, likeQuery: `%${query}%` },
       )
       .orderBy(
-        `ts_rank(
-          to_tsvector('english', character.name || ' ' || character.description || ' ' || COALESCE(character."alternateNames", '')),
-          plainto_tsquery('english', :query)
-        )`,
-        'DESC',
+        `CASE 
+          WHEN character.name ILIKE :exactQuery THEN 1
+          WHEN character.name ILIKE :startQuery THEN 2
+          WHEN character.name ILIKE :likeQuery THEN 3
+          ELSE 4
+        END`,
+        'ASC',
       )
+      .addOrderBy('character.name', 'ASC')
+      .setParameters({ 
+        query, 
+        likeQuery: `%${query}%`, 
+        exactQuery: query, 
+        startQuery: `${query}%` 
+      })
       .offset(offset)
       .limit(limit)
       .getManyAndCount();
@@ -239,7 +400,21 @@ export class SearchService {
     }
 
     const [events, total] = await queryBuilder
-      .orderBy('event.title', 'ASC')
+      .orderBy(
+        `CASE 
+          WHEN event.title ILIKE :exactQuery THEN 1
+          WHEN event.title ILIKE :startQuery THEN 2
+          WHEN event.title ILIKE :query THEN 3
+          ELSE 4
+        END`,
+        'ASC',
+      )
+      .addOrderBy('event.title', 'ASC')
+      .setParameters({ 
+        query: `%${query}%`, 
+        exactQuery: query, 
+        startQuery: `${query}%` 
+      })
       .offset(offset)
       .limit(limit)
       .getManyAndCount();
@@ -268,18 +443,29 @@ export class SearchService {
       .createQueryBuilder('arc')
       .where(
         `(
+          arc.name ILIKE :likeQuery OR
+          arc.description ILIKE :likeQuery OR
           to_tsvector('english', arc.name) @@ plainto_tsquery('english', :query) OR
           to_tsvector('english', arc.description) @@ plainto_tsquery('english', :query)
         )`,
-        { query },
+        { query, likeQuery: `%${query}%` },
       )
       .orderBy(
-        `ts_rank(
-          to_tsvector('english', arc.name || ' ' || arc.description),
-          plainto_tsquery('english', :query)
-        )`,
-        'DESC',
+        `CASE 
+          WHEN arc.name ILIKE :exactQuery THEN 1
+          WHEN arc.name ILIKE :startQuery THEN 2
+          WHEN arc.name ILIKE :likeQuery THEN 3
+          ELSE 4
+        END`,
+        'ASC',
       )
+      .addOrderBy('arc.name', 'ASC')
+      .setParameters({ 
+        query, 
+        likeQuery: `%${query}%`, 
+        exactQuery: query, 
+        startQuery: `${query}%` 
+      })
       .offset(offset)
       .limit(limit)
       .getManyAndCount();
@@ -308,19 +494,31 @@ export class SearchService {
       .leftJoinAndSelect('gamble.participants', 'character')
       .where(
         `(
+          gamble.name ILIKE :likeQuery OR
+          gamble.rules ILIKE :likeQuery OR
+          character.name ILIKE :likeQuery OR
           to_tsvector('english', gamble.name) @@ plainto_tsquery('english', :query) OR
           to_tsvector('english', gamble.rules) @@ plainto_tsquery('english', :query) OR
           to_tsvector('english', character.name) @@ plainto_tsquery('english', :query)
         )`,
-        { query },
+        { query, likeQuery: `%${query}%` },
       )
       .orderBy(
-        `ts_rank(
-          to_tsvector('english', gamble.name || ' ' || gamble.rules || ' ' || COALESCE(character.name, '')),
-          plainto_tsquery('english', :query)
-        )`,
-        'DESC',
+        `CASE 
+          WHEN gamble.name ILIKE :exactQuery THEN 1
+          WHEN gamble.name ILIKE :startQuery THEN 2
+          WHEN gamble.name ILIKE :likeQuery THEN 3
+          ELSE 4
+        END`,
+        'ASC',
       )
+      .addOrderBy('gamble.name', 'ASC')
+      .setParameters({ 
+        query, 
+        likeQuery: `%${query}%`, 
+        exactQuery: query, 
+        startQuery: `${query}%` 
+      })
       .offset(offset)
       .limit(limit)
       .getManyAndCount();
@@ -343,46 +541,96 @@ export class SearchService {
     return { results, total };
   }
 
+  private async searchFactions(query: string, offset: number, limit: number) {
+    const [factions, total] = await this.factionRepository
+      .createQueryBuilder('faction')
+      .where(
+        `(
+          faction.name ILIKE :likeQuery OR
+          faction.description ILIKE :likeQuery OR
+          to_tsvector('english', faction.name) @@ plainto_tsquery('english', :query) OR
+          to_tsvector('english', faction.description) @@ plainto_tsquery('english', :query)
+        )`,
+        { query, likeQuery: `%${query}%` },
+      )
+      .orderBy(
+        `CASE 
+          WHEN faction.name ILIKE :exactQuery THEN 1
+          WHEN faction.name ILIKE :startQuery THEN 2
+          WHEN faction.name ILIKE :likeQuery THEN 3
+          ELSE 4
+        END`,
+        'ASC',
+      )
+      .addOrderBy('faction.name', 'ASC')
+      .setParameters({ 
+        query, 
+        likeQuery: `%${query}%`, 
+        exactQuery: query, 
+        startQuery: `${query}%` 
+      })
+      .offset(offset)
+      .limit(limit)
+      .getManyAndCount();
+
+    const results: SearchResultItemDto[] = factions.map((faction) => ({
+      id: faction.id,
+      type: 'faction',
+      title: faction.name || 'Unknown Faction',
+      description: faction.description ?? undefined,
+      score: 1.0,
+      hasSpoilers: false, // Factions don't typically have spoiler flags
+      slug: `faction-${faction.id}`,
+      metadata: {},
+    }));
+
+    return { results, total };
+  }
+
   private async searchAll(
     query: string,
     userProgress?: number,
     offset: number = 0,
     limit: number = 20,
   ) {
-    // Get results from each type with prioritization: character -> arc -> gambles -> chapters -> events
-    const resultsPerType = Math.ceil(limit / 5); // Distribute results across 5 types
+    // Get results from each type with prioritization: character -> factions -> arcs -> gambles -> events -> chapters
+    const resultsPerType = Math.ceil(limit / 6); // Distribute results across 6 types
 
     const [
       characterResults,
+      factionResults,
       arcResults,
       gambleResults,
-      chapterResults,
       eventResults,
+      chapterResults,
     ] = await Promise.all([
       this.searchCharacters(query, 0, resultsPerType),
+      this.searchFactions(query, 0, resultsPerType),
       this.searchArcs(query, 0, resultsPerType),
       this.searchGambles(query, 0, resultsPerType),
-      this.searchChapters(query, userProgress, 0, resultsPerType),
       this.searchEvents(query, userProgress, 0, resultsPerType),
+      this.searchChapters(query, userProgress, 0, resultsPerType),
     ]);
 
     // Combine all results in priority order
     const allResults = [
       ...characterResults.results,
+      ...factionResults.results,
       ...arcResults.results,
       ...gambleResults.results,
-      ...chapterResults.results,
       ...eventResults.results,
+      ...chapterResults.results,
     ];
 
     // Apply pagination to combined results
     const results = allResults.slice(offset, offset + limit);
     const total =
       characterResults.total +
+      factionResults.total +
       arcResults.total +
       gambleResults.total +
-      chapterResults.total +
-      eventResults.total;
+      eventResults.total +
+      chapterResults.total;
 
     return { results, total };
   }
