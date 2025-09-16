@@ -22,15 +22,15 @@ import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import MediaThumbnail from '../../components/MediaThumbnail'
 
-interface Faction {
+interface Organization {
   id: number
   name: string
   description?: string
   memberCount?: number
 }
 
-export default function FactionsPage() {
-  const [factions, setFactions] = useState<Faction[]>([])
+export default function OrganizationsPage() {
+  const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -41,7 +41,7 @@ export default function FactionsPage() {
   const limit = 12
 
   useEffect(() => {
-    const fetchFactions = async () => {
+    const fetchOrganizations = async () => {
       try {
         setLoading(true)
         const params: any = { page, limit }
@@ -49,8 +49,8 @@ export default function FactionsPage() {
           params.name = searchTerm
         }
         
-        const response = await api.getFactions(params)
-        setFactions(response.data)
+        const response = await api.getOrganizations(params)
+        setOrganizations(response.data)
         setTotalPages(response.totalPages)
         setTotal(response.total)
       } catch (error: any) {
@@ -60,7 +60,7 @@ export default function FactionsPage() {
       }
     }
 
-    fetchFactions()
+    fetchOrganizations()
   }, [page, searchTerm])
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +90,7 @@ export default function FactionsPage() {
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Shield size={48} style={{ marginBottom: 16 }} />
           <Typography variant="h2" component="h1" gutterBottom>
-            Factions
+            Organizations
           </Typography>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             Explore the various groups and organizations in Usogui
@@ -100,7 +100,7 @@ export default function FactionsPage() {
         <Box sx={{ mb: 4 }}>
           <TextField
             fullWidth
-            placeholder="Search factions by name..."
+            placeholder="Search organizations by name..."
             value={searchTerm}
             onChange={handleSearch}
             InputProps={{
@@ -121,13 +121,13 @@ export default function FactionsPage() {
           <>
             <Box sx={{ mb: 3 }}>
               <Typography variant="body2" color="text.secondary">
-                {total} factions found
+                {total} organizations found
               </Typography>
             </Box>
 
             <Grid container spacing={3}>
-              {factions.map((faction) => (
-                <Grid item xs={12} sm={6} md={4} key={faction.id}>
+              {organizations.map((organization) => (
+                <Grid item xs={12} sm={6} md={4} key={organization.id}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -148,9 +148,9 @@ export default function FactionsPage() {
                     >
                       <Box sx={{ position: 'relative' }}>
                         <MediaThumbnail
-                          entityType="faction"
-                          entityId={faction.id}
-                          entityName={faction.name}
+                          entityType="organization"
+                          entityId={organization.id}
+                          entityName={organization.name}
                           maxWidth="100%"
                           maxHeight="200px"
                           allowCycling={false}
@@ -163,7 +163,7 @@ export default function FactionsPage() {
                           <Typography 
                             variant="h5" 
                             component={Link}
-                            href={`/factions/${faction.id}`}
+                            href={`/organizations/${organization.id}`}
                             sx={{ 
                               textDecoration: 'none', 
                               color: 'primary.main',
@@ -171,11 +171,11 @@ export default function FactionsPage() {
                               flex: 1
                             }}
                           >
-                            {faction.name}
+                            {organization.name}
                           </Typography>
                         </Box>
 
-                        {faction.description && (
+                        {organization.description && (
                           <div style={{ 
                             display: '-webkit-box',
                             WebkitLineClamp: 4,
@@ -185,18 +185,18 @@ export default function FactionsPage() {
                             flexGrow: 1
                           }}>
                             <EnhancedSpoilerMarkdown
-                              content={faction.description}
-                              className="faction-description-preview"
+                              content={organization.description}
+                              className="organization-description-preview"
                               enableEntityEmbeds={true}
                               compactEntityCards={true}
                             />
                           </div>
                         )}
 
-                        {faction.memberCount !== undefined && (
+                        {organization.memberCount !== undefined && (
                           <Box sx={{ mt: 'auto', pt: 2, borderTop: 1, borderColor: 'divider' }}>
                             <Chip
-                              label={`${faction.memberCount} members`}
+                              label={`${organization.memberCount} members`}
                               size="small"
                               color="secondary"
                               variant="outlined"
@@ -223,10 +223,10 @@ export default function FactionsPage() {
               </Box>
             )}
 
-            {factions.length === 0 && !loading && (
+            {organizations.length === 0 && !loading && (
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography variant="h6" color="text.secondary">
-                  No factions found
+                  No organizations found
                 </Typography>
               </Box>
             )}

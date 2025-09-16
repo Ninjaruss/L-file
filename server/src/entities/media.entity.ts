@@ -39,7 +39,7 @@ export enum MediaOwnerType {
   ARC = 'arc',
   EVENT = 'event',
   GAMBLE = 'gamble',
-  FACTION = 'faction',
+  ORGANIZATION = 'organization',
   USER = 'user',
   VOLUME = 'volume',
 }

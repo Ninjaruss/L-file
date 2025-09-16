@@ -8,7 +8,7 @@ import { ArcsModule } from './modules/arcs/arcs.module';
 import { CharactersModule } from './modules/characters/characters.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
 import { EventsModule } from './modules/events/events.module';
-import { FactionsModule } from './modules/factions/factions.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { VolumesModule } from './modules/volumes/volumes.module';
 import { SearchModule } from './modules/search/search.module';
@@ -71,7 +71,7 @@ import { Logger } from '@nestjs/common';
     CharactersModule,
     ChaptersModule,
     EventsModule,
-    FactionsModule,
+    OrganizationsModule,
     TagsModule,
     VolumesModule,
     SearchModule,

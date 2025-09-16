@@ -34,7 +34,7 @@ interface MediaItem {
   description: string
   fileName?: string
   isUploaded?: boolean
-  ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+  ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
   ownerId: number
   chapterNumber?: number
   purpose: 'gallery' | 'entity_display'
@@ -46,7 +46,7 @@ interface MediaItem {
 }
 
 interface MediaGalleryProps {
-  ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+  ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
   ownerId?: number
   purpose?: 'gallery' | 'entity_display'
   limit?: number
@@ -97,6 +97,11 @@ export default function MediaGallery({
         // Convert legacy props to polymorphic if needed
         let finalOwnerType = ownerType
         let finalOwnerId = ownerId
+        
+        // Handle migration from organization to organization
+        if (finalOwnerType === 'organization' as any) {
+          finalOwnerType = 'organization'
+        }
         
         if (!finalOwnerType && !finalOwnerId) {
           if (characterId && !isNaN(characterId) && characterId > 0) {

@@ -59,7 +59,7 @@ export interface Character {
   updatedAt: string;
 }
 
-export interface Faction {
+export interface Organization {
   id: number;
   name: string;
   description?: string;

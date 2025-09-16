@@ -430,9 +430,9 @@ export class MediaController {
     type: 'string',
   })
   @ApiQuery({
-    name: 'factionIds',
+    name: 'organizationIds',
     required: false,
-    description: 'Comma-separated list of faction IDs to filter by',
+    description: 'Comma-separated list of organization IDs to filter by',
     type: 'string',
   })
   @ApiResponse({
@@ -454,7 +454,7 @@ export class MediaController {
     @Query('arcIds') arcIds?: string,
     @Query('eventIds') eventIds?: string,
     @Query('gambleIds') gambleIds?: string,
-    @Query('factionIds') factionIds?: string,
+    @Query('organizationIds') organizationIds?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
@@ -482,7 +482,7 @@ export class MediaController {
       arcIds,
       eventIds,
       gambleIds,
-      factionIds,
+      organizationIds,
     });
 
     // Return canonical top-level paginated shape used across the API
@@ -659,7 +659,7 @@ export class MediaController {
         description: { type: 'string', example: 'Updated description' },
         ownerType: {
           type: 'string',
-          enum: ['character', 'arc', 'event', 'gamble', 'faction', 'user'],
+          enum: ['character', 'arc', 'event', 'gamble', 'organization', 'user'],
         },
         ownerId: { type: 'number', example: 1 },
         chapterNumber: { type: 'number', example: 45 },

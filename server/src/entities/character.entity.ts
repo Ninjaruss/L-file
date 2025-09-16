@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Media } from './media.entity';
-import { Faction } from './faction.entity';
+import { Organization } from './organization.entity';
 import { Quote } from './quote.entity';
 import {
   ApiProperty,
@@ -56,11 +56,11 @@ export class Character {
   // with ownerType='character' and ownerId=character.id
 
   @ApiPropertyOptional({
-    description: 'Factions the character belongs to',
-    type: () => [Faction],
+    description: 'Organizations the character belongs to',
+    type: () => [Organization],
   })
-  @ManyToMany(() => Faction, (faction) => faction.characters)
-  factions: Faction[];
+  @ManyToMany(() => Organization, (organization) => organization.characters)
+  organizations: Organization[];
 
   @ApiHideProperty()
   @OneToMany(() => Quote, (quote) => quote.character, {

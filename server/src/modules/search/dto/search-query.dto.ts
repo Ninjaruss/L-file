@@ -9,7 +9,7 @@ export enum SearchType {
   EVENTS = 'events',
   ARCS = 'arcs',
   GAMBLES = 'gambles',
-  FACTIONS = 'factions',
+  ORGANIZATIONS = 'organizations',
 }
 
 export class SearchQueryDto {

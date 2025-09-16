@@ -110,7 +110,7 @@ export class MediaService {
       arcIds?: string;
       eventIds?: string;
       gambleIds?: string;
-      factionIds?: string;
+      organizationIds?: string;
     } = {},
   ): Promise<{
     data: Media[];
@@ -134,7 +134,7 @@ export class MediaService {
       arcIds,
       eventIds,
       gambleIds,
-      factionIds,
+      organizationIds,
     } = filters;
     const query = this.mediaRepo
       .createQueryBuilder('media')
@@ -217,13 +217,13 @@ export class MediaService {
       }
     }
 
-    if (factionIds) {
-      const ids = factionIds
+    if (organizationIds) {
+      const ids = organizationIds
         .split(',')
         .map((id) => parseInt(id.trim()))
         .filter((id) => !isNaN(id));
       if (ids.length > 0) {
-        entityFilters.push({ ownerType: MediaOwnerType.FACTION, ids });
+        entityFilters.push({ ownerType: MediaOwnerType.ORGANIZATION, ids });
       }
     }
 

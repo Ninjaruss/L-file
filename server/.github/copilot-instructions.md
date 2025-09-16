@@ -24,7 +24,7 @@ Core Modules:
 - `arcs` - Story arc management
 - `characters` - Character information
 - `events` - Event tracking
-- `factions` - Group/faction management
+- `organizations` - Group/organization management
 - `tags` - Content tagging system
 - `media` - Media asset handling
 - `translations` - Content translation management
@@ -172,7 +172,7 @@ if (guide.authorId !== currentUser.id &&
 2. **Characters**: Character profiles and associations
 3. **Arcs**: Narrative arc organization, contains multiple Chapters
 4. **Events**: Story events and timeline references (may reference Chapters and Characters)
-5. **Factions**: Groups and organizations containing multiple Characters
+5. **Organizations**: Groups and organizations containing multiple Characters
 7. **Tags**: Many-to-many relationships with content entities
 8. **Gambles**: Complex entity specific to Usogui's gambling events
 9. **Guides**: User-generated content with likes, view tracking, and tagging

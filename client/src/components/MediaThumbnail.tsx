@@ -18,7 +18,7 @@ interface MediaItem {
 }
 
 interface MediaThumbnailProps {
-  entityType: 'character' | 'arc' | 'gamble' | 'faction' | 'volume'
+  entityType: 'character' | 'arc' | 'gamble' | 'organization' | 'volume'
   entityId: number
   entityName?: string
   className?: string
@@ -70,10 +70,16 @@ export default function MediaThumbnail({
       setLoading(true)
       setError(null)
       
+      // Handle migration from organization to organization
+      let finalEntityType = entityType
+      if (finalEntityType === 'organization' as any) {
+        finalEntityType = 'organization'
+      }
+      
       // Load entity display media first
       try {
         const response = await api.getEntityDisplayMediaForCycling(
-          entityType,
+          finalEntityType,
           entityId,
           userProgress
         )

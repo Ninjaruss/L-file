@@ -6,7 +6,7 @@ import { Character } from '../../entities/character.entity';
 import { Event } from '../../entities/event.entity';
 import { Arc } from '../../entities/arc.entity';
 import { Gamble } from '../../entities/gamble.entity';
-import { Faction } from '../../entities/faction.entity';
+import { Organization } from '../../entities/organization.entity';
 import { SearchQueryDto, SearchType } from './dto/search-query.dto';
 import { SearchResultDto, SearchResultItemDto } from './dto/search-result.dto';
 
@@ -23,8 +23,8 @@ export class SearchService {
     private arcRepository: Repository<Arc>,
     @InjectRepository(Gamble)
     private gambleRepository: Repository<Gamble>,
-    @InjectRepository(Faction)
-    private factionRepository: Repository<Faction>,
+    @InjectRepository(Organization)
+    private organizationRepository: Repository<Organization>,
   ) {}
 
   async search(searchQuery: SearchQueryDto): Promise<SearchResultDto> {
@@ -80,10 +80,10 @@ export class SearchService {
         results = gambleResults.results;
         total = gambleResults.total;
         break;
-      case SearchType.FACTIONS:
-        const factionResults = await this.searchFactions(query, offset, limit);
-        results = factionResults.results;
-        total = factionResults.total;
+      case SearchType.ORGANIZATIONS:
+        const organizationResults = await this.searchOrganizations(query, offset, limit);
+        results = organizationResults.results;
+        total = organizationResults.total;
         break;
       case SearchType.ALL:
       default:
@@ -112,8 +112,8 @@ export class SearchService {
   async getSuggestions(query: string): Promise<string[]> {
     const suggestions: string[] = [];
 
-    // Get suggestions from all entity types in priority order: characters, factions, arcs, gambles, events, chapters
-    const [characters, factions, arcs, gambles, events, chapters] = await Promise.all([
+    // Get suggestions from all entity types in priority order: characters, organizations, arcs, gambles, events, chapters
+    const [characters, organizations, arcs, gambles, events, chapters] = await Promise.all([
       // Characters
       this.characterRepository
         .createQueryBuilder('character')
@@ -135,19 +135,19 @@ export class SearchService {
         .limit(2)
         .getMany(),
       
-      // Factions
-      this.factionRepository
-        .createQueryBuilder('faction')
-        .where('faction.name ILIKE :query', { query: `%${query}%` })
+      // Organizations
+      this.organizationRepository
+        .createQueryBuilder('organization')
+        .where('organization.name ILIKE :query', { query: `%${query}%` })
         .orderBy(
           `CASE 
-            WHEN faction.name ILIKE :exactQuery THEN 1
-            WHEN faction.name ILIKE :startQuery THEN 2
+            WHEN organization.name ILIKE :exactQuery THEN 1
+            WHEN organization.name ILIKE :startQuery THEN 2
             ELSE 3
           END`,
           'ASC',
         )
-        .addOrderBy('faction.name', 'ASC')
+        .addOrderBy('organization.name', 'ASC')
         .setParameters({ 
           query: `%${query}%`, 
           exactQuery: query, 
@@ -243,7 +243,7 @@ export class SearchService {
 
     // Add suggestions in priority order
     characters.forEach((char) => suggestions.push(char.name));
-    factions.forEach((faction) => suggestions.push(faction.name));
+    organizations.forEach((organization) => suggestions.push(organization.name));
     arcs.forEach((arc) => suggestions.push(arc.name));
     gambles.forEach((gamble) => suggestions.push(gamble.name));
     events.forEach((event) => suggestions.push(event.title || 'Unknown Event'));
@@ -254,19 +254,19 @@ export class SearchService {
   }
 
   async getContentTypes(): Promise<{ type: string; count: number }[]> {
-    const [chapterCount, characterCount, eventCount, arcCount, gambleCount, factionCount] =
+    const [chapterCount, characterCount, eventCount, arcCount, gambleCount, organizationCount] =
       await Promise.all([
         this.chapterRepository.count(),
         this.characterRepository.count(),
         this.eventRepository.count(),
         this.arcRepository.count(),
         this.gambleRepository.count(),
-        this.factionRepository.count(),
+        this.organizationRepository.count(),
       ]);
 
     return [
       { type: 'characters', count: characterCount },
-      { type: 'factions', count: factionCount },
+      { type: 'organizations', count: organizationCount },
       { type: 'arcs', count: arcCount },
       { type: 'gambles', count: gambleCount },
       { type: 'chapters', count: chapterCount },
@@ -559,31 +559,31 @@ export class SearchService {
     return { results, total };
   }
 
-  private async searchFactions(query: string, offset: number, limit: number) {
-    const [factions, total] = await this.factionRepository
-      .createQueryBuilder('faction')
+  private async searchOrganizations(query: string, offset: number, limit: number) {
+    const [organizations, total] = await this.organizationRepository
+      .createQueryBuilder('organization')
       .where(
         `(
-          faction.name ILIKE :likeQuery OR
-          faction.description ILIKE :likeQuery OR
-          to_tsvector('english', faction.name) @@ plainto_tsquery('english', :query) OR
-          to_tsvector('english', faction.description) @@ plainto_tsquery('english', :query)
+          organization.name ILIKE :likeQuery OR
+          organization.description ILIKE :likeQuery OR
+          to_tsvector('english', organization.name) @@ plainto_tsquery('english', :query) OR
+          to_tsvector('english', organization.description) @@ plainto_tsquery('english', :query)
         )`,
         { query, likeQuery: `%${query}%` },
       )
       .orderBy(
         `CASE 
-          WHEN faction.name ILIKE :exactQuery THEN 1
-          WHEN faction.name ILIKE :startQuery THEN 2
-          WHEN faction.name ILIKE :likeQuery THEN 3
-          WHEN faction.description ILIKE :exactQuery THEN 4
-          WHEN faction.description ILIKE :startQuery THEN 5
-          WHEN faction.description ILIKE :likeQuery THEN 6
+          WHEN organization.name ILIKE :exactQuery THEN 1
+          WHEN organization.name ILIKE :startQuery THEN 2
+          WHEN organization.name ILIKE :likeQuery THEN 3
+          WHEN organization.description ILIKE :exactQuery THEN 4
+          WHEN organization.description ILIKE :startQuery THEN 5
+          WHEN organization.description ILIKE :likeQuery THEN 6
           ELSE 7
         END`,
         'ASC',
       )
-      .addOrderBy('faction.name', 'ASC')
+      .addOrderBy('organization.name', 'ASC')
       .setParameters({ 
         query, 
         likeQuery: `%${query}%`, 
@@ -594,14 +594,14 @@ export class SearchService {
       .limit(limit)
       .getManyAndCount();
 
-    const results: SearchResultItemDto[] = factions.map((faction) => ({
-      id: faction.id,
-      type: 'faction',
-      title: faction.name || 'Unknown Faction',
-      description: faction.description ?? undefined,
+    const results: SearchResultItemDto[] = organizations.map((organization) => ({
+      id: organization.id,
+      type: 'organization',
+      title: organization.name || 'Unknown Organization',
+      description: organization.description ?? undefined,
       score: 1.0,
-      hasSpoilers: false, // Factions don't typically have spoiler flags
-      slug: `faction-${faction.id}`,
+      hasSpoilers: false, // Organizations don't typically have spoiler flags
+      slug: `organization-${organization.id}`,
       metadata: {},
     }));
 
@@ -614,19 +614,19 @@ export class SearchService {
     offset: number = 0,
     limit: number = 20,
   ) {
-    // Get results from each type with prioritization: character -> factions -> arcs -> gambles -> events -> chapters
+    // Get results from each type with prioritization: character -> organizations -> arcs -> gambles -> events -> chapters
     const resultsPerType = Math.ceil(limit / 6); // Distribute results across 6 types
 
     const [
       characterResults,
-      factionResults,
+      organizationResults,
       arcResults,
       gambleResults,
       eventResults,
       chapterResults,
     ] = await Promise.all([
       this.searchCharacters(query, 0, resultsPerType),
-      this.searchFactions(query, 0, resultsPerType),
+      this.searchOrganizations(query, 0, resultsPerType),
       this.searchArcs(query, 0, resultsPerType),
       this.searchGambles(query, 0, resultsPerType),
       this.searchEvents(query, userProgress, 0, resultsPerType),
@@ -636,7 +636,7 @@ export class SearchService {
     // Combine all results in priority order
     const allResults = [
       ...characterResults.results,
-      ...factionResults.results,
+      ...organizationResults.results,
       ...arcResults.results,
       ...gambleResults.results,
       ...eventResults.results,
@@ -647,7 +647,7 @@ export class SearchService {
     const results = allResults.slice(offset, offset + limit);
     const total =
       characterResults.total +
-      factionResults.total +
+      organizationResults.total +
       arcResults.total +
       gambleResults.total +
       eventResults.total +

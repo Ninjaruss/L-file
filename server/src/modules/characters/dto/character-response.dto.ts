@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Faction } from '../../../entities/faction.entity';
+import { Organization } from '../../../entities/organization.entity';
 import { Arc } from '../../../entities/arc.entity';
 import { Media } from '../../../entities/media.entity';
 
@@ -32,10 +32,10 @@ export class CharacterResponseDto {
   arc?: Arc;
 
   @ApiPropertyOptional({
-    description: 'Factions the character belongs to',
-    type: () => [Faction],
+    description: 'Organizations the character belongs to',
+    type: () => [Organization],
   })
-  factions?: Faction[];
+  organizations?: Organization[];
 
   @ApiPropertyOptional({
     description: 'Media associated with the character',

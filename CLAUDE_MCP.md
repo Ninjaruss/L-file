@@ -148,7 +148,7 @@ The Usogui Fansite is a comprehensive full-stack web application dedicated to th
 - **Quote**: Character dialogue and memorable lines
 - **Media**: Community-submitted images and content
 - **Guide**: User-generated analysis and guides
-- **Faction**: Groups and organizations
+- **Organization**: Groups and organizations
 
 #### Supporting Entities
 - **Tag**: Content categorization system

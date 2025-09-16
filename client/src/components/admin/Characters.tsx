@@ -52,7 +52,7 @@ export const CharacterList = () => (
           </Box>
         )}
       />
-      <ArrayField source="factions" label="Factions">
+      <ArrayField source="organizations" label="Organizations">
         <SingleFieldList linkType={false}>
           <ChipField source="name" size="small" />
         </SingleFieldList>
@@ -103,7 +103,7 @@ export const CharacterShow = () => (
           </Box>
         )}
       />
-      <ArrayField source="factions" label="Factions">
+      <ArrayField source="organizations" label="Organizations">
         <SingleFieldList linkType={false}>
           <ChipField source="name" />
         </SingleFieldList>
@@ -246,7 +246,7 @@ export const CharacterEdit = () => (
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
                     Relations
                   </Typography>
-                  <ReferenceArrayInput source="factionIds" reference="factions" label="Factions">
+                  <ReferenceArrayInput source="organizationIds" reference="organizations" label="Organizations">
                     <AutocompleteArrayInput 
                       optionText="name"
                       sx={{
@@ -390,7 +390,7 @@ export const CharacterCreate = () => (
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
                     Relations
                   </Typography>
-                  <ReferenceArrayInput source="factionIds" reference="factions" label="Factions">
+                  <ReferenceArrayInput source="organizationIds" reference="organizations" label="Organizations">
                     <AutocompleteArrayInput 
                       optionText="name"
                       sx={{

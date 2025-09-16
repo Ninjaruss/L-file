@@ -4,14 +4,14 @@ import { CharactersService } from './characters.service';
 import { CharactersController } from './characters.controller';
 import { Character } from '../../entities/character.entity';
 import { Gamble } from '../../entities/gamble.entity';
-import { Faction } from '../../entities/faction.entity';
+import { Organization } from '../../entities/organization.entity';
 import { ServicesModule } from '../../services/services.module';
 import { PageViewsModule } from '../page-views/page-views.module';
 import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Character, Gamble, Faction]),
+    TypeOrmModule.forFeature([Character, Gamble, Organization]),
     ServicesModule,
     PageViewsModule,
     MediaModule,

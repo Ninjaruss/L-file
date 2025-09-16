@@ -60,7 +60,7 @@ server/
 │   │   ├── volumes/        # Volume information
 │   │   ├── chapters/       # Chapter details
 │   │   ├── events/         # Story events
-│   │   ├── factions/       # Character factions
+│   │   ├── organizations/       # Character organizations
 │   │   ├── quotes/         # Character quotes
 │   │   ├── users/          # User management
 │   │   ├── tags/           # Content tagging
@@ -119,7 +119,7 @@ Key entities include:
 - **Volume/Chapter**: Manga structure
 - **Gamble**: Game mechanics and rules
 - **Event**: Story events and timeline
-- **Faction**: Character groupings
+- **Organization**: Character groupings
 - **Guide**: Community-generated guides
 - **Media**: User-uploaded media content
 - **Quote**: Character quotes
@@ -146,7 +146,7 @@ Base URL: `http://localhost:3001/api`
 - `/volumes` - Volume CRUD
 - `/chapters` - Chapter CRUD
 - `/events` - Event CRUD
-- `/factions` - Faction CRUD
+- `/organizations` - Organization CRUD
 - `/quotes` - Quote CRUD
 - `/users` - User management (admin only)
 - `/tags` - Tag management

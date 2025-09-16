@@ -558,7 +558,7 @@ class ApiClient {
   async submitMedia(data: {
     url: string
     type: 'image' | 'video' | 'audio'
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
     ownerId: number
     chapterNumber?: number
     purpose?: 'gallery' | 'entity_display'
@@ -570,7 +570,7 @@ class ApiClient {
   async submitMediaPolymorphic(data: {
     url: string
     type: 'image' | 'video' | 'audio'
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
     ownerId: number
     chapterNumber?: number
     description?: string
@@ -593,7 +593,7 @@ class ApiClient {
 
   async uploadMedia(file: File, data: {
     type: 'image' | 'video' | 'audio'
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume'
     ownerId: number
     chapterNumber?: number
     purpose?: 'gallery' | 'entity_display'
@@ -859,7 +859,7 @@ class ApiClient {
     return this.delete<any>(`/tags/${id}`)
   }
 
-  async getFactions(params?: {
+  async getOrganizations(params?: {
     page?: number
     limit?: number
     name?: string
@@ -878,7 +878,7 @@ class ApiClient {
       total: number
       page: number
       totalPages: number
-    }>(`/factions${query ? `?${query}` : ''}`)
+    }>(`/organizations${query ? `?${query}` : ''}`)
   }
 
   async getVolumes(params?: {
@@ -919,20 +919,20 @@ class ApiClient {
     }>(`/volumes/${id}/chapters`)
   }
 
-  async getFaction(id: number) {
-    return this.get<any>(`/factions/${id}`)
+  async getOrganization(id: number) {
+    return this.get<any>(`/organizations/${id}`)
   }
 
-  async createFaction(data: any) {
-    return this.post<any>('/factions', data)
+  async createOrganization(data: any) {
+    return this.post<any>('/organizations', data)
   }
 
-  async updateFaction(id: number, data: any) {
-    return this.put<any>(`/factions/${id}`, data)
+  async updateOrganization(id: number, data: any) {
+    return this.put<any>(`/organizations/${id}`, data)
   }
 
-  async deleteFaction(id: number) {
-    return this.delete<any>(`/factions/${id}`)
+  async deleteOrganization(id: number) {
+    return this.delete<any>(`/organizations/${id}`)
   }
 
   async getAllMedia(params?: {
@@ -974,7 +974,7 @@ class ApiClient {
     page?: number
     limit?: number
     type?: string
-    ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume'
+    ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume'
     ownerId?: number
     purpose?: 'gallery' | 'entity_display'
   }) {
@@ -997,7 +997,7 @@ class ApiClient {
   }
 
   async getMediaForOwner(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
     ownerId: number,
     params?: {
       chapter?: number
@@ -1025,14 +1025,14 @@ class ApiClient {
   }
 
   async getDefaultMediaForOwner(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
     ownerId: number
   ) {
     return this.get<any>(`/media/owner/${ownerType}/${ownerId}/default`)
   }
 
   async getEntityDisplayMedia(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
     ownerId: number,
     params?: {
       chapter?: number
@@ -1060,7 +1060,7 @@ class ApiClient {
   }
 
   async getGalleryMedia(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
     ownerId: number,
     params?: {
       chapter?: number
@@ -1088,7 +1088,7 @@ class ApiClient {
   }
 
   async getThumbnailForUserProgress(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
     ownerId: number,
     userProgress: number
   ) {
@@ -1096,7 +1096,7 @@ class ApiClient {
   }
 
   async getEntityDisplayMediaForCycling(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
     ownerId: number,
     userProgress?: number
   ) {

@@ -39,7 +39,7 @@ interface Character {
   firstAppearanceChapter: number | null
   imageFileName?: string | null
   imageDisplayName?: string | null
-  factions?: Array<{
+  organizations?: Array<{
     id: number
     name: string
     description?: string
@@ -233,21 +233,21 @@ export default function CharacterDetailPage() {
                     </Box>
                   )}
 
-                  {/* Faction Affiliations */}
-                  {character.factions && character.factions.length > 0 && (
+                  {/* Organization Affiliations */}
+                  {character.organizations && character.organizations.length > 0 && (
                     <Box sx={{ mb: 3 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                        Faction Affiliations:
+                        Organization Affiliations:
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {character.factions.map((faction) => (
+                        {character.organizations.map((organization) => (
                           <Chip
-                            key={faction.id}
-                            label={faction.name}
+                            key={organization.id}
+                            label={organization.name}
                             size="medium"
                             variant="filled"
                             component={Link}
-                            href={`/factions/${faction.id}`}
+                            href={`/organizations/${organization.id}`}
                             clickable
                             sx={{ 
                               backgroundColor: '#e91e63',

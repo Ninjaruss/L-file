@@ -2,7 +2,7 @@ import React from 'react'
 import { api } from '../lib/api'
 
 export interface EntityEmbedData {
-  type: 'character' | 'arc' | 'gamble' | 'guide' | 'faction' | 'chapter' | 'volume' | 'quote'
+  type: 'character' | 'arc' | 'gamble' | 'guide' | 'organization' | 'chapter' | 'volume' | 'quote'
   id: number
   data?: any
 }
@@ -15,7 +15,7 @@ export interface EntityEmbedData {
  * - {{arc:5:Tower Arc}}
  * - {{gamble:12:Air Poker}}
  * - {{guide:3}}
- * - {{faction:2:Kakerou}}
+ * - {{organization:2:Kakerou}}
  * - {{chapter:150}}
  * - {{volume:20}}
  * - {{quote:45}}
@@ -39,7 +39,7 @@ export function parseEntityEmbeds(content: string): {
   }> = []
 
   // Regex to match {{type:id}} or {{type:id:display_text}}
-  const embedRegex = /\{\{(character|arc|gamble|guide|faction|chapter|volume|quote):(\d+)(?::([^}]+))?\}\}/g
+  const embedRegex = /\{\{(character|arc|gamble|guide|organization|chapter|volume|quote):(\d+)(?::([^}]+))?\}\}/g
   
   let match
   let counter = 0
@@ -84,8 +84,8 @@ export async function fetchEntityData(type: EntityEmbedData['type'], id: number)
         return await api.getGamble(id)
       case 'guide':
         return await api.getGuide(id)
-      case 'faction':
-        return await api.getFaction(id)
+      case 'organization':
+        return await api.getOrganization(id)
       case 'chapter':
         return await api.getChapter(id)
       case 'volume':
@@ -110,7 +110,7 @@ export function getEntityTypeLabel(type: EntityEmbedData['type']): string {
     arc: 'Arc',
     gamble: 'Gamble',
     guide: 'Guide',
-    faction: 'Faction',
+    organization: 'Organization',
     chapter: 'Chapter',
     volume: 'Volume',
     quote: 'Quote'
@@ -133,8 +133,8 @@ export function getDefaultDisplayText(type: EntityEmbedData['type'], data: any):
       return data.name || `Gamble #${data.id}`
     case 'guide':
       return data.title || `Guide #${data.id}`
-    case 'faction':
-      return data.name || `Faction #${data.id}`
+    case 'organization':
+      return data.name || `Organization #${data.id}`
     case 'chapter':
       return `Chapter ${data.number || data.id}`
     case 'volume':
@@ -155,7 +155,7 @@ export function getEntityUrl(type: EntityEmbedData['type'], id: number): string 
     arc: `/arcs/${id}`,
     gamble: `/gambles/${id}`,
     guide: `/guides/${id}`,
-    faction: `/factions/${id}`,
+    organization: `/organizations/${id}`,
     chapter: `/chapters/${id}`,
     volume: `/volumes/${id}`,
     quote: `/quotes/${id}`
@@ -172,7 +172,7 @@ export function getEntityThemeColor(type: EntityEmbedData['type']): string {
     arc: 'usogui.arc',
     gamble: 'usogui.gamble',
     guide: 'usogui.guide',
-    faction: 'usogui.faction',
+    organization: 'usogui.organization',
     chapter: 'primary.main',
     volume: 'secondary.main',
     quote: 'text.secondary'

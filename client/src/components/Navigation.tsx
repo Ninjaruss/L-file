@@ -34,7 +34,6 @@ import {
   Book,
   Shield,
   Quote,
-  ChevronDown,
   Search,
   Info,
   FileText,
@@ -46,6 +45,11 @@ import { useAuth } from '../providers/AuthProvider'
 import { useProgress } from '../providers/ProgressProvider'
 import { api } from '../lib/api'
 import { motion, AnimatePresence } from 'motion/react'
+import { useNavDropdowns } from '../hooks/useNavDropdowns'
+import { useMouseTracking } from '../hooks/useMouseTracking'
+import { DropdownButton } from './DropdownButton'
+import { DropdownMenu } from './DropdownMenu'
+import { NavigationData, getCategoryColor } from '../types/navigation'
 
 interface SearchResult {
   id: number
@@ -65,18 +69,24 @@ export const Navigation: React.FC = () => {
   const pathname = usePathname()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null)
-  const [browseMenuAnchor, setBrowseMenuAnchor] = useState<null | HTMLElement>(null)
-  const [communityMenuAnchor, setCommunityMenuAnchor] = useState<null | HTMLElement>(null)
-  const [submitMenuAnchor, setSubmitMenuAnchor] = useState<null | HTMLElement>(null)
   const [searchValue, setSearchValue] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeout = useRef<NodeJS.Timeout | null>(null)
-  const browseTimeout = useRef<NodeJS.Timeout | null>(null)
-  const communityTimeout = useRef<NodeJS.Timeout | null>(null)
-  const submitTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  // Use refactored dropdown hooks
+  const dropdowns = useNavDropdowns()
+
+  // Enhanced mouse tracking for auto-close
+  const anyDropdownOpen = dropdowns.browse[0].isOpen || dropdowns.community[0].isOpen || dropdowns.submit[0].isOpen
+  useMouseTracking({
+    isActive: anyDropdownOpen,
+    onOutsideArea: dropdowns.closeAll,
+    selector: '[data-testid="navigation-bar"]',
+    padding: { left: 50, right: 50, top: 50, bottom: 300 }
+  })
 
 
   const handleProfileMenuEnter = (event: React.MouseEvent<HTMLElement>) => {
@@ -104,191 +114,14 @@ export const Navigation: React.FC = () => {
     handleMenuClose()
   }
 
-  // Dropdown menu handlers
-  const handleBrowseMenuEnter = (event: React.MouseEvent<HTMLElement>) => {
-    // Clear any pending timeouts
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-    // Close other dropdowns first
-    setCommunityMenuAnchor(null)
-    setSubmitMenuAnchor(null)
-    // Use the current target (the Box element) as the anchor
-    setBrowseMenuAnchor(event.currentTarget)
-  }
-
-  const handleCommunityMenuEnter = (event: React.MouseEvent<HTMLElement>) => {
-    // Clear any pending timeouts
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-    // Close other dropdowns first
-    setBrowseMenuAnchor(null)
-    setSubmitMenuAnchor(null)
-    // Use the current target (the Box element) as the anchor
-    setCommunityMenuAnchor(event.currentTarget)
-  }
-
-  const handleSubmitMenuEnter = (event: React.MouseEvent<HTMLElement>) => {
-    // Clear any pending timeouts
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-    // Close other dropdowns first
-    setBrowseMenuAnchor(null)
-    setCommunityMenuAnchor(null)
-    // Use the current target (the Box element) as the anchor
-    setSubmitMenuAnchor(event.currentTarget)
-  }
-
-  const handleDropdownClose = () => {
-    // Clear any pending timeouts
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-    setBrowseMenuAnchor(null)
-    setCommunityMenuAnchor(null)
-    setSubmitMenuAnchor(null)
-  }
-
-  const handleDropdownLeave = () => {
-    // Add a slightly longer delay to allow moving between button and dropdown
-    browseTimeout.current = setTimeout(() => {
-      setBrowseMenuAnchor(null)
-      setCommunityMenuAnchor(null)
-      setSubmitMenuAnchor(null)
-    }, 250) // Increased from 150ms to 250ms for better UX
-  }
-
-  // Dropdown menu mouse handlers - these handle the actual dropdown closing
-  const handleDropdownEnter = () => {
-    // Clear any pending timeouts when entering the dropdown
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-  }
-
-  // Specific dropdown enter handlers to clear their specific timeouts
-  const handleBrowseDropdownEnter = () => {
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-  }
-
-  const handleCommunityDropdownEnter = () => {
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-  }
-
-  const handleSubmitDropdownEnter = () => {
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-  }
-
-  // Specific dropdown leave handlers
-  const handleBrowseDropdownLeave = () => {
-    browseTimeout.current = setTimeout(() => {
-      setBrowseMenuAnchor(null)
-    }, 200)
-  }
-
-  const handleCommunityDropdownLeave = () => {
-    communityTimeout.current = setTimeout(() => {
-      setCommunityMenuAnchor(null)
-    }, 200)
-  }
-
-  const handleSubmitDropdownLeave = () => {
-    submitTimeout.current = setTimeout(() => {
-      setSubmitMenuAnchor(null)
-    }, 200)
-  }
-
-  // Individual button leave handlers - close specific dropdown when leaving button
-  const handleBrowseButtonLeave = () => {
-    browseTimeout.current = setTimeout(() => {
-      setBrowseMenuAnchor(null)
-    }, 200) // Reduced since navbar leave will also handle it
-  }
-
-  const handleCommunityButtonLeave = () => {
-    communityTimeout.current = setTimeout(() => {
-      setCommunityMenuAnchor(null)
-    }, 200) // Reduced since navbar leave will also handle it
-  }
-
-  const handleSubmitButtonLeave = () => {
-    submitTimeout.current = setTimeout(() => {
-      setSubmitMenuAnchor(null)
-    }, 200) // Reduced since navbar leave will also handle it
-  }
-
-  // Handle mouse leaving the entire navbar area (for auto-close when moving away)
-  const handleNavbarLeave = () => {
-    // Set timeouts for all dropdowns to close after leaving navbar
-    browseTimeout.current = setTimeout(() => {
-      setBrowseMenuAnchor(null)
-    }, 300)
-    communityTimeout.current = setTimeout(() => {
-      setCommunityMenuAnchor(null)
-    }, 300)
-    submitTimeout.current = setTimeout(() => {
-      setSubmitMenuAnchor(null)
-    }, 300)
-  }
-
-  // Handle mouse entering the navbar area - cancel auto-close
-  const handleNavbarEnter = () => {
-    // Clear timeouts when re-entering navbar
-    if (browseTimeout.current) {
-      clearTimeout(browseTimeout.current)
-    }
-    if (communityTimeout.current) {
-      clearTimeout(communityTimeout.current)
-    }
-    if (submitTimeout.current) {
-      clearTimeout(submitTimeout.current)
-    }
-  }
+  // Mouse tracking is now handled by the useMouseTracking hook
 
   // Search helper functions
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'character':
         return <Users size={16} />
-      case 'faction':
+      case 'organization':
         return <Shield size={16} />
       case 'arc':
         return <BookOpen size={16} />
@@ -307,7 +140,7 @@ export const Navigation: React.FC = () => {
     switch (type) {
       case 'character':
         return '#1976d2'
-      case 'faction':
+      case 'organization':
         return '#9c27b0'
       case 'arc':
         return '#dc004e'
@@ -340,8 +173,8 @@ export const Navigation: React.FC = () => {
     try {
       const response = await api.search(searchQuery, undefined, userProgress)
 
-      // Sort results by priority: characters, factions, arcs, gambles, events, chapters
-      const priorityOrder = ['character', 'faction', 'arc', 'gamble', 'event', 'chapter']
+      // Sort results by priority: characters, organizations, arcs, gambles, events, chapters
+      const priorityOrder = ['character', 'organization', 'arc', 'gamble', 'event', 'chapter']
       const sortedResults = response.results.sort((a, b) => {
         const aPriority = priorityOrder.indexOf(a.type)
         const bPriority = priorityOrder.indexOf(b.type)
@@ -436,77 +269,63 @@ export const Navigation: React.FC = () => {
     return pathname === path || pathname.startsWith(path + '/')
   }
 
-  // Navigation categories
-  const browseItems = {
-    'Characters & Factions': [
-      { label: 'Characters', href: '/characters', icon: <Users size={16} /> },
-      { label: 'Factions', href: '/factions', icon: <Shield size={16} /> },
-      { label: 'Quotes', href: '/quotes', icon: <Quote size={16} /> }
+  // Navigation data
+  const navigationData: NavigationData = {
+    browse: [
+      {
+        name: 'Cast',
+        color: getCategoryColor('Cast'),
+        items: [
+          { label: 'Characters', href: '/characters', icon: <Users size={16} /> },
+          { label: 'Organizations', href: '/organizations', icon: <Shield size={16} /> },
+          { label: 'Quotes', href: '/quotes', icon: <Quote size={16} /> }
+        ]
+      },
+      {
+        name: 'Story Elements',
+        color: getCategoryColor('Story Elements'),
+        items: [
+          { label: 'Arcs', href: '/arcs', icon: <BookOpen size={16} /> },
+          { label: 'Events', href: '/events', icon: <CalendarSearch size={16} /> },
+          { label: 'Gambles', href: '/gambles', icon: <Dices size={16} /> }
+        ]
+      },
+      {
+        name: 'Reference Guide',
+        color: getCategoryColor('Reference Guide'),
+        items: [
+          { label: 'Volumes', href: '/volumes', icon: <Book size={16} /> },
+          { label: 'Chapters', href: '/chapters', icon: <FileText size={16} /> }
+        ]
+      }
     ],
-    'Story Elements': [
-      { label: 'Arcs', href: '/arcs', icon: <BookOpen size={16} /> },
-      { label: 'Events', href: '/events', icon: <CalendarSearch size={16} /> },
-      { label: 'Gambles', href: '/gambles', icon: <Dices size={16} /> }
+    community: [
+      { label: 'Guides', href: '/guides', icon: <BookOpen size={16} /> },
+      { label: 'Users', href: '/users', icon: <Users size={16} /> },
+      { label: 'About', href: '/about', icon: <Info size={16} /> }
     ],
-    'Content Navigation': [
-      { label: 'Volumes', href: '/volumes', icon: <Book size={16} /> },
-      { label: 'Chapters', href: '/chapters', icon: <FileText size={16} /> }
+    submit: [
+      { label: 'Submit Guide', href: '/submit-guide', icon: <BookOpen size={16} /> },
+      { label: 'Submit Media', href: '/submit-media', icon: <Image size={16} /> }
     ]
   }
 
-  // Category colors for enhanced visual distinction
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Characters & Factions':
-        return '#2196f3' // Bright Material Blue
-      case 'Story Elements':
-        return '#e91e63' // Bright Material Pink
-      case 'Content Navigation':
-        return '#4caf50' // Bright Material Green
-      default:
-        return '#f44336' // Bright Material Red
-    }
-  }
-
-  const communityItems = [
-    { label: 'Guides', href: '/guides', icon: <BookOpen size={16} /> },
-    { label: 'Users', href: '/users', icon: <Users size={16} /> },
-    { label: 'About', href: '/about', icon: <Info size={16} /> }
-  ]
-
-  const submitItems = [
-    { label: 'Submit Guide', href: '/submit-guide', icon: <BookOpen size={16} /> },
-    { label: 'Submit Media', href: '/submit-media', icon: <Image size={16} /> }
-  ]
-
   const avatarSrc = getAvatarSrc()
 
-  // Cleanup timeouts on unmount
+  // Cleanup search timeout on unmount
   useEffect(() => {
     return () => {
       if (searchTimeout.current) {
         clearTimeout(searchTimeout.current)
-      }
-      if (browseTimeout.current) {
-        clearTimeout(browseTimeout.current)
-      }
-      if (communityTimeout.current) {
-        clearTimeout(communityTimeout.current)
-      }
-      if (submitTimeout.current) {
-        clearTimeout(submitTimeout.current)
       }
     }
   }, [])
 
   // Close dropdowns when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Only close if we have open dropdowns
-      if (browseMenuAnchor || communityMenuAnchor || submitMenuAnchor) {
-        setBrowseMenuAnchor(null)
-        setCommunityMenuAnchor(null)
-        setSubmitMenuAnchor(null)
+    const handleClickOutside = () => {
+      if (anyDropdownOpen) {
+        dropdowns.closeAll()
       }
     }
 
@@ -514,7 +333,7 @@ export const Navigation: React.FC = () => {
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [browseMenuAnchor, communityMenuAnchor, submitMenuAnchor])
+  }, [anyDropdownOpen, dropdowns])
 
   return (
     <AppBar 
@@ -522,7 +341,7 @@ export const Navigation: React.FC = () => {
       sx={{ mb: 4 }}
       data-testid="navigation-bar"
     >
-      <Toolbar onMouseEnter={handleNavbarEnter} onMouseLeave={handleNavbarLeave}>
+      <Toolbar>
         {/* Logo - Left Side */}
         <Typography
           variant="h4"
@@ -542,123 +361,30 @@ export const Navigation: React.FC = () => {
         </Typography>
 
         {/* Desktop Navigation */}
-        <Box 
+        <Box
           sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3, flexGrow: 1 }}
           data-testid="nav-buttons-container"
         >
           {/* Browse Dropdown */}
-          <Box 
-            sx={{ position: 'relative' }}
-            onMouseEnter={handleBrowseMenuEnter}
-            onMouseLeave={handleBrowseButtonLeave}
-          >
-            <Button
-              color="inherit"
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                },
-                backgroundColor: Boolean(browseMenuAnchor) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                cursor: 'default'
-              }}
-              disableRipple
-            >
-              Browse
-            </Button>
-            {/* Arrow indicator */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: -2,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 0,
-                height: 0,
-                borderLeft: '4px solid transparent',
-                borderRight: '4px solid transparent',
-                borderTop: Boolean(browseMenuAnchor) ? '4px solid white' : 'none',
-                borderBottom: Boolean(browseMenuAnchor) ? 'none' : '4px solid rgba(255, 255, 255, 0.4)',
-                opacity: 1,
-                transition: 'all 0.2s ease-in-out'
-              }}
-            />
-          </Box>
+          <DropdownButton
+            label="Browse"
+            state={dropdowns.browse[0]}
+            handlers={dropdowns.browse[1]}
+          />
 
           {/* Community Dropdown */}
-          <Box 
-            sx={{ position: 'relative' }}
-            onMouseEnter={handleCommunityMenuEnter}
-            onMouseLeave={handleCommunityButtonLeave}
-          >
-            <Button
-              color="inherit"
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                },
-                backgroundColor: Boolean(communityMenuAnchor) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                cursor: 'default'
-              }}
-              disableRipple
-            >
-              Community
-            </Button>
-            {/* Arrow indicator */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: -2,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 0,
-                height: 0,
-                borderLeft: '4px solid transparent',
-                borderRight: '4px solid transparent',
-                borderTop: Boolean(communityMenuAnchor) ? '4px solid white' : 'none',
-                borderBottom: Boolean(communityMenuAnchor) ? 'none' : '4px solid rgba(255, 255, 255, 0.4)',
-                opacity: 1,
-                transition: 'all 0.2s ease-in-out'
-              }}
-            />
-          </Box>
+          <DropdownButton
+            label="Community"
+            state={dropdowns.community[0]}
+            handlers={dropdowns.community[1]}
+          />
 
           {/* Submit Dropdown */}
-          <Box 
-            sx={{ position: 'relative' }}
-            onMouseEnter={handleSubmitMenuEnter}
-            onMouseLeave={handleSubmitButtonLeave}
-          >
-            <Button
-              color="inherit"
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                },
-                backgroundColor: Boolean(submitMenuAnchor) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                cursor: 'default'
-              }}
-              disableRipple
-            >
-              Submit
-            </Button>
-            {/* Arrow indicator */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: -2,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 0,
-                height: 0,
-                borderLeft: '4px solid transparent',
-                borderRight: '4px solid transparent',
-                borderTop: Boolean(submitMenuAnchor) ? '4px solid white' : 'none',
-                borderBottom: Boolean(submitMenuAnchor) ? 'none' : '4px solid rgba(255, 255, 255, 0.4)',
-                opacity: 1,
-                transition: 'all 0.2s ease-in-out'
-              }}
-            />
-          </Box>
+          <DropdownButton
+            label="Submit"
+            state={dropdowns.submit[0]}
+            handlers={dropdowns.submit[1]}
+          />
         </Box>
 
         {/* Search Bar - Desktop */}
@@ -927,156 +653,31 @@ export const Navigation: React.FC = () => {
         </Box>
 
         {/* Browse Dropdown Menu */}
-        <Menu
-          anchorEl={browseMenuAnchor}
-          open={Boolean(browseMenuAnchor)}
-          onClose={handleDropdownClose}
-          onClick={handleDropdownClose}
-          onMouseEnter={handleBrowseDropdownEnter}
-          onMouseLeave={handleBrowseDropdownLeave}
-          autoFocus={false}
-          disableAutoFocusItem={true}
-          MenuListProps={{
-            onMouseEnter: handleBrowseDropdownEnter,
-            onMouseLeave: handleBrowseDropdownLeave,
-            disablePadding: false,
-            autoFocus: false,
-            autoFocusItem: false
-          }}
-          transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-          sx={{ 
-            '& .MuiPaper-root': {
-              marginTop: '4px', // Small gap to allow leaving button area
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-            }
-          }}
-        >
-          {Object.entries(browseItems).map(([category, items], index, array) => (
-            <Box key={category}>
-              <MenuItem disabled sx={{ 
-                fontWeight: 'bold', 
-                opacity: '1 !important', 
-                color: `${getCategoryColor(category)} !important`,
-                fontSize: '0.9rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                '&.Mui-disabled': {
-                  color: `${getCategoryColor(category)} !important`,
-                  opacity: '1 !important'
-                }
-              }}>
-                {category}
-              </MenuItem>
-              {items.map((item) => (
-                <MenuItem
-                  key={item.href}
-                  component={Link}
-                  href={item.href}
-                  sx={{
-                    pl: 3,
-                    backgroundColor: isActivePath(item.href) ? 'action.selected' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
-                  }}
-                >
-                  <Box sx={{ mr: 1, display: 'flex' }}>{item.icon}</Box>
-                  {item.label}
-                </MenuItem>
-              ))}
-              {index < array.length - 1 && <Divider sx={{ my: 0.5 }} />}
-            </Box>
-          ))}
-        </Menu>
+        <DropdownMenu
+          state={dropdowns.browse[0]}
+          handlers={dropdowns.browse[1]}
+          items={navigationData.browse}
+          isActivePath={isActivePath}
+          isCategorized={true}
+        />
 
         {/* Community Dropdown Menu */}
-        <Menu
-          anchorEl={communityMenuAnchor}
-          open={Boolean(communityMenuAnchor)}
-          onClose={handleDropdownClose}
-          onClick={handleDropdownClose}
-          onMouseEnter={handleCommunityDropdownEnter}
-          onMouseLeave={handleCommunityDropdownLeave}
-          autoFocus={false}
-          disableAutoFocusItem={true}
-          MenuListProps={{
-            onMouseEnter: handleCommunityDropdownEnter,
-            onMouseLeave: handleCommunityDropdownLeave,
-            disablePadding: false,
-            autoFocus: false,
-            autoFocusItem: false
-          }}
-          transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-          sx={{ 
-            '& .MuiPaper-root': {
-              marginTop: '4px', // Small gap to allow leaving button area
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-            }
-          }}
-        >
-          {communityItems.map((item) => (
-            <MenuItem
-              key={item.href}
-              component={Link}
-              href={item.href}
-              sx={{
-                backgroundColor: isActivePath(item.href) ? 'action.selected' : 'transparent',
-                '&:hover': {
-                  backgroundColor: 'action.hover'
-                }
-              }}
-            >
-              <Box sx={{ mr: 1, display: 'flex' }}>{item.icon}</Box>
-              {item.label}
-            </MenuItem>
-          ))}
-        </Menu>
+        <DropdownMenu
+          state={dropdowns.community[0]}
+          handlers={dropdowns.community[1]}
+          items={navigationData.community}
+          isActivePath={isActivePath}
+          isCategorized={false}
+        />
 
         {/* Submit Dropdown Menu */}
-        <Menu
-          anchorEl={submitMenuAnchor}
-          open={Boolean(submitMenuAnchor)}
-          onClose={handleDropdownClose}
-          onClick={handleDropdownClose}
-          onMouseEnter={handleSubmitDropdownEnter}
-          onMouseLeave={handleSubmitDropdownLeave}
-          autoFocus={false}
-          disableAutoFocusItem={true}
-          MenuListProps={{
-            onMouseEnter: handleSubmitDropdownEnter,
-            onMouseLeave: handleSubmitDropdownLeave,
-            disablePadding: false,
-            autoFocus: false,
-            autoFocusItem: false
-          }}
-          transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-          sx={{ 
-            '& .MuiPaper-root': {
-              marginTop: '4px', // Small gap to allow leaving button area
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-            }
-          }}
-        >
-          {submitItems.map((item) => (
-            <MenuItem
-              key={item.href}
-              component={Link}
-              href={item.href}
-              sx={{
-                backgroundColor: isActivePath(item.href) ? 'action.selected' : 'transparent',
-                '&:hover': {
-                  backgroundColor: 'action.hover'
-                }
-              }}
-            >
-              <Box sx={{ mr: 1, display: 'flex' }}>{item.icon}</Box>
-              {item.label}
-            </MenuItem>
-          ))}
-        </Menu>
+        <DropdownMenu
+          state={dropdowns.submit[0]}
+          handlers={dropdowns.submit[1]}
+          items={navigationData.submit}
+          isActivePath={isActivePath}
+          isCategorized={false}
+        />
 
         {/* Profile Menu */}
         <Menu
@@ -1153,24 +754,48 @@ export const Navigation: React.FC = () => {
           </Box>
           <Divider />
 
+          {/* User Section - Moved to top */}
+          {user ? [
+            <MenuItem key="profile" component={Link} href="/profile">
+              <User size={16} style={{ marginRight: 8 }} />
+              Profile
+            </MenuItem>,
+            <MenuItem key="donate" component={Link} href="/about">
+              <Heart size={16} style={{ marginRight: 8 }} />
+              Donate
+            </MenuItem>,
+            ...(user.role === 'admin' || user.role === 'moderator' ? [
+              <MenuItem key="admin" component={Link} href="/admin">
+                <Crown size={16} style={{ marginRight: 8 }} />
+                Admin
+              </MenuItem>
+            ] : []),
+            <Divider key="user-divider" />
+          ] : [
+            <MenuItem key="login" component={Link} href="/login">
+              Login
+            </MenuItem>,
+            <Divider key="login-divider" />
+          ]}
+
           {/* Browse Section */}
-          {Object.entries(browseItems).map(([category, items]) => (
-            <Box key={category}>
-              <MenuItem disabled sx={{ 
-                fontWeight: 'bold', 
-                opacity: '1 !important', 
-                color: `${getCategoryColor(category)} !important`,
+          {navigationData.browse.map((category) => (
+            <Box key={category.name}>
+              <MenuItem disabled sx={{
+                fontWeight: 'bold',
+                opacity: '1 !important',
+                color: `${category.color} !important`,
                 fontSize: '0.9rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 '&.Mui-disabled': {
-                  color: `${getCategoryColor(category)} !important`,
+                  color: `${category.color} !important`,
                   opacity: '1 !important'
                 }
               }}>
-                {category}
+                {category.name}
               </MenuItem>
-              {items.map((item) => (
+              {category.items.map((item) => (
                 <MenuItem
                   key={item.href}
                   component={Link}
@@ -1204,7 +829,7 @@ export const Navigation: React.FC = () => {
           }}>
             Community
           </MenuItem>
-          {communityItems.map((item) => (
+          {navigationData.community.map((item) => (
             <MenuItem
               key={item.href}
               component={Link}
@@ -1236,7 +861,7 @@ export const Navigation: React.FC = () => {
           }}>
             Submit
           </MenuItem>
-          {submitItems.map((item) => (
+          {navigationData.submit.map((item) => (
             <MenuItem
               key={item.href}
               component={Link}
@@ -1251,34 +876,15 @@ export const Navigation: React.FC = () => {
             </MenuItem>
           ))}
 
-          <Divider />
-
-          {/* User Section */}
-          {user ? (
-            [
-              <MenuItem key="profile" component={Link} href="/profile">
-                <User size={16} style={{ marginRight: 8 }} />
-                Profile
-              </MenuItem>,
-              <MenuItem key="donate" component={Link} href="/about">
-                <Heart size={16} style={{ marginRight: 8 }} />
-                Donate
-              </MenuItem>,
-              (user.role === 'admin' || user.role === 'moderator') && (
-                <MenuItem key="admin" component={Link} href="/admin">
-                  <Crown size={16} style={{ marginRight: 8 }} />
-                  Admin
-                </MenuItem>
-              ),
-              <MenuItem key="logout" onClick={handleLogout}>
+          {/* Logout at very bottom */}
+          {user && (
+            <>
+              <Divider />
+              <MenuItem onClick={handleLogout}>
                 <LogOut size={16} style={{ marginRight: 8 }} />
                 Logout
               </MenuItem>
-            ]
-          ) : (
-            <MenuItem component={Link} href="/login">
-              Login
-            </MenuItem>
+            </>
           )}
         </Menu>
       </Toolbar>

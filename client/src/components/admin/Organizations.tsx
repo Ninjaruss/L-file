@@ -11,7 +11,7 @@ import {
 } from 'react-admin'
 import { Typography } from '@mui/material'
 
-export const FactionList = () => (
+export const OrganizationList = () => (
   <List>
     <Datagrid rowClick="edit">
       <TextField source="id" />
@@ -21,7 +21,7 @@ export const FactionList = () => (
   </List>
 )
 
-export const FactionEdit = () => (
+export const OrganizationEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="name" required />
@@ -35,7 +35,7 @@ export const FactionEdit = () => (
   </Edit>
 )
 
-export const FactionCreate = () => (
+export const OrganizationCreate = () => (
   <Create>
     <SimpleForm>
       <TextInput source="name" required />

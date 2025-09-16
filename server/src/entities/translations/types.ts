@@ -4,7 +4,7 @@ import {
   CharacterTranslation,
   EventTranslation,
   ArcTranslation,
-  FactionTranslation,
+  OrganizationTranslation,
   TagTranslation,
   GambleTranslation,
 } from './index';
@@ -17,7 +17,7 @@ export const TRANSLATABLE_ENTITY_TYPES = [
   'character',
   'event',
   'arc',
-  'faction',
+  'organization',
   'tag',
   'gamble',
 ] as const;
@@ -30,7 +30,7 @@ export type TranslationEntity =
   | CharacterTranslation
   | EventTranslation
   | ArcTranslation
-  | FactionTranslation
+  | OrganizationTranslation
   | TagTranslation
   | GambleTranslation;
 

@@ -1,16 +1,16 @@
 import { DataSource } from 'typeorm';
-import { Faction } from '../../entities/faction.entity';
+import { Organization } from '../../entities/organization.entity';
 import { Character } from '../../entities/character.entity';
 import { Seeder } from './seeder.interface';
 
-export class FactionSeeder implements Seeder {
+export class OrganizationSeeder implements Seeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
-    const factionRepository = this.dataSource.getRepository(Faction);
+    const organizationRepository = this.dataSource.getRepository(Organization);
     const characterRepository = this.dataSource.getRepository(Character);
 
-    // Get characters for faction associations
+    // Get characters for organization associations
     const baku = await characterRepository.findOne({
       where: { name: 'Baku Madarame' },
     });
@@ -19,7 +19,7 @@ export class FactionSeeder implements Seeder {
       where: { name: 'Marco Reiji' },
     });
 
-    const factions = [
+    const organizations = [
       {
         name: 'Kakerou',
         description:
@@ -52,13 +52,13 @@ export class FactionSeeder implements Seeder {
       },
     ];
 
-    for (const factionData of factions) {
-      const existingFaction = await factionRepository.findOne({
-        where: { name: factionData.name },
+    for (const organizationData of organizations) {
+      const existingOrganization = await organizationRepository.findOne({
+        where: { name: organizationData.name },
       });
 
-      if (!existingFaction) {
-        await factionRepository.save(factionData);
+      if (!existingOrganization) {
+        await organizationRepository.save(organizationData);
       }
     }
   }

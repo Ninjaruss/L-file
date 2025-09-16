@@ -53,7 +53,7 @@ export class ArcSeeder implements Seeder {
         name: 'High Stakes Tournament Arc',
         order: 5,
         description:
-          'A major tournament with life-or-death consequences. Multiple factions compete, and the stakes reach unprecedented levels.',
+          'A major tournament with life-or-death consequences. Multiple organizations compete, and the stakes reach unprecedented levels.',
         startChapter: 86,
         endChapter: 120,
       },

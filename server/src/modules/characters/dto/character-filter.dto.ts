@@ -12,13 +12,13 @@ export class CharacterFilterDto extends PaginationDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by faction IDs',
+    description: 'Filter by organization IDs',
     type: [Number],
   })
   @IsOptional()
   @IsArray()
   @Type(() => Number)
-  factionIds?: number[];
+  organizationIds?: number[];
 
   @ApiPropertyOptional({
     description: 'Filter by latest chapter read to hide spoilers',

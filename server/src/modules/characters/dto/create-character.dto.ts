@@ -53,7 +53,7 @@ export class CreateCharacterDto {
   firstAppearanceChapter?: number;
 
   @ApiPropertyOptional({
-    description: 'IDs of factions the character belongs to',
+    description: 'IDs of organizations the character belongs to',
     type: [Number],
     example: [1, 3],
   })
@@ -61,5 +61,5 @@ export class CreateCharacterDto {
   @IsNumber({}, { each: true })
   @IsOptional()
   @ArrayMaxSize(10)
-  factionIds?: number[];
+  organizationIds?: number[];
 }

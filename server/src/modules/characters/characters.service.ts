@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from '../../entities/character.entity';
 import { Gamble } from '../../entities/gamble.entity';
-import { Faction } from '../../entities/faction.entity';
+import { Organization } from '../../entities/organization.entity';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
@@ -21,7 +21,7 @@ export class CharactersService {
   constructor(
     @InjectRepository(Character) private repo: Repository<Character>,
     @InjectRepository(Gamble) private gamblesRepository: Repository<Gamble>,
-    @InjectRepository(Faction) private factionRepository: Repository<Faction>,
+    @InjectRepository(Organization) private organizationRepository: Repository<Organization>,
     private readonly pageViewsService: PageViewsService,
     private readonly mediaService: MediaService,
   ) {}
@@ -33,7 +33,7 @@ export class CharactersService {
     name?: string;
     arc?: string;
     arcId?: number;
-    faction?: string;
+    organization?: string;
     description?: string;
     page?: number;
     limit?: number;
@@ -44,7 +44,7 @@ export class CharactersService {
       name,
       arc,
       arcId,
-      faction,
+      organization,
       description,
       page = 1,
       limit = 20,
@@ -54,7 +54,7 @@ export class CharactersService {
 
     const qb = this.repo
       .createQueryBuilder('character')
-      .leftJoinAndSelect('character.factions', 'factions');
+      .leftJoinAndSelect('character.organizations', 'organizations');
 
     if (name) {
       qb.andWhere(
@@ -75,9 +75,9 @@ export class CharactersService {
         .andWhere('LOWER(arc.name) LIKE LOWER(:arc)', { arc: `%${arc}%` });
     }
 
-    if (faction) {
-      qb.andWhere('LOWER(factions.name) LIKE LOWER(:faction)', {
-        faction: `%${faction}%`,
+    if (organization) {
+      qb.andWhere('LOWER(organizations.name) LIKE LOWER(:organization)', {
+        organization: `%${organization}%`,
       });
     }
 
@@ -112,7 +112,7 @@ export class CharactersService {
   async findOne(id: number): Promise<Character> {
     const character = await this.repo.findOne({
       where: { id },
-      relations: ['factions'],
+      relations: ['organizations'],
     });
 
     if (!character) {
@@ -122,18 +122,18 @@ export class CharactersService {
   }
 
   async create(createCharacterDto: CreateCharacterDto): Promise<Character> {
-    const { factionIds, ...characterData } = createCharacterDto;
+    const { organizationIds, ...characterData } = createCharacterDto;
 
     // Create the character first
     const character = this.repo.create(characterData);
 
-    // Handle faction relations if provided
-    if (factionIds && factionIds.length > 0) {
-      const factions = await this.factionRepository.findByIds(factionIds);
-      if (factions.length !== factionIds.length) {
-        throw new BadRequestException('One or more faction IDs are invalid');
+    // Handle organization relations if provided
+    if (organizationIds && organizationIds.length > 0) {
+      const organizations = await this.organizationRepository.findByIds(organizationIds);
+      if (organizations.length !== organizationIds.length) {
+        throw new BadRequestException('One or more organization IDs are invalid');
       }
-      character.factions = factions;
+      character.organizations = organizations;
     }
 
     return this.repo.save(character);
@@ -145,29 +145,29 @@ export class CharactersService {
   ): Promise<Character> {
     const character = await this.repo.findOne({
       where: { id },
-      relations: ['factions'],
+      relations: ['organizations'],
     });
 
     if (!character) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
 
-    const { factionIds, ...characterData } = updateCharacterDto;
+    const { organizationIds, ...characterData } = updateCharacterDto;
 
     // Update basic character data
     Object.assign(character, characterData);
 
-    // Handle faction relations if provided
-    if (factionIds !== undefined) {
-      if (factionIds.length > 0) {
-        const factions = await this.factionRepository.findByIds(factionIds);
-        if (factions.length !== factionIds.length) {
-          throw new BadRequestException('One or more faction IDs are invalid');
+    // Handle organization relations if provided
+    if (organizationIds !== undefined) {
+      if (organizationIds.length > 0) {
+        const organizations = await this.organizationRepository.findByIds(organizationIds);
+        if (organizations.length !== organizationIds.length) {
+          throw new BadRequestException('One or more organization IDs are invalid');
         }
-        character.factions = factions;
+        character.organizations = organizations;
       } else {
-        // Clear factions if empty array provided
-        character.factions = [];
+        // Clear organizations if empty array provided
+        character.organizations = [];
       }
     }
 

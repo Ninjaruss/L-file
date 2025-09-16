@@ -7,7 +7,7 @@ import { ArcSeeder } from './arc.seeder';
 import { VolumeSeeder } from './volume.seeder';
 import { QuoteSeeder } from './quote.seeder';
 import { EventSeeder } from './event.seeder';
-import { FactionSeeder } from './faction.seeder';
+import { OrganizationSeeder } from './organization.seeder';
 import { TagSeeder } from './tag.seeder';
 import { MediaSeeder } from './media.seeder';
 import { GambleSeeder } from './gamble.seeder';
@@ -38,7 +38,7 @@ export class MainSeeder {
 
       // Characters and content
       new CharacterSeeder(this.dataSource), // Character profiles
-      new FactionSeeder(this.dataSource), // Organizations and groups
+      new OrganizationSeeder(this.dataSource), // Organizations and groups
       new TagSeeder(this.dataSource), // Content categorization tags
 
       // Interactive content

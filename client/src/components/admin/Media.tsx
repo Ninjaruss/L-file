@@ -272,7 +272,7 @@ const EntityInfoField = () => {
       case 'arc': return { bg: 'rgba(255, 152, 0, 0.2)', color: '#ff9800' }
       case 'event': return { bg: 'rgba(156, 39, 176, 0.2)', color: '#9c27b0' }
       case 'gamble': return { bg: 'rgba(244, 67, 54, 0.2)', color: '#f44336' }
-      case 'faction': return { bg: 'rgba(63, 81, 181, 0.2)', color: '#3f51b5' }
+      case 'organization': return { bg: 'rgba(63, 81, 181, 0.2)', color: '#3f51b5' }
       default: return { bg: 'rgba(158, 158, 158, 0.2)', color: '#9e9e9e' }
     }
   }
@@ -419,27 +419,27 @@ const MediaFilterToolbar = () => {
     arcs: any[]
     events: any[]
     gambles: any[]
-    factions: any[]
-  }>({ characters: [], arcs: [], events: [], gambles: [], factions: [] })
+    organizations: any[]
+  }>({ characters: [], arcs: [], events: [], gambles: [], organizations: [] })
   
   const [entities, setEntities] = useState<{
     characters: any[]
     arcs: any[]
     events: any[]
     gambles: any[]
-    factions: any[]
-  }>({ characters: [], arcs: [], events: [], gambles: [], factions: [] })
+    organizations: any[]
+  }>({ characters: [], arcs: [], events: [], gambles: [], organizations: [] })
 
   // Load entities on mount
   useEffect(() => {
     const loadEntities = async () => {
       try {
-        const [charactersRes, arcsRes, eventsRes, gamblesRes, factionsRes] = await Promise.all([
+        const [charactersRes, arcsRes, eventsRes, gamblesRes, organizationsRes] = await Promise.all([
           api.getCharacters({ limit: 100 }),
           api.getArcs({ limit: 100 }),
           api.getEvents({ limit: 100 }),
           api.getGambles({ limit: 100 }),
-          api.getFactions({ limit: 100 })
+          api.getOrganizations({ limit: 100 })
         ])
         
         const loadedEntities = {
@@ -447,7 +447,7 @@ const MediaFilterToolbar = () => {
           arcs: arcsRes.data || [],
           events: eventsRes.data || [],
           gambles: gamblesRes.data || [],
-          factions: factionsRes.data || []
+          organizations: organizationsRes.data || []
         }
         
         setEntities(loadedEntities)
@@ -458,13 +458,13 @@ const MediaFilterToolbar = () => {
           arcs: any[]
           events: any[]
           gambles: any[]
-          factions: any[]
+          organizations: any[]
         } = {
           characters: [],
           arcs: [],
           events: [],
           gambles: [],
-          factions: []
+          organizations: []
         }
         
         if (filterValues?.characterIds) {
@@ -487,9 +487,9 @@ const MediaFilterToolbar = () => {
           newSelectedEntities.gambles = loadedEntities.gambles.filter(g => gambleIds.includes(g.id))
         }
         
-        if (filterValues?.factionIds) {
-          const factionIds = filterValues.factionIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.factions = loadedEntities.factions.filter(f => factionIds.includes(f.id))
+        if (filterValues?.organizationIds) {
+          const organizationIds = filterValues.organizationIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.organizations = loadedEntities.organizations.filter(f => organizationIds.includes(f.id))
         }
         
         setSelectedEntities(newSelectedEntities)
@@ -499,7 +499,7 @@ const MediaFilterToolbar = () => {
     }
     
     loadEntities()
-  }, [filterValues?.characterIds, filterValues?.arcIds, filterValues?.eventIds, filterValues?.gambleIds, filterValues?.factionIds])
+  }, [filterValues?.characterIds, filterValues?.arcIds, filterValues?.eventIds, filterValues?.gambleIds, filterValues?.organizationIds])
 
   const statusFilters = [
     { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
@@ -523,7 +523,7 @@ const MediaFilterToolbar = () => {
     delete newFilters.arcIds
     delete newFilters.eventIds
     delete newFilters.gambleIds
-    delete newFilters.factionIds
+    delete newFilters.organizationIds
     
     // Add selected entity filters
     if (selectedEntities.characters.length > 0) {
@@ -538,21 +538,21 @@ const MediaFilterToolbar = () => {
     if (selectedEntities.gambles.length > 0) {
       newFilters.gambleIds = selectedEntities.gambles.map(g => g.id).join(',')
     }
-    if (selectedEntities.factions.length > 0) {
-      newFilters.factionIds = selectedEntities.factions.map(f => f.id).join(',')
+    if (selectedEntities.organizations.length > 0) {
+      newFilters.organizationIds = selectedEntities.organizations.map(f => f.id).join(',')
     }
     
     setFilters(newFilters, filterValues)
   }
 
   const clearEntityFilters = () => {
-    setSelectedEntities({ characters: [], arcs: [], events: [], gambles: [], factions: [] })
+    setSelectedEntities({ characters: [], arcs: [], events: [], gambles: [], organizations: [] })
     const newFilters = { ...filterValues }
     delete newFilters.characterIds
     delete newFilters.arcIds
     delete newFilters.eventIds
     delete newFilters.gambleIds
-    delete newFilters.factionIds
+    delete newFilters.organizationIds
     setFilters(newFilters, filterValues)
   }
 
@@ -569,7 +569,7 @@ const MediaFilterToolbar = () => {
     gambles: entities.gambles.filter(g => 
       g.name.toLowerCase().includes(entitySearch.toLowerCase())
     ),
-    factions: entities.factions.filter(f => 
+    organizations: entities.organizations.filter(f => 
       f.name.toLowerCase().includes(entitySearch.toLowerCase())
     )
   }
@@ -579,7 +579,7 @@ const MediaFilterToolbar = () => {
                           selectedEntities.arcs.length > 0 || 
                           selectedEntities.events.length > 0 ||
                           selectedEntities.gambles.length > 0 ||
-                          selectedEntities.factions.length > 0
+                          selectedEntities.organizations.length > 0
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFilters = { ...filterValues, search: e.target.value || undefined }
@@ -696,7 +696,7 @@ const MediaFilterToolbar = () => {
           selectedEntities.arcs.length > 0 || 
           selectedEntities.events.length > 0 || 
           selectedEntities.gambles.length > 0 || 
-          selectedEntities.factions.length > 0) && (
+          selectedEntities.organizations.length > 0) && (
           <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(124, 58, 237, 0.05)', borderRadius: 1, border: '1px solid rgba(124, 58, 237, 0.2)' }}>
             <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
               🎯 Active Filters:
@@ -774,15 +774,15 @@ const MediaFilterToolbar = () => {
                   }}
                 />
               ))}
-              {selectedEntities.factions.map((faction) => (
+              {selectedEntities.organizations.map((organization) => (
                 <Chip
-                  key={`faction-${faction.id}`}
-                  label={`⚔️ ${faction.name}`}
+                  key={`organization-${organization.id}`}
+                  label={`⚔️ ${organization.name}`}
                   size="small"
                   onDelete={() => {
                     setSelectedEntities(prev => ({
                       ...prev,
-                      factions: prev.factions.filter(f => f.id !== faction.id)
+                      organizations: prev.organizations.filter(f => f.id !== organization.id)
                     }))
                   }}
                   sx={{ 
@@ -1002,10 +1002,10 @@ const MediaFilterToolbar = () => {
             </Box>
           </Grid>
 
-          {/* Factions */}
+          {/* Organizations */}
           <Grid item xs={12} md={2.4}>
             <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              🏛️ Factions ({selectedEntities.factions.length})
+              🏛️ Organizations ({selectedEntities.organizations.length})
             </Typography>
             <Box sx={{ 
               maxHeight: 150, 
@@ -1015,37 +1015,37 @@ const MediaFilterToolbar = () => {
               p: 1,
               backgroundColor: 'rgba(124, 58, 237, 0.02)'
             }}>
-              {filteredEntities.factions.slice(0, 10).map((faction) => (
-                <Box key={faction.id} sx={{ 
+              {filteredEntities.organizations.slice(0, 10).map((organization) => (
+                <Box key={organization.id} sx={{ 
                   display: 'flex', 
                   alignItems: 'center', 
                   mb: 0.5,
                   cursor: 'pointer',
                   p: 0.5,
                   borderRadius: 0.5,
-                  backgroundColor: selectedEntities.factions.find(f => f.id === faction.id) 
+                  backgroundColor: selectedEntities.organizations.find(f => f.id === organization.id) 
                     ? 'rgba(124, 58, 237, 0.1)' 
                     : 'transparent',
                   '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
                 }}
                 onClick={() => {
-                  const isSelected = selectedEntities.factions.find(f => f.id === faction.id)
+                  const isSelected = selectedEntities.organizations.find(f => f.id === organization.id)
                   if (isSelected) {
                     setSelectedEntities(prev => ({
                       ...prev,
-                      factions: prev.factions.filter(f => f.id !== faction.id)
+                      organizations: prev.organizations.filter(f => f.id !== organization.id)
                     }))
                   } else {
                     setSelectedEntities(prev => ({
                       ...prev,
-                      factions: [...prev.factions, faction]
+                      organizations: [...prev.organizations, organization]
                     }))
                   }
                 }}>
                   <Chip
                     size="small"
-                    label={faction.name}
-                    variant={selectedEntities.factions.find(f => f.id === faction.id) ? 'filled' : 'outlined'}
+                    label={organization.name}
+                    variant={selectedEntities.organizations.find(f => f.id === organization.id) ? 'filled' : 'outlined'}
                     sx={{ fontSize: '0.7rem' }}
                   />
                 </Box>
@@ -1224,8 +1224,8 @@ const EntityNameDisplay = () => {
           case 'gamble':
             response = await api.getGambles({ limit: 100 })
             break
-          case 'faction':
-            response = await api.getFactions({ limit: 100 })
+          case 'organization':
+            response = await api.getOrganizations({ limit: 100 })
             break
           case 'user':
             response = await api.getPublicUsers({ limit: 100 })
@@ -2191,7 +2191,7 @@ const EntitySelector = ({ entities, loadingEntities, loadEntities, getEntityChoi
             { id: 'arc', name: 'Arc' },
             { id: 'event', name: 'Event' },
             { id: 'gamble', name: 'Gamble' },
-            { id: 'faction', name: 'Faction' },
+            { id: 'organization', name: 'Organization' },
             { id: 'user', name: 'User' },
           ]}
           fullWidth
@@ -2310,9 +2310,9 @@ const DynamicEntitySelector = () => {
     )
   }
 
-  if (ownerType === 'faction') {
+  if (ownerType === 'organization') {
     return (
-      <ReferenceInput source="ownerId" reference="factions" label="Faction">
+      <ReferenceInput source="ownerId" reference="organizations" label="Organization">
         <AutocompleteInput 
           optionText="name"
           fullWidth
@@ -2490,7 +2490,7 @@ export const MediaEdit = () => {
                   { id: 'arc', name: 'Arc' },
                   { id: 'event', name: 'Event' },
                   { id: 'gamble', name: 'Gamble' },
-                  { id: 'faction', name: 'Faction' },
+                  { id: 'organization', name: 'Organization' },
                   { id: 'user', name: 'User' },
                 ]}
                 fullWidth
@@ -2610,7 +2610,7 @@ export const MediaCreate = () => (
           { id: 'arc', name: 'Arc' },
           { id: 'event', name: 'Event' },
           { id: 'gamble', name: 'Gamble' },
-          { id: 'faction', name: 'Faction' },
+          { id: 'organization', name: 'Organization' },
           { id: 'user', name: 'User' },
         ]}
       />

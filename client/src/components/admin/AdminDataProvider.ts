@@ -8,7 +8,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   // Common relationship fields to remove (these are populated by the server)
   const relationshipFields = [
     'user', 'author', 'character', 'characters', 'chapter', 'chapters', 'arc', 'arcs',
-    'gamble', 'gambles', 'event', 'events', 'faction', 'factions', 'tag', 'tags',
+    'gamble', 'gambles', 'event', 'events', 'organization', 'organizations', 'tag', 'tags',
     'quote', 'quotes', 'volume', 'volumes', 'submittedBy', 'profileImage', 'likes',
     'users', 'chapters', 'volumes', 'teams', 'rounds', 'observers', 'members',
     'winner', 'media', 'guides'
@@ -288,7 +288,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     delete mediaCleaned.arc
     delete mediaCleaned.event
     delete mediaCleaned.gamble
-    delete mediaCleaned.faction
+    delete mediaCleaned.organization
     delete mediaCleaned.user
     
     // Remove legacy relationship fields to prevent conflicts
@@ -296,7 +296,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     delete mediaCleaned.arcId
     delete mediaCleaned.eventId
     delete mediaCleaned.gambleId
-    delete mediaCleaned.factionId
+    delete mediaCleaned.organizationId
     delete mediaCleaned.userId
     
     return mediaCleaned
@@ -305,7 +305,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   if (resource === 'characters') {
     // Keep only the fields that are allowed in the CreateCharacterDto/UpdateCharacterDto
     const allowedFields = [
-      'name', 'description', 'firstAppearanceChapter', 'alternateNames', 'factionIds'
+      'name', 'description', 'firstAppearanceChapter', 'alternateNames', 'organizationIds'
     ]
     
     const characterCleaned: Record<string, unknown> = {}
@@ -315,10 +315,10 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
       }
     })
     
-    // Handle factionIds - ReferenceArrayInput might set this as objects or IDs
-    if (characterCleaned.factionIds && Array.isArray(characterCleaned.factionIds)) {
-      console.log('Processing factionIds for character:', characterCleaned.factionIds)
-      characterCleaned.factionIds = characterCleaned.factionIds.map((f: unknown) => {
+    // Handle organizationIds (organization IDs) - ReferenceArrayInput might set this as objects or IDs
+    if (characterCleaned.organizationIds && Array.isArray(characterCleaned.organizationIds)) {
+      console.log('Processing organization IDs for character:', characterCleaned.organizationIds)
+      characterCleaned.organizationIds = characterCleaned.organizationIds.map((f: unknown) => {
         // If it's already a number, keep it
         if (typeof f === 'number') return f
         // If it's a string that can be parsed as number, parse it
@@ -328,25 +328,25 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
           const id = (f as Record<string, unknown>).id
           return typeof id === 'number' ? id : Number(id)
         }
-        console.warn('Unexpected factionId format:', f)
+        console.warn('Unexpected organization ID format:', f)
         return f
       }).filter(id => {
         const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-        if (!isValid) console.warn('Filtered out invalid factionId:', id)
+        if (!isValid) console.warn('Filtered out invalid organization ID:', id)
         return isValid
       })
-      console.log('Processed factionIds for character:', characterCleaned.factionIds)
-    } else if (data.factions && Array.isArray(data.factions)) {
-      // If factionIds doesn't exist but factions does, extract IDs from factions
-      console.log('Extracting factionIds from factions for character:', data.factions)
-      characterCleaned.factionIds = data.factions.map((f: any) => 
+      console.log('Processed organization IDs for character:', characterCleaned.organizationIds)
+    } else if (data.organizations && Array.isArray(data.organizations)) {
+      // If organizationIds doesn't exist but organizations does, extract IDs from organizations
+      console.log('Extracting organization IDs from organizations for character:', data.organizations)
+      characterCleaned.organizationIds = data.organizations.map((f: any) => 
         typeof f === 'object' && f !== null ? f.id : f
       ).filter((id: any) => {
         const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-        if (!isValid) console.warn('Filtered out invalid extracted factionId:', id)
+        if (!isValid) console.warn('Filtered out invalid extracted organization ID:', id)
         return isValid
       })
-      console.log('Extracted factionIds for character:', characterCleaned.factionIds)
+      console.log('Extracted organization IDs for character:', characterCleaned.organizationIds)
     }
     
     return characterCleaned
@@ -428,7 +428,7 @@ export const AdminDataProvider: DataProvider = {
     if (resource === 'guides') {
       query.sortBy = field
       query.sortOrder = order
-    } else if (['characters', 'arcs', 'events', 'gambles', 'factions', 'tags', 'quotes', 'chapters', 'volumes', 'media'].includes(resource)) {
+    } else if (['characters', 'arcs', 'events', 'gambles', 'organizations', 'tags', 'quotes', 'chapters', 'volumes', 'media'].includes(resource)) {
       query.sort = field
       query.order = order
     }
@@ -611,14 +611,14 @@ export const AdminDataProvider: DataProvider = {
       }
       
       if (resource === 'characters') {
-        // Transform factions array to factionIds for the form
+        // Transform organizations array to organizationIds for the form
         const itemData = item as any
-        if (itemData.factions && Array.isArray(itemData.factions)) {
-          console.log('Transforming factions to factionIds for character:', itemData.id, itemData.factions)
-          itemData.factionIds = itemData.factions.map((faction: any) => 
-            typeof faction === 'object' && faction !== null ? faction.id : faction
+        if (itemData.organizations && Array.isArray(itemData.organizations)) {
+          console.log('Transforming organizations to organizationIds for character:', itemData.id, itemData.organizations)
+          itemData.organizationIds = itemData.organizations.map((organization: any) => 
+            typeof organization === 'object' && organization !== null ? organization.id : organization
           ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
-          console.log('Generated factionIds:', itemData.factionIds)
+          console.log('Generated organizationIds:', itemData.organizationIds)
         }
       }
       
@@ -692,7 +692,7 @@ export const AdminDataProvider: DataProvider = {
     if (resource === 'guides') {
       query.sortBy = field
       query.sortOrder = order
-    } else if (['characters', 'arcs', 'events', 'gambles', 'factions', 'tags', 'quotes', 'chapters', 'volumes'].includes(resource)) {
+    } else if (['characters', 'arcs', 'events', 'gambles', 'organizations', 'tags', 'quotes', 'chapters', 'volumes'].includes(resource)) {
       query.sort = field
       query.order = order
     }

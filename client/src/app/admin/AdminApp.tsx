@@ -19,7 +19,7 @@ import { MediaList, MediaEdit, MediaShow, MediaCreate } from '../../components/a
 import { UserList, UserEdit, UserShow } from '../../components/admin/Users'
 import { QuoteList, QuoteEdit, QuoteCreate, QuoteShow } from '../../components/admin/Quotes'
 import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
-import { FactionList, FactionEdit, FactionCreate } from '../../components/admin/Factions'
+import { OrganizationList, OrganizationEdit, OrganizationCreate } from '../../components/admin/Organizations'
 import { BadgeList, BadgeEdit, BadgeCreate, BadgeShow } from '../../components/admin/Badges'
 
 // Icons
@@ -118,10 +118,10 @@ export default function AdminApp() {
         icon={TagIcon}
       />
       <Resource
-        name="factions"
-        list={FactionList}
-        edit={FactionEdit}
-        create={FactionCreate}
+        name="organizations"
+        list={OrganizationList}
+        edit={OrganizationEdit}
+        create={OrganizationCreate}
         icon={ShieldIcon}
       />
       <Resource

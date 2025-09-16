@@ -8,13 +8,13 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class CreateFactionDto {
+export class CreateOrganizationDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(100)
   @ApiProperty({
-    description: 'Name of the faction',
+    description: 'Name of the organization',
     example: 'Kakerou',
   })
   name: string;
@@ -23,7 +23,7 @@ export class CreateFactionDto {
   @IsOptional()
   @MaxLength(5000)
   @ApiPropertyOptional({
-    description: 'Description of the faction',
+    description: 'Description of the organization',
     example:
       'The underground gambling organization that governs illegal gambling',
   })

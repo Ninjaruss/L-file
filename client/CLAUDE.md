@@ -48,7 +48,7 @@ client/
 │   │   ├── volumes/           # Volume information
 │   │   ├── chapters/          # Chapter details
 │   │   ├── events/            # Story events
-│   │   ├── factions/          # Character factions
+│   │   ├── organizations/          # Character organizations
 │   │   ├── quotes/            # Character quotes
 │   │   ├── users/             # User profiles
 │   │   ├── auth/              # Authentication pages

@@ -98,7 +98,7 @@ export interface Donation {
   isAnonymous: boolean;
 }
 
-export interface Faction {
+export interface Organization {
   id: number;
   name: string;
   description: string;

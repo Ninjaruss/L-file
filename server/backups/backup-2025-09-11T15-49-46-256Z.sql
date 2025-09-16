@@ -107,16 +107,16 @@ CREATE TYPE public.event_type_enum AS ENUM (
 ALTER TYPE public.event_type_enum OWNER TO ninjaruss;
 
 --
--- Name: faction_translations_language_enum; Type: TYPE; Schema: public; Owner: ninjaruss
+-- Name: organization_translations_language_enum; Type: TYPE; Schema: public; Owner: ninjaruss
 --
 
-CREATE TYPE public.faction_translations_language_enum AS ENUM (
+CREATE TYPE public.organization_translations_language_enum AS ENUM (
     'en',
     'ja'
 );
 
 
-ALTER TYPE public.faction_translations_language_enum OWNER TO ninjaruss;
+ALTER TYPE public.organization_translations_language_enum OWNER TO ninjaruss;
 
 --
 -- Name: gamble_translations_language_enum; Type: TYPE; Schema: public; Owner: ninjaruss
@@ -153,7 +153,7 @@ CREATE TYPE public.media_ownertype_enum AS ENUM (
     'arc',
     'event',
     'gamble',
-    'faction',
+    'organization',
     'user'
 );
 
@@ -573,35 +573,35 @@ ALTER SEQUENCE public.event_translations_id_seq OWNED BY public.event_translatio
 
 
 --
--- Name: faction; Type: TABLE; Schema: public; Owner: ninjaruss
+-- Name: organization; Type: TABLE; Schema: public; Owner: ninjaruss
 --
 
-CREATE TABLE public.faction (
+CREATE TABLE public.organization (
     id integer NOT NULL,
     name character varying NOT NULL,
     description character varying
 );
 
 
-ALTER TABLE public.faction OWNER TO ninjaruss;
+ALTER TABLE public.organization OWNER TO ninjaruss;
 
 --
--- Name: faction_characters_character; Type: TABLE; Schema: public; Owner: ninjaruss
+-- Name: organization_characters_character; Type: TABLE; Schema: public; Owner: ninjaruss
 --
 
-CREATE TABLE public.faction_characters_character (
-    "factionId" integer NOT NULL,
+CREATE TABLE public.organization_characters_character (
+    "organizationId" integer NOT NULL,
     "characterId" integer NOT NULL
 );
 
 
-ALTER TABLE public.faction_characters_character OWNER TO ninjaruss;
+ALTER TABLE public.organization_characters_character OWNER TO ninjaruss;
 
 --
--- Name: faction_id_seq; Type: SEQUENCE; Schema: public; Owner: ninjaruss
+-- Name: organization_id_seq; Type: SEQUENCE; Schema: public; Owner: ninjaruss
 --
 
-CREATE SEQUENCE public.faction_id_seq
+CREATE SEQUENCE public.organization_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -610,37 +610,37 @@ CREATE SEQUENCE public.faction_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.faction_id_seq OWNER TO ninjaruss;
+ALTER TABLE public.organization_id_seq OWNER TO ninjaruss;
 
 --
--- Name: faction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ninjaruss
+-- Name: organization_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ninjaruss
 --
 
-ALTER SEQUENCE public.faction_id_seq OWNED BY public.faction.id;
+ALTER SEQUENCE public.organization_id_seq OWNED BY public.organization.id;
 
 
 --
--- Name: faction_translations; Type: TABLE; Schema: public; Owner: ninjaruss
+-- Name: organization_translations; Type: TABLE; Schema: public; Owner: ninjaruss
 --
 
-CREATE TABLE public.faction_translations (
+CREATE TABLE public.organization_translations (
     id integer NOT NULL,
-    language public.faction_translations_language_enum DEFAULT 'en'::public.faction_translations_language_enum NOT NULL,
+    language public.organization_translations_language_enum DEFAULT 'en'::public.organization_translations_language_enum NOT NULL,
     "createdAt" timestamp without time zone DEFAULT now() NOT NULL,
     "updatedAt" timestamp without time zone DEFAULT now() NOT NULL,
-    faction_id integer NOT NULL,
+    organization_id integer NOT NULL,
     name text NOT NULL,
     description text
 );
 
 
-ALTER TABLE public.faction_translations OWNER TO ninjaruss;
+ALTER TABLE public.organization_translations OWNER TO ninjaruss;
 
 --
--- Name: faction_translations_id_seq; Type: SEQUENCE; Schema: public; Owner: ninjaruss
+-- Name: organization_translations_id_seq; Type: SEQUENCE; Schema: public; Owner: ninjaruss
 --
 
-CREATE SEQUENCE public.faction_translations_id_seq
+CREATE SEQUENCE public.organization_translations_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -649,13 +649,13 @@ CREATE SEQUENCE public.faction_translations_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.faction_translations_id_seq OWNER TO ninjaruss;
+ALTER TABLE public.organization_translations_id_seq OWNER TO ninjaruss;
 
 --
--- Name: faction_translations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ninjaruss
+-- Name: organization_translations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ninjaruss
 --
 
-ALTER SEQUENCE public.faction_translations_id_seq OWNED BY public.faction_translations.id;
+ALTER SEQUENCE public.organization_translations_id_seq OWNED BY public.organization_translations.id;
 
 
 --
@@ -1244,17 +1244,17 @@ ALTER TABLE ONLY public.event_translations ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: faction id; Type: DEFAULT; Schema: public; Owner: ninjaruss
+-- Name: organization id; Type: DEFAULT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction ALTER COLUMN id SET DEFAULT nextval('public.faction_id_seq'::regclass);
+ALTER TABLE ONLY public.organization ALTER COLUMN id SET DEFAULT nextval('public.organization_id_seq'::regclass);
 
 
 --
--- Name: faction_translations id; Type: DEFAULT; Schema: public; Owner: ninjaruss
+-- Name: organization_translations id; Type: DEFAULT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction_translations ALTER COLUMN id SET DEFAULT nextval('public.faction_translations_id_seq'::regclass);
+ALTER TABLE ONLY public.organization_translations ALTER COLUMN id SET DEFAULT nextval('public.organization_translations_id_seq'::regclass);
 
 
 --
@@ -1344,7 +1344,7 @@ COPY public.arc (id, name, "order", description, "startChapter", "endChapter", "
 3	First Tournament Arc	2	Baku participates in his first major tournament, facing skilled opponents and learning the true depths of psychological warfare in gambling. Alliance formations and betrayals shape the narrative.	26	45	\N	\N
 4	Protoporos Arc	3	A complex gambling game involving mathematical strategy and psychological manipulation. This arc showcases the intellectual depth of the story's games.	46	65	\N	\N
 5	Character Development Arc	4	Focus on character backstories and relationships. Key character motivations are revealed, and the bonds between allies are tested and strengthened.	66	85	\N	\N
-6	High Stakes Tournament Arc	5	A major tournament with life-or-death consequences. Multiple factions compete, and the stakes reach unprecedented levels.	86	120	\N	\N
+6	High Stakes Tournament Arc	5	A major tournament with life-or-death consequences. Multiple organizations compete, and the stakes reach unprecedented levels.	86	120	\N	\N
 \.
 
 
@@ -1442,10 +1442,10 @@ COPY public.event_translations (id, language, "createdAt", "updatedAt", event_id
 
 
 --
--- Data for Name: faction; Type: TABLE DATA; Schema: public; Owner: ninjaruss
+-- Data for Name: organization; Type: TABLE DATA; Schema: public; Owner: ninjaruss
 --
 
-COPY public.faction (id, name, description) FROM stdin;
+COPY public.organization (id, name, description) FROM stdin;
 1	Kakerou	A secret organization that oversees high-stakes gambling and illegal activities. Members are bound by strict rules and face severe consequences for betrayal.
 2	IDEAL	A powerful criminal organization that operates various illegal businesses including gambling, smuggling, and information trading.
 3	Clan	A yakuza organization involved in underground gambling and territorial disputes with other criminal groups.
@@ -1455,20 +1455,20 @@ COPY public.faction (id, name, description) FROM stdin;
 
 
 --
--- Data for Name: faction_characters_character; Type: TABLE DATA; Schema: public; Owner: ninjaruss
+-- Data for Name: organization_characters_character; Type: TABLE DATA; Schema: public; Owner: ninjaruss
 --
 
-COPY public.faction_characters_character ("factionId", "characterId") FROM stdin;
+COPY public.organization_characters_character ("organizationId", "characterId") FROM stdin;
 1	1
 1	2
 \.
 
 
 --
--- Data for Name: faction_translations; Type: TABLE DATA; Schema: public; Owner: ninjaruss
+-- Data for Name: organization_translations; Type: TABLE DATA; Schema: public; Owner: ninjaruss
 --
 
-COPY public.faction_translations (id, language, "createdAt", "updatedAt", faction_id, name, description) FROM stdin;
+COPY public.organization_translations (id, language, "createdAt", "updatedAt", organization_id, name, description) FROM stdin;
 \.
 
 
@@ -1759,17 +1759,17 @@ SELECT pg_catalog.setval('public.event_translations_id_seq', 1, false);
 
 
 --
--- Name: faction_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ninjaruss
+-- Name: organization_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ninjaruss
 --
 
-SELECT pg_catalog.setval('public.faction_id_seq', 5, true);
+SELECT pg_catalog.setval('public.organization_id_seq', 5, true);
 
 
 --
--- Name: faction_translations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ninjaruss
+-- Name: organization_translations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ninjaruss
 --
 
-SELECT pg_catalog.setval('public.faction_translations_id_seq', 1, false);
+SELECT pg_catalog.setval('public.organization_translations_id_seq', 1, false);
 
 
 --
@@ -1858,10 +1858,10 @@ ALTER TABLE ONLY public.arc_translations
 
 
 --
--- Name: faction_translations PK_1a9038eb16257ade2c54585a51b; Type: CONSTRAINT; Schema: public; Owner: ninjaruss
+-- Name: organization_translations PK_1a9038eb16257ade2c54585a51b; Type: CONSTRAINT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction_translations
+ALTER TABLE ONLY public.organization_translations
     ADD CONSTRAINT "PK_1a9038eb16257ade2c54585a51b" PRIMARY KEY (id);
 
 
@@ -1922,11 +1922,11 @@ ALTER TABLE ONLY public.guide_gambles
 
 
 --
--- Name: faction_characters_character PK_4129946dd28d5412a3ffee0a35f; Type: CONSTRAINT; Schema: public; Owner: ninjaruss
+-- Name: organization_characters_character PK_4129946dd28d5412a3ffee0a35f; Type: CONSTRAINT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction_characters_character
-    ADD CONSTRAINT "PK_4129946dd28d5412a3ffee0a35f" PRIMARY KEY ("factionId", "characterId");
+ALTER TABLE ONLY public.organization_characters_character
+    ADD CONSTRAINT "PK_4129946dd28d5412a3ffee0a35f" PRIMARY KEY ("organizationId", "characterId");
 
 
 --
@@ -1946,10 +1946,10 @@ ALTER TABLE ONLY public.arc
 
 
 --
--- Name: faction PK_5935637aa4ecd999ac0555ae5a6; Type: CONSTRAINT; Schema: public; Owner: ninjaruss
+-- Name: organization PK_5935637aa4ecd999ac0555ae5a6; Type: CONSTRAINT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction
+ALTER TABLE ONLY public.organization
     ADD CONSTRAINT "PK_5935637aa4ecd999ac0555ae5a6" PRIMARY KEY (id);
 
 
@@ -2291,7 +2291,7 @@ CREATE INDEX "IDX_97c4f69b950df60f24b40906d1" ON public.event USING btree ("arcI
 -- Name: IDX_9ce7587daf696e4a5bcea30270; Type: INDEX; Schema: public; Owner: ninjaruss
 --
 
-CREATE INDEX "IDX_9ce7587daf696e4a5bcea30270" ON public.faction_characters_character USING btree ("factionId");
+CREATE INDEX "IDX_9ce7587daf696e4a5bcea30270" ON public.organization_characters_character USING btree ("organizationId");
 
 
 --
@@ -2424,7 +2424,7 @@ CREATE INDEX "IDX_ed0f2136ba1c01a2a21c3f8c0d" ON public.guide USING btree ("crea
 -- Name: IDX_f10c1e1dce80efd38b959931fb; Type: INDEX; Schema: public; Owner: ninjaruss
 --
 
-CREATE INDEX "IDX_f10c1e1dce80efd38b959931fb" ON public.faction_characters_character USING btree ("characterId");
+CREATE INDEX "IDX_f10c1e1dce80efd38b959931fb" ON public.organization_characters_character USING btree ("characterId");
 
 
 --
@@ -2555,11 +2555,11 @@ ALTER TABLE ONLY public.event
 
 
 --
--- Name: faction_characters_character FK_9ce7587daf696e4a5bcea30270f; Type: FK CONSTRAINT; Schema: public; Owner: ninjaruss
+-- Name: organization_characters_character FK_9ce7587daf696e4a5bcea30270f; Type: FK CONSTRAINT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction_characters_character
-    ADD CONSTRAINT "FK_9ce7587daf696e4a5bcea30270f" FOREIGN KEY ("factionId") REFERENCES public.faction(id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.organization_characters_character
+    ADD CONSTRAINT "FK_9ce7587daf696e4a5bcea30270f" FOREIGN KEY ("organizationId") REFERENCES public.organization(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -2635,11 +2635,11 @@ ALTER TABLE ONLY public.guide
 
 
 --
--- Name: faction_translations FK_c7c363047732db699554634d0a6; Type: FK CONSTRAINT; Schema: public; Owner: ninjaruss
+-- Name: organization_translations FK_c7c363047732db699554634d0a6; Type: FK CONSTRAINT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction_translations
-    ADD CONSTRAINT "FK_c7c363047732db699554634d0a6" FOREIGN KEY (faction_id) REFERENCES public.faction(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.organization_translations
+    ADD CONSTRAINT "FK_c7c363047732db699554634d0a6" FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
@@ -2691,10 +2691,10 @@ ALTER TABLE ONLY public.guide_characters
 
 
 --
--- Name: faction_characters_character FK_f10c1e1dce80efd38b959931fbd; Type: FK CONSTRAINT; Schema: public; Owner: ninjaruss
+-- Name: organization_characters_character FK_f10c1e1dce80efd38b959931fbd; Type: FK CONSTRAINT; Schema: public; Owner: ninjaruss
 --
 
-ALTER TABLE ONLY public.faction_characters_character
+ALTER TABLE ONLY public.organization_characters_character
     ADD CONSTRAINT "FK_f10c1e1dce80efd38b959931fbd" FOREIGN KEY ("characterId") REFERENCES public."character"(id);
 
 

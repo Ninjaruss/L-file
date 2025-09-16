@@ -7,7 +7,7 @@ import {
   CharacterTranslation,
   EventTranslation,
   ArcTranslation,
-  FactionTranslation,
+  OrganizationTranslation,
   TagTranslation,
   GambleTranslation,
 } from '../../entities/translations';
@@ -19,7 +19,7 @@ import {
       CharacterTranslation,
       EventTranslation,
       ArcTranslation,
-      FactionTranslation,
+      OrganizationTranslation,
       TagTranslation,
       GambleTranslation,
     ]),

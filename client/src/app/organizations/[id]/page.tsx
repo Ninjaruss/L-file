@@ -26,7 +26,7 @@ import MediaGallery from '../../../components/MediaGallery'
 import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 
-interface Faction {
+interface Organization {
   id: number
   name: string
   description?: string
@@ -40,9 +40,9 @@ interface Faction {
   }>
 }
 
-export default function FactionDetailPage() {
+export default function OrganizationDetailPage() {
   const theme = useTheme()
-  const [faction, setFaction] = useState<Faction | null>(null)
+  const [organization, setOrganization] = useState<Organization | null>(null)
   const [members, setMembers] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [gambles, setGambles] = useState<any[]>([])
@@ -51,48 +51,53 @@ export default function FactionDetailPage() {
   const params = useParams()
 
   // Track page view
-  const factionId = Array.isArray(params.id) ? params.id[0] : params.id
-  usePageView('faction', factionId || '', !!factionId)
+  const organizationId = Array.isArray(params.id) ? params.id[0] : params.id
+  usePageView('organization', organizationId || '', !!organizationId)
 
   useEffect(() => {
-    const fetchFactionData = async () => {
+    const fetchOrganizationData = async () => {
       try {
         const id = Array.isArray(params.id) ? params.id[0] : params.id
         
         // Validate that ID is a valid number
         if (!id || isNaN(Number(id))) {
-          setError('Invalid faction ID')
+          setError('Invalid organization ID')
           return
         }
         
-        const factionIdNum = Number(id)
+        const organizationIdNum = Number(id)
         
         // Additional safety check for negative or zero IDs
-        if (factionIdNum <= 0) {
-          setError('Invalid faction ID')
+        if (organizationIdNum <= 0) {
+          setError('Invalid organization ID')
           return
         }
         
-        // Fetch faction data
-        const factionData = await api.getFaction(factionIdNum)
-        setFaction(factionData)
+        // Fetch organization data
+        try {
+          const organizationData = await api.getOrganization(organizationIdNum)
+          setOrganization(organizationData)
 
-        // Set characters as members
-        setMembers(factionData.characters || [])
+          // Set characters as members
+          setMembers(organizationData.characters || [])
 
-        // For now, we'll set empty arrays for other related data
-        // In a real implementation, you'd have API endpoints for faction-related data
-        setEvents([])
-        setGambles([])
+          // For now, we'll set empty arrays for other related data
+          // In a real implementation, you'd have API endpoints for organization-related data
+          setEvents([])
+          setGambles([])
+        } catch (error: any) {
+          setError(error.message)
+        } finally {
+          setLoading(false)
+        }
       } catch (error: any) {
         setError(error.message)
-      } finally {
         setLoading(false)
       }
     }
 
     if (params.id) {
-      fetchFactionData()
+      fetchOrganizationData()
     }
   }, [params.id])
 
@@ -106,15 +111,15 @@ export default function FactionDetailPage() {
     )
   }
 
-  if (error || !faction) {
+  if (error || !organization) {
     return (
       <Container maxWidth="lg" sx={{ py: 8 }}>
         <Alert severity="error">
-          {error || 'Faction not found'}
+          {error || 'Organization not found'}
         </Alert>
         <Box sx={{ mt: 3 }}>
-          <Button component={Link} href="/factions" startIcon={<ArrowLeft />}>
-            Back to Factions
+          <Button component={Link} href="/organizations" startIcon={<ArrowLeft />}>
+            Back to Organizations
           </Button>
         </Box>
       </Container>
@@ -130,14 +135,14 @@ export default function FactionDetailPage() {
       >
         <Button
           component={Link}
-          href="/factions"
+          href="/organizations"
           startIcon={<ArrowLeft />}
           sx={{ mb: 3 }}
         >
-          Back to Factions
+          Back to Organizations
         </Button>
 
-        {/* Enhanced Faction Header */}
+        {/* Enhanced Organization Header */}
         <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
           <CardContent sx={{ p: 4 }}>
             <Grid container spacing={4} alignItems="center">
@@ -147,20 +152,20 @@ export default function FactionDetailPage() {
                   position: 'relative'
                 }}>
                   <MediaThumbnail
-                    entityType="faction"
-                    entityId={faction.id}
-                    entityName={faction.name}
+                    entityType="organization"
+                    entityId={organization.id}
+                    entityName={organization.name}
                     allowCycling={true}
                     maxWidth={280}
                     maxHeight={320}
-                    className="faction-thumbnail"
+                    className="organization-thumbnail"
                   />
                 </Box>
               </Grid>
               
               <Grid item xs={12} md={8} lg={9}>
                 <Box sx={{ pl: { md: 2 } }}>
-                  {/* Faction Name with Gradient */}
+                  {/* Organization Name with Gradient */}
                   <Typography 
                     variant="h2" 
                     component="h1" 
@@ -178,7 +183,7 @@ export default function FactionDetailPage() {
                     }}
                   >
                     <Shield size={40} color={theme.palette.secondary.main} />
-                    {faction.name}
+                    {organization.name}
                   </Typography>
                 </Box>
               </Grid>
@@ -188,18 +193,18 @@ export default function FactionDetailPage() {
 
         <Grid container spacing={4}>
           <Grid item xs={12} md={8}>
-            {faction.description && (
+            {organization.description && (
               <Card className="gambling-card">
                 <CardContent>
                   <Typography variant="h5" gutterBottom>
-                    About {faction.name}
+                    About {organization.name}
                   </Typography>
                   <TimelineSpoilerWrapper 
                     chapterNumber={1}
                   >
                     <EnhancedSpoilerMarkdown
-                      content={faction.description}
-                      className="faction-description"
+                      content={organization.description}
+                      className="organization-description"
                       enableEntityEmbeds={true}
                       compactEntityCards={false}
                     />
@@ -221,11 +226,11 @@ export default function FactionDetailPage() {
                       gap: 1
                     }}>
                       <Users size={24} />
-                      Faction Members ({members.length})
+                      Organization Members ({members.length})
                     </Typography>
                     <Button
                       component={Link}
-                      href={`/characters?faction=${faction.name}`}
+                      href={`/characters?organization=${organization.name}`}
                       size="small"
                       variant="outlined"
                       color="primary"
@@ -355,7 +360,7 @@ export default function FactionDetailPage() {
                       No Known Members
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
-                      This faction currently has no associated character members in our database. 
+                      This organization currently has no associated character members in our database. 
                       Member relationships may be added as the story progresses.
                     </Typography>
                   </Box>
@@ -373,7 +378,7 @@ export default function FactionDetailPage() {
                     </Typography>
                     <Button
                       component={Link}
-                      href={`/gambles?faction=${faction.name}`}
+                      href={`/gambles?organization=${organization.name}`}
                       size="small"
                       color="primary"
                     >
@@ -390,7 +395,7 @@ export default function FactionDetailPage() {
                         <Box sx={{ mt: 1 }}>
                           <EnhancedSpoilerMarkdown
                             content={gamble.rules}
-                            className="faction-gamble-rules"
+                            className="organization-gamble-rules"
                             enableEntityEmbeds={true}
                             compactEntityCards={true}
                           />
@@ -417,7 +422,7 @@ export default function FactionDetailPage() {
                     </Typography>
                     <Button
                       component={Link}
-                      href={`/events?faction=${faction.name}`}
+                      href={`/events?organization=${organization.name}`}
                       size="small"
                       color="primary"
                     >
@@ -476,8 +481,8 @@ export default function FactionDetailPage() {
                   Media Gallery
                 </Typography>
                 <MediaGallery
-                  ownerType="faction"
-                  ownerId={faction.id}
+                  ownerType="organization"
+                  ownerId={organization.id}
                   purpose="gallery"
                   showTitle={false}
                   compactMode={false}
@@ -492,15 +497,15 @@ export default function FactionDetailPage() {
             <Card className="gambling-card">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Faction Details
+                  Organization Details
                 </Typography>
                 
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Faction Name
+                    Organization Name
                   </Typography>
                   <Typography variant="body1">
-                    {faction.name}
+                    {organization.name}
                   </Typography>
                 </Box>
 

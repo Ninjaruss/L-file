@@ -69,7 +69,7 @@ This is a monorepo containing:
 The project uses PostgreSQL with TypeORM. Key entities include:
 - Users (with role-based permissions)
 - Characters, Arcs, Volumes, Chapters
-- Gambles, Events, Factions
+- Gambles, Events, Organizations
 - Media, Guides, Quotes
 - Tags and Translations
 

@@ -7,7 +7,7 @@ import {
   CharacterTranslation,
   EventTranslation,
   ArcTranslation,
-  FactionTranslation,
+  OrganizationTranslation,
   TagTranslation,
   GambleTranslation,
 } from '../../entities/translations';
@@ -29,7 +29,7 @@ export class TranslationsService {
     characterRepo: Repository<CharacterTranslation>,
     eventRepo: Repository<EventTranslation>,
     arcRepo: Repository<ArcTranslation>,
-    factionRepo: Repository<FactionTranslation>,
+    organizationRepo: Repository<OrganizationTranslation>,
     tagRepo: Repository<TagTranslation>,
     gambleRepo: Repository<GambleTranslation>,
   ) {
@@ -38,7 +38,7 @@ export class TranslationsService {
       character: characterRepo,
       event: eventRepo,
       arc: arcRepo,
-      faction: factionRepo,
+      organization: organizationRepo,
       tag: tagRepo,
       gamble: gambleRepo,
     } as Record<TranslatableEntityType, Repository<TranslationEntity>>;
@@ -53,8 +53,8 @@ export class TranslationsService {
     eventTranslationRepo: Repository<EventTranslation>,
     @InjectRepository(ArcTranslation)
     arcTranslationRepo: Repository<ArcTranslation>,
-    @InjectRepository(FactionTranslation)
-    factionTranslationRepo: Repository<FactionTranslation>,
+    @InjectRepository(OrganizationTranslation)
+    organizationTranslationRepo: Repository<OrganizationTranslation>,
     @InjectRepository(TagTranslation)
     tagTranslationRepo: Repository<TagTranslation>,
     @InjectRepository(GambleTranslation)
@@ -65,7 +65,7 @@ export class TranslationsService {
       characterTranslationRepo,
       eventTranslationRepo,
       arcTranslationRepo,
-      factionTranslationRepo,
+      organizationTranslationRepo,
       tagTranslationRepo,
       gambleTranslationRepo,
     );

@@ -71,9 +71,9 @@ export default function HomePage() {
     },
     {
       icon: <Shield className="w-8 h-8" />,
-      title: 'Factions',
+      title: 'Organizations',
       description: 'Groups and organizations',
-      href: '/factions',
+      href: '/organizations',
       color: 'secondary'
     }
   ]

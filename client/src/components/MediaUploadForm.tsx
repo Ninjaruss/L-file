@@ -20,7 +20,7 @@ interface MediaUploadFormProps {
   onUpload: (file: File, data: {
     type: 'image' | 'video' | 'audio'
     description?: string
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
     ownerId: number
     chapterNumber?: number
     purpose?: 'gallery' | 'entity_display'
@@ -29,7 +29,7 @@ interface MediaUploadFormProps {
   arcs: Array<{ id: number; name: string }>
   events: Array<{ id: number; title: string }>
   gambles: Array<{ id: number; name: string }>
-  factions: Array<{ id: number; name: string }>
+  organizations: Array<{ id: number; name: string }>
   users: Array<{ id: number; username: string }>
   loading?: boolean
   dataLoading?: boolean
@@ -42,7 +42,7 @@ export default function MediaUploadForm({
   arcs, 
   events,
   gambles,
-  factions,
+  organizations,
   users,
   loading = false, 
   dataLoading = false,
@@ -52,7 +52,7 @@ export default function MediaUploadForm({
   const [formData, setFormData] = useState({
     type: 'image' as 'image' | 'video' | 'audio',
     description: '',
-    ownerType: '' as 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user' | '',
+    ownerType: '' as 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | '',
     ownerId: null as number | null,
     chapterNumber: null as number | null,
     purpose: 'gallery' as 'gallery' | 'entity_display',
@@ -109,10 +109,16 @@ export default function MediaUploadForm({
       throw new Error('Please select an owner type and owner ID')
     }
 
+    // Convert legacy organization to organization for backward compatibility
+    let finalOwnerType = formData.ownerType
+    if (finalOwnerType === 'organization' as any) {
+      finalOwnerType = 'organization'
+    }
+
     await onUpload(selectedFile, {
       type: formData.type,
       description: formData.description || undefined,
-      ownerType: formData.ownerType,
+      ownerType: finalOwnerType,
       ownerId: formData.ownerId,
       chapterNumber: formData.chapterNumber || undefined,
       purpose: formData.purpose || 'gallery', // Default to gallery
@@ -247,7 +253,7 @@ export default function MediaUploadForm({
             <MenuItem value="arc">Arc</MenuItem>
             <MenuItem value="event">Event</MenuItem>
             <MenuItem value="gamble">Gamble</MenuItem>
-            <MenuItem value="faction">Faction</MenuItem>
+            <MenuItem value="organization">Organization</MenuItem>
             <MenuItem value="user">User</MenuItem>
           </Select>
         </FormControl>
@@ -291,10 +297,10 @@ export default function MediaUploadForm({
                     {gamble.name}
                   </MenuItem>
                 ))
-              ) : formData.ownerType === 'faction' ? (
-                factions.map((faction) => (
-                  <MenuItem key={faction.id} value={faction.id}>
-                    {faction.name}
+              ) : formData.ownerType === 'organization' ? (
+                organizations.map((organization) => (
+                  <MenuItem key={organization.id} value={organization.id}>
+                    {organization.name}
                   </MenuItem>
                 ))
               ) : formData.ownerType === 'user' ? (

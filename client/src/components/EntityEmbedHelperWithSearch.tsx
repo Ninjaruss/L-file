@@ -51,7 +51,7 @@ import { api } from '../lib/api'
 interface EntityOption {
   id: number
   name: string
-  type: 'character' | 'arc' | 'gamble' | 'guide' | 'faction' | 'chapter' | 'volume' | 'quote'
+  type: 'character' | 'arc' | 'gamble' | 'guide' | 'organization' | 'chapter' | 'volume' | 'quote'
   subtitle?: string
 }
 
@@ -72,7 +72,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
     arcs: any[]
     gambles: any[]
     guides: any[]
-    factions: any[]
+    organizations: any[]
     chapters: any[]
     volumes: any[]
     quotes: any[]
@@ -81,7 +81,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
     arcs: [],
     gambles: [],
     guides: [],
-    factions: [],
+    organizations: [],
     chapters: [],
     volumes: [],
     quotes: []
@@ -133,14 +133,14 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
       ]
     },
     {
-      type: 'faction',
-      label: 'Faction',
+      type: 'organization',
+      label: 'Organization',
       icon: <Users size={16} />,
       color: theme.palette.info.main,
-      description: 'Link to factions and organizations',
+      description: 'Link to organizations and groups',
       examples: [
-        { code: '{{faction:2}}', description: 'Basic faction embed' },
-        { code: '{{faction:2|Kakerou}}', description: 'Faction with custom text' }
+        { code: '{{organization:2}}', description: 'Basic organization embed' },
+        { code: '{{organization:2|Kakerou}}', description: 'Organization with custom text' }
       ]
     },
     {
@@ -193,7 +193,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
           arcs: arcsRes.data || [],
           gambles: gamblesRes.data || [],
           guides: [], // These would need separate API calls
-          factions: [], // These would need separate API calls
+          organizations: [], // These would need separate API calls
           chapters: [], // These would need separate API calls
           volumes: [], // These would need separate API calls
           quotes: quotesRes.data || []
@@ -262,16 +262,16 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
         }))
       results.push(...matchingGuides.slice(0, 5))
 
-      // Search factions
-      const matchingFactions = allEntities.factions
-        .filter(f => f.name.toLowerCase().includes(searchLower))
-        .map(f => ({
-          id: f.id,
-          name: f.name,
-          type: 'faction' as EntityOption['type'],
-          subtitle: f.description
+      // Search organizations
+      const matchingOrganizations = allEntities.organizations
+        .filter((o: any) => o.name.toLowerCase().includes(searchLower))
+        .map((o: any) => ({
+          id: o.id,
+          name: o.name,
+          type: 'organization' as EntityOption['type'],
+          subtitle: o.description
         }))
-      results.push(...matchingFactions.slice(0, 3))
+      results.push(...matchingOrganizations.slice(0, 3))
 
       // Search chapters
       const matchingChapters = allEntities.chapters

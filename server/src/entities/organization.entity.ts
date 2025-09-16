@@ -13,27 +13,27 @@ import {
 } from '@nestjs/swagger';
 
 @Entity()
-export class Faction {
-  @ApiProperty({ description: 'Unique identifier of the faction' })
+export class Organization {
+  @ApiProperty({ description: 'Unique identifier of the organization' })
   @PrimaryGeneratedColumn()
   id: number;
 
   @ApiProperty({
-    description: 'Name of the faction',
+    description: 'Name of the organization',
     example: 'IDEAL',
   })
   @Column()
   name: string;
 
   @ApiPropertyOptional({
-    description: 'Detailed description of the faction',
+    description: 'Detailed description of the organization',
     example: 'A powerful organization that...',
   })
   @Column({ nullable: true })
   description: string;
 
   @ApiHideProperty()
-  @ManyToMany(() => Character, (character) => character.factions)
+  @ManyToMany(() => Character, (character) => character.organizations)
   @JoinTable()
   characters: Character[];
 }

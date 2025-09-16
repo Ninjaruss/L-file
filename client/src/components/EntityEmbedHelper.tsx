@@ -96,14 +96,14 @@ const EntityEmbedHelper: React.FC<EntityEmbedHelperProps> = ({ onInsertEmbed }) 
       ]
     },
     {
-      type: 'faction',
-      label: 'Faction',
+      type: 'organization',
+      label: 'Organization',
       icon: <Users size={16} />,
       color: theme.palette.info.main,
-      description: 'Link to factions and organizations',
+      description: 'Link to organizations and groups',
       examples: [
-        { code: '{{faction:2}}', description: 'Basic faction embed' },
-        { code: '{{faction:2:Kakerou}}', description: 'Faction with custom text' }
+        { code: '{{organization:2}}', description: 'Basic organization embed' },
+        { code: '{{organization:2:Kakerou}}', description: 'Organization with custom text' }
       ]
     },
     {

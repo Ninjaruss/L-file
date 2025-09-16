@@ -37,7 +37,7 @@ export default function CustomRoleDisplay({
           color: 'white',
         },
         '& .MuiChip-label': {
-          paddingLeft: showIcon ? '4px' : '12px',
+          paddingLeft: showIcon ? '8px' : '12px',
           paddingRight: '12px',
           // Allow text to wrap if needed
           whiteSpace: 'normal',

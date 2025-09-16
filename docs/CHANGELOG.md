@@ -1,20 +1,26 @@
 # Changelog and notes
 ## TODO:
 - Redis based rate limiting with caching middle ware for responses; add cache headers to specific routes
-- Add image upload for gambles, events, factions, volumes (need to setup Backblaze + CDN)
+- Add image upload for gambles, events, organizations, volumes (need to setup Backblaze + CDN)
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
 - Quality control of admin page sorting and display of fields; improved ux if needed for all pages
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Donation linking to badges; badge system with perks
 
+## 2025-09-16
+### Changes
+- Renamed all instances of organization into organization
+
 ## 2025-09-15
-### Chagnes
+### Changes
 - Replaced all markdown components into enhanced version (support for entity embeds and spoilers)
 - Embedded entity support editing added to guide admin page
 - Added badge system with support for Ko-fi and expiration of badge
 - Fixed issues with badge system from admin pages
 - Added custom role display to user profile if active supporter badge is active
 - Redesign of navbar; categories to group content pages and search bar
+### Notes
+- It seems MUI styling can interfere with event detection for mouse leaving a component.
 
 ## 2025-09-14
 ### Changes
@@ -25,7 +31,7 @@
 
 ## 2025-09-13
 ### Changes
-- Added faction relation to character detail page and added characters to factions detail page
+- Added organization relation to character detail page and added characters to organizations detail page
 - Added support for markdown for descriptions of entities
 - Fixed log in pop up to close properly
 - Hid 401 unauthenticated error when not logged in
@@ -40,7 +46,7 @@
 - Profile picture can now select from available character display media or keep default Discord profile
 - Updated users page and profile to load the new modern profile header
 - Normalized spoiler wrapper component by replacing it with timeline spoiler component
-- Normalized entity display to be shown on arcs, gambles, gambles, volumes, and factions 
+- Normalized entity display to be shown on arcs, gambles, gambles, volumes, and organizations 
 - Added highlight of most popular quote, gamble, and character profile picture 
 
 ### Notes
@@ -140,7 +146,7 @@
 - Added proper view counting for pages as well as trending section
 - Updated consistency of Lucide icons use (themeing)
 - Added Volumes 37/38 to the landing page with animations
-- Detail pages added for chapters, users, volumes, factions
+- Detail pages added for chapters, users, volumes, organizations
 - Reading progress button added; hidden on admin page
 - Added alias to character search
 - Author linking and updated user profile view

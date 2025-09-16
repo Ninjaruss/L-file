@@ -113,7 +113,7 @@ async function bootstrap() {
     // Character & Content
     .addTag('characters', 'Characters - Character profiles and information')
     .addTag('events', 'Events - Story events and timeline management')
-    .addTag('factions', 'Factions - Groups and organizations')
+    .addTag('organizations', 'Organizations - Groups and organizations')
     .addTag('quotes', 'Quotes - Character quotes and memorable lines')
     // Interactive Content
     .addTag('gambles', 'Gambles - Gambling events and game management')

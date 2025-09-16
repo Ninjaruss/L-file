@@ -35,7 +35,7 @@ import {
 import MediaThumbnail from './MediaThumbnail'
 
 interface EntityCardProps {
-  type: 'character' | 'arc' | 'gamble' | 'guide' | 'faction' | 'chapter' | 'volume' | 'quote'
+  type: 'character' | 'arc' | 'gamble' | 'guide' | 'organization' | 'chapter' | 'volume' | 'quote'
   id: number
   displayText?: string
   compact?: boolean
@@ -79,7 +79,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
       case 'arc': return <BookOpen {...iconProps} />
       case 'gamble': return <Dice6 {...iconProps} />
       case 'guide': return <FileText {...iconProps} />
-      case 'faction': return <Users {...iconProps} />
+      case 'organization': return <Users {...iconProps} />
       case 'chapter': return <Hash {...iconProps} />
       case 'volume': return <Volume2 {...iconProps} />
       case 'quote': return <Quote {...iconProps} />
@@ -235,13 +235,13 @@ const EntityCard: React.FC<EntityCardProps> = ({
               />
               
               {/* Additional context based on entity type */}
-              {type === 'character' && data.faction && (
+              {type === 'character' && data.organization && (
                 <Typography 
                   component={inline ? "span" : "p"}
                   variant="caption" 
                   color="text.secondary"
                 >
-                  {data.faction}
+                  {data.organization}
                 </Typography>
               )}
               

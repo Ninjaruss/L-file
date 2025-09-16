@@ -10,6 +10,6 @@ export { ChapterTranslation } from './chapter-translation.entity';
 export { CharacterTranslation } from './character-translation.entity';
 export { EventTranslation } from './event-translation.entity';
 export { ArcTranslation } from './arc-translation.entity';
-export { FactionTranslation } from './faction-translation.entity';
+export { OrganizationTranslation } from './organization-translation.entity';
 export { TagTranslation } from './tag-translation.entity';
 export { GambleTranslation } from './gamble-translation.entity';

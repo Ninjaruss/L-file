@@ -45,7 +45,7 @@ export const SearchBar: React.FC = () => {
     switch (type) {
       case 'character':
         return <Users size={16} />
-      case 'faction':
+      case 'organization':
         return <Shield size={16} />
       case 'arc':
         return <BookOpen size={16} />
@@ -64,8 +64,8 @@ export const SearchBar: React.FC = () => {
     switch (type) {
       case 'character':
         return '#1976d2' // theme.palette.usogui.character
-      case 'faction':
-        return '#9c27b0' // purple for factions
+      case 'organization':
+        return '#9c27b0' // purple for organizations
       case 'arc':
         return '#dc004e' // theme.palette.usogui.arc
       case 'gamble':
@@ -100,8 +100,8 @@ export const SearchBar: React.FC = () => {
         userProgress
       )
 
-      // Sort results by priority: characters, factions, arcs, gambles, events, chapters
-      const priorityOrder = ['character', 'faction', 'arc', 'gamble', 'event', 'chapter']
+      // Sort results by priority: characters, organizations, arcs, gambles, events, chapters
+      const priorityOrder = ['character', 'organization', 'arc', 'gamble', 'event', 'chapter']
       const sortedResults = response.results.sort((a, b) => {
         const aPriority = priorityOrder.indexOf(a.type)
         const bPriority = priorityOrder.indexOf(b.type)

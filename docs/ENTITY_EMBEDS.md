@@ -58,15 +58,15 @@ Link to other user-created guides and analysis.
 - `{{guide:3:Gambling Rules Guide}}` - Guide with title
 - `{{guide:7:my previous analysis}}` - Guide with custom reference
 
-### Factions
-Link to faction pages with member information.
+### Organizations
+Link to organization pages with member information.
 
-**Syntax:** `{{faction:id}}` or `{{faction:id:custom_text}}`
+**Syntax:** `{{organization:id}}` or `{{organization:id:custom_text}}`
 
 **Examples:**
-- `{{faction:2}}` - Basic faction embed
-- `{{faction:2:Kakerou}}` - Faction with name
-- `{{faction:1:the main organization}}` - Faction with description
+- `{{organization:2}}` - Basic organization embed
+- `{{organization:2:Kakerou}}` - Organization with name
+- `{{organization:1:the main organization}}` - Organization with description
 
 ### Chapters
 Link to specific chapter pages.
@@ -110,7 +110,7 @@ For more information about the gambling rules, see {{guide:3:Gambling Rules Guid
 
 The arc takes place from {{chapter:150}} to {{chapter:200}} and is contained within {{volume:20}} and {{volume:21}}.
 
-Key participants include members of {{faction:2:Kakerou}} and other organizations.
+Key participants include members of {{organization:2:Kakerou}} and other organizations.
 ```
 
 ### Multiple Embeds in Context
@@ -125,7 +125,7 @@ In {{chapter:175}}, {{character:1:Baku}} delivers his famous quote {{quote:45}} 
 
 - **Reference Key Characters**: When mentioning important characters in your analysis
 - **Cite Sources**: When referencing specific chapters, volumes, or other guides
-- **Explain Context**: When discussing gambles, arcs, or factions
+- **Explain Context**: When discussing gambles, arcs, or organizations
 - **Cross-Reference**: When connecting related content
 
 ### Custom Display Text Guidelines
@@ -150,7 +150,7 @@ When rendered, entity embeds appear as interactive cards with:
 - **Entity Icon**: Visual representation of the entity type
 - **Entity Name**: The name or custom display text
 - **Entity Type Badge**: Shows what type of entity it is
-- **Contextual Information**: Additional details like chapter ranges, character factions, etc.
+- **Contextual Information**: Additional details like chapter ranges, character organizations, etc.
 - **Hover Effects**: Visual feedback when users interact with the cards
 - **Click Navigation**: Direct links to the full entity pages
 
@@ -202,7 +202,7 @@ Key characters in this arc:
 ### Complex References
 
 ```markdown
-This analysis builds on {{guide:3:previous guide}} and focuses on events from {{arc:5}} through {{arc:7}}, specifically examining {{gamble:12}} and {{gamble:18}} as turning points in the relationship between {{faction:1}} and {{faction:2}}.
+This analysis builds on {{guide:3:previous guide}} and focuses on events from {{arc:5}} through {{arc:7}}, specifically examining {{gamble:12}} and {{gamble:18}} as turning points in the relationship between {{organization:1}} and {{organization:2}}.
 ```
 
 ---

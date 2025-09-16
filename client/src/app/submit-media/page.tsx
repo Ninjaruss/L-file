@@ -46,12 +46,12 @@ interface Gamble {
   name: string
 }
 
-interface Faction {
+interface Organization {
   id: number
   name: string
 }
 
-type MediaOwnerType = 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+type MediaOwnerType = 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
 
 export default function SubmitMediaPage() {
   const { user, loading: authLoading } = useAuth()
@@ -67,7 +67,7 @@ export default function SubmitMediaPage() {
   const [arcs, setArcs] = useState<Arc[]>([])
   const [events, setEvents] = useState<Event[]>([])
   const [gambles, setGambles] = useState<Gamble[]>([])
-  const [factions, setFactions] = useState<Faction[]>([])
+  const [organizations, setOrganizations] = useState<Organization[]>([])
   const [users, setUsers] = useState<{id: number, username: string}[]>([])
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
@@ -79,19 +79,19 @@ export default function SubmitMediaPage() {
     const fetchData = async () => {
       try {
         setDataLoading(true)
-        const [charactersResponse, arcsResponse, eventsResponse, gamblesResponse, factionsResponse, usersResponse] = await Promise.all([
+        const [charactersResponse, arcsResponse, eventsResponse, gamblesResponse, organizationsResponse, usersResponse] = await Promise.all([
           api.getCharacters({ limit: 500 }),
           api.getArcs({ limit: 200 }),
           api.getEvents({ limit: 200 }),
           api.getGambles({ limit: 500 }),
-          api.getFactions({ limit: 100 }),
+          api.getOrganizations({ limit: 100 }),
           api.getPublicUsers({ limit: 200 })
         ])
         setCharacters(charactersResponse.data || [])
         setArcs(arcsResponse.data || [])
         setEvents(eventsResponse.data || [])
         setGambles(gamblesResponse.data || [])
-        setFactions(factionsResponse.data || [])
+        setOrganizations(organizationsResponse.data || [])
         setUsers(usersResponse.data || [])
       } catch (error) {
         console.error('Failed to fetch data:', error)
@@ -179,7 +179,7 @@ export default function SubmitMediaPage() {
   const handleUpload = async (file: File, uploadData: {
     type: 'image' | 'video' | 'audio'
     description?: string
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'faction' | 'user'
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
     ownerId: number
     chapterNumber?: number
     purpose?: 'gallery' | 'entity_display'
@@ -258,8 +258,8 @@ export default function SubmitMediaPage() {
         return events.map(item => ({ id: item.id, name: item.title }))
       case 'gamble':
         return gambles.map(item => ({ id: item.id, name: item.name }))
-      case 'faction':
-        return factions.map(item => ({ id: item.id, name: item.name }))
+      case 'organization':
+        return organizations.map((item: Organization) => ({ id: item.id, name: item.name }))
       case 'user':
         return users.map(item => ({ id: item.id, name: item.username }))
       default:
@@ -380,7 +380,7 @@ export default function SubmitMediaPage() {
                         <MenuItem value="arc">Arc</MenuItem>
                         <MenuItem value="event">Event</MenuItem>
                         <MenuItem value="gamble">Gamble</MenuItem>
-                        <MenuItem value="faction">Faction</MenuItem>
+                        <MenuItem value="organization">Organization</MenuItem>
                         <MenuItem value="user">User</MenuItem>
                       </Select>
                     </FormControl>
@@ -474,7 +474,7 @@ export default function SubmitMediaPage() {
                   arcs={arcs}
                   events={events}
                   gambles={gambles}
-                  factions={factions}
+                  organizations={organizations}
                   users={users}
                   loading={loading}
                   dataLoading={dataLoading}

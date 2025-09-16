@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Faction } from '../../entities/faction.entity';
+import { Organization } from '../../entities/organization.entity';
 import { MediaService } from '../media/media.service';
 import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
 
 @Injectable()
-export class FactionsService {
+export class OrganizationsService {
   constructor(
-    @InjectRepository(Faction) private repo: Repository<Faction>,
+    @InjectRepository(Organization) private repo: Repository<Organization>,
     private readonly mediaService: MediaService,
   ) {}
 
@@ -23,7 +23,7 @@ export class FactionsService {
       limit?: number;
     } = {},
   ): Promise<{
-    data: Faction[];
+    data: Organization[];
     total: number;
     page: number;
     perPage: number;
@@ -31,13 +31,13 @@ export class FactionsService {
   }> {
     const { sort, order = 'ASC', page = 1, limit = 1000 } = filters;
     const query = this.repo
-      .createQueryBuilder('faction')
-      .leftJoinAndSelect('faction.characters', 'characters');
+      .createQueryBuilder('organization')
+      .leftJoinAndSelect('organization.characters', 'characters');
     const allowedSort = ['id', 'name'];
     if (sort && allowedSort.includes(sort)) {
-      query.orderBy(`faction.${sort}`, order);
+      query.orderBy(`organization.${sort}`, order);
     } else {
-      query.orderBy('faction.name', 'ASC');
+      query.orderBy('organization.name', 'ASC');
     }
 
     const skip = (page - 1) * limit;
@@ -48,51 +48,51 @@ export class FactionsService {
     return { data, total, page, perPage: limit, totalPages };
   }
 
-  async findOne(id: number): Promise<Faction> {
-    const faction = await this.repo.findOne({
+  async findOne(id: number): Promise<Organization> {
+    const organization = await this.repo.findOne({
       where: { id },
       relations: ['characters'],
     });
-    if (!faction)
-      throw new NotFoundException(`Faction with ID ${id} not found`);
-    return faction;
+    if (!organization)
+      throw new NotFoundException(`Organization with ID ${id} not found`);
+    return organization;
   }
 
-  create(data: Partial<Faction>): Promise<Faction> {
-    const faction = this.repo.create(data);
-    return this.repo.save(faction);
+  create(data: Partial<Organization>): Promise<Organization> {
+    const organization = this.repo.create(data);
+    return this.repo.save(organization);
   }
 
-  async update(id: number, data: Partial<Faction>) {
+  async update(id: number, data: Partial<Organization>) {
     const result = await this.repo.update(id, data);
     if (result.affected === 0)
-      throw new NotFoundException(`Faction with ID ${id} not found`);
+      throw new NotFoundException(`Organization with ID ${id} not found`);
     return this.findOne(id);
   }
 
   async remove(id: number) {
     const result = await this.repo.delete(id);
     if (result.affected === 0)
-      throw new NotFoundException(`Faction with ID ${id} not found`);
+      throw new NotFoundException(`Organization with ID ${id} not found`);
     return { deleted: true };
   }
 
   /**
-   * Get entity display media for faction thumbnails with spoiler protection
+   * Get entity display media for organization thumbnails with spoiler protection
    */
-  async getFactionEntityDisplayMedia(
-    factionId: number,
+  async getOrganizationEntityDisplayMedia(
+    organizationId: number,
     userProgress?: number,
     options: {
       page?: number;
       limit?: number;
     } = {},
   ) {
-    const faction = await this.findOne(factionId);
+    const organization = await this.findOne(organizationId);
 
     const result = await this.mediaService.findForEntityDisplay(
-      MediaOwnerType.FACTION,
-      factionId,
+      MediaOwnerType.ORGANIZATION,
+      organizationId,
       undefined,
       {
         page: options.page,
@@ -114,10 +114,10 @@ export class FactionsService {
   }
 
   /**
-   * Get gallery media for faction
+   * Get gallery media for organization
    */
-  async getFactionGalleryMedia(
-    factionId: number,
+  async getOrganizationGalleryMedia(
+    organizationId: number,
     userProgress?: number,
     options: {
       chapter?: number;
@@ -125,11 +125,11 @@ export class FactionsService {
       limit?: number;
     } = {},
   ) {
-    const faction = await this.findOne(factionId);
+    const organization = await this.findOne(organizationId);
 
     const result = await this.mediaService.findForGallery(
-      MediaOwnerType.FACTION,
-      factionId,
+      MediaOwnerType.ORGANIZATION,
+      organizationId,
       {
         chapter: options.chapter,
         page: options.page,
@@ -151,16 +151,16 @@ export class FactionsService {
   }
 
   /**
-   * Get the current entity display media for faction thumbnail
+   * Get the current entity display media for organization thumbnail
    * Default changes to the one with the latest chapter number within user progress
    */
-  async getFactionCurrentThumbnail(factionId: number, userProgress?: number) {
-    const faction = await this.findOne(factionId);
+  async getOrganizationCurrentThumbnail(organizationId: number, userProgress?: number) {
+    const organization = await this.findOne(organizationId);
 
-    // Get all entity display media for this faction
+    // Get all entity display media for this organization
     const allMedia = await this.mediaService.findForEntityDisplay(
-      MediaOwnerType.FACTION,
-      factionId,
+      MediaOwnerType.ORGANIZATION,
+      organizationId,
       undefined,
       { limit: 100 }, // Get all to find the right one
     );
