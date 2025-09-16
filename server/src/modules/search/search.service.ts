@@ -347,7 +347,13 @@ export class SearchService {
           WHEN character.name ILIKE :exactQuery THEN 1
           WHEN character.name ILIKE :startQuery THEN 2
           WHEN character.name ILIKE :likeQuery THEN 3
-          ELSE 4
+          WHEN character.description ILIKE :exactQuery THEN 4
+          WHEN character.description ILIKE :startQuery THEN 5
+          WHEN character.description ILIKE :likeQuery THEN 6
+          WHEN character."alternateNames" ILIKE :exactQuery THEN 7
+          WHEN character."alternateNames" ILIKE :startQuery THEN 8
+          WHEN character."alternateNames" ILIKE :likeQuery THEN 9
+          ELSE 10
         END`,
         'ASC',
       )
@@ -405,7 +411,10 @@ export class SearchService {
           WHEN event.title ILIKE :exactQuery THEN 1
           WHEN event.title ILIKE :startQuery THEN 2
           WHEN event.title ILIKE :query THEN 3
-          ELSE 4
+          WHEN event.description ILIKE :exactQuery THEN 4
+          WHEN event.description ILIKE :startQuery THEN 5
+          WHEN event.description ILIKE :query THEN 6
+          ELSE 7
         END`,
         'ASC',
       )
@@ -455,7 +464,10 @@ export class SearchService {
           WHEN arc.name ILIKE :exactQuery THEN 1
           WHEN arc.name ILIKE :startQuery THEN 2
           WHEN arc.name ILIKE :likeQuery THEN 3
-          ELSE 4
+          WHEN arc.description ILIKE :exactQuery THEN 4
+          WHEN arc.description ILIKE :startQuery THEN 5
+          WHEN arc.description ILIKE :likeQuery THEN 6
+          ELSE 7
         END`,
         'ASC',
       )
@@ -508,7 +520,13 @@ export class SearchService {
           WHEN gamble.name ILIKE :exactQuery THEN 1
           WHEN gamble.name ILIKE :startQuery THEN 2
           WHEN gamble.name ILIKE :likeQuery THEN 3
-          ELSE 4
+          WHEN character.name ILIKE :exactQuery THEN 4
+          WHEN character.name ILIKE :startQuery THEN 5
+          WHEN character.name ILIKE :likeQuery THEN 6
+          WHEN gamble.rules ILIKE :exactQuery THEN 7
+          WHEN gamble.rules ILIKE :startQuery THEN 8
+          WHEN gamble.rules ILIKE :likeQuery THEN 9
+          ELSE 10
         END`,
         'ASC',
       )
@@ -558,7 +576,10 @@ export class SearchService {
           WHEN faction.name ILIKE :exactQuery THEN 1
           WHEN faction.name ILIKE :startQuery THEN 2
           WHEN faction.name ILIKE :likeQuery THEN 3
-          ELSE 4
+          WHEN faction.description ILIKE :exactQuery THEN 4
+          WHEN faction.description ILIKE :startQuery THEN 5
+          WHEN faction.description ILIKE :likeQuery THEN 6
+          ELSE 7
         END`,
         'ASC',
       )
