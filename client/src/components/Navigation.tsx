@@ -240,19 +240,47 @@ export const Navigation: React.FC = () => {
   const handleBrowseButtonLeave = () => {
     browseTimeout.current = setTimeout(() => {
       setBrowseMenuAnchor(null)
-    }, 150) // Reduced timeout for faster closing
+    }, 200) // Reduced since navbar leave will also handle it
   }
 
   const handleCommunityButtonLeave = () => {
     communityTimeout.current = setTimeout(() => {
       setCommunityMenuAnchor(null)
-    }, 150) // Reduced timeout for faster closing
+    }, 200) // Reduced since navbar leave will also handle it
   }
 
   const handleSubmitButtonLeave = () => {
     submitTimeout.current = setTimeout(() => {
       setSubmitMenuAnchor(null)
-    }, 150) // Reduced timeout for faster closing
+    }, 200) // Reduced since navbar leave will also handle it
+  }
+
+  // Handle mouse leaving the entire navbar area (for auto-close when moving away)
+  const handleNavbarLeave = () => {
+    // Set timeouts for all dropdowns to close after leaving navbar
+    browseTimeout.current = setTimeout(() => {
+      setBrowseMenuAnchor(null)
+    }, 300)
+    communityTimeout.current = setTimeout(() => {
+      setCommunityMenuAnchor(null)
+    }, 300)
+    submitTimeout.current = setTimeout(() => {
+      setSubmitMenuAnchor(null)
+    }, 300)
+  }
+
+  // Handle mouse entering the navbar area - cancel auto-close
+  const handleNavbarEnter = () => {
+    // Clear timeouts when re-entering navbar
+    if (browseTimeout.current) {
+      clearTimeout(browseTimeout.current)
+    }
+    if (communityTimeout.current) {
+      clearTimeout(communityTimeout.current)
+    }
+    if (submitTimeout.current) {
+      clearTimeout(submitTimeout.current)
+    }
   }
 
   // Search helper functions
@@ -488,64 +516,13 @@ export const Navigation: React.FC = () => {
     }
   }, [browseMenuAnchor, communityMenuAnchor, submitMenuAnchor])
 
-  // More robust mouse leave detection for navbar dropdowns
-  useEffect(() => {
-    const handleGlobalMouseMove = (event: MouseEvent) => {
-      // Only check if we have open dropdowns
-      if (!browseMenuAnchor && !communityMenuAnchor && !submitMenuAnchor) {
-        return
-      }
-
-      // Get the navbar element
-      const navbar = document.querySelector('[data-testid="navigation-bar"]')
-      if (!navbar) return
-
-      // Get all open dropdown elements
-      const dropdownElements = document.querySelectorAll('.MuiPaper-root[role="menu"]')
-      
-      // Check if mouse is over navbar or any open dropdown
-      const rect = navbar.getBoundingClientRect()
-      const isOverNavbar = event.clientX >= rect.left && 
-                          event.clientX <= rect.right && 
-                          event.clientY >= rect.top && 
-                          event.clientY <= rect.bottom
-
-      let isOverDropdown = false
-      dropdownElements.forEach(dropdown => {
-        const dropdownRect = dropdown.getBoundingClientRect()
-        if (event.clientX >= dropdownRect.left && 
-            event.clientX <= dropdownRect.right && 
-            event.clientY >= dropdownRect.top && 
-            event.clientY <= dropdownRect.bottom) {
-          isOverDropdown = true
-        }
-      })
-
-      // If mouse is not over navbar or any dropdown, close all dropdowns
-      if (!isOverNavbar && !isOverDropdown) {
-        setBrowseMenuAnchor(null)
-        setCommunityMenuAnchor(null)
-        setSubmitMenuAnchor(null)
-      }
-    }
-
-    // Add mousemove listener when dropdowns are open
-    if (browseMenuAnchor || communityMenuAnchor || submitMenuAnchor) {
-      document.addEventListener('mousemove', handleGlobalMouseMove)
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove)
-    }
-  }, [browseMenuAnchor, communityMenuAnchor, submitMenuAnchor])
-
   return (
     <AppBar 
       position="sticky" 
       sx={{ mb: 4 }}
       data-testid="navigation-bar"
     >
-      <Toolbar>
+      <Toolbar onMouseEnter={handleNavbarEnter} onMouseLeave={handleNavbarLeave}>
         {/* Logo - Left Side */}
         <Typography
           variant="h4"
