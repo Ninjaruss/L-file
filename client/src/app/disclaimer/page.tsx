@@ -2,6 +2,9 @@ import { Container, Typography, Box, Paper, Divider } from '@mui/material'
 import { Shield, AlertTriangle, Copyright, ExternalLink } from 'lucide-react'
 import { Metadata } from 'next'
 
+// Use a static date to avoid hydration mismatch
+const LAST_UPDATED = 'December 15, 2024'
+
 export const metadata: Metadata = {
   title: 'Legal Disclaimer - L-File Usogui Database',
   description: 'Legal disclaimer and terms of use for L-File, the Usogui manga fan database. Copyright information and fair use policy.',
@@ -136,7 +139,7 @@ export default function DisclaimerPage() {
 
       <Box textAlign="center" sx={{ color: 'text.secondary' }}>
         <Typography variant="body2">
-          Last updated: {new Date().toLocaleDateString()}
+          Last updated: {LAST_UPDATED}
         </Typography>
         <Typography variant="body2" sx={{ mt: 1 }}>
           This disclaimer may be updated periodically. Continued use of this website constitutes 

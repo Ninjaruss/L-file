@@ -5,18 +5,16 @@
 - Update landing page volume showcase to handle other volume covers (single and pairs) 
 - Quality control of admin page sorting and display of fields; improved ux if needed for all pages
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
+- Donation linking to badges; badge system with perks
 
 ## 2025-09-16
 ### Changes
 - Renamed all instances of organization into organization
-- Updated counters on landing page
-- SEO additions and removed client rendering for mostly static pages to improve load times
-- Added pending indicator for user guides; users can now edit and see their guides on their profile page
-- Normalized status types across guides, events, media
-- Insert entity embed at cursor text position
-- Adding meta deta to allow SEO; enabling server side rendering for main list pages
+- Small updates to landing page (counters, footer, discord banner)
+- Implemented SSR and meta tags for all data pages and detail pages except users/guides/admin and any client heavy page.
+
 ### Notes
-- I've decided to begin leveraging NextJS server side rendering in order to optimize the initial page load and SEO for the main list pages. So instead of having several back and forths between the server/client to serve data and the page, I can pre-render the page on the server so that initial data is shown. Hydration comes into play as hydration refers to when the interactions for the javascript are active. Initially, it is not hydrated and will take longer to load during the very first load of the page for the browser; however, on subsequent loads it will be hydrated quickly. Basically, SSR will allow us to preload the data for the user instead of having them wait for several javascript loading requests (they can see initial set of html and data that is "correct" while we render the dynamic changes on the server).
+- I am realizing more and more that using Material UI has become a lot more troublesome. Mainly due to it conflicting with a lot of server side rendering and causes many hydration issues. The reason to leverage server side rendering is to improve SEO and to provide the user with a prerendered page with initial data (so the backend can continue to load the rest of the javascript in the background). The drawback is a longer initial load, but subsequent loads are extremely fast. 
 
 ## 2025-09-15
 ### Changes

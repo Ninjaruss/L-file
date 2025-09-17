@@ -46,7 +46,6 @@ import { useProgress } from '../providers/ProgressProvider'
 import { api } from '../lib/api'
 import { motion, AnimatePresence } from 'motion/react'
 import { useNavDropdowns } from '../hooks/useNavDropdowns'
-import { useMouseTracking } from '../hooks/useMouseTracking'
 import { DropdownButton } from './DropdownButton'
 import { DropdownMenu } from './DropdownMenu'
 import { NavigationData, getCategoryColor } from '../types/navigation'
@@ -62,12 +61,11 @@ interface SearchResult {
   metadata?: any
 }
 
-export const Navigation: React.FC = () => {
+const Navigation: React.FC = () => {
   const { user, logout } = useAuth()
   const { userProgress } = useProgress()
   const router = useRouter()
   const pathname = usePathname()
-  const [mounted, setMounted] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null)
   const [searchValue, setSearchValue] = useState('')
@@ -77,24 +75,12 @@ export const Navigation: React.FC = () => {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  // Track when component is mounted (client-side only)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   // Use refactored dropdown hooks
   const dropdowns = useNavDropdowns()
 
   // Enhanced mouse tracking for auto-close
   const anyDropdownOpen = dropdowns.browse[0].isOpen || dropdowns.community[0].isOpen || dropdowns.submit[0].isOpen
-  // Temporarily disable aggressive mouse tracking to test if it's interfering
-  // useMouseTracking({
-  //   isActive: anyDropdownOpen,
-  //   onOutsideArea: dropdowns.closeAll,
-  //   selector: '[data-testid="navigation-bar"]',
-  //   padding: { left: 80, right: 80, top: 80, bottom: 400 }
-  // })
-
 
   const handleProfileMenuEnter = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -342,18 +328,12 @@ export const Navigation: React.FC = () => {
     }
   }, [anyDropdownOpen, dropdowns])
 
-  // Don't render until mounted to prevent hydration issues
-  if (!mounted) {
-    return <div style={{ height: '64px' }} /> // Placeholder to prevent layout shift
-  }
-
   return (
-    <AppBar 
-      position="sticky" 
-      sx={{ mb: 4 }}
-      data-testid="navigation-bar"
-      suppressHydrationWarning
-    >
+      <AppBar
+        position="sticky"
+        sx={{ mb: 4 }}
+        data-testid="navigation-bar"
+      >
       <Toolbar>
         {/* Logo - Left Side */}
         <Typography
@@ -906,3 +886,6 @@ export const Navigation: React.FC = () => {
     </AppBar>
   )
 }
+
+export default Navigation
+export { Navigation }

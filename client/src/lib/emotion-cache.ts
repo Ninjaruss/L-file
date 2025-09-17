@@ -15,5 +15,17 @@ export default function createEmotionCache() {
     insertionPoint = emotionInsertionPoint ?? undefined
   }
 
-  return createCache({ key: 'mui-style', insertionPoint })
+  return createCache({
+    key: 'mui-style',
+    insertionPoint,
+    prepend: true // This ensures MUI styles are prepended and can be overridden
+  })
+}
+
+// Create a server-side cache for SSR
+export function createServerEmotionCache() {
+  return createCache({
+    key: 'mui-style-ssr',
+    prepend: true
+  })
 }

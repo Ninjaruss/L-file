@@ -2,25 +2,36 @@
 
 import React from 'react'
 import { usePathname } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { ThemeProvider } from '@mui/material/styles'
-import { CacheProvider } from '@emotion/react'
 import CssBaseline from '@mui/material/CssBaseline'
 import { theme } from '../lib/theme'
-import createEmotionCache from '../lib/emotion-cache'
+import EmotionRegistry from '../lib/emotion-registry'
 import { AuthProvider } from './AuthProvider'
 import { ProgressProvider } from './ProgressProvider'
-import { Navigation } from '../components/Navigation'
 import { FloatingProgressIndicator } from '../components/FloatingProgressIndicator'
 
-// Client-side cache, shared for the whole session of the user in the browser.
-const clientSideEmotionCache = createEmotionCache()
+// Dynamically import Navigation with SSR disabled to prevent hydration issues
+const Navigation = dynamic(() => import('../components/Navigation'), {
+  ssr: false
+})
 
 interface ClientProvidersProps {
   children: React.ReactNode
 }
 
 function ConditionalNavigation() {
+  const [isClient, setIsClient] = React.useState(false)
   const pathname = usePathname()
+  
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
+  if (!isClient) {
+    return null
+  }
+  
   const isAdminPage = pathname?.startsWith('/admin')
   
   if (isAdminPage) {
@@ -31,7 +42,17 @@ function ConditionalNavigation() {
 }
 
 function ConditionalFloatingProgress() {
+  const [isClient, setIsClient] = React.useState(false)
   const pathname = usePathname()
+  
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
+  if (!isClient) {
+    return null
+  }
+  
   const isAdminPage = pathname?.startsWith('/admin')
   
   if (isAdminPage) {
@@ -43,9 +64,9 @@ function ConditionalFloatingProgress() {
 
 export function ClientProviders({ children }: ClientProvidersProps) {
   return (
-    <CacheProvider value={clientSideEmotionCache}>
+    <EmotionRegistry options={{ key: 'mui' }}>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
+        <CssBaseline enableColorScheme />
         <AuthProvider>
           <ProgressProvider>
             <ConditionalNavigation />
@@ -56,6 +77,6 @@ export function ClientProviders({ children }: ClientProvidersProps) {
           </ProgressProvider>
         </AuthProvider>
       </ThemeProvider>
-    </CacheProvider>
+    </EmotionRegistry>
   )
 }

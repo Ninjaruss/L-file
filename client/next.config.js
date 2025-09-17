@@ -18,19 +18,31 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    domains: [
-      'localhost',
-      'l-file.com',
-      // Add your Backblaze B2 domain here
-      'f005.backblazeb2.com', // Replace with your actual B2 domain
-      'www.deviantart.com',
-      'www.pixiv.net',
-      'i.imgur.com',
-      'imgur.com',
-      'cdn.discordapp.com',
-      'media.discordapp.net',
-    ],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'l-file.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'f005.backblazeb2.com',
+        port: '',
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: '**.backblazeb2.com',
@@ -88,6 +100,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'media.discordapp.net',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
         port: '',
         pathname: '/**',
       }
