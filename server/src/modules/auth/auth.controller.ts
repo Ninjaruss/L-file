@@ -120,6 +120,36 @@ export class AuthController {
     return safe;
   }
 
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      'Refresh the JWT access token using the refresh token stored in HTTP-only cookie. Returns a new access token and updated user information.',
+  })
+  @ApiOkResponse({
+    description: 'Token refreshed successfully',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          username: 'johndoe',
+          email: 'john@example.com',
+          role: 'user',
+          isEmailVerified: true,
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'No refresh token provided or token is invalid/expired',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'No refresh token',
+        error: 'Unauthorized',
+      },
+    },
+  })
   @Post('refresh')
   async refresh(@Request() req) {
     const refresh = req.cookies?.refreshToken;
@@ -129,6 +159,19 @@ export class AuthController {
     return { access_token: payload.access_token, user: payload.user };
   }
 
+  @ApiOperation({
+    summary: 'Logout user',
+    description:
+      'Logs out the current user by clearing the refresh token cookie and removing the stored refresh token from the database. Can be called with or without authentication.',
+  })
+  @ApiOkResponse({
+    description: 'User logged out successfully',
+    schema: {
+      example: {
+        message: 'Logged out',
+      },
+    },
+  })
   @Post('logout')
   async logout(@Request() req) {
     try {

@@ -53,8 +53,8 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
           handlers.onDropdownEnter()
         }}
         onMouseLeave={() => {
-          setHighlightedItem((current) => (current === item.href ? null : current))
           handlers.onDropdownLeave()
+          setHighlightedItem((current) => (current === item.href ? null : current))
         }}
         onFocus={() => setHighlightedItem(item.href)}
         onBlur={() => {
@@ -103,9 +103,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         menuItems.push(
           <Menu.Divider
             key={`divider-${category.name}`}
-            style={{
-              pointerEvents: 'none'
-            }}
+            style={{ pointerEvents: 'none' }}
           />
         )
       }
@@ -118,19 +116,15 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
     menuItems.map(renderMenuItem)
 
   return (
-    <Box
-      style={{ position: 'relative' }}
-      onMouseEnter={handlers.onEnter}
-      onMouseLeave={handlers.onLeave}
-    >
+    <Box style={{ position: 'relative' }}>
       <Menu
         opened={state.isOpen}
-        onClose={handlers.onClose}
+        onChange={handlers.setOpen}
         position="bottom-start"
         offset={0}
         withArrow={false}
-        closeOnClickOutside={true}
-        closeOnEscape={true}
+        closeOnClickOutside
+        closeOnEscape
         trapFocus={false}
         returnFocus={false}
         keepMounted
@@ -157,6 +151,11 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
               color: 'white',
               boxShadow: state.isOpen ? `inset 0 0 0 1px ${accentColor}` : 'none'
             }}
+            onPointerEnter={handlers.onTriggerEnter}
+            onPointerLeave={handlers.onTriggerLeave}
+            onMouseEnter={handlers.onTriggerEnter}
+            onMouseLeave={handlers.onTriggerLeave}
+            onFocus={handlers.open}
             styles={{
               root: {
                 '&:hover': {
@@ -172,26 +171,20 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
 
         {items && (
           <Menu.Dropdown
-            onMouseEnter={() => {
-              handlers.onDropdownEnter()
-            }}
-            onMouseLeave={() => {
-              handlers.onDropdownLeave()
-            }}
-            onClick={handlers.onClose}
-            style={{
-              marginTop: 0
-            }}
+            onPointerEnter={handlers.onDropdownEnter}
+            onPointerLeave={handlers.onDropdownLeave}
+            onMouseEnter={handlers.onDropdownEnter}
+            onMouseLeave={handlers.onDropdownLeave}
+            onClick={handlers.close}
+            style={{ marginTop: 0 }}
           >
             {isCategorized
               ? renderCategorizedItems(items as MenuCategory[])
-              : renderSimpleItems(items as MenuItemData[])
-            }
+              : renderSimpleItems(items as MenuItemData[])}
           </Menu.Dropdown>
         )}
       </Menu>
 
-      {/* Arrow indicator */}
       <Box
         style={{
           position: 'absolute',

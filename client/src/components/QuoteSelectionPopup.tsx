@@ -1,23 +1,20 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  List,
-  ListItem,
-  ListItemButton,
-  Typography,
+  Badge,
   Box,
-  TextField,
-  InputAdornment,
-  CircularProgress,
-  Chip,
-  Paper
-} from '@mui/material'
+  Button,
+  Group,
+  Loader,
+  Modal,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, Quote as QuoteIcon } from 'lucide-react'
 
 interface Quote {
@@ -46,6 +43,12 @@ export default function QuoteSelectionPopup({
 }: QuoteSelectionPopupProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [tempSelectedQuote, setTempSelectedQuote] = useState<number | null>(selectedQuoteId || null)
+  const theme = useMantineTheme()
+
+  const accentColor = useMemo(
+    () => theme.other?.usogui?.quote ?? theme.colors.teal?.[6] ?? '#00796b',
+    [theme]
+  )
 
   // Filter quotes based on search term
   const filteredQuotes = quotes.filter(quote =>
@@ -69,173 +72,180 @@ export default function QuoteSelectionPopup({
   }
 
   return (
-    <Dialog
-      open={open}
+    <Modal
+      opened={open}
       onClose={handleCancel}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
+      size="lg"
+      centered
+      radius="md"
+      title={
+        <Group gap="sm">
+          <QuoteIcon size={24} />
+          <Text size="lg" fw={600}>
+            Select Favorite Quote
+          </Text>
+        </Group>
+      }
+      styles={{
+        content: {
           height: '80vh',
           display: 'flex',
           flexDirection: 'column'
+        },
+        body: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: theme.spacing.md,
+          paddingBottom: theme.spacing.md,
+          flex: 1
+        },
+        header: {
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          marginBottom: theme.spacing.md,
+          paddingBottom: theme.spacing.sm
         }
       }}
     >
-      <DialogTitle sx={{ pb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <QuoteIcon size={24} />
-          Select Favorite Quote
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 2 }}>
+      <Stack gap="md" style={{ flex: 1 }}>
         {/* Search Field */}
-        <TextField
-          fullWidth
+        <TextInput
           placeholder="Search quotes by text or character..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            )
-          }}
-          size="small"
+          onChange={(event) => setSearchTerm(event.currentTarget.value)}
+          leftSection={<Search size={18} />}
+          size="md"
         />
 
         {/* Current Selection */}
         {tempSelectedQuote && (
-          <Paper elevation={1} sx={{ p: 2, bgcolor: 'action.hover' }}>
-            <Typography variant="subtitle2" gutterBottom>
+          <Paper
+            withBorder
+            radius="md"
+            p="md"
+            style={{
+              backgroundColor: 'rgba(0, 121, 107, 0.12)'
+            }}
+          >
+            <Text size="sm" fw={600} mb="xs">
               Currently Selected:
-            </Typography>
-            {(() => {
-              const selectedQuote = quotes.find(q => q.id === tempSelectedQuote)
-              return selectedQuote ? (
-                <Box>
-                  <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1 }}>
-                    "{selectedQuote.text}"
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Chip 
-                      label={selectedQuote.character} 
-                      size="small" 
-                      variant="outlined"
-                    />
-                    <Chip 
-                      label={`Ch. ${selectedQuote.chapterNumber}`} 
-                      size="small" 
-                      variant="outlined"
-                      color="primary"
-                    />
-                  </Box>
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Quote not found
-                </Typography>
-              )
-            })()}
+            </Text>
+            {tempSelectedQuote && quotes.find(q => q.id === tempSelectedQuote) ? (
+              <Box>
+                <Text size="sm" style={{ fontStyle: 'italic', marginBottom: '0.5rem' }}>
+                  "{quotes.find(q => q.id === tempSelectedQuote)!.text}"
+                </Text>
+                <Group gap="xs">
+                  <Badge variant="outline" radius="sm">
+                    {quotes.find(q => q.id === tempSelectedQuote)!.character}
+                  </Badge>
+                  <Badge color="red" radius="sm" variant="light">
+                    Ch. {quotes.find(q => q.id === tempSelectedQuote)!.chapterNumber}
+                  </Badge>
+                </Group>
+              </Box>
+            ) : (
+              <Text size="sm" c="dimmed">
+                Quote not found
+              </Text>
+            )}
           </Paper>
         )}
 
         {/* Quote List */}
-        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="subtitle2" gutterBottom>
+        <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <Text size="sm" fw={600} mb="xs">
             Available Quotes ({filteredQuotes.length})
-          </Typography>
+          </Text>
           
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
+            <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: '1.5rem' }}>
+              <Loader color="red" />
             </Box>
           ) : filteredQuotes.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+            <Text size="sm" c="dimmed" style={{ textAlign: 'center', paddingBlock: '1.5rem' }}>
               {searchTerm ? 'No quotes found matching your search.' : 'No quotes available.'}
-            </Typography>
+            </Text>
           ) : (
-            <List sx={{ flex: 1, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 1 }}>
-              {filteredQuotes.map((quote) => (
-                <ListItem key={quote.id} disablePadding>
-                  <ListItemButton
-                    selected={tempSelectedQuote === quote.id}
-                    onClick={() => setTempSelectedQuote(quote.id)}
-                    sx={{ 
-                      flexDirection: 'column', 
-                      alignItems: 'flex-start',
-                      py: 2,
-                      '&.Mui-selected': {
-                        bgcolor: 'primary.light',
-                        color: 'primary.contrastText',
-                        '&:hover': {
-                          bgcolor: 'primary.main'
+            <ScrollArea offsetScrollbars style={{ flex: 1 }}>
+              <Stack gap="sm">
+                {filteredQuotes.map((quote) => {
+                  const isSelected = tempSelectedQuote === quote.id
+                  const backgroundColor = isSelected
+                    ? 'rgba(0, 121, 107, 0.18)'
+                    : 'rgba(10, 10, 10, 0.6)'
+
+                  return (
+                    <Paper
+                      key={quote.id}
+                      withBorder
+                      radius="md"
+                      onClick={() => setTempSelectedQuote(quote.id)}
+                      role="button"
+                      aria-pressed={isSelected}
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setTempSelectedQuote(quote.id)
                         }
-                      }
-                    }}
-                  >
-                    <Box sx={{ width: '100%', py: 1 }}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          fontStyle: 'italic',
-                          mb: 1,
-                          color: tempSelectedQuote === quote.id ? 'inherit' : 'text.primary'
-                        }}
+                      }}
+                      style={{
+                        cursor: 'pointer',
+                        backgroundColor,
+                        borderColor: isSelected ? accentColor : 'rgba(255, 255, 255, 0.08)',
+                        padding: theme.spacing.md,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: theme.spacing.xs,
+                        transition: 'transform 150ms ease, box-shadow 150ms ease'
+                      }}
+                      shadow={isSelected ? 'md' : 'sm'}
+                    >
+                      <Text
+                        size="sm"
+                        style={{ fontStyle: 'italic' }}
+                        c={isSelected ? theme.white : 'rgba(255, 255, 255, 0.85)'}
                       >
                         "{quote.text}"
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        <Chip 
-                          label={quote.character} 
-                          size="small" 
-                          variant={tempSelectedQuote === quote.id ? "filled" : "outlined"}
-                          sx={{
-                            bgcolor: tempSelectedQuote === quote.id ? 'primary.dark' : 'transparent',
-                            color: tempSelectedQuote === quote.id ? 'primary.contrastText' : 'text.secondary',
-                            borderColor: tempSelectedQuote === quote.id ? 'primary.dark' : 'divider'
-                          }}
-                        />
-                        <Chip 
-                          label={`Ch. ${quote.chapterNumber}`} 
-                          size="small" 
-                          variant={tempSelectedQuote === quote.id ? "filled" : "outlined"}
-                          color="primary"
-                          sx={{
-                            bgcolor: tempSelectedQuote === quote.id ? 'primary.dark' : 'transparent',
-                            color: tempSelectedQuote === quote.id ? 'primary.contrastText' : 'primary.main',
-                            borderColor: tempSelectedQuote === quote.id ? 'primary.dark' : 'primary.main'
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
+                      </Text>
+                      <Group gap="xs">
+                        <Badge
+                          variant={isSelected ? 'filled' : 'outline'}
+                          color={isSelected ? 'teal' : 'gray'}
+                          radius="sm"
+                        >
+                          {quote.character}
+                        </Badge>
+                        <Badge
+                          variant={isSelected ? 'filled' : 'outline'}
+                          color="red"
+                          radius="sm"
+                        >
+                          Ch. {quote.chapterNumber}
+                        </Badge>
+                      </Group>
+                    </Paper>
+                  )
+                })}
+              </Stack>
+            </ScrollArea>
           )}
         </Box>
-      </DialogContent>
+      </Stack>
 
-      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-        <Button onClick={handleClearSelection} color="warning" variant="outlined">
+      <Group justify="space-between" mt="auto">
+        <Button onClick={handleClearSelection} variant="outline" color="yellow">
           Clear Selection
         </Button>
-        <Box sx={{ flex: 1 }} />
-        <Button onClick={handleCancel} color="inherit">
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleConfirm} 
-          color="primary" 
-          variant="contained"
-          disabled={loading}
-        >
-          Confirm Selection
-        </Button>
-      </DialogActions>
-    </Dialog>
+        <Group gap="sm">
+          <Button onClick={handleCancel} variant="subtle" color="gray">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} color="red" disabled={loading}>
+            Confirm Selection
+          </Button>
+        </Group>
+      </Group>
+    </Modal>
   )
 }

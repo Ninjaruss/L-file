@@ -91,7 +91,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   return (
     <Menu
       opened={state.isOpen}
-      onClose={handlers.onClose}
+      onChange={handlers.setOpen}
       position="bottom-start"
       offset={4}
       styles={{
@@ -102,9 +102,11 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
       }}
     >
       <Menu.Dropdown
+        onPointerEnter={handlers.onDropdownEnter}
+        onPointerLeave={handlers.onDropdownLeave}
         onMouseEnter={handlers.onDropdownEnter}
         onMouseLeave={handlers.onDropdownLeave}
-        onClick={handlers.onClose}
+        onClick={handlers.close}
       >
         {isCategorized
           ? renderCategorizedItems(items as MenuCategory[])

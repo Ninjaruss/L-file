@@ -1,7 +1,17 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Box, IconButton, Typography, CircularProgress, Tooltip, useTheme } from '@mui/material'
+import React, { useEffect, useMemo, useState } from 'react'
+import {
+  ActionIcon,
+  Alert,
+  Box,
+  Loader,
+  Text,
+  Tooltip,
+  rem,
+  useMantineTheme,
+  rgba
+} from '@mantine/core'
 import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import Image from 'next/image'
@@ -39,18 +49,43 @@ export default function MediaThumbnail({
   showGallery = false,
   maxWidth = 300,
   maxHeight = 300,
-  inline = false,
+  inline = false
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
   const [allEntityMedia, setAllEntityMedia] = useState<MediaItem[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  const { userProgress } = useProgress()
-  const theme = useTheme()
 
-  // Fetch current thumbnail using polymorphic media API
+  const { userProgress } = useProgress()
+  const theme = useMantineTheme()
+
+  const containerComponent = inline ? 'span' : 'div'
+  const numericMaxWidth = typeof maxWidth === 'number' ? maxWidth : Number(maxWidth)
+  const numericMaxHeight = typeof maxHeight === 'number' ? maxHeight : Number(maxHeight)
+
+  const containerStyles = useMemo(
+    () => ({
+      width: maxWidth,
+      height: maxHeight,
+      display: inline ? 'inline-block' : 'block',
+      position: 'relative',
+      overflow: 'hidden',
+      borderRadius: rem(8),
+      backgroundColor: theme.colors.gray?.[0] ?? '#f8f9fa'
+    }),
+    [inline, maxHeight, maxWidth, theme]
+  )
+
+  const contentWrapperStyles = useMemo(
+    () => ({
+      position: 'relative' as const,
+      width: '100%',
+      height: '100%'
+    }),
+    []
+  )
+
   const fetchCurrentThumbnail = async () => {
     try {
       const thumbnail = await api.getThumbnailForUserProgress(
@@ -59,25 +94,22 @@ export default function MediaThumbnail({
         userProgress
       )
       setCurrentThumbnail(thumbnail)
-    } catch (err) {
-      console.error(`Error fetching ${entityType} thumbnail:`, err)
+    } catch (thumbnailError) {
+      console.error(`Error fetching ${entityType} thumbnail:`, thumbnailError)
       setCurrentThumbnail(null)
     }
   }
-
 
   useEffect(() => {
     const loadMedia = async () => {
       setLoading(true)
       setError(null)
-      
-      // Handle migration from organization to organization
+
       let finalEntityType = entityType
-      if (finalEntityType === 'organization' as any) {
+      if (finalEntityType === ('organization' as any)) {
         finalEntityType = 'organization'
       }
-      
-      // Load entity display media first
+
       try {
         const response = await api.getEntityDisplayMediaForCycling(
           finalEntityType,
@@ -86,31 +118,27 @@ export default function MediaThumbnail({
         )
         const mediaArray = response?.data || []
         setAllEntityMedia(mediaArray)
-        
-        // If we have entity display media, start with closest chapter that meets user progress
+
         if (mediaArray && mediaArray.length > 0) {
-          // Find the latest chapter that the user has reached (chapter <= userProgress)
           let startIndex = 0
-          for (let i = mediaArray.length - 1; i >= 0; i--) {
+          for (let i = mediaArray.length - 1; i >= 0; i -= 1) {
             const media = mediaArray[i]
             if (!media.chapterNumber || media.chapterNumber <= userProgress) {
               startIndex = i
               break
             }
           }
-          
+
           setCurrentIndex(startIndex)
           setCurrentThumbnail(mediaArray[startIndex])
         } else {
-          // Fallback to fetching current thumbnail if no entity display media
           await fetchCurrentThumbnail()
         }
-      } catch (err) {
-        console.error(`Error fetching ${entityType} media:`, err)
-        // Fallback to fetching current thumbnail
+      } catch (loadError) {
+        console.error(`Error fetching ${entityType} media:`, loadError)
         await fetchCurrentThumbnail()
       }
-      
+
       setLoading(false)
     }
 
@@ -142,16 +170,18 @@ export default function MediaThumbnail({
           fill
           style={{
             objectFit: 'cover',
-            borderRadius: '8px',
+            objectPosition: 'center'
           }}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          onError={(e) => {
+          onError={() => {
             console.error('Image failed to load:', media.url)
             setError('Failed to load image')
           }}
         />
       )
-    } else if (media.type === 'video') {
+    }
+
+    if (media.type === 'video') {
       return (
         <video
           src={media.url}
@@ -159,90 +189,83 @@ export default function MediaThumbnail({
           style={{
             width: '100%',
             height: '100%',
-            borderRadius: '8px',
+            objectFit: 'cover',
+            objectPosition: 'center'
           }}
-          onError={(e) => {
+          onError={() => {
             console.error('Video failed to load:', media.url)
             setError('Failed to load video')
           }}
         />
       )
     }
-    
-    // Fallback for other media types
+
     return (
       <Box
-        sx={{
+        style={{
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'grey.100',
-          borderRadius: '8px',
+          backgroundColor: theme.colors.gray[1],
+          color: theme.colors.gray[6],
+          borderRadius: rem(8),
+          gap: rem(8)
         }}
       >
-        <ImageIcon size={48} color="grey" />
-        <Typography variant="body2" color="text.secondary" ml={1}>
+        <ImageIcon size={36} />
+        <Text size="sm" fw={600}>
           {media.type.toUpperCase()}
-        </Typography>
+        </Text>
       </Box>
     )
   }
 
   const renderEmptyState = () => {
-    // Check if this is a small container (likely inline/compact)
-    const isSmallContainer = (typeof maxWidth === 'number' && maxWidth <= 32) || 
-                            (typeof maxHeight === 'number' && maxHeight <= 32)
-    
+    const isSmallContainer =
+      (typeof maxWidth === 'number' && maxWidth <= 32) ||
+      (typeof maxHeight === 'number' && maxHeight <= 32)
+
     if (isSmallContainer) {
-      // For small containers, just show a simple icon without text
       return (
         <Box
-          component={inline ? "span" : "div"}
-          sx={{
+          component={containerComponent}
+          style={{
             width: maxWidth,
             height: maxHeight,
             display: inline ? 'inline-flex' : 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'grey.100',
-            borderRadius: '4px',
-            border: '1px solid',
-            borderColor: 'grey.300',
+            backgroundColor: theme.colors.gray[1],
+            borderRadius: rem(4),
+            border: `1px solid ${theme.colors.gray[4]}`
           }}
         >
-          <ImageIcon size={16} color="grey" />
+          <ImageIcon size={16} color={theme.colors.gray[5]} />
         </Box>
       )
     }
 
-    // For larger containers, show the full empty state with text
     return (
       <Box
-        component={inline ? "span" : "div"}
-        sx={{
+        component={containerComponent}
+        style={{
           width: maxWidth,
           height: maxHeight,
           display: inline ? 'inline-flex' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'grey.50',
-          borderRadius: '8px',
-          border: '2px dashed',
-          borderColor: 'grey.300',
+          backgroundColor: theme.colors.gray[0],
+          borderRadius: rem(8),
+          border: `2px dashed ${theme.colors.gray[4]}`
         }}
       >
-        <Box component={inline ? "span" : "div"} textAlign="center">
-          <ImageIcon size={48} color="grey" />
-          <Typography 
-            component={inline ? "span" : "p"}
-            variant="body2" 
-            color="text.secondary" 
-            mt={1}
-          >
+        <Box component={containerComponent} style={{ textAlign: 'center' }}>
+          <ImageIcon size={48} color={theme.colors.gray[5]} />
+          <Text size="sm" c="dimmed" mt={rem(4)}>
             No thumbnail available
-          </Typography>
+          </Text>
         </Box>
       </Box>
     )
@@ -251,44 +274,32 @@ export default function MediaThumbnail({
   if (loading) {
     return (
       <Box
-        component={inline ? "span" : "div"}
+        component={containerComponent}
         className={className}
-        sx={{
+        style={{
           width: maxWidth,
           height: maxHeight,
           display: inline ? 'inline-flex' : 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'center'
         }}
       >
-        <CircularProgress />
+        <Loader color="red" />
       </Box>
     )
   }
 
   if (error) {
     return (
-      <Box
-        component={inline ? "span" : "div"}
-        className={className}
-        sx={{
-          width: maxWidth,
-          height: maxHeight,
-          display: inline ? 'inline-flex' : 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'error.light',
-          borderRadius: '8px',
-        }}
+      <Alert
+        color="red"
+        variant="light"
+        radius="md"
+        icon={<AlertTriangle size={16} />}
+        style={{ width: maxWidth, maxWidth: typeof maxWidth === 'number' ? undefined : '100%' }}
       >
-        <Typography 
-          component={inline ? "span" : "p"}
-          variant="body2" 
-          color="error.main"
-        >
-          {error}
-        </Typography>
-      </Box>
+        {error}
+      </Alert>
     )
   }
 
@@ -297,14 +308,7 @@ export default function MediaThumbnail({
   }
 
   const mediaContent = (
-    <Box
-      component={inline ? "span" : "div"}
-      sx={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-      }}
-    >
+    <Box component={containerComponent} style={contentWrapperStyles}>
       <AnimatePresence mode="wait">
         {inline ? (
           <motion.span
@@ -313,7 +317,7 @@ export default function MediaThumbnail({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ width: '100%', height: '100%', display: 'inline-block' }}
+            style={{ width: '100%', height: '100%', display: 'inline-block', position: 'relative' }}
           >
             {renderMediaContent(currentThumbnail)}
           </motion.span>
@@ -324,29 +328,27 @@ export default function MediaThumbnail({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
           >
             {renderMediaContent(currentThumbnail)}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Chapter indicator */}
       {currentThumbnail.chapterNumber && (
         <Box
-          component={inline ? "span" : "div"}
-          sx={{
+          style={{
             position: 'absolute',
-            bottom: (maxHeight && Number(maxHeight) <= 32) ? 2 : 8,
-            left: (maxWidth && Number(maxWidth) <= 32) ? 2 : 8,
-            bgcolor: 'rgba(0, 0, 0, 0.7)',
+            bottom: numericMaxHeight && numericMaxHeight <= 32 ? rem(2) : rem(8),
+            left: numericMaxWidth && numericMaxWidth <= 32 ? rem(2) : rem(8),
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
             color: 'white',
-            px: (maxWidth && Number(maxWidth) <= 32) ? 0.25 : 1,
-            py: (maxHeight && Number(maxHeight) <= 32) ? 0.125 : 0.5,
-            borderRadius: (maxWidth && Number(maxWidth) <= 32) ? 0.5 : 1,
-            fontSize: (maxWidth && Number(maxWidth) <= 32) ? '0.5rem' : '0.75rem',
+            paddingInline: numericMaxWidth && numericMaxWidth <= 32 ? rem(2) : rem(8),
+            paddingBlock: numericMaxHeight && numericMaxHeight <= 32 ? rem(1) : rem(4),
+            borderRadius: numericMaxWidth && numericMaxWidth <= 32 ? rem(4) : rem(8),
+            fontSize: numericMaxWidth && numericMaxWidth <= 32 ? '0.5rem' : '0.75rem',
             lineHeight: 1,
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap'
           }}
         >
           Ch. {currentThumbnail.chapterNumber}
@@ -355,169 +357,130 @@ export default function MediaThumbnail({
     </Box>
   )
 
-  // Use the same spoiler wrapper as CharacterTimeline, but controls are outside
+  const showControls =
+    allowCycling &&
+    allEntityMedia.length > 1 &&
+    !inline &&
+    (!numericMaxWidth || numericMaxWidth > 64) &&
+    (!numericMaxHeight || numericMaxHeight > 64)
+
   return (
-    <Box
-      component={inline ? "span" : "div"}
-      className={className}
-      sx={{
-        position: 'relative',
-        width: maxWidth,
-        height: maxHeight,
-        display: inline ? 'inline-block' : 'block',
-      }}
-    >
-      <MediaSpoilerWrapper 
-        media={currentThumbnail} 
-        userProgress={userProgress}
-      >
+    <Box component={containerComponent} className={className} style={containerStyles}>
+      <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress}>
         {mediaContent}
       </MediaSpoilerWrapper>
 
-      {/* Cycling controls - outside spoiler wrapper */}
-      {allowCycling && allEntityMedia.length > 1 && (
+      {showControls && (
         <>
-          {/* Only show controls if not in compact/inline mode or if container is large enough */}
-          {(!inline && (typeof maxWidth !== 'number' || maxWidth > 64) && (typeof maxHeight !== 'number' || maxHeight > 64)) && (
-            <>
-              <IconButton
-                onClick={handlePrevious}
-                sx={{
-                  position: 'absolute',
-                  left: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  bgcolor: 'rgba(0, 0, 0, 0.6)',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.8)',
-                  },
-                  zIndex: 30,
-                }}
-                size="small"
-              >
-                <ChevronLeft size={20} />
-              </IconButton>
+          <ActionIcon
+            variant="light"
+            size="sm"
+            radius="xl"
+            onClick={handlePrevious}
+            style={{
+              position: 'absolute',
+              left: rem(8),
+              top: '50%',
+              transform: 'translateY(-50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: '#ffffff',
+              zIndex: 30
+            }}
+          >
+            <ChevronLeft size={20} />
+          </ActionIcon>
 
-              <IconButton
-                onClick={handleNext}
-                sx={{
-                  position: 'absolute',
-                  right: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  bgcolor: 'rgba(0, 0, 0, 0.6)',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.8)',
-                  },
-                  zIndex: 30,
-                }}
-                size="small"
-              >
-                <ChevronRight size={20} />
-              </IconButton>
+          <ActionIcon
+            variant="light"
+            size="sm"
+            radius="xl"
+            onClick={handleNext}
+            style={{
+              position: 'absolute',
+              right: rem(8),
+              top: '50%',
+              transform: 'translateY(-50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: '#ffffff',
+              zIndex: 30
+            }}
+          >
+            <ChevronRight size={20} />
+          </ActionIcon>
 
-              {/* Media counter - only show for larger displays, not for inline entity embeds */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 8,
-                  right: 8,
-                  bgcolor: 'rgba(0, 0, 0, 0.6)',
-                  color: 'white',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  fontSize: '0.75rem',
-                  zIndex: 30,
-                }}
-              >
-                {currentIndex + 1} / {allEntityMedia.length}
-              </Box>
-            </>
-          )}
+          <Box
+            style={{
+              position: 'absolute',
+              bottom: rem(8),
+              right: rem(8),
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: '#ffffff',
+              paddingInline: rem(8),
+              paddingBlock: rem(4),
+              borderRadius: rem(8),
+              fontSize: '0.75rem',
+              zIndex: 30
+            }}
+          >
+            {currentIndex + 1} / {allEntityMedia.length}
+          </Box>
         </>
       )}
     </Box>
   )
 }
 
-// Media Spoiler Wrapper - matches CharacterTimeline spoiler behavior
-function MediaSpoilerWrapper({ 
-  media, 
-  userProgress, 
-  children 
-}: { 
-  media: MediaItem, 
-  userProgress: number,
-  children: React.ReactNode 
+function MediaSpoilerWrapper({
+  media,
+  userProgress,
+  children
+}: {
+  media: MediaItem
+  userProgress: number
+  children: React.ReactNode
 }) {
   const [isRevealed, setIsRevealed] = useState(false)
   const { settings } = useSpoilerSettings()
-  const theme = useTheme()
+  const theme = useMantineTheme()
+
+  const chapterNumber = media.chapterNumber
+
+  const effectiveProgress = settings.chapterTolerance > 0
+    ? settings.chapterTolerance
+    : userProgress
 
   const shouldHideSpoiler = () => {
-    const chapterNumber = media.chapterNumber
-    
-    // First check if spoiler settings say to show all spoilers
     if (settings.showAllSpoilers) {
       return false
     }
 
-    // Determine the effective progress to use for spoiler checking
-    // Priority: spoiler settings tolerance > user progress
-    const effectiveProgress = settings.chapterTolerance > 0 
-      ? settings.chapterTolerance 
-      : userProgress
-
-    // If we have a chapter number, use unified logic
     if (chapterNumber) {
       return chapterNumber > effectiveProgress
     }
 
-    // For media without chapter numbers, check the isSpoiler flag
-    return media.isSpoiler || false
+    return media.isSpoiler ?? false
   }
 
-  // Always check client-side logic, don't rely solely on server's isSpoiler
   const clientSideShouldHide = shouldHideSpoiler()
-  
-  // Always render the media, but with spoiler protection overlay if needed
+
   if (!clientSideShouldHide || isRevealed) {
     return <>{children}</>
   }
 
-  const handleReveal = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleReveal = (event: React.MouseEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
     setIsRevealed(true)
   }
 
-  const chapterNumber = media.chapterNumber
-  const effectiveProgress = settings.chapterTolerance > 0 
-    ? settings.chapterTolerance 
-    : userProgress
-
   return (
-    <Box sx={{ 
-      position: 'relative', 
-      width: '100%', 
-      height: '100%',
-    }}>
-      {/* Render the actual content underneath with cycling controls accessible */}
-      <Box sx={{ 
-        opacity: 0.3, 
-        filter: 'blur(2px)',
-        width: '100%',
-        height: '100%',
-      }}>
+    <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Box style={{ opacity: 0.3, filter: 'blur(2px)', width: '100%', height: '100%' }}>
         {children}
       </Box>
-      
-      {/* Spoiler overlay - centered within the media area */}
-      <Box 
-        sx={{ 
+
+      <Box
+        style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
@@ -527,55 +490,44 @@ function MediaSpoilerWrapper({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'error.light',
-          borderRadius: '8px',
+          backgroundColor: rgba(theme.colors.red[6] ?? '#e11d48', 0.9),
+          borderRadius: rem(8),
           cursor: 'pointer',
-          border: `1px solid ${theme.palette.error.main}`,
-          boxShadow: theme.shadows[4],
-          '&:hover': {
-            backgroundColor: 'error.dark'
-          },
-          zIndex: 10,
-          pointerEvents: 'auto',
+          border: `1px solid ${theme.colors.red[5] ?? '#f87171'}`,
+          boxShadow: theme.shadows.lg,
+          zIndex: 10
         }}
         onClick={handleReveal}
       >
-        <Tooltip 
-          title={chapterNumber ? `Chapter ${chapterNumber} spoiler - You're at Chapter ${effectiveProgress}. Click to reveal.` : `Spoiler content. Click to reveal.`}
-          placement="top"
-          arrow
+        <Tooltip
+          label={chapterNumber
+            ? `Chapter ${chapterNumber} spoiler – you're at Chapter ${effectiveProgress}. Click to reveal.`
+            : 'Spoiler content. Click to reveal.'}
+          position="top"
+          withArrow
         >
-          <Box sx={{ textAlign: 'center', width: '100%' }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'white',
-                fontWeight: 'bold',
+          <Box style={{ textAlign: 'center', width: '100%' }}>
+            <Text
+              size="xs"
+              fw={700}
+              style={{
+                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 0.5,
-                fontSize: '0.75rem',
-                mb: 0.5
+                gap: rem(6),
+                marginBottom: rem(4)
               }}
             >
               <AlertTriangle size={14} />
               {chapterNumber ? `Chapter ${chapterNumber} Spoiler` : 'Spoiler'}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: '0.65rem',
-                display: 'block'
-              }}
-            >
+            </Text>
+            <Text size="xs" style={{ color: 'rgba(255,255,255,0.85)' }}>
               Click to reveal
-            </Typography>
+            </Text>
           </Box>
         </Tooltip>
       </Box>
-
     </Box>
   )
 }

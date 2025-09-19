@@ -129,6 +129,10 @@ async function bootstrap() {
       'search',
       'Search - Text search across all content with spoiler protection',
     )
+    // Community Features
+    .addTag('badges', 'Badges - User achievement and recognition system')
+    .addTag('donations', 'Donations - Support and contributor management')
+    .addTag('page-views', 'Page Views - Analytics and usage tracking')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

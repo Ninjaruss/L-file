@@ -2,18 +2,21 @@
 
 import React from 'react'
 import {
-  Container,
-  Typography,
+  Badge,
   Box,
-  Chip,
-  Card,
-  CardContent,
-  Grid,
   Button,
-  Divider
-} from '@mui/material'
+  Card,
+  Container,
+  Divider,
+  Grid,
+  Group,
+  Stack,
+  Text,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
 import { ArrowLeft, Book, Hash } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
@@ -38,160 +41,144 @@ interface VolumePageClientProps {
 }
 
 export default function VolumePageClient({ initialVolume, initialChapters }: VolumePageClientProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
 
   // Track page view
   usePageView('volume', initialVolume.id.toString(), true)
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Button
-          component={Link}
-          href="/volumes"
-          startIcon={<ArrowLeft />}
-          sx={{ mb: 3 }}
-        >
-          Back to Volumes
-        </Button>
+        <Box mb="md">
+          <Button
+            component={Link}
+            href="/volumes"
+            variant="subtle"
+            color="gray"
+            leftSection={<ArrowLeft size={18} />}
+          >
+            Back to Volumes
+          </Button>
+        </Box>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Volume {initialVolume.number}
-          </Typography>
+        <Stack align="center" gap="sm" mb="xl">
+          <Title order={1}>Volume {initialVolume.number}</Title>
 
           {initialVolume.title && (
-            <Typography variant="h5" color="text.secondary" gutterBottom>
+            <Text size="lg" c="dimmed">
               {initialVolume.title}
-            </Typography>
+            </Text>
           )}
 
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <Box>
             <MediaThumbnail
               entityType="volume"
               entityId={initialVolume.id}
               entityName={`Volume ${initialVolume.number}`}
               maxWidth="200px"
               maxHeight="300px"
-              allowCycling={true}
+              allowCycling
             />
           </Box>
 
-          <Box sx={{ mt: 2 }}>
-            <Chip
-              label={`Chapters ${initialVolume.startChapter}-${initialVolume.endChapter}`}
-              size="medium"
-              color="primary"
-              variant="outlined"
-              icon={<Hash size={16} />}
-            />
-          </Box>
-        </Box>
+          <Badge
+            variant="outline"
+            color="red"
+            radius="sm"
+            size="lg"
+            leftSection={<Hash size={16} />}
+          >
+            Chapters {initialVolume.startChapter}-{initialVolume.endChapter}
+          </Badge>
+        </Stack>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
+        <Grid gutter="xl">
+          <Grid.Col span={{ base: 12, md: 8 }}>
             {initialVolume.description && (
-              <Card className="gambling-card">
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Volume Summary
-                  </Typography>
-                  <TimelineSpoilerWrapper
-                    chapterNumber={initialVolume.startChapter}
-                  >
-                    <Typography variant="body1" paragraph>
+              <Card withBorder radius="md" className="gambling-card" shadow="sm" p="lg">
+                <Stack gap="sm">
+                  <Group gap="sm">
+                    <Book size={20} />
+                    <Title order={4}>Volume Summary</Title>
+                  </Group>
+                  <TimelineSpoilerWrapper chapterNumber={initialVolume.startChapter}>
+                    <Text size="sm" style={{ lineHeight: 1.6 }}>
                       {initialVolume.description}
-                    </Typography>
+                    </Text>
                   </TimelineSpoilerWrapper>
-                </CardContent>
+                </Stack>
               </Card>
             )}
 
-            {/* Chapters Section */}
             {initialChapters.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Chapters in this Volume
-                  </Typography>
-                  <Grid container spacing={1}>
+              <Card
+                withBorder
+                radius="md"
+                className="gambling-card"
+                shadow="sm"
+                p="lg"
+                mt="xl"
+              >
+                <Stack gap="md">
+                  <Title order={4}>Chapters in this Volume</Title>
+                  <Grid gutter="sm">
                     {initialChapters.map((chapterNumber) => (
-                      <Grid item xs={6} sm={4} md={3} key={chapterNumber}>
+                      <Grid.Col span={{ base: 6, sm: 4, md: 3 }} key={chapterNumber}>
                         <Button
                           component={Link}
                           href={`/chapters/${chapterNumber}`}
-                          variant="outlined"
-                          size="small"
+                          variant="outline"
+                          color="red"
+                          size="sm"
                           fullWidth
-                          sx={{
-                            mb: 1,
-                            '&:hover': {
-                              backgroundColor: 'primary.main',
-                              color: 'white',
-                              borderColor: 'primary.main'
-                            }
-                          }}
                         >
                           Chapter {chapterNumber}
                         </Button>
-                      </Grid>
+                      </Grid.Col>
                     ))}
                   </Grid>
-                </CardContent>
+                </Stack>
               </Card>
             )}
-          </Grid>
+          </Grid.Col>
 
-          <Grid item xs={12} md={4}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Volume Info
-                </Typography>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Card withBorder radius="md" className="gambling-card" shadow="sm" p="lg">
+              <Stack gap="md">
+                <Title order={5}>Volume Info</Title>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Volume Number
-                  </Typography>
-                  <Typography variant="body1">
-                    {initialVolume.number}
-                  </Typography>
-                </Box>
+                <Stack gap={4}>
+                  <Text size="xs" c="dimmed">Volume Number</Text>
+                  <Text>{initialVolume.number}</Text>
+                </Stack>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Chapter Range
-                  </Typography>
-                  <Typography variant="body1">
-                    Chapters {initialVolume.startChapter} - {initialVolume.endChapter}
-                  </Typography>
-                </Box>
+                <Stack gap={4}>
+                  <Text size="xs" c="dimmed">Chapter Range</Text>
+                  <Text>
+                    Chapters {initialVolume.startChapter} – {initialVolume.endChapter}
+                  </Text>
+                </Stack>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Chapters
-                  </Typography>
-                  <Typography variant="body1">
-                    {initialVolume.endChapter - initialVolume.startChapter + 1} chapters
-                  </Typography>
-                </Box>
+                <Stack gap={4}>
+                  <Text size="xs" c="dimmed">Total Chapters</Text>
+                  <Text>{initialVolume.endChapter - initialVolume.startChapter + 1} chapters</Text>
+                </Stack>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider color="rgba(255, 255, 255, 0.12)" my="sm" />
 
-                <Typography variant="h6" gutterBottom>
-                  Quick Navigation
-                </Typography>
+                <Title order={6}>Quick Navigation</Title>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Stack gap="sm">
                   <Button
                     component={Link}
                     href={`/chapters/${initialVolume.startChapter}`}
-                    variant="outlined"
-                    size="small"
+                    variant="outline"
+                    color="red"
+                    size="sm"
                     fullWidth
                   >
                     First Chapter ({initialVolume.startChapter})
@@ -199,8 +186,9 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
                   <Button
                     component={Link}
                     href={`/chapters/${initialVolume.endChapter}`}
-                    variant="outlined"
-                    size="small"
+                    variant="outline"
+                    color="red"
+                    size="sm"
                     fullWidth
                   >
                     Last Chapter ({initialVolume.endChapter})
@@ -208,16 +196,17 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
                   <Button
                     component={Link}
                     href="/chapters"
-                    variant="outlined"
-                    size="small"
+                    variant="outline"
+                    color="red"
+                    size="sm"
                     fullWidth
                   >
                     Browse All Chapters
                   </Button>
-                </Box>
-              </CardContent>
+                </Stack>
+              </Stack>
             </Card>
-          </Grid>
+          </Grid.Col>
         </Grid>
       </motion.div>
     </Container>

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container } from '@mui/material'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
 import ChaptersPageContent from './ChaptersPageContent'
 
@@ -41,8 +41,8 @@ export async function generateMetadata({ searchParams }: ChaptersPageProps) {
     openGraph: {
       title,
       description,
-      type: 'website',
-    },
+      type: 'website'
+    }
   }
 }
 
@@ -51,7 +51,6 @@ export default async function ChaptersPage({ searchParams }: ChaptersPageProps) 
   const page = parseInt(resolvedSearchParams.page || '1', 10)
   const search = resolvedSearchParams.search || ''
 
-  // Fetch chapters server-side
   const params: { page: number; limit: number; search?: string } = { page, limit: 20 }
   if (search) params.search = search
 
@@ -70,7 +69,7 @@ export default async function ChaptersPage({ searchParams }: ChaptersPageProps) 
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <ChaptersPageContent
         initialChapters={chapters}
         initialTotalPages={totalPages}

@@ -2,18 +2,19 @@
 
 import React from 'react'
 import {
-  Container,
-  Typography,
-  Box,
-  Chip,
-  Card,
-  CardContent,
-  Grid,
+  Alert,
+  Badge,
   Button,
-  Divider
-} from '@mui/material'
+  Card,
+  Container,
+  Divider,
+  Grid,
+  Stack,
+  Text,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
 import { ArrowLeft, BookOpen } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
@@ -69,207 +70,168 @@ export default function ChapterPageClient({
   initialQuotes,
   initialCharacters
 }: ChapterPageClientProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
 
-  // Track page view
   usePageView('chapter', initialChapter.id.toString(), true)
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+    <Container size="lg" py="xl">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
           component={Link}
           href="/chapters"
-          startIcon={<ArrowLeft />}
-          sx={{ mb: 3 }}
+          variant="subtle"
+          color="gray"
+          leftSection={<ArrowLeft size={18} />}
+          mb="lg"
         >
           Back to Chapters
         </Button>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <BookOpen size={48} color={theme.palette.primary.main} />
-          </Box>
-
-          <Typography variant="h3" component="h1" gutterBottom>
-            Chapter {initialChapter.number}
-          </Typography>
-
+        <Stack align="center" gap="sm" mb="xl">
+          <BookOpen size={48} color={theme.other?.usogui?.guide ?? theme.colors.green?.[6]} />
+          <Title order={1}>Chapter {initialChapter.number}</Title>
           {initialChapter.title && (
-            <Typography variant="h5" color="text.secondary" gutterBottom>
+            <Text size="lg" c="dimmed">
               {initialChapter.title}
-            </Typography>
+            </Text>
           )}
-
           {initialChapter.volume && (
-            <Box sx={{ mt: 2 }}>
-              <Chip
-                label={`Volume ${initialChapter.volume.number}${initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}`}
-                component={Link}
-                href={`/volumes/${initialChapter.volume.id}`}
-                clickable
-                color="primary"
-                variant="outlined"
-                sx={{
-                  textDecoration: 'none',
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                    color: 'white'
-                  }
-                }}
-              />
-            </Box>
+            <Badge
+              component={Link}
+              href={`/volumes/${initialChapter.volume.id}`}
+              color="violet"
+              variant="outline"
+              radius="lg"
+              style={{ textDecoration: 'none' }}
+            >
+              Volume {initialChapter.volume.number}
+              {initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
+            </Badge>
           )}
-        </Box>
+        </Stack>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
+        <Grid gutter="xl">
+          <Grid.Col span={{ base: 12, md: 8 }}>
             {(initialChapter.description || initialChapter.summary) && (
-              <Card className="gambling-card">
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Chapter Summary
-                  </Typography>
-                  <TimelineSpoilerWrapper
-                    chapterNumber={initialChapter.number}
-                  >
-                    <Typography variant="body1" paragraph>
+              <Card withBorder radius="md" className="gambling-card" shadow="sm" mb="lg">
+                <Stack gap="md" p="lg">
+                  <Title order={3}>Chapter Summary</Title>
+                  <TimelineSpoilerWrapper chapterNumber={initialChapter.number}>
+                    <Text size="sm" lh={1.6}>
                       {initialChapter.description || initialChapter.summary}
-                    </Typography>
+                    </Text>
                   </TimelineSpoilerWrapper>
-                </CardContent>
+                </Stack>
               </Card>
             )}
 
-            {/* Events Section */}
             {initialEvents.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Chapter Events
-                  </Typography>
-                  {initialEvents.map((event) => (
-                    <Card key={event.id} variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Typography variant="h6" component={Link} href={`/events/${event.id}`}
-                                  sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                          {event.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          {event.description}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Quotes Section */}
-            {initialQuotes.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Memorable Quotes
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {initialQuotes.map((quote) => (
-                      <Box key={quote.id} sx={{
-                        p: 2,
-                        border: 1,
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
-                      }}>
-                        <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, lineHeight: 1.4 }}>
-                          &ldquo;{quote.text}&rdquo;
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {quote.character && `— ${quote.character.name}`}
-                          {quote.pageNumber && `, p.${quote.pageNumber}`}
-                        </Typography>
-                      </Box>
+              <Card withBorder radius="md" className="gambling-card" shadow="sm" mb="lg">
+                <Stack gap="md" p="lg">
+                  <Title order={3}>Chapter Events</Title>
+                  <Stack gap="sm">
+                    {initialEvents.map((event) => (
+                      <Card key={event.id} withBorder radius="md" shadow="xs" padding="md">
+                        <Stack gap={4}>
+                          <Text
+                            component={Link}
+                            href={`/events/${event.id}`}
+                            fw={600}
+                            style={{ textDecoration: 'none', color: theme.colors.red?.[4] ?? '#f87171' }}
+                          >
+                            {event.title}
+                          </Text>
+                          <Text size="sm" c="dimmed" lh={1.6}>
+                            {event.description}
+                          </Text>
+                        </Stack>
+                      </Card>
                     ))}
-                  </Box>
-                </CardContent>
+                  </Stack>
+                </Stack>
               </Card>
             )}
-          </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Chapter Info
-                </Typography>
+            {initialQuotes.length > 0 && (
+              <Card withBorder radius="md" className="gambling-card" shadow="sm">
+                <Stack gap="md" p="lg">
+                  <Title order={3}>Memorable Quotes</Title>
+                  <Stack gap="sm">
+                    {initialQuotes.map((quote) => (
+                      <Card key={quote.id} withBorder radius="md" shadow="xs" padding="md">
+                        <Stack gap={4}>
+                          <Text size="sm" style={{ fontStyle: 'italic' }}>
+                            “{quote.text}”
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {quote.character ? `— ${quote.character.name}` : ''}
+                            {quote.pageNumber ? `, p.${quote.pageNumber}` : ''}
+                          </Text>
+                        </Stack>
+                      </Card>
+                    ))}
+                  </Stack>
+                </Stack>
+              </Card>
+            )}
+          </Grid.Col>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Card withBorder radius="md" className="gambling-card" shadow="sm">
+              <Stack gap="md" p="lg">
+                <Title order={4}>Chapter Info</Title>
+
+                <Stack gap={4}>
+                  <Text size="xs" c="dimmed">
                     Chapter Number
-                  </Typography>
-                  <Typography variant="body1">
-                    {initialChapter.number}
-                  </Typography>
-                </Box>
+                  </Text>
+                  <Text fw={600}>{initialChapter.number}</Text>
+                </Stack>
 
                 {initialChapter.volume && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed">
                       Volume
-                    </Typography>
-                    <Typography
-                      variant="body1"
+                    </Text>
+                    <Text
                       component={Link}
                       href={`/volumes/${initialChapter.volume.id}`}
-                      sx={{
-                        textDecoration: 'none',
-                        color: 'primary.main',
-                        '&:hover': { textDecoration: 'underline' }
-                      }}
+                      fw={600}
+                      style={{ textDecoration: 'none', color: theme.colors.violet?.[4] ?? '#a855f7' }}
                     >
                       Volume {initialChapter.volume.number}
-                      {initialChapter.volume.title && ` - ${initialChapter.volume.title}`}
-                    </Typography>
-                  </Box>
+                      {initialChapter.volume.title ? ` — ${initialChapter.volume.title}` : ''}
+                    </Text>
+                  </Stack>
                 )}
 
-                {/* Characters Section */}
-                {initialCharacters.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Featured Characters
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                <Divider color="rgba(255, 255, 255, 0.12)" />
+
+                {initialCharacters.length > 0 ? (
+                  <Stack gap="sm">
+                    <Title order={5}>Featured Characters</Title>
+                    <Stack gap={4}>
                       {initialCharacters.map((character) => (
-                        <Chip
+                        <Text
                           key={character.id}
-                          label={character.name}
-                          size="small"
                           component={Link}
                           href={`/characters/${character.id}`}
-                          clickable
-                          color="secondary"
-                          variant="outlined"
-                          sx={{
-                            textDecoration: 'none',
-                            '&:hover': {
-                              backgroundColor: 'secondary.main',
-                              color: 'white'
-                            }
-                          }}
-                        />
+                          style={{ textDecoration: 'none', color: theme.colors.blue?.[4] ?? '#60a5fa' }}
+                        >
+                          {character.name}
+                        </Text>
                       ))}
-                    </Box>
-                  </>
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Alert radius="md" color="gray" title="No character data" variant="light">
+                    Character information isn’t available for this chapter yet.
+                  </Alert>
                 )}
-              </CardContent>
+              </Stack>
             </Card>
-          </Grid>
+          </Grid.Col>
         </Grid>
       </motion.div>
     </Container>

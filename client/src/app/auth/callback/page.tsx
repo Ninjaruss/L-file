@@ -66,81 +66,14 @@ export default function AuthCallback() {
         localStorage.setItem('authCallback', Date.now().toString())
         addDebugInfo('Auth callback flag set')
         
-        setStatus('Authentication successful! Redirecting...')
+        setStatus('Authentication successful! Redirecting to home page...')
+        addDebugInfo('Authentication completed successfully, redirecting to landing page')
 
-        // Simplified communication strategy - use BroadcastChannel as primary method
-        
-        try {
-          addDebugInfo('Sending auth success via BroadcastChannel...')
-          const channel = new BroadcastChannel('auth_channel')
-          channel.postMessage({
-            type: 'DISCORD_AUTH_SUCCESS',
-            token,
-            timestamp: Date.now(),
-            refreshUser: true
-          })
-          
-          setTimeout(() => {
-            channel.close()
-            addDebugInfo('BroadcastChannel closed')
-          }, 500)
-          
-          addDebugInfo('BroadcastChannel message sent successfully')
-        } catch (error) {
-          addDebugInfo(`BroadcastChannel failed: ${error}`)
-        }
-        
-        // Fallback: Try postMessage to opener window
-        if (window.opener && !window.opener.closed) {
-          try {
-            addDebugInfo('Sending postMessage to opener window...')
-            window.opener.postMessage({
-              type: 'DISCORD_AUTH_SUCCESS',
-              token,
-              timestamp: Date.now(),
-              refreshUser: true
-            }, window.location.origin)
-            addDebugInfo('PostMessage sent successfully')
-          } catch (error) {
-            addDebugInfo(`PostMessage failed: ${error}`)
-          }
-        } else {
-          addDebugInfo('No opener window available')
-        }
-        
-        // Try to close popup immediately after sending messages
+        // Redirect to landing page after a brief delay
         setTimeout(() => {
-          addDebugInfo('Attempting immediate popup close...')
-
-          // Try to close via parent window first
-          if (window.opener && !window.opener.closed) {
-            try {
-              // Send a direct close message to parent
-              window.opener.postMessage({
-                type: 'CLOSE_AUTH_POPUP'
-              }, window.location.origin)
-              addDebugInfo('Close popup message sent to parent')
-            } catch (error) {
-              addDebugInfo(`Failed to send close message: ${error}`)
-            }
-          }
-
-          // Also try window.close() as a fallback
-          try {
-            addDebugInfo('Attempting window.close()...')
-            window.close()
-          } catch (error) {
-            addDebugInfo(`window.close() failed: ${error}`)
-          }
-
-          // If still open after a reasonable time, show manual close instruction
-          setTimeout(() => {
-            if (!window.closed) {
-              addDebugInfo('Popup was not closed automatically, showing manual close instruction')
-              setStatus('Authentication successful! You can close this window.')
-            }
-          }, 2000)
-        }, 500)
+          addDebugInfo('Redirecting to home page...')
+          window.location.href = '/'
+        }, 1500)
         
       } catch (error) {
         console.error('Auth callback error:', error)
@@ -162,8 +95,8 @@ export default function AuthCallback() {
         <p className="text-gray-600 mb-4">{status}</p>
         <div className="mt-4 animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full mb-4"></div>
         <p className="text-sm text-gray-400 mb-4">
-          {status.includes('successful') 
-            ? "This tab will close automatically..." 
+          {status.includes('successful')
+            ? "Redirecting you to the home page..."
             : "Please wait while we process your authentication..."
           }
         </p>

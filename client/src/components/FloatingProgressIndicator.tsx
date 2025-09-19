@@ -1,45 +1,57 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Fab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-  Typography,
-  LinearProgress,
-  Slide,
-  IconButton,
-  Tooltip,
+  ActionIcon,
   Alert,
-  Chip
-} from '@mui/material'
-import { TransitionProps } from '@mui/material/transitions'
+  Badge,
+  Box,
+  Button,
+  Group,
+  Modal,
+  NumberInput,
+  Progress,
+  Slider,
+  Stack,
+  Text,
+  Tooltip,
+  rem,
+  useMantineTheme,
+  Loader
+} from '@mantine/core'
 import { BookOpen, Edit3, Check, X, User } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
+import { AnimatePresence, motion } from 'motion/react'
 import { useProgress } from '../providers/ProgressProvider'
 import { useAuth } from '../providers/AuthProvider'
-import { motion, AnimatePresence } from 'motion/react'
 import api from '../lib/api'
 
-const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & {
-    children: React.ReactElement<any, any>
-  },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="up" ref={ref} {...props} />
-})
-
 const MAX_CHAPTER = 539
+const successAnimationDuration = 1500
+
+const defaultPalette = {
+  red: '#e11d48',
+  guide: '#388e3c',
+  character: '#1976d2',
+  arc: '#dc004e',
+  black: '#0a0a0a',
+  purple: '#7c3aed'
+}
 
 export const FloatingProgressIndicator: React.FC = () => {
-  const theme = useTheme()
+  const theme = useMantineTheme()
+  const palette = {
+    red: theme.other?.usogui?.red ?? theme.colors.red?.[5] ?? defaultPalette.red,
+    guide: theme.other?.usogui?.guide ?? theme.colors.green?.[6] ?? defaultPalette.guide,
+    character: theme.other?.usogui?.character ?? theme.colors.blue?.[6] ?? defaultPalette.character,
+    arc: theme.other?.usogui?.arc ?? theme.colors.pink?.[6] ?? defaultPalette.arc,
+    black: theme.other?.usogui?.black ?? theme.colors.dark?.[9] ?? defaultPalette.black,
+    purple: theme.other?.usogui?.purple ?? theme.colors.violet?.[6] ?? defaultPalette.purple
+  }
+  const transitionDuration = theme.other?.transitions?.durationShort ?? 200
+  const transitionTimingFunction =
+    theme.other?.transitions?.easingStandard ?? 'cubic-bezier(0.4, 0, 0.2, 1)'
+
   const { user } = useAuth()
   const { userProgress, updateProgress, loading: progressLoading } = useProgress()
   const [open, setOpen] = useState(false)
@@ -51,44 +63,46 @@ export const FloatingProgressIndicator: React.FC = () => {
   const [currentChapterTitle, setCurrentChapterTitle] = useState<string | null>(null)
 
   const progressPercentage = Math.round((userProgress / MAX_CHAPTER) * 100)
+  const modalProgressPercentage = Math.round((tempProgress / MAX_CHAPTER) * 100)
+
+  const progressGradient = `linear-gradient(135deg, ${palette.guide} 0%, ${palette.character} 50%, ${palette.arc} 80%, ${palette.red} 100%)`
+  const badgeGradient = `linear-gradient(135deg, ${palette.arc} 0%, ${palette.red} 100%)`
 
   useEffect(() => {
     setTempProgress(userProgress)
   }, [userProgress])
 
-  // Fetch chapter title for current user progress
+  const fetchChapterByNumber = useCallback(async (chapterNumber: number) => {
+    try {
+      const chapter = await api.getChapterByNumber(chapterNumber)
+      return chapter.title as string
+    } catch (fetchError) {
+      console.error('Failed to fetch chapter title:', fetchError)
+      return null
+    }
+  }, [])
+
   useEffect(() => {
-    const fetchCurrentChapterTitle = async () => {
+    const run = async () => {
       if (userProgress && userProgress > 0) {
-        try {
-          const chapter = await api.getChapterByNumber(userProgress)
-          setCurrentChapterTitle(chapter.title)
-        } catch (error) {
-          console.error('Failed to fetch current chapter title:', error)
-          setCurrentChapterTitle(null)
-        }
+        const title = await fetchChapterByNumber(userProgress)
+        setCurrentChapterTitle(title)
       }
     }
 
-    fetchCurrentChapterTitle()
-  }, [userProgress])
+    run()
+  }, [fetchChapterByNumber, userProgress])
 
-  // Fetch chapter title when tempProgress changes
   useEffect(() => {
-    const fetchChapterTitle = async () => {
+    const run = async () => {
       if (tempProgress && tempProgress > 0) {
-        try {
-          const chapter = await api.getChapterByNumber(tempProgress)
-          setChapterTitle(chapter.title)
-        } catch (error) {
-          console.error('Failed to fetch chapter title:', error)
-          setChapterTitle(null)
-        }
+        const title = await fetchChapterByNumber(tempProgress)
+        setChapterTitle(title)
       }
     }
 
-    fetchChapterTitle()
-  }, [tempProgress])
+    run()
+  }, [fetchChapterByNumber, tempProgress])
 
   const handleOpen = () => {
     setOpen(true)
@@ -102,14 +116,25 @@ export const FloatingProgressIndicator: React.FC = () => {
     setError('')
   }
 
-  const handleProgressChange = (newProgress: number) => {
+  const handleProgressChange = useCallback((newProgress: number) => {
     if (newProgress >= 1 && newProgress <= MAX_CHAPTER) {
       setTempProgress(newProgress)
       setError('')
     }
+  }, [])
+
+  const handleNumberInputChange = (value: number | string) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      handleProgressChange(value)
+      return
+    }
+
+    if (value === '') {
+      setTempProgress(1)
+    }
   }
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (tempProgress === userProgress) {
       handleClose()
       return
@@ -124,57 +149,61 @@ export const FloatingProgressIndicator: React.FC = () => {
       setTimeout(() => {
         setShowSuccess(false)
         handleClose()
-      }, 1500)
-    } catch (error) {
+      }, successAnimationDuration)
+    } catch (saveError) {
       setError('Failed to update progress. Please try again.')
     } finally {
       setIsUpdating(false)
     }
-  }
+  }, [handleClose, tempProgress, updateProgress, userProgress])
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (!open) return
-    
-    if (event.key === 'Enter' && !isUpdating) {
-      handleSave()
-    } else if (event.key === 'Escape') {
-      handleClose()
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault()
-      handleProgressChange(tempProgress - 1)
-    } else if (event.key === 'ArrowRight') {
-      event.preventDefault()
-      handleProgressChange(tempProgress + 1)
-    }
-  }
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      if (!open || isUpdating) return
 
-  const getVolumeInfo = (chapter: number) => {
-    // Approximate volume groupings for Usogui (49 volumes, ~11 chapters each)
-    const volume = Math.ceil(chapter / 11)
-    const chapterInVolume = ((chapter - 1) % 11) + 1
-    return { volume: Math.min(volume, 49), chapterInVolume }
-  }
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        handleSave()
+      } else if (event.key === 'Escape') {
+        event.preventDefault()
+        handleClose()
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        handleProgressChange(tempProgress - 1)
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        handleProgressChange(tempProgress + 1)
+      }
+    },
+    [handleSave, handleClose, handleProgressChange, open, isUpdating, tempProgress]
+  )
 
   useEffect(() => {
-    const handleGlobalKeyPress = (event: KeyboardEvent) => {
-      if (open) {
-        handleKeyPress(event as any)
-      }
-    }
-
-    window.addEventListener('keydown', handleGlobalKeyPress)
-    return () => window.removeEventListener('keydown', handleGlobalKeyPress)
-  }, [open, tempProgress, isUpdating, handleKeyPress])
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [handleKeyPress])
 
   if (progressLoading) {
     return null
   }
 
+  const getVolumeInfo = (chapter: number) => {
+    const volume = Math.ceil(chapter / 11)
+    const chapterInVolume = ((chapter - 1) % 11) + 1
+    return { volume: Math.min(volume, 49), chapterInVolume }
+  }
+
   const volumeInfo = getVolumeInfo(tempProgress)
 
+  const tooltipLabel = currentChapterTitle
+    ? `Reading Progress: Chapter ${userProgress} - ${currentChapterTitle} (${progressPercentage}%)`
+    : `Reading Progress: Chapter ${userProgress} (${progressPercentage}%)`
+
+  // Use dark mode by default
+  const isDark = theme.colorScheme !== 'light'
+  
   return (
     <>
-      {/* Floating Action Button */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -186,59 +215,66 @@ export const FloatingProgressIndicator: React.FC = () => {
           zIndex: 1000
         }}
       >
-        <Tooltip
-          title={
-            currentChapterTitle
-              ? `Reading Progress: Chapter ${userProgress} - ${currentChapterTitle} (${progressPercentage}%)`
-              : `Reading Progress: Chapter ${userProgress} (${progressPercentage}%)`
-          }
-          placement="left"
-        >
-          <Fab
-            color="primary"
+        <Tooltip label={tooltipLabel} position="left" withinPortal>
+          <ActionIcon
+            aria-label="Open reading progress"
+            size={56}
+            radius="xl"
             onClick={handleOpen}
-            sx={{
-              background: `linear-gradient(135deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.usogui.character} 50%, ${theme.palette.primary.main} 100%)`,
-              boxShadow: `0 4px 12px rgba(225, 29, 72, 0.3)`,
-              border: `1px solid rgba(225, 29, 72, 0.2)`,
-              '&:hover': {
-                boxShadow: `0 8px 24px rgba(225, 29, 72, 0.4)`,
-                transform: 'scale(1.05)',
-                border: `1px solid ${theme.palette.primary.main}`
-              },
-              transition: 'all 0.2s ease-in-out'
+            styles={{
+              root: {
+                backgroundImage: `linear-gradient(135deg, ${palette.guide} 0%, ${palette.character} 50%, ${palette.red} 100%)`,
+                color: '#ffffff',
+                boxShadow: `0 4px 12px ${theme.colors.red[5]}40`,
+                border: `1px solid ${theme.colors.red[5]}33`,
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  boxShadow: `0 8px 24px ${theme.colors.red[5]}66`,
+                  transform: 'scale(1.05)',
+                  border: `1px solid ${palette.red}`
+                }
+              }
             }}
           >
-            <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               <BookOpen size={24} />
               <Box
-                sx={{
+                style={{
                   position: 'absolute',
                   bottom: -4,
                   right: -6,
-                  minWidth: userProgress > 999 ? 32 : userProgress > 99 ? 28 : userProgress > 9 ? 24 : 22,
+                  minWidth:
+                    userProgress > 999 ? 32 : userProgress > 99 ? 28 : userProgress > 9 ? 24 : 22,
                   height: 18,
-                  px: 0.5,
-                  borderRadius: '12px',
-                  background: `linear-gradient(135deg, ${theme.palette.usogui.arc} 0%, ${theme.palette.primary.main} 100%)`,
-                  border: `2px solid ${theme.palette.usogui.black}`,
+                  paddingLeft: 6,
+                  paddingRight: 6,
+                  borderRadius: 12,
+                  backgroundImage: badgeGradient,
+                  border: `2px solid ${theme.colors.dark[9]}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: userProgress > 999 ? '9px' : userProgress > 99 ? '10px' : userProgress > 9 ? '11px' : '12px',
+                  fontSize:
+                    userProgress > 999 ? '9px' : userProgress > 99 ? '10px' : userProgress > 9 ? '11px' : '12px',
                   fontWeight: 'bold',
                   color: 'white',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
                 }}
               >
                 {userProgress}
               </Box>
             </Box>
-          </Fab>
+          </ActionIcon>
         </Tooltip>
       </motion.div>
 
-      {/* Success Animation */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
@@ -252,233 +288,235 @@ export const FloatingProgressIndicator: React.FC = () => {
               zIndex: 1001
             }}
           >
-            <Chip
-              label="Progress Updated!"
-              color="success"
+            <Badge
+              color="green"
+              size="lg"
               variant="filled"
-              icon={<Check size={16} />}
-              sx={{
-                fontSize: '0.875rem',
-                fontWeight: 'bold',
-                boxShadow: 4
+              leftSection={<Check size={16} />}
+              styles={{
+                root: {
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  boxShadow: `0 4px 12px ${theme.colors.green[6]}73`
+                }
               }}
-            />
+            >
+              Progress Updated!
+            </Badge>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Enhanced Progress Dialog */}
-      <Dialog
-        open={open}
+      <Modal
+        opened={open}
         onClose={handleClose}
-        TransitionComponent={Transition}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: theme.palette.mode === 'dark' 
-              ? 'linear-gradient(135deg, rgba(33, 33, 33, 0.95) 0%, rgba(66, 66, 66, 0.95) 100%)'
-              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.95) 100%)',
-            backdropFilter: 'blur(10px)',
-            maxHeight: '80vh'
+        size="md"
+        radius="lg"
+        centered
+        transitionProps={{ transition: 'slide-up', duration: transitionDuration, timingFunction: transitionTimingFunction }}
+        overlayProps={{ color: theme.colors.dark[9], opacity: 0.65, blur: 4 }}
+        styles={{
+          content: {
+            backgroundColor: isDark
+              ? 'rgba(16, 16, 16, 0.95)'
+              : 'rgba(255, 255, 255, 0.95)',
+            border: `1px solid ${theme.colors.red[5]}4d`,
+            backdropFilter: 'blur(16px)',
+            marginTop: '80px',
+            color: isDark ? theme.white : theme.colors.dark[8]
+          },
+          header: {
+            backgroundColor: 'transparent',
+            borderBottom: `1px solid ${theme.colors.red[5]}33`,
+            marginBottom: theme.spacing.sm,
+            paddingBottom: theme.spacing.sm
+          },
+          title: {
+            width: '100%',
+            color: isDark ? theme.white : theme.colors.dark[8]
+          },
+          body: {
+            padding: `0 ${theme.spacing.lg}`
           }
         }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <BookOpen size={24} />
-            <Typography variant="h6">Reading Progress</Typography>
+        title={
+          <Group justify="space-between" gap="md">
+            <Group gap="sm">
+              <BookOpen size={24} color={theme.colors.red[5]} />
+              <Text fw={600} size="lg" c={isDark ? undefined : 'dark.8'}>
+                Reading Progress
+              </Text>
+            </Group>
             {user && (
-              <Chip
-                label={`${user.username}`}
-                size="small"
-                color="primary"
-                variant="outlined"
-                icon={<User size={14} />}
-              />
-            )}
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ px: 3 }}>
-          {/* Current Progress Display */}
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
-              Chapter {tempProgress}
-            </Typography>
-            {chapterTitle && (
-              <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 1 }}>
-                {chapterTitle}
-              </Typography>
-            )}
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-              Volume {volumeInfo.volume}, Chapter {volumeInfo.chapterInVolume}
-            </Typography>
-            
-            {/* Visual Progress Bar */}
-            <Box sx={{ position: 'relative', mb: 2 }}>
-              <LinearProgress
-                variant="determinate"
-                value={Math.round((tempProgress / MAX_CHAPTER) * 100)}
-                sx={{
-                  height: 12,
-                  borderRadius: 2,
-                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 2,
-                    background: `linear-gradient(90deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.usogui.character} 50%, ${theme.palette.usogui.arc} 80%, ${theme.palette.primary.main} 100%)`
-                  }
-                }}
-              />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  position: 'absolute', 
-                  right: 0, 
-                  top: -20,
-                  fontWeight: 'bold',
-                  color: 'text.secondary'
-                }}
+              <Badge
+                color="red"
+                variant="light"
+                radius="sm"
+                leftSection={<User size={14} />}
               >
-                {Math.round((tempProgress / MAX_CHAPTER) * 100)}% ({MAX_CHAPTER - tempProgress} remaining)
-              </Typography>
-            </Box>
-          </Box>
+                {user.username}
+              </Badge>
+            )}
+          </Group>
+        }
+      >
+        <Stack gap="md" pb="xs">
+          <Stack gap="xs" align="center">
+            <Text component="p" size="lg" fw={700} c="red.5">
+              Chapter {tempProgress}
+            </Text>
+            {chapterTitle && (
+              <Text size="sm" fw={500} c={isDark ? 'gray.1' : 'dark.6'} ta="center" lineClamp={2}>
+                {chapterTitle}
+              </Text>
+            )}
+            <Text size="xs" c="dimmed">
+              Volume {volumeInfo.volume}, Chapter {volumeInfo.chapterInVolume} • {modalProgressPercentage}%
+            </Text>
+            <Progress
+              value={modalProgressPercentage}
+              size={12}
+              radius="xl"
+              color="red"
+              w="100%"
+              styles={{
+                bar: {
+                  backgroundImage: progressGradient
+                },
+                root: {
+                  backgroundColor: isDark
+                    ? theme.colors.dark[6]
+                    : theme.colors.gray[2]
+                }
+              }}
+            />
+          </Stack>
 
-          {/* Quick Navigation Buttons */}
-          <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProgressChange(tempProgress - 10)}
-              disabled={tempProgress <= 10}
-              sx={{ minWidth: 'auto', px: 2 }}
-            >
-              -10
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProgressChange(tempProgress - 1)}
-              disabled={tempProgress <= 1}
-              sx={{ minWidth: 'auto', px: 2 }}
-            >
-              -1
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProgressChange(tempProgress + 1)}
-              disabled={tempProgress >= MAX_CHAPTER}
-              sx={{ minWidth: 'auto', px: 2 }}
-            >
-              +1
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProgressChange(tempProgress + 10)}
-              disabled={tempProgress >= MAX_CHAPTER - 9}
-              sx={{ minWidth: 'auto', px: 2 }}
-            >
-              +10
-            </Button>
-          </Box>
-
-          {/* Chapter Input with Slider */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Jump to chapter:
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="body2">1</Typography>
-              <Box sx={{ flex: 1 }}>
-                <input
-                  type="range"
-                  min="1"
-                  max={MAX_CHAPTER}
-                  value={tempProgress}
-                  onChange={(e) => handleProgressChange(parseInt(e.target.value))}
-                  disabled={isUpdating}
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    background: `linear-gradient(to right, ${theme.palette.primary.main} 0%, ${theme.palette.primary.main} ${(tempProgress / MAX_CHAPTER) * 100}%, ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'} ${(tempProgress / MAX_CHAPTER) * 100}%, ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'} 100%)`,
-                    outline: 'none',
-                    cursor: 'pointer'
-                  }}
-                />
-              </Box>
-              <Typography variant="body2">{MAX_CHAPTER}</Typography>
-            </Box>
-          </Box>
-
-          {/* Direct Input Field */}
-          <TextField
-            fullWidth
-            label="Or enter chapter number"
-            type="number"
+          <NumberInput
             value={tempProgress}
-            onChange={(e) => handleProgressChange(parseInt(e.target.value) || 1)}
-            inputProps={{ min: 1, max: MAX_CHAPTER }}
+            onChange={handleNumberInputChange}
+            min={1}
+            max={MAX_CHAPTER}
             disabled={isUpdating}
-            size="small"
-            sx={{ mb: 2 }}
-            helperText="Use arrow keys for fine control"
+            hideControls
+            radius="md"
+            size="md"
+            label="Enter chapter number"
+            styles={{
+              input: {
+                backgroundColor: isDark
+                  ? theme.colors.dark[7]
+                  : theme.white,
+                border: `2px solid ${isDark ? theme.colors.dark[4] : theme.colors.gray[3]}`,
+                color: isDark ? theme.white : theme.colors.dark[8],
+                fontSize: rem(16),
+                textAlign: 'center',
+                '&:focus': {
+                  borderColor: theme.colors.red[5],
+                  boxShadow: `0 0 0 2px ${theme.colors.red[5]}33`
+                }
+              },
+              label: {
+                color: isDark ? theme.colors.gray[1] : theme.colors.dark[6],
+                fontWeight: 500,
+                fontSize: rem(13)
+              }
+            }}
           />
 
+          <Group gap="xs" justify="center">
+            <Button
+              size="compact-sm"
+              variant="outline"
+              color="gray"
+              onClick={() => handleProgressChange(tempProgress - 1)}
+              disabled={tempProgress <= 1 || isUpdating}
+            >
+              Previous
+            </Button>
+            <Button
+              size="compact-sm"
+              variant="outline"
+              color="gray"
+              onClick={() => handleProgressChange(tempProgress + 1)}
+              disabled={tempProgress >= MAX_CHAPTER || isUpdating}
+            >
+              Next
+            </Button>
+          </Group>
+
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              color="red"
+              variant="light"
+              icon={<X size={14} />}
+              radius="sm"
+              py="xs"
+              styles={{
+                root: {
+                  backgroundColor: isDark
+                    ? `${theme.colors.red[9]}33`
+                    : `${theme.colors.red[0]}80`,
+                  border: `1px solid ${theme.colors.red[5]}66`
+                }
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          {!user && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Your progress is saved locally. Sign in to sync across devices.
-            </Alert>
+          {!user && !error && (
+            <Text size="xs" c="dimmed" ta="center">
+              Progress saved locally. Sign in to sync across devices.
+            </Text>
           )}
 
-          {tempProgress !== userProgress && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              You have unsaved changes. Click "Update Progress" to save.
-            </Alert>
-          )}
-        </DialogContent>
+          <Stack gap="sm">
+            <Button
+              component={Link}
+              href={`/chapters/${tempProgress}`}
+              variant="outline"
+              color="gray"
+              leftSection={<BookOpen size={14} />}
+              onClick={handleClose}
+              fullWidth
+              size="sm"
+              radius="md"
+            >
+              Read Chapter {tempProgress}
+            </Button>
 
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
-          <Button
-            component={Link}
-            href={`/chapters/${tempProgress}`}
-            variant="outlined"
-            startIcon={<BookOpen size={16} />}
-            onClick={handleClose}
-            fullWidth
-            sx={{ order: { xs: 2, sm: 1 } }}
-          >
-            Read Chapter {tempProgress}
-          </Button>
-          
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={isUpdating || tempProgress === userProgress}
-            startIcon={isUpdating ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}><Check size={16} /></motion.div> : <Check size={16} />}
-            fullWidth
-            sx={{ 
-              order: { xs: 1, sm: 2 },
-              background: tempProgress !== userProgress ? `linear-gradient(135deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.primary.main} 100%)` : undefined,
-              '&:hover': tempProgress !== userProgress ? {
-                background: `linear-gradient(135deg, ${theme.palette.usogui.guide} 0%, ${theme.palette.primary.dark} 100%)`
-              } : undefined
-            }}
-          >
-            {isUpdating ? 'Updating...' : tempProgress !== userProgress ? 'Update Progress' : 'Progress Saved'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Button
+              variant={tempProgress !== userProgress ? 'gradient' : 'filled'}
+              gradient={{ from: palette.guide, to: palette.red }}
+              color={tempProgress === userProgress ? 'gray' : undefined}
+              onClick={handleSave}
+              disabled={isUpdating || tempProgress === userProgress}
+              leftSection={
+                isUpdating ? (
+                  <Loader size="xs" color="white" />
+                ) : (
+                  <Check size={14} />
+                )
+              }
+              fullWidth
+              size="sm"
+              radius="md"
+              styles={{
+                root: {
+                  fontWeight: 600
+                }
+              }}
+            >
+              {isUpdating
+                ? 'Updating...'
+                : tempProgress !== userProgress
+                  ? 'Update Progress'
+                  : 'Progress Saved'}
+            </Button>
+          </Stack>
+        </Stack>
+      </Modal>
     </>
   )
 }

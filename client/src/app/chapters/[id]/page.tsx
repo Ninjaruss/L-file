@@ -1,35 +1,26 @@
 import React from 'react'
-import {
-  Container,
-  Box,
-  Button,
-  Alert
-} from '@mui/material'
+import { Alert, Button, Container, Stack } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
 import { api } from '../../../lib/api'
 import ChapterPageClient from './ChapterPageClient'
+import type { Chapter } from '../../../types'
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-async function getChapterData(id: string) {
+async function getChapterData(id: string): Promise<Chapter | null> {
   try {
-    const chapterId = Number(id)
-    const chapterData = await api.getChapter(chapterId)
-
-    const events: any[] = []
-    const quotes: any[] = []
-    const characters: any[] = []
-
-    return {
-      chapter: chapterData,
-      events,
-      quotes,
-      characters
+    if (!id || isNaN(Number(id))) {
+      throw new Error('Invalid chapter ID')
     }
+    const chapterId = Number(id)
+    if (chapterId <= 0) {
+      throw new Error('Invalid chapter ID')
+    }
+    return await api.getChapter(chapterId)
   } catch (error: unknown) {
     console.error('Error fetching chapter data:', error)
     return null
@@ -38,64 +29,43 @@ async function getChapterData(id: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const data = await getChapterData(id)
+  const chapter = await getChapterData(id)
 
-  if (!data?.chapter) {
+  if (!chapter) {
     return {
       title: 'Chapter Not Found - Usogui Fansite',
-      description: 'The requested chapter reference could not be found.'
+      description: 'The requested chapter could not be found.'
     }
   }
 
-  const { chapter } = data
-
   return {
-    title: `Chapter ${chapter.number}${chapter.title ? ` - ${chapter.title}` : ''} | Usogui Reference Guide`,
-    description: `Reference guide for Usogui Chapter ${chapter.number}${chapter.title ? ` (${chapter.title})` : ''}. ${chapter.summary ? chapter.summary.slice(0, 120) + '...' : 'Analysis and information about this chapter.'}`,
-    keywords: `Usogui, Chapter ${chapter.number}, manga analysis, fan guide, reference${chapter.title ? `, ${chapter.title}` : ''}`,
-    openGraph: {
-      title: `Chapter ${chapter.number}${chapter.title ? ` - ${chapter.title}` : ''} - Usogui Reference`,
-      description: `Reference information and analysis for Chapter ${chapter.number} of the Usogui manga.`,
-      type: 'article'
-    },
-    twitter: {
-      card: 'summary',
-      title: `Chapter ${chapter.number} - Usogui Reference`,
-      description: `Analysis and reference information for Chapter ${chapter.number} of Usogui.`
-    },
-    robots: 'index, follow'
+    title: `Chapter ${chapter.number}${chapter.title ? ` - ${chapter.title}` : ''} | Usogui Fansite`,
+    description: chapter.summary
+      ? chapter.summary.substring(0, 160).replace(/\n/g, ' ') + '...'
+      : `Read about Chapter ${chapter.number} of Usogui. Summary and details are available for readers to revisit key events.`
   }
 }
 
 export default async function ChapterDetailPage({ params }: PageProps) {
   const { id } = await params
-  const data = await getChapterData(id)
+  const chapter = await getChapterData(id)
 
-  if (!data?.chapter) {
+  if (!chapter) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">
-          Chapter reference not found
-        </Alert>
-        <Box sx={{ mt: 3 }}>
-          <Button component={Link} href="/chapters" startIcon={<ArrowLeft />}>
-            Back to Chapter References
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          <Alert color="red" radius="md">
+            Chapter not found
+          </Alert>
+          <Button component={Link} href="/chapters" variant="subtle" color="gray" leftSection={<ArrowLeft size={18} />}>
+            Back to Chapters
           </Button>
-        </Box>
+        </Stack>
       </Container>
     )
   }
 
-  const { chapter, events, quotes, characters } = data
-
-  return (
-    <ChapterPageClient
-      initialChapter={chapter}
-      initialEvents={events}
-      initialQuotes={quotes}
-      initialCharacters={characters}
-    />
-  )
+  return <ChapterPageClient initialChapter={chapter} />
 }
 
 export const dynamic = 'force-dynamic'

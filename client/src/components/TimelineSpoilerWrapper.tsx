@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Box, Typography, Tooltip, useTheme } from '@mui/material'
+import React, { useMemo, useState } from 'react'
+import { Box, Text, Tooltip, useMantineTheme } from '@mantine/core'
 import { AlertTriangle } from 'lucide-react'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
@@ -28,7 +28,26 @@ export default function TimelineSpoilerWrapper({
   const [isRevealed, setIsRevealed] = useState(false)
   const { userProgress } = useProgress()
   const { settings } = useSpoilerSettings()
-  const theme = useTheme()
+  const theme = useMantineTheme()
+  const [isHovered, setIsHovered] = useState(false)
+
+  const accentColor = useMemo(() => {
+    return theme.other?.usogui?.arc ?? theme.colors.red?.[6] ?? '#dc004e'
+  }, [theme])
+
+  const overlayBase = useMemo(() => {
+    if (theme.fn?.rgba) {
+      return theme.fn.rgba(accentColor, 0.78)
+    }
+    return 'rgba(220, 0, 78, 0.78)'
+  }, [accentColor, theme])
+
+  const overlayHover = useMemo(() => {
+    if (theme.fn?.rgba) {
+      return theme.fn.rgba(accentColor, 0.9)
+    }
+    return 'rgba(220, 0, 78, 0.9)'
+  }, [accentColor, theme])
 
   const shouldHideSpoiler = () => {
     // First check if spoiler settings say to show all spoilers
@@ -70,15 +89,18 @@ export default function TimelineSpoilerWrapper({
     : userProgress
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box style={{ position: 'relative' }}>
       {/* Render the actual content underneath */}
-      <Box sx={{ opacity: 0.3, filter: 'blur(2px)', pointerEvents: 'none' }}>
+      <Box style={{ opacity: 0.3, filter: 'blur(2px)', pointerEvents: 'none' }}>
         {children}
       </Box>
       
       {/* Spoiler overlay */}
       <Box 
-        sx={{ 
+        onClick={handleReveal}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{ 
           position: 'absolute',
           top: 0,
           left: 0,
@@ -87,49 +109,46 @@ export default function TimelineSpoilerWrapper({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'error.light',
-          borderRadius: 1,
+          backgroundColor: isHovered ? overlayHover : overlayBase,
+          borderRadius: theme.radius.sm,
           cursor: 'pointer',
-          border: `1px solid ${theme.palette.error.main}`,
-          '&:hover': {
-            backgroundColor: 'error.dark'
-          },
-          zIndex: 100
+          border: `1px solid ${accentColor}`,
+          zIndex: 100,
+          transition: `background-color ${theme.defaultTransition?.duration ?? 200}ms ${theme.transitionTimingFunction}`
         }}
-        onClick={handleReveal}
       >
         <Tooltip 
-          title={chapterNumber ? `Chapter ${chapterNumber} spoiler - You're at Chapter ${effectiveProgress}. Click to reveal.` : `Spoiler content. Click to reveal.`}
-          placement="top"
-          arrow
+          label={chapterNumber ? `Chapter ${chapterNumber} spoiler - You're at Chapter ${effectiveProgress}. Click to reveal.` : 'Spoiler content. Click to reveal.'}
+          position="top"
+          withArrow
         >
-          <Box sx={{ textAlign: 'center', width: '100%' }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'white',
-                fontWeight: 'bold',
+          <Box style={{ textAlign: 'center', width: '100%' }}>
+            <Text 
+              size="xs"
+              span
+              fw={700}
+              style={{ 
+                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 0.5,
+                gap: '0.5rem',
                 fontSize: '0.75rem',
-                mb: 0.5
+                marginBottom: '0.5rem'
               }}
             >
               <AlertTriangle size={14} />
               {chapterNumber ? `Chapter ${chapterNumber} Spoiler` : 'Spoiler'}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: '0.65rem',
-                display: 'block'
+            </Text>
+            <Text 
+              size="xs"
+              style={{ 
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '0.65rem'
               }}
             >
               Click to reveal
-            </Typography>
+            </Text>
           </Box>
         </Tooltip>
       </Box>

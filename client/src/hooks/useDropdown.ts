@@ -1,83 +1,132 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 
 export interface DropdownState {
-  anchorEl: HTMLElement | null
   isOpen: boolean
 }
 
 export interface DropdownHandlers {
-  onEnter: (event: React.MouseEvent<HTMLElement>) => void
-  onLeave: () => void
-  onClose: () => void
+  open: () => void
+  close: () => void
+  setOpen: (opened: boolean) => void
+  onTriggerEnter: () => void
+  onTriggerLeave: () => void
   onDropdownEnter: () => void
   onDropdownLeave: () => void
 }
 
 export interface UseDropdownOptions {
-  buttonLeaveDelay?: number
-  dropdownLeaveDelay?: number
   closeOthers?: () => void
+  openDelay?: number
+  closeDelay?: number
 }
 
 export function useDropdown(options: UseDropdownOptions = {}): [DropdownState, DropdownHandlers] {
   const {
-    buttonLeaveDelay = 250,
-    dropdownLeaveDelay = 150,
-    closeOthers
+    closeOthers,
+    openDelay = 120,
+    closeDelay = 200
   } = options
 
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const clearTimeout = useCallback(() => {
-    if (timeoutRef.current) {
-      globalThis.clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
+  const clearOpenTimeout = useCallback(() => {
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current)
+      openTimeoutRef.current = null
     }
   }, [])
 
-  const onEnter = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    clearTimeout()
+  const clearCloseTimeout = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }, [])
+
+  const open = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
     closeOthers?.()
-    setAnchorEl(event.currentTarget)
-  }, [clearTimeout, closeOthers])
+    setIsOpen(true)
+  }, [clearCloseTimeout, clearOpenTimeout, closeOthers])
 
-  const onLeave = useCallback(() => {
-    timeoutRef.current = globalThis.setTimeout(() => {
-      setAnchorEl(null)
-    }, buttonLeaveDelay)
-  }, [buttonLeaveDelay])
+  const close = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    setIsOpen(false)
+  }, [clearCloseTimeout, clearOpenTimeout])
 
-  const onClose = useCallback(() => {
-    clearTimeout()
-    setAnchorEl(null)
-  }, [clearTimeout])
+  const setOpen = useCallback((opened: boolean) => {
+    if (opened) {
+      open()
+    } else {
+      close()
+    }
+  }, [open, close])
+
+  const scheduleOpen = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    if (openDelay === 0) {
+      open()
+      return
+    }
+
+    openTimeoutRef.current = setTimeout(() => {
+      open()
+      openTimeoutRef.current = null
+    }, openDelay)
+  }, [clearCloseTimeout, clearOpenTimeout, open, openDelay])
+
+  const scheduleClose = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    if (closeDelay === 0) {
+      close()
+      return
+    }
+
+    closeTimeoutRef.current = setTimeout(() => {
+      close()
+      closeTimeoutRef.current = null
+    }, closeDelay)
+  }, [clearCloseTimeout, clearOpenTimeout, close, closeDelay])
+
+  const onTriggerEnter = useCallback(() => {
+    scheduleOpen()
+  }, [scheduleOpen])
+
+  const onTriggerLeave = useCallback(() => {
+    scheduleClose()
+  }, [scheduleClose])
 
   const onDropdownEnter = useCallback(() => {
-    clearTimeout()
-  }, [clearTimeout])
+    clearCloseTimeout()
+  }, [clearCloseTimeout])
 
   const onDropdownLeave = useCallback(() => {
-    timeoutRef.current = globalThis.setTimeout(() => {
-      setAnchorEl(null)
-    }, dropdownLeaveDelay)
-  }, [dropdownLeaveDelay])
+    scheduleClose()
+  }, [scheduleClose])
 
   useEffect(() => {
     return () => {
-      clearTimeout()
+      clearOpenTimeout()
+      clearCloseTimeout()
     }
-  }, [clearTimeout])
+  }, [clearCloseTimeout, clearOpenTimeout])
 
   return [
     {
-      anchorEl,
-      isOpen: Boolean(anchorEl)
+      isOpen
     },
     {
-      onEnter,
-      onLeave,
-      onClose,
+      open,
+      close,
+      setOpen,
+      onTriggerEnter,
+      onTriggerLeave,
       onDropdownEnter,
       onDropdownLeave
     }

@@ -1,33 +1,41 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
-  Container,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
   Alert,
-  CircularProgress,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CloseButton,
+  Container,
   Grid,
-  Chip,
-  Autocomplete,
-  FormControl,
-  Tab,
-  Tabs
-} from '@mui/material'
-import { FileText, Send, Plus, X, Users, BookOpen, Dice6, Eye } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+  Group,
+  Loader,
+  MultiSelect,
+  Select,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
+import { FileText, Send, Plus, BookOpen, Eye } from 'lucide-react'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import EntityEmbedHelperWithSearch from '../../components/EntityEmbedHelperWithSearch'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 
+const MIN_TITLE_LENGTH = 5
+const MIN_DESCRIPTION_LENGTH = 20
+const MIN_CONTENT_LENGTH = 100
+
 export default function SubmitGuidePageContent() {
-  const theme = useTheme()
+  const theme = useMantineTheme()
   const { user, loading: authLoading } = useAuth()
   const [formData, setFormData] = useState({
     title: '',
@@ -42,34 +50,34 @@ export default function SubmitGuidePageContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [characters, setCharacters] = useState<Array<{id: number, name: string}>>([])
-  const [arcs, setArcs] = useState<Array<{id: number, name: string}>>([])
-  const [gambles, setGambles] = useState<Array<{id: number, name: string}>>([])
+  const [characters, setCharacters] = useState<Array<{ id: number; name: string }>>([])
+  const [arcs, setArcs] = useState<Array<{ id: number; name: string }>>([])
+  const [gambles, setGambles] = useState<Array<{ id: number; name: string }>>([])
   const [loadingData, setLoadingData] = useState(true)
-  const [activeTab, setActiveTab] = useState(0)
-  const [contentTextAreaRef, setContentTextAreaRef] = useState<HTMLTextAreaElement | null>(null)
+  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write')
+  const contentRef = useRef<HTMLTextAreaElement | null>(null)
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
+  const guideAccent = theme.other?.usogui?.guide ?? theme.colors.green[6]
+
+  const handleInputChange = (field: string, value: unknown) => {
+    setFormData((prev) => ({
       ...prev,
       [field]: value
     }))
   }
 
   const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }))
+    const candidate = newTag.trim()
+    if (candidate && !formData.tags.includes(candidate)) {
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, candidate] }))
       setNewTag('')
     }
   }
 
   const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove)
     }))
   }
 
@@ -77,20 +85,20 @@ export default function SubmitGuidePageContent() {
     if (!formData.title.trim()) {
       return 'Title is required'
     }
-    if (formData.title.length < 5) {
-      return 'Title must be at least 5 characters long'
+    if (formData.title.trim().length < MIN_TITLE_LENGTH) {
+      return `Title must be at least ${MIN_TITLE_LENGTH} characters long`
     }
     if (!formData.description.trim()) {
       return 'Description is required'
     }
-    if (formData.description.length < 20) {
-      return 'Description must be at least 20 characters long'
+    if (formData.description.trim().length < MIN_DESCRIPTION_LENGTH) {
+      return `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters long`
     }
     if (!formData.content.trim()) {
       return 'Content is required'
     }
-    if (formData.content.length < 100) {
-      return 'Content must be at least 100 characters long'
+    if (formData.content.trim().length < MIN_CONTENT_LENGTH) {
+      return `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
     }
     return null
   }
@@ -107,16 +115,15 @@ export default function SubmitGuidePageContent() {
     }
 
     setLoading(true)
-
     try {
       await api.createGuide({
         title: formData.title.trim(),
         description: formData.description.trim(),
         content: formData.content.trim(),
         tags: formData.tags,
-        characterIds: formData.characterIds.length > 0 ? formData.characterIds : undefined,
-        arcId: formData.arcId || undefined,
-        gambleIds: formData.gambleIds.length > 0 ? formData.gambleIds : undefined
+        characterIds: formData.characterIds.length ? formData.characterIds : undefined,
+        arcId: formData.arcId ?? undefined,
+        gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined
       })
       setSuccess('Guide submitted successfully! It is now pending moderator approval and will be reviewed before being published.')
       setFormData({
@@ -128,54 +135,42 @@ export default function SubmitGuidePageContent() {
         arcId: null,
         gambleIds: []
       })
-    } catch (error: any) {
-      setError(error.message || 'Failed to submit guide. Please try again.')
+      setActiveTab('write')
+    } catch (submissionError: unknown) {
+      if (submissionError instanceof Error) {
+        setError(submissionError.message)
+      } else {
+        setError('Failed to submit guide. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && event.target === event.currentTarget) {
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
       event.preventDefault()
       addTag()
     }
   }
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
-
   const handleInsertEmbed = (embedCode: string) => {
-    if (contentTextAreaRef) {
-      const textArea = contentTextAreaRef
-      const currentValue = formData.content
-      const cursorPosition = textArea.selectionStart || currentValue.length
-      const newValue =
-        currentValue.slice(0, cursorPosition) +
-        embedCode +
-        currentValue.slice(cursorPosition)
-
-      setFormData(prev => ({
-        ...prev,
-        content: newValue
-      }))
-
-      // Focus back to textarea and position cursor after the inserted embed
-      setTimeout(() => {
-        textArea.focus()
-        textArea.setSelectionRange(
-          cursorPosition + embedCode.length,
-          cursorPosition + embedCode.length
-        )
-      }, 100)
-    } else {
-      // Fallback: just append to the end
-      setFormData(prev => ({
-        ...prev,
-        content: prev.content + embedCode
-      }))
+    const textarea = contentRef.current
+    if (!textarea) {
+      setFormData((prev) => ({ ...prev, content: prev.content + embedCode }))
+      return
     }
+
+    const currentValue = formData.content
+    const cursorPosition = textarea.selectionStart ?? currentValue.length
+    const newValue = `${currentValue.slice(0, cursorPosition)}${embedCode}${currentValue.slice(cursorPosition)}`
+    setFormData((prev) => ({ ...prev, content: newValue }))
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const offset = cursorPosition + embedCode.length
+      textarea.setSelectionRange(offset, offset)
+    })
   }
 
   useEffect(() => {
@@ -186,26 +181,25 @@ export default function SubmitGuidePageContent() {
           api.getArcs({ limit: 200 }),
           api.getGambles({ limit: 500 })
         ])
-        
         setCharacters(charactersRes.data || [])
         setArcs(arcsRes.data || [])
         setGambles(gamblesRes.data || [])
-      } catch (error) {
-        console.error('Error loading data:', error)
+      } catch (loadError) {
+        console.error('Error loading data:', loadError)
         setError('Failed to load form data. Please refresh the page.')
       } finally {
         setLoadingData(false)
       }
     }
-    
+
     loadData()
   }, [])
 
   if (authLoading || loadingData) {
     return (
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress size={50} />
+      <Container size="md" py="xl">
+        <Box style={{ display: 'flex', justifyContent: 'center' }}>
+          <Loader size="lg" />
         </Box>
       </Container>
     )
@@ -213,8 +207,8 @@ export default function SubmitGuidePageContent() {
 
   if (!user) {
     return (
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Alert severity="warning">
+      <Container size="md" py="xl">
+        <Alert color="yellow" variant="light">
           Please log in to submit a guide.
         </Alert>
       </Container>
@@ -223,367 +217,263 @@ export default function SubmitGuidePageContent() {
 
   const isFormValid = !validateForm()
 
+  const characterOptions = characters.map((character) => ({ value: character.id.toString(), label: character.name }))
+  const arcOptions = arcs.map((arc) => ({ value: arc.id.toString(), label: arc.name }))
+  const gambleOptions = gambles.map((gamble) => ({ value: gamble.id.toString(), label: gamble.name }))
+
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <FileText size={48} color={theme.palette.usogui.guide} />
-          </Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Write a Guide
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
+    <Container size="md" py="xl">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <Stack align="center" gap="sm" mb="xl" ta="center">
+          <FileText size={48} color={guideAccent} />
+          <Title order={2}>Write a Guide</Title>
+          <Text size="lg" c="dimmed">
             Share your knowledge and insights about Usogui with the community
-          </Typography>
-        </Box>
+          </Text>
+        </Stack>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert color="red" variant="light" mb="md">
             {error}
           </Alert>
         )}
 
         {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
+          <Alert color="green" variant="light" mb="md">
             {success}
           </Alert>
         )}
 
-        <Card className="gambling-card">
-          <CardContent>
-            <form onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
-                {/* Title */}
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Guide Title"
-                    placeholder="e.g., 'Understanding the Rules of Air Poker' or 'Character Analysis: Baku Madarame'"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    required
-                    error={formData.title.length > 0 && formData.title.length < 5}
-                    helperText={
-                      formData.title.length > 0 && formData.title.length < 5
-                        ? 'Title must be at least 5 characters long'
-                        : 'Choose a clear, descriptive title for your guide (minimum 5 characters)'
-                    }
-                  />
-                </Grid>
+        <Card className="gambling-card" shadow="lg" radius="md" withBorder>
+          <form onSubmit={handleSubmit}>
+            <Stack gap="xl" p="xl">
+              <Stack gap="md">
+                <TextInput
+                  label="Guide Title"
+                  placeholder="e.g., 'Understanding the Rules of Air Poker' or 'Character Analysis: Baku Madarame'"
+                  value={formData.title}
+                  onChange={(event) => handleInputChange('title', event.currentTarget.value)}
+                  required
+                  error={
+                    formData.title.length > 0 && formData.title.trim().length < MIN_TITLE_LENGTH
+                      ? `Title must be at least ${MIN_TITLE_LENGTH} characters long`
+                      : undefined
+                  }
+                  description="Choose a clear, descriptive title for your guide (minimum 5 characters)"
+                />
 
-                {/* Description */}
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="Guide Description"
-                    placeholder="Provide a brief summary of what your guide covers. This will be shown in guide listings to help readers understand what they'll learn."
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    required
-                    error={formData.description.length > 0 && formData.description.length < 20}
-                    helperText={
-                      formData.description.length > 0 && formData.description.length < 20
-                        ? 'Description must be at least 20 characters long'
-                        : `Write a compelling description that summarizes your guide (${formData.description.length}/20+ characters)`
-                    }
-                  />
-                </Grid>
+                <Textarea
+                  label="Guide Description"
+                  placeholder="Provide a brief summary of what your guide covers. This will be shown in guide listings to help readers understand what they'll learn."
+                  value={formData.description}
+                  onChange={(event) => handleInputChange('description', event.currentTarget.value)}
+                  required
+                  minRows={3}
+                  autosize
+                  error={
+                    formData.description.length > 0 && formData.description.trim().length < MIN_DESCRIPTION_LENGTH
+                      ? `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters long`
+                      : undefined
+                  }
+                  description={`Write a compelling description that summarizes your guide (${formData.description.length}/20+ characters)`}
+                />
+              </Stack>
 
-                {/* Enhanced Content Section with Entity Embeds */}
-                <Grid item xs={12}>
-                  <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
-                  
-                  <Card className="gambling-card">
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                      <Tabs value={activeTab} onChange={handleTabChange}>
-                        <Tab label="Write" icon={<FileText size={16} />} iconPosition="start" />
-                        <Tab label="Preview" icon={<Eye size={16} />} iconPosition="start" />
-                      </Tabs>
-                    </Box>
-                    
-                    <CardContent>
-                      {activeTab === 0 ? (
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={16}
-                          label="Guide Content"
-                          placeholder="Write your guide here. Use Markdown for formatting and embed entities using {{entity_type:entity_id}} syntax. You may use entity embed search above to insert embeds."
-                          value={formData.content}
-                          onChange={(e) => handleInputChange('content', e.target.value)}
-                          required
-                          error={formData.content.length > 0 && formData.content.length < 100}
-                          helperText={
-                            formData.content.length > 0 && formData.content.length < 100
-                              ? 'Content must be at least 100 characters long'
-                              : `Write your detailed guide content with entity embeds (${formData.content.length}/100+ characters)`
-                          }
-                          inputProps={{
-                            ref: (ref: HTMLTextAreaElement) => setContentTextAreaRef(ref)
-                          }}
-                        />
-                      ) : (
-                        <Box>
-                          <Typography variant="h6" gutterBottom>
-                            Preview
-                          </Typography>
-                          <Box sx={{ 
-                            border: `1px solid ${theme.palette.divider}`,
-                            borderRadius: 1,
-                            p: 2,
-                            minHeight: '400px',
-                            backgroundColor: 'rgba(0,0,0,0.02)'
-                          }}>
-                            {formData.content ? (
-                              <EnhancedSpoilerMarkdown 
-                                content={formData.content}
-                                compactEntityCards={false}
-                              />
-                            ) : (
-                              <Typography color="text.secondary" fontStyle="italic">
-                                Start writing your guide to see the preview with entity embeds...
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
+              <Stack gap="md">
+                <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
 
-                {/* Related Content Section */}
-                <Grid item xs={12}>
-                  <Box sx={{ 
-                    p: 3, 
-                    backgroundColor: 'rgba(16, 185, 129, 0.05)', 
-                    borderRadius: 2, 
-                    border: `1px solid ${theme.palette.usogui.guide}`,
-                    mb: 3
-                  }}>
-                    <Typography variant="h6" gutterBottom sx={{ 
-                      color: theme.palette.usogui.guide,
-                      fontWeight: 'bold',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      <BookOpen size={20} />
-                      Related Content (Optional)
-                    </Typography>
-                    
-                    <Grid container spacing={3}>
-                      {/* Characters */}
-                      <Grid item xs={12} md={4}>
-                        <FormControl fullWidth>
-                          <Autocomplete
-                            multiple
-                            options={characters}
-                            getOptionLabel={(option) => option.name}
-                            value={characters.filter(char => formData.characterIds.includes(char.id))}
-                            onChange={(_, newValue) => {
-                              handleInputChange('characterIds', newValue.map(char => char.id))
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Characters"
-                                placeholder="Select related characters"
-                                helperText="Link to characters featured in your guide"
-                              />
-                            )}
-                            renderOption={(props, option) => {
-                              const { key, ...otherProps } = props
-                              return (
-                                <li key={key} {...otherProps}>
-                                  <Users size={16} style={{ marginRight: 8 }} />
-                                  {option.name}
-                                </li>
-                              )
-                            }}
-                            renderTags={(value, getTagProps) =>
-                              value.map((option, index) => {
-                                const { key, ...tagProps } = getTagProps({ index })
-                                return (
-                                  <Chip
-                                    key={key}
-                                    label={option.name}
-                                    {...tagProps}
-                                    color="primary"
-                                    size="small"
-                                    icon={<Users size={14} />}
-                                  />
-                                )
-                              })
-                            }
-                          />
-                        </FormControl>
-                      </Grid>
+                <Card className="gambling-card" shadow="sm" radius="md" withBorder>
+                  <Tabs value={activeTab} onChange={(value) => setActiveTab(value as 'write' | 'preview')}>
+                    <Tabs.List>
+                      <Tabs.Tab value="write" leftSection={<FileText size={16} />}>
+                        Write
+                      </Tabs.Tab>
+                      <Tabs.Tab value="preview" leftSection={<Eye size={16} />}>
+                        Preview
+                      </Tabs.Tab>
+                    </Tabs.List>
 
-                      {/* Arc */}
-                      <Grid item xs={12} md={4}>
-                        <FormControl fullWidth>
-                          <Autocomplete
-                            options={arcs}
-                            getOptionLabel={(option) => option.name}
-                            value={arcs.find(arc => arc.id === formData.arcId) || null}
-                            onChange={(_, newValue) => {
-                              handleInputChange('arcId', newValue?.id || null)
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Arc"
-                                placeholder="Select related arc"
-                                helperText="Link to the story arc your guide covers"
-                              />
-                            )}
-                            renderOption={(props, option) => {
-                              const { key, ...otherProps } = props
-                              return (
-                                <li key={key} {...otherProps}>
-                                  <BookOpen size={16} style={{ marginRight: 8 }} />
-                                  {option.name}
-                                </li>
-                              )
-                            }}
-                          />
-                        </FormControl>
-                      </Grid>
-
-                      {/* Gambles */}
-                      <Grid item xs={12} md={4}>
-                        <FormControl fullWidth>
-                          <Autocomplete
-                            multiple
-                            options={gambles}
-                            getOptionLabel={(option) => option.name}
-                            value={gambles.filter(gamble => formData.gambleIds.includes(gamble.id))}
-                            onChange={(_, newValue) => {
-                              handleInputChange('gambleIds', newValue.map(gamble => gamble.id))
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Gambles"
-                                placeholder="Select related gambles"
-                                helperText="Link to gambles analyzed in your guide"
-                              />
-                            )}
-                            renderOption={(props, option) => {
-                              const { key, ...otherProps } = props
-                              return (
-                                <li key={key} {...otherProps}>
-                                  <Dice6 size={16} style={{ marginRight: 8 }} />
-                                  {option.name}
-                                </li>
-                              )
-                            }}
-                            renderTags={(value, getTagProps) =>
-                              value.map((option, index) => {
-                                const { key, ...tagProps } = getTagProps({ index })
-                                return (
-                                  <Chip
-                                    key={key}
-                                    label={option.name}
-                                    {...tagProps}
-                                    color="secondary"
-                                    size="small"
-                                    icon={<Dice6 size={14} />}
-                                  />
-                                )
-                              })
-                            }
-                          />
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                </Grid>
-
-                {/* Tags */}
-                <Grid item xs={12}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Tags
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                      {formData.tags.map((tag) => (
-                        <Chip
-                          key={tag}
-                          label={tag}
-                          onDelete={() => removeTag(tag)}
-                          color="primary"
-                          variant="outlined"
-                          deleteIcon={<X size={16} />}
-                        />
-                      ))}
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <TextField
-                        size="small"
-                        label="Add tag"
-                        placeholder="e.g., character-analysis, gambling, theory"
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        sx={{ flexGrow: 1 }}
+                    <Tabs.Panel value="write" p="xl">
+                      <Textarea
+                        label="Guide Content"
+                        placeholder="Write your guide here. Use Markdown for formatting and embed entities using {{entity_type:entity_id}} syntax."
+                        value={formData.content}
+                        onChange={(event) => handleInputChange('content', event.currentTarget.value)}
+                        required
+                        minRows={16}
+                        autosize
+                        error={
+                          formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH
+                            ? `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
+                            : undefined
+                        }
+                        description={`Write your detailed guide content with entity embeds (${formData.content.length}/100+ characters)`}
+                        ref={contentRef}
                       />
-                      <Button
-                        variant="outlined"
-                        onClick={addTag}
-                        startIcon={<Plus size={16} />}
-                        disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
-                      >
-                        Add
-                      </Button>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Add relevant tags to help others find your guide (e.g., characters, gambles, arcs, analysis)
-                    </Typography>
-                  </Box>
-                </Grid>
+                    </Tabs.Panel>
 
-                {/* Submit Button */}
-                <Grid item xs={12}>
+                    <Tabs.Panel value="preview" p="xl">
+                      <Stack gap="md">
+                        <Title order={4}>Preview</Title>
+                        <Box
+                          style={{
+                            border: `1px solid ${theme.other?.usogui?.guide ? `${theme.other.usogui.guide}40` : 'rgba(255,255,255,0.12)'}`,
+                            borderRadius: rem(12),
+                            padding: rem(16),
+                            minHeight: rem(320),
+                            backgroundColor: 'rgba(10, 10, 10, 0.4)'
+                          }}
+                        >
+                          {formData.content ? (
+                            <EnhancedSpoilerMarkdown content={formData.content} compactEntityCards={false} />
+                          ) : (
+                            <Text c="dimmed" fs="italic">
+                              Start writing your guide to see the preview with entity embeds...
+                            </Text>
+                          )}
+                        </Box>
+                      </Stack>
+                    </Tabs.Panel>
+                  </Tabs>
+                </Card>
+              </Stack>
+
+              <Box
+                style={{
+                  padding: rem(24),
+                  backgroundColor: 'rgba(56, 142, 60, 0.08)',
+                  borderRadius: rem(12),
+                  border: `1px solid ${guideAccent}33`
+                }}
+              >
+                <Stack gap="md">
+                  <Group gap="sm">
+                    <BookOpen size={20} color={guideAccent} />
+                    <Text fw={600} c={guideAccent}>
+                      Related Content (Optional)
+                    </Text>
+                  </Group>
+
+                  <Grid gutter="lg">
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                      <MultiSelect
+                        label="Characters"
+                        placeholder="Select related characters"
+                        data={characterOptions}
+                        value={formData.characterIds.map(String)}
+                        onChange={(values) => handleInputChange('characterIds', values.map((v) => Number(v)))}
+                        searchable
+                        clearable
+                        nothingFoundMessage="No characters"
+                        description="Link to characters featured in your guide"
+                      />
+                    </Grid.Col>
+
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                      <Select
+                        label="Arc"
+                        placeholder="Select related arc"
+                        data={arcOptions}
+                        value={formData.arcId !== null ? formData.arcId.toString() : null}
+                        onChange={(value) => handleInputChange('arcId', value ? Number(value) : null)}
+                        searchable
+                        clearable
+                        nothingFoundMessage="No arcs"
+                        description="Link to the story arc your guide covers"
+                      />
+                    </Grid.Col>
+
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                      <MultiSelect
+                        label="Gambles"
+                        placeholder="Select related gambles"
+                        data={gambleOptions}
+                        value={formData.gambleIds.map(String)}
+                        onChange={(values) => handleInputChange('gambleIds', values.map((v) => Number(v)))}
+                        searchable
+                        clearable
+                        nothingFoundMessage="No gambles"
+                        description="Link to gambles analyzed in your guide"
+                      />
+                    </Grid.Col>
+                  </Grid>
+                </Stack>
+              </Box>
+
+              <Stack gap="sm">
+                <Text fw={600}>Tags</Text>
+                <Group gap={8} wrap="wrap">
+                  {formData.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      color="red"
+                      rightSection={<CloseButton size="sm" onClick={() => removeTag(tag)} />}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                  {formData.tags.length === 0 && (
+                    <Text size="sm" c="dimmed">
+                      No tags added yet.
+                    </Text>
+                  )}
+                </Group>
+
+                <Group align="flex-end" gap="sm" wrap="nowrap">
+                  <TextInput
+                    label="Add tag"
+                    placeholder="e.g., character-analysis, gambling, theory"
+                    value={newTag}
+                    onChange={(event) => setNewTag(event.currentTarget.value)}
+                    onKeyDown={handleKeyPress}
+                    style={{ flex: 1 }}
+                  />
                   <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    fullWidth
-                    disabled={loading || !isFormValid}
-                    startIcon={loading ? <CircularProgress size={20} /> : <Send size={20} />}
+                    variant="outline"
+                    color="red"
+                    leftSection={<Plus size={16} />}
+                    onClick={addTag}
+                    disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
                   >
-                    {loading ? 'Submitting...' : 'Submit Guide'}
+                    Add
                   </Button>
-                </Grid>
-              </Grid>
-            </form>
-          </CardContent>
+                </Group>
+
+                <Text size="xs" c="dimmed">
+                  Add relevant tags to help others find your guide (e.g., characters, gambles, arcs, analysis)
+                </Text>
+              </Stack>
+
+              <Button
+                type="submit"
+                size="lg"
+                color="red"
+                fullWidth
+                loading={loading}
+                leftSection={loading ? undefined : <Send size={18} />}
+                disabled={!isFormValid}
+              >
+                {loading ? 'Submitting...' : 'Submit Guide'}
+              </Button>
+            </Stack>
+          </form>
         </Card>
 
-        <Box sx={{ mt: 4 }}>
-          <Alert severity="info">
-            <Typography variant="body2">
-              <strong>Guide Writing Tips:</strong>
-              <br />• Be thorough and informative
-              <br />• Use clear headings and structure
-              <br />• Use entity embeds to reference characters, arcs, gambles, etc. (e.g., <code>{'{{character:1}}'}</code>)
-              <br />• Add custom text to embeds for context (e.g., <code>{'{{character:1:the protagonist}}'}</code>)
-              <br />• Avoid major spoilers unless clearly marked
-              <br />• Cite sources when referencing specific chapters
-              <br />• Use the Preview tab to see how your entity embeds will look
-              <br />• Proofread before submitting
-              <br />• Guides will be reviewed before publication
-            </Typography>
-          </Alert>
-        </Box>
+        <Alert color="blue" variant="light" mt="xl">
+          <Text size="sm">
+            <strong>Guide Writing Tips:</strong>
+            <br />• Be thorough and informative
+            <br />• Use clear headings and structure
+            <br />• Use entity embeds to reference characters, arcs, gambles, etc. (e.g., <code>{'{{character:1}}'}</code>)
+            <br />• Add custom text to embeds for context (e.g., <code>{'{{character:1:the protagonist}}'}</code>)
+            <br />• Avoid major spoilers unless clearly marked
+            <br />• Cite sources when referencing specific chapters
+            <br />• Use the Preview tab to see how your entity embeds will look
+            <br />• Proofread before submitting
+            <br />• Guides will be reviewed before publication
+          </Text>
+        </Alert>
       </motion.div>
     </Container>
   )

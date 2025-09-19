@@ -1,24 +1,6 @@
 import React from 'react'
-import {
-  Container,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Grid,
-  TextField,
-  Chip,
-  CircularProgress,
-  Alert,
-  Pagination,
-  InputAdornment
-} from '@mui/material'
-import { Search, Shield, Users } from 'lucide-react'
-import Link from 'next/link'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
-import { motion } from 'motion/react'
-import MediaThumbnail from '../../components/MediaThumbnail'
 import OrganizationsPageContent from './OrganizationsPageContent'
 
 interface Organization {
@@ -82,7 +64,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <OrganizationsPageContent
         initialOrganizations={organizations}
         initialTotalPages={totalPages}

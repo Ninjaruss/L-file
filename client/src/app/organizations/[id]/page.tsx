@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Container,
-  Box,
-  Button,
-  Alert
-} from '@mui/material'
+import { Alert, Button, Container, Stack } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -50,8 +45,22 @@ async function getOrganizationData(id: string) {
     const members = organizationData.characters || []
 
     // For now, we'll set empty arrays for other related data
-    const events: any[] = []
-    const gambles: any[] = []
+    const events: Array<{
+      id: number
+      title: string
+      description: string
+      type: string
+      chapterNumber: number
+      characters?: Array<{ id: number; name: string }>
+    }> = []
+    const gambles: Array<{
+      id: number
+      name: string
+      description?: string
+      rules: string
+      winCondition?: string
+      chapterId: number
+    }> = []
 
     return {
       organization: organizationData,
@@ -103,15 +112,15 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
 
   if (!data?.organization) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">
-          Organization not found
-        </Alert>
-        <Box sx={{ mt: 3 }}>
-          <Button component={Link} href="/organizations" startIcon={<ArrowLeft />}>
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          <Alert color="red" variant="light">
+            Organization not found
+          </Alert>
+          <Button component={Link} href="/organizations" leftSection={<ArrowLeft size={16} />}>
             Back to Organizations
           </Button>
-        </Box>
+        </Stack>
       </Container>
     )
   }

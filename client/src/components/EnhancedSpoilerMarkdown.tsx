@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Box } from '@mui/material'
+import { Box } from '@mantine/core'
 import TimelineSpoilerWrapper from './TimelineSpoilerWrapper'
 import EntityCard from './EntityCard'
 import { parseEntityEmbeds } from '../lib/entityEmbedParser'
@@ -36,7 +36,7 @@ const EnhancedSpoilerMarkdown: React.FC<EnhancedSpoilerMarkdownProps> = ({
         <Box
           key={embed.id}
           component="span"
-          sx={{ 
+          style={{
             display: compactEntityCards ? 'inline' : 'inline-block',
             margin: compactEntityCards ? '0 4px' : '4px 2px',
             verticalAlign: compactEntityCards ? 'middle' : 'top'

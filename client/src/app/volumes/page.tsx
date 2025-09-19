@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container } from '@mui/material'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
 import VolumesPageContent from './VolumesPageContent'
 
@@ -67,7 +67,7 @@ export default async function VolumesPage({ searchParams }: VolumesPageProps) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <VolumesPageContent
         initialVolumes={volumes}
         initialTotalPages={totalPages}

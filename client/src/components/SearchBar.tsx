@@ -11,7 +11,8 @@ import {
   Loader,
   Text,
   ScrollArea,
-  useMantineTheme
+  useMantineTheme,
+  rgba
 } from '@mantine/core'
 import { Search, BookOpen, Users, Zap, Shield, FileText, Dices, Image as MediaIcon, Quote } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -47,7 +48,7 @@ export const SearchBar: React.FC = () => {
 
   const withAlpha = (color: string, alpha: number, fallback: string) => {
     try {
-      return theme.fn?.rgba?.(color, alpha) ?? fallback
+      return rgba(color, alpha)
     } catch (error) {
       return fallback
     }

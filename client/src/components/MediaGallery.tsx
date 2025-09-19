@@ -1,30 +1,38 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  CircularProgress,
+  ActionIcon,
   Alert,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  useMediaQuery,
-  Link as MuiLink,
-  Fade,
+  AspectRatio,
+  Badge,
+  Box,
   Button,
-  FormControl,
-  InputLabel,
+  Card,
+  Group,
+  Loader,
+  Modal,
+  Paper,
   Select,
-  MenuItem,
-  Chip
-} from '@mui/material'
-import { Image, Play, ExternalLink, X, ZoomIn, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+  SimpleGrid,
+  Stack,
+  Text,
+  Transition,
+  rem,
+  useMantineTheme,
+  rgba
+} from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
+import {
+  Image as ImageIcon,
+  Play,
+  ExternalLink,
+  X,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2
+} from 'lucide-react'
 import NextImage from 'next/image'
 import { api } from '../lib/api'
 
@@ -60,20 +68,42 @@ interface MediaGalleryProps {
   arcId?: number
 }
 
-export default function MediaGallery({ 
+const MAX_DIALOG_WIDTH = 1280
+
+const mediaTypeOptions = [
+  { value: 'all', label: 'All Types' },
+  { value: 'image', label: 'Images' },
+  { value: 'video', label: 'Videos' },
+  { value: 'audio', label: 'Audio' }
+]
+
+export default function MediaGallery({
   ownerType,
   ownerId,
   purpose,
-  characterId, 
-  arcId, 
-  limit = 12, 
+  characterId,
+  arcId,
+  limit = 12,
   showTitle = true,
   compactMode = false,
   showFilters = false,
   allowMultipleTypes = true
 }: MediaGalleryProps) {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const theme = useMantineTheme()
+  const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`)
+  const palette = useMemo(() => {
+    const baseBlack = theme.other?.usogui?.black ?? '#0a0a0a'
+    const accent = theme.other?.usogui?.red ?? theme.colors.red?.[5] ?? '#e11d48'
+    const secondaryAccent = theme.other?.usogui?.purple ?? theme.colors.violet?.[6] ?? '#7c3aed'
+
+    return {
+      panel: rgba(baseBlack, 0.95),
+      border: '1px solid rgba(225, 29, 72, 0.2)',
+      accent,
+      secondaryAccent
+    }
+  }, [theme])
+
   const [media, setMedia] = useState<MediaItem[]>([])
   const [filteredMedia, setFilteredMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,10 +112,10 @@ export default function MediaGallery({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [imageZoomed, setImageZoomed] = useState(false)
-  const [videoLoaded, setVideoLoaded] = useState(false)
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
-  
-  // Filter states
+  const [hoveredMediaId, setHoveredMediaId] = useState<number | null>(null)
+
+  // Filter state
   const [selectedMediaType, setSelectedMediaType] = useState<string>('all')
   const [selectedCharacter, setSelectedCharacter] = useState<string>('all')
   const [selectedArc, setSelectedArc] = useState<string>('all')
@@ -94,33 +124,29 @@ export default function MediaGallery({
     const fetchMedia = async () => {
       try {
         setLoading(true)
-        
-        // Convert legacy props to polymorphic if needed
+
         let finalOwnerType = ownerType
         let finalOwnerId = ownerId
-        
-        // Handle migration from organization to organization
-        if (finalOwnerType === 'organization' as any) {
+
+        if (finalOwnerType === ('organization' as any)) {
           finalOwnerType = 'organization'
         }
-        
+
         if (!finalOwnerType && !finalOwnerId) {
           if (characterId && !isNaN(characterId) && characterId > 0) {
             finalOwnerType = 'character'
             finalOwnerId = characterId
           } else if (arcId && !isNaN(arcId) && arcId > 0) {
-            finalOwnerType = 'arc' 
+            finalOwnerType = 'arc'
             finalOwnerId = arcId
           }
         }
-        
-        // Additional validation for polymorphic props
+
         if (finalOwnerId && (isNaN(finalOwnerId) || finalOwnerId <= 0)) {
           setError('Invalid entity ID for media')
           return
         }
-        
-        // Use specific API methods based on purpose
+
         let response
         if (purpose === 'entity_display' && finalOwnerType && finalOwnerId) {
           response = await api.getEntityDisplayMedia(finalOwnerType, finalOwnerId, {
@@ -133,13 +159,11 @@ export default function MediaGallery({
             limit
           })
         } else if (finalOwnerType && finalOwnerId) {
-          // Default to gallery media for character pages to show only user-submitted content
           response = await api.getGalleryMedia(finalOwnerType, finalOwnerId, {
             page: 1,
             limit
           })
         } else {
-          // Fallback to general approved media
           const params = {
             page: 1,
             limit,
@@ -147,12 +171,12 @@ export default function MediaGallery({
           }
           response = await api.getApprovedMedia(params)
         }
-        
+
         setMedia(response.data)
         setFilteredMedia(response.data)
-      } catch (error: any) {
-        console.error('Failed to fetch media:', error)
-        setError(error.message || 'Failed to load media')
+      } catch (fetchError: any) {
+        console.error('Failed to fetch media:', fetchError)
+        setError(fetchError?.message || 'Failed to load media')
       } finally {
         setLoading(false)
       }
@@ -161,33 +185,22 @@ export default function MediaGallery({
     fetchMedia()
   }, [ownerType, ownerId, purpose, characterId, arcId, limit])
 
-  // Apply filters when filter states change
   useEffect(() => {
     let filtered = [...media]
 
-    // Filter by media type
     if (selectedMediaType !== 'all') {
-      filtered = filtered.filter(item => item.type === selectedMediaType)
+      filtered = filtered.filter((item) => item.type === selectedMediaType)
     }
-
-    // Note: Owner-specific filtering is now handled by the API call
-    // Additional filtering can be added here if needed for specific use cases
 
     setFilteredMedia(filtered)
   }, [media, selectedMediaType])
 
-  // Since we're now using polymorphic ownership, we don't have separate character/arc objects
-  // These could be populated from API calls if needed for filtering
-  const availableCharacters: string[] = []
-  const availableArcs: string[] = []
-
   const handleMediaClick = (mediaItem: MediaItem) => {
-    const mediaIndex = filteredMedia.findIndex(m => m.id === mediaItem.id)
+    const mediaIndex = filteredMedia.findIndex((m) => m.id === mediaItem.id)
     setCurrentImageIndex(mediaIndex)
     setSelectedMedia(mediaItem)
     setDialogOpen(true)
     setImageZoomed(false)
-    setVideoLoaded(false)
     setShouldLoadVideo(false)
   }
 
@@ -195,7 +208,6 @@ export default function MediaGallery({
     setDialogOpen(false)
     setSelectedMedia(null)
     setImageZoomed(false)
-    setVideoLoaded(false)
     setShouldLoadVideo(false)
   }
 
@@ -205,7 +217,6 @@ export default function MediaGallery({
       setCurrentImageIndex(newIndex)
       setSelectedMedia(filteredMedia[newIndex])
       setImageZoomed(false)
-      setVideoLoaded(false)
       setShouldLoadVideo(false)
     }
   }
@@ -216,13 +227,12 @@ export default function MediaGallery({
       setCurrentImageIndex(newIndex)
       setSelectedMedia(filteredMedia[newIndex])
       setImageZoomed(false)
-      setVideoLoaded(false)
       setShouldLoadVideo(false)
     }
   }
 
   const handleImageZoom = () => {
-    setImageZoomed(!imageZoomed)
+    setImageZoomed((prev) => !prev)
   }
 
   const handleLoadVideo = () => {
@@ -231,12 +241,11 @@ export default function MediaGallery({
 
   const getMediaThumbnail = (mediaItem: MediaItem) => {
     if (mediaItem.type === 'image') {
-      return mediaItem.isUploaded 
+      return mediaItem.isUploaded
         ? `${process.env.NEXT_PUBLIC_API_URL}/media/${mediaItem.fileName}`
         : mediaItem.url
     }
-    
-    // For videos, try to extract thumbnail from common platforms
+
     if (mediaItem.type === 'video') {
       if (mediaItem.url.includes('youtube.com') || mediaItem.url.includes('youtu.be')) {
         const videoId = extractYouTubeVideoId(mediaItem.url)
@@ -244,9 +253,8 @@ export default function MediaGallery({
           return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
         }
       }
-      // Add other video platform thumbnails as needed
     }
-    
+
     return null
   }
 
@@ -256,9 +264,8 @@ export default function MediaGallery({
     return match && match[7].length === 11 ? match[7] : null
   }
 
-  const getYouTubeEmbedUrl = (videoId: string): string => {
-    return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1&controls=1&enablejsapi=1&fs=1&cc_load_policy=0&disablekb=0&iv_load_policy=3`
-  }
+  const getYouTubeEmbedUrl = (videoId: string): string =>
+    `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1&controls=1&enablejsapi=1&fs=1&cc_load_policy=0&disablekb=0&iv_load_policy=3`
 
   const getVimeoVideoId = (url: string): string | null => {
     const regExp = /(?:vimeo\.com\/)(?:.*\/)?(\d+)/
@@ -266,19 +273,17 @@ export default function MediaGallery({
     return match ? match[1] : null
   }
 
-  const getVimeoEmbedUrl = (videoId: string): string => {
-    return `https://player.vimeo.com/video/${videoId}?byline=0&portrait=0&color=ffffff&title=0&autoplay=0&controls=1`
-  }
+  const getVimeoEmbedUrl = (videoId: string): string =>
+    `https://player.vimeo.com/video/${videoId}?byline=0&portrait=0&color=ffffff&title=0&autoplay=0&controls=1`
 
   const isDirectVideoUrl = (url: string): boolean => {
     const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv']
     const urlPath = url.toLowerCase()
-    return videoExtensions.some(ext => urlPath.includes(ext))
+    return videoExtensions.some((ext) => urlPath.includes(ext))
   }
 
-  const canEmbedVideo = (url: string): boolean => {
-    return !!(extractYouTubeVideoId(url) || getVimeoVideoId(url) || isDirectVideoUrl(url))
-  }
+  const canEmbedVideo = (url: string): boolean =>
+    Boolean(extractYouTubeVideoId(url) || getVimeoVideoId(url) || isDirectVideoUrl(url))
 
   const getEmbedUrl = (url: string): string | null => {
     const youtubeId = extractYouTubeVideoId(url)
@@ -297,7 +302,7 @@ export default function MediaGallery({
   const getMediaTypeIcon = (type: string) => {
     switch (type) {
       case 'image':
-        return <Image size={20} />
+        return <ImageIcon size={20} />
       case 'video':
         return <Play size={20} />
       default:
@@ -307,15 +312,15 @@ export default function MediaGallery({
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress size={40} />
+      <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: rem(32) }}>
+        <Loader size="lg" color="red" />
       </Box>
     )
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
+      <Alert color="red" variant="light" radius="md">
         {error}
       </Alert>
     )
@@ -324,361 +329,293 @@ export default function MediaGallery({
   if (media.length === 0) {
     const contextType = ownerType || (characterId ? 'character' : arcId ? 'arc' : 'content')
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="h6" gutterBottom color="text.secondary">
+      <Stack align="center" gap="xs" py="xl">
+        <Text size="lg" fw={600} c="dimmed">
           No Media Found
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+        </Text>
+        <Text size="sm" c="dimmed">
           No approved media has been submitted for this {contextType} yet.
-        </Typography>
-      </Box>
+        </Text>
+      </Stack>
     )
   }
 
   return (
     <Box>
       {showTitle && (
-        <Typography variant={compactMode ? "h6" : "h5"} gutterBottom sx={{ mb: 3 }}>
-          Media Gallery ({filteredMedia.length}{filteredMedia.length !== media.length ? ` of ${media.length}` : ''})
-        </Typography>
+        <Text
+          size={compactMode ? 'lg' : 'xl'}
+          fw={600}
+          mb="md"
+        >
+          Media Gallery ({filteredMedia.length}
+          {filteredMedia.length !== media.length ? ` of ${media.length}` : ''})
+        </Text>
       )}
 
-      {/* Filter Controls */}
       {showFilters && (
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={4}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Media Type</InputLabel>
-                <Select
-                  value={selectedMediaType}
-                  label="Media Type"
-                  onChange={(e) => setSelectedMediaType(e.target.value)}
-                >
-                  <MenuItem value="all">All Types</MenuItem>
-                  <MenuItem value="image">Images</MenuItem>
-                  <MenuItem value="video">Videos</MenuItem>
-                  <MenuItem value="audio">Audio</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Additional filters can be added here if needed */}
-          </Grid>
-        </Box>
+        <Paper
+          p="md"
+          mb="md"
+          radius="md"
+          withBorder
+          style={{
+            background: palette.panel,
+            border: palette.border
+          }}
+        >
+          <Group gap="md" wrap="wrap">
+            <Select
+              label="Media Type"
+              data={mediaTypeOptions}
+              value={selectedMediaType}
+              onChange={(value) => setSelectedMediaType(value || 'all')}
+              size="sm"
+              style={{ flex: 1, minWidth: rem(180) }}
+            />
+            {/* Placeholder for additional filters */}
+          </Group>
+        </Paper>
       )}
-      
-      <Grid container spacing={compactMode ? 1 : 2}>
+
+      <SimpleGrid
+        spacing={compactMode ? 'xs' : 'md'}
+        cols={compactMode ? 2 : 3}
+        breakpoints={[
+          { maxWidth: 'lg', cols: compactMode ? 3 : 4 },
+          { maxWidth: 'md', cols: compactMode ? 2 : 3 },
+          { maxWidth: 'sm', cols: 2 }
+        ]}
+      >
         {filteredMedia.map((mediaItem) => {
           const thumbnail = getMediaThumbnail(mediaItem)
-          
+          const isHovered = hoveredMediaId === mediaItem.id
+
           return (
-            <Grid item xs={6} sm={4} md={compactMode ? 6 : 3} lg={compactMode ? 4 : 3} key={mediaItem.id}>
-              <Card 
-                sx={{ 
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease-in-out',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  '&:hover': {
-                    transform: 'translateY(-4px) scale(1.02)',
-                    boxShadow: theme.shadows[12],
-                    '& .media-overlay': {
-                      opacity: 1
-                    }
-                  }
-                }}
-                onClick={() => handleMediaClick(mediaItem)}
-              >
-                <Box 
-                  sx={{ 
-                    position: 'relative',
-                    aspectRatio: '16/9',
-                    overflow: 'hidden',
-                    bgcolor: 'grey.100',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
+            <Card
+              key={mediaItem.id}
+              padding={0}
+              radius="md"
+              withBorder
+              onClick={() => handleMediaClick(mediaItem)}
+              onMouseEnter={() => setHoveredMediaId(mediaItem.id)}
+              onMouseLeave={() => setHoveredMediaId(null)}
+              style={{
+                cursor: 'pointer',
+                transition: 'transform 200ms ease, box-shadow 200ms ease',
+                transform: isHovered ? 'translateY(-4px) scale(1.02)' : 'none',
+                boxShadow: isHovered
+                  ? '0 20px 30px -15px rgba(225, 29, 72, 0.45)'
+                  : '0 10px 20px -18px rgba(0, 0, 0, 0.65)',
+                overflow: 'hidden'
+              }}
+            >
+              <Box style={{ position: 'relative' }}>
+                <AspectRatio ratio={16 / 9}>
                   {thumbnail ? (
                     <NextImage
                       src={thumbnail}
                       alt={mediaItem.description}
                       fill
-                      style={{
-                        objectFit: 'cover'
-                      }}
+                      style={{ objectFit: 'cover' }}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
+                      onError={(event) => {
+                        const target = event.target as HTMLImageElement
                         target.style.display = 'none'
                       }}
                     />
                   ) : (
-                    <Box sx={{ color: 'text.secondary' }}>
+                    <Box
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: theme.colors.gray[5]
+                      }}
+                    >
                       {getMediaTypeIcon(mediaItem.type)}
                     </Box>
                   )}
-                  
-                  {/* Enhanced overlay with play button for videos */}
-                  <Box
-                    className="media-overlay"
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: mediaItem.type === 'video' 
-                        ? 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)'
-                        : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: mediaItem.type === 'video' ? 0 : 1,
-                      transition: 'opacity 0.3s ease'
-                    }}
-                  >
-                    {mediaItem.type === 'video' && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 56,
-                          height: 56,
-                          borderRadius: '50%',
-                          bgcolor: 'rgba(255,255,255,0.9)',
-                          color: 'primary.main',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                          backdropFilter: 'blur(10px)',
-                          border: '2px solid rgba(255,255,255,0.2)'
-                        }}
-                      >
-                        <Play size={24} fill="currentColor" />
-                      </Box>
-                    )}
-                  </Box>
+                </AspectRatio>
 
-                  {/* Media type indicator */}
-                  <Box
-                    sx={{
+                <Box
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: mediaItem.type === 'video'
+                      ? 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)'
+                      : 'linear-gradient(135deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.4) 100%)',
+                    opacity: isHovered ? 1 : 0,
+                    transition: 'opacity 200ms ease'
+                  }}
+                >
+                  <Group
+                    justify="space-between"
+                    style={{
                       position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      bgcolor: 'rgba(0,0,0,0.8)',
-                      color: 'white',
-                      borderRadius: 1.5,
-                      px: 1,
-                      py: 0.5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.1)'
+                      bottom: rem(12),
+                      left: rem(16),
+                      right: rem(16),
+                      color: '#ffffff'
                     }}
                   >
-                    {getMediaTypeIcon(mediaItem.type)}
-                    <Typography variant="caption" sx={{ 
-                      fontSize: '0.7rem', 
-                      fontWeight: 600, 
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5
-                    }}>
-                      {mediaItem.type}
-                    </Typography>
-                  </Box>
-
-                  {/* Owner type indicator */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      bottom: 8,
-                      left: 8,
-                      right: 8,
-                      display: 'flex',
-                      gap: 0.5,
-                      flexWrap: 'wrap',
-                      justifyContent: 'flex-start'
-                    }}
-                  >
-                    <Chip
-                      label={`${mediaItem.ownerType} ${mediaItem.ownerId}`}
-                      size="small"
-                      color="primary"
-                      variant="filled"
-                      sx={{
-                        fontSize: '0.7rem',
-                        height: '22px',
-                        backgroundColor: 'rgba(25, 118, 210, 0.95)',
-                        color: 'white',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        fontWeight: 600,
-                        textTransform: 'capitalize'
-                      }}
-                    />
-                    {mediaItem.purpose === 'entity_display' && (
-                      <Chip
-                        label="Official"
-                        size="small"
-                        color="secondary"
-                        variant="filled"
-                        sx={{
-                          fontSize: '0.7rem',
-                          height: '22px',
-                          backgroundColor: 'rgba(156, 39, 176, 0.95)',
-                          color: 'white',
-                          backdropFilter: 'blur(10px)',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          fontWeight: 600
-                        }}
-                      />
-                    )}
-                  </Box>
+                    <Group gap="xs">
+                      {getMediaTypeIcon(mediaItem.type)}
+                      <Text size="sm" fw={600}>
+                        {mediaItem.type.toUpperCase()}
+                      </Text>
+                    </Group>
+                    {mediaItem.type === 'video' ? <Play size={20} /> : <ExternalLink size={18} />}
+                  </Group>
                 </Box>
-                
-                {!compactMode && (
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        mb: 1,
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        lineHeight: 1.4
-                      }}
-                    >
-                      {mediaItem.description || 'No description available'}
-                    </Typography>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      mt: 1
-                    }}>
-                      <Typography variant="caption" color="text.secondary" sx={{
-                        fontSize: '0.75rem',
-                        fontWeight: 500
-                      }}>
-                        By {mediaItem.submittedBy.username}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{
-                        fontSize: '0.7rem',
-                        opacity: 0.7
-                      }}>
-                        {new Date(mediaItem.createdAt).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </Typography>
-                    </Box>
-                  </CardContent>
+
+                {mediaItem.isUploaded && allowMultipleTypes && (
+                  <Badge
+                    size="sm"
+                    radius="sm"
+                    style={{
+                      position: 'absolute',
+                      top: rem(12),
+                      right: rem(12),
+                      backdropFilter: 'blur(10px)',
+                      backgroundColor: 'rgba(156, 39, 176, 0.95)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#fff',
+                      fontWeight: 600
+                    }}
+                  >
+                    Official
+                  </Badge>
                 )}
-              </Card>
-            </Grid>
+              </Box>
+
+              {!compactMode && (
+                <Box style={{ padding: rem(16) }}>
+                  <Text
+                    size="sm"
+                    fw={500}
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      marginBottom: rem(8),
+                      lineHeight: 1.4
+                    }}
+                  >
+                    {mediaItem.description || 'No description available'}
+                  </Text>
+                  <Group justify="space-between">
+                    <Text size="xs" c="dimmed" fw={500}>
+                      By {mediaItem.submittedBy.username}
+                    </Text>
+                    <Text size="xs" c="dimmed" style={{ opacity: 0.7 }}>
+                      {new Date(mediaItem.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </Text>
+                  </Group>
+                </Box>
+              )}
+            </Card>
           )
         })}
-      </Grid>
+      </SimpleGrid>
 
-      {/* Enhanced Media Viewer Dialog */}
-      <Dialog 
-        open={dialogOpen} 
+      <Modal
+        opened={dialogOpen}
         onClose={handleCloseDialog}
-        maxWidth="lg"
-        fullWidth
+        size="auto"
+        radius="lg"
         fullScreen={isMobile}
-        PaperProps={{
-          sx: {
-            ...(selectedMedia?.type === 'image' && imageZoomed && {
-              maxWidth: '95vw',
-              maxHeight: '95vh'
-            })
+        centered
+        transitionProps={{ transition: 'fade', duration: 200 }}
+        styles={{
+          content: {
+            width: '100%',
+            maxWidth: isMobile ? '100%' : MAX_DIALOG_WIDTH,
+            background: palette.panel,
+            border: palette.border
           }
         }}
+        title={
+          <Group h="100%" gap="sm" justify="space-between">
+            <Group gap="xs">
+              <Text size="lg" fw={600}>
+                {selectedMedia?.type === 'image'
+                  ? 'Image'
+                  : selectedMedia?.type === 'video'
+                    ? 'Video'
+                    : 'Media'}{' '}
+                Viewer
+              </Text>
+              {filteredMedia.length > 1 && (
+                <Text size="sm" c="dimmed">
+                  {currentImageIndex + 1} of {filteredMedia.length}
+                </Text>
+              )}
+            </Group>
+
+            <Group gap="xs">
+              {filteredMedia.length > 1 && (
+                <>
+                  <ActionIcon
+                    variant="subtle"
+                    onClick={handlePrevious}
+                    disabled={currentImageIndex === 0}
+                    aria-label="Previous"
+                  >
+                    <ChevronLeft size={18} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    onClick={handleNext}
+                    disabled={currentImageIndex === filteredMedia.length - 1}
+                    aria-label="Next"
+                  >
+                    <ChevronRight size={18} />
+                  </ActionIcon>
+                </>
+              )}
+
+              {selectedMedia?.type === 'image' && (
+                <ActionIcon
+                  variant="subtle"
+                  onClick={handleImageZoom}
+                  aria-label={imageZoomed ? 'Zoom out' : 'Zoom in'}
+                >
+                  {imageZoomed ? <Maximize2 size={18} /> : <ZoomIn size={18} />}
+                </ActionIcon>
+              )}
+
+              <ActionIcon variant="subtle" onClick={handleCloseDialog} aria-label="Close">
+                <X size={18} />
+              </ActionIcon>
+            </Group>
+          </Group>
+        }
       >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          pb: 1,
-          bgcolor: 'background.paper',
-          borderBottom: 1,
-          borderColor: 'divider'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h6">
-              {selectedMedia?.type === 'image' ? 'Image' : 
-               selectedMedia?.type === 'video' ? 'Video' : 'Media'} Viewer
-            </Typography>
-            {filteredMedia.length > 1 && (
-              <Typography variant="body2" color="text.secondary">
-                {currentImageIndex + 1} of {filteredMedia.length}
-              </Typography>
-            )}
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Navigation buttons */}
-            {filteredMedia.length > 1 && (
-              <>
-                <IconButton 
-                  onClick={handlePrevious} 
-                  disabled={currentImageIndex === 0}
-                  size="small"
-                  title="Previous"
-                >
-                  <ChevronLeft size={20} />
-                </IconButton>
-                <IconButton 
-                  onClick={handleNext} 
-                  disabled={currentImageIndex === filteredMedia.length - 1}
-                  size="small"
-                  title="Next"
-                >
-                  <ChevronRight size={20} />
-                </IconButton>
-              </>
-            )}
-            
-            {/* Zoom button for images */}
-            {selectedMedia?.type === 'image' && (
-              <IconButton 
-                onClick={handleImageZoom} 
-                size="small"
-                title={imageZoomed ? "Zoom out" : "Zoom in"}
-              >
-                {imageZoomed ? <Maximize2 size={20} /> : <ZoomIn size={20} />}
-              </IconButton>
-            )}
-            
-            <IconButton onClick={handleCloseDialog} size="small" title="Close">
-              <X size={20} />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: 0 }}>
-          {selectedMedia && (
-            <Box>
-              {/* Media Content */}
-              <Box sx={{ 
+        {selectedMedia && (
+          <Stack gap="lg">
+            <Box
+              style={{
                 position: 'relative',
                 minHeight: imageZoomed ? '80vh' : '60vh',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: 'grey.900'
-              }}>
-                {selectedMedia.type === 'image' ? (
-                  <Fade in={true} timeout={300}>
-                    <Box 
-                      sx={{ 
+                backgroundColor: '#090909',
+                borderRadius: rem(12),
+                overflow: 'hidden'
+              }}
+            >
+              {selectedMedia.type === 'image' ? (
+                <Transition mounted={true} transition="fade" duration={300}>
+                  {(styles) => (
+                    <Box
+                      style={{
+                        ...styles,
                         position: 'relative',
                         maxWidth: '100%',
                         maxHeight: '100%',
@@ -687,10 +624,9 @@ export default function MediaGallery({
                       onClick={handleImageZoom}
                     >
                       <img
-                        src={selectedMedia.isUploaded 
+                        src={selectedMedia.isUploaded
                           ? `${process.env.NEXT_PUBLIC_API_URL}/media/${selectedMedia.fileName}`
-                          : selectedMedia.url
-                        }
+                          : selectedMedia.url}
                         alt={selectedMedia.description}
                         style={{
                           maxWidth: imageZoomed ? 'none' : '100%',
@@ -698,105 +634,114 @@ export default function MediaGallery({
                           width: imageZoomed ? 'auto' : '100%',
                           height: imageZoomed ? 'auto' : 'auto',
                           objectFit: imageZoomed ? 'none' : 'contain',
-                          transition: 'all 0.3s ease-in-out'
+                          transition: 'transform 300ms ease'
                         }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
+                        onError={(event) => {
+                          const target = event.target as HTMLImageElement
                           target.style.display = 'none'
                         }}
                       />
                     </Box>
-                  </Fade>
-                ) : selectedMedia.type === 'video' ? (
-                  <Box sx={{ 
-                    width: '100%', 
+                  )}
+                </Transition>
+              ) : selectedMedia.type === 'video' ? (
+                <Box
+                  style={{
+                    width: '100%',
                     minHeight: '60vh',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'black'
-                  }}>
-                    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-                      {canEmbedVideo(selectedMedia.url) ? (
-                        <Box sx={{ 
-                          width: '100%', 
-                          aspectRatio: '16/9',
-                          minHeight: '400px',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Box style={{ width: '100%', maxWidth: '100%' }}>
+                    {canEmbedVideo(selectedMedia.url) ? (
+                      <Box
+                        style={{
+                          width: '100%',
+                          aspectRatio: '16 / 9',
+                          minHeight: rem(400),
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center'
-                        }}>
-                          {isDirectVideoUrl(selectedMedia.url) ? (
-                            <Fade in={true} timeout={500}>
+                        }}
+                      >
+                        {isDirectVideoUrl(selectedMedia.url) ? (
+                          <Transition mounted={true} transition="fade" duration={500}>
+                            {(styles) => (
                               <video
-                                controls
-                                preload="metadata"
                                 style={{
+                                  ...styles,
                                   width: '100%',
                                   height: '100%',
                                   maxHeight: '70vh',
                                   objectFit: 'contain',
                                   backgroundColor: 'black'
                                 }}
-                                onLoadStart={() => setVideoLoaded(true)}
+                                controls
+                                preload="metadata"
                               >
                                 <source src={selectedMedia.url} />
                                 Your browser does not support the video tag.
                               </video>
-                            </Fade>
-                          ) : !shouldLoadVideo ? (
-                            <Box sx={{ 
-                              textAlign: 'center',
-                              p: 4,
-                              bgcolor: 'rgba(0,0,0,0.9)',
-                              borderRadius: 2,
-                              color: 'white',
-                              border: '2px solid rgba(255,255,255,0.1)'
-                            }}>
-                              <Box sx={{ mb: 3, position: 'relative', width: '320px', height: '180px', mx: 'auto' }}>
-                                {getMediaThumbnail(selectedMedia) && (
-                                  <NextImage
-                                    src={getMediaThumbnail(selectedMedia)!}
-                                    alt="Video thumbnail"
-                                    fill
-                                    style={{
-                                      objectFit: 'cover',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
-                                    }}
-                                    sizes="320px"
-                                  />
-                                )}
-                              </Box>
-                              <Button
-                                variant="contained"
-                                size="large"
-                                startIcon={<Play size={24} />}
-                                onClick={handleLoadVideo}
-                                sx={{
-                                  bgcolor: 'primary.main',
-                                  color: 'white',
-                                  px: 4,
-                                  py: 1.5,
-                                  fontSize: '1.1rem',
-                                  fontWeight: 600,
-                                  borderRadius: '12px',
-                                  boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)',
-                                  '&:hover': {
-                                    bgcolor: 'primary.dark',
-                                    transform: 'translateY(-2px)',
-                                    boxShadow: '0 6px 24px rgba(25, 118, 210, 0.5)'
-                                  }
+                            )}
+                          </Transition>
+                        ) : !shouldLoadVideo ? (
+                          <Stack
+                            align="center"
+                            gap="md"
+                            justify="center"
+                            p="lg"
+                            style={{
+                              background: 'rgba(0,0,0,0.9)',
+                              borderRadius: rem(16),
+                              color: '#ffffff',
+                              border: '2px solid rgba(255,255,255,0.1)',
+                              width: '100%',
+                              maxWidth: rem(360)
+                            }}
+                          >
+                            {getMediaThumbnail(selectedMedia) && (
+                              <Box
+                                style={{
+                                  position: 'relative',
+                                  width: rem(320),
+                                  height: rem(180),
+                                  borderRadius: rem(12),
+                                  overflow: 'hidden',
+                                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
                                 }}
                               >
-                                Play Video
-                              </Button>
-                              <Typography variant="body2" sx={{ mt: 2, opacity: 0.7 }}>
-                                Click to load the video player with full controls
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Fade in={shouldLoadVideo} timeout={500}>
+                                <NextImage
+                                  src={getMediaThumbnail(selectedMedia)!}
+                                  alt="Video thumbnail"
+                                  fill
+                                  style={{ objectFit: 'cover' }}
+                                  sizes="320px"
+                                />
+                              </Box>
+                            )}
+                            <Button
+                              size="md"
+                              leftSection={<Play size={18} />}
+                              onClick={handleLoadVideo}
+                              fullWidth
+                              styles={{
+                                root: {
+                                  backgroundImage: `linear-gradient(135deg, ${palette.secondaryAccent} 0%, ${palette.accent} 100%)`,
+                                  boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)'
+                                }
+                              }}
+                            >
+                              Play Video
+                            </Button>
+                            <Text size="sm" c="gray.4" ta="center">
+                              Click to load the video player with full controls
+                            </Text>
+                          </Stack>
+                        ) : (
+                          <Transition mounted={shouldLoadVideo} transition="fade" duration={500}>
+                            {(styles) => (
                               <iframe
                                 src={getEmbedUrl(selectedMedia.url)!}
                                 width="100%"
@@ -805,101 +750,108 @@ export default function MediaGallery({
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                                 allowFullScreen
                                 title={selectedMedia.description}
-                                onLoad={() => setVideoLoaded(true)}
                                 style={{
-                                  minHeight: '400px',
-                                  borderRadius: '8px'
+                                  ...styles,
+                                  minHeight: rem(400),
+                                  borderRadius: rem(8)
                                 }}
                               />
-                            </Fade>
-                          )}
-                        </Box>
-                      ) : (
-                        <Box sx={{ 
+                            )}
+                          </Transition>
+                        )}
+                      </Box>
+                    ) : (
+                      <Stack
+                        align="center"
+                        gap="sm"
+                        p="lg"
+                        style={{
                           textAlign: 'center',
-                          p: 4,
-                          bgcolor: 'rgba(0,0,0,0.8)',
-                          borderRadius: 2,
-                          color: 'white'
-                        }}>
-                          <Typography variant="h6" gutterBottom>
-                            External Video
-                          </Typography>
-                          <Typography variant="body2" paragraph>
-                            This video is hosted externally and cannot be embedded.
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            href={selectedMedia.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            startIcon={<ExternalLink />}
-                          >
-                            Open in New Tab
-                          </Button>
-                        </Box>
-                      )}
-                    </Box>
+                          background: 'rgba(0,0,0,0.8)',
+                          borderRadius: rem(16),
+                          color: '#ffffff'
+                        }}
+                      >
+                        <Text size="lg" fw={600}>
+                          External Video
+                        </Text>
+                        <Text size="sm" c="gray.4">
+                          This video is hosted externally and cannot be embedded.
+                        </Text>
+                        <Button
+                          component="a"
+                          href={selectedMedia.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          leftSection={<ExternalLink size={18} />}
+                        >
+                          Open in New Tab
+                        </Button>
+                      </Stack>
+                    )}
                   </Box>
-                ) : (
-                  <Box sx={{ 
-                    textAlign: 'center',
-                    p: 4,
-                    bgcolor: 'background.paper'
-                  }}>
-                    <ExternalLink size={48} color={theme.palette.text.secondary} />
-                    <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                      External Media
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      href={selectedMedia.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      startIcon={<ExternalLink />}
-                      sx={{ mt: 2 }}
-                    >
-                      Open Media
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Media Info Panel */}
-              <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
-                <Typography variant="h6" gutterBottom>
-                  {selectedMedia.description || 'No title'}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>By:</strong> {selectedMedia.submittedBy.username}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Added:</strong> {new Date(selectedMedia.createdAt).toLocaleDateString()}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Owner:</strong> {selectedMedia.ownerType} {selectedMedia.ownerId}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Purpose:</strong> {selectedMedia.purpose.replace('_', ' ')}
-                  </Typography>
-                  
-                  {selectedMedia.chapterNumber && (
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Chapter:</strong> {selectedMedia.chapterNumber}
-                    </Typography>
-                  )}
                 </Box>
-              </Box>
+              ) : (
+                <Stack
+                  align="center"
+                  gap="sm"
+                  p="xl"
+                  style={{ textAlign: 'center', background: palette.panel, borderRadius: rem(16) }}
+                >
+                  <ExternalLink size={48} color={theme.colors.gray[4]} />
+                  <Text size="lg" fw={600}>
+                    External Media
+                  </Text>
+                  <Button
+                    component="a"
+                    href={selectedMedia.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    leftSection={<ExternalLink size={18} />}
+                  >
+                    Open Media
+                  </Button>
+                </Stack>
+              )}
             </Box>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <Paper
+              radius="md"
+              p="md"
+              withBorder
+              style={{
+                background: palette.panel,
+                border: palette.border
+              }}
+            >
+              <Stack gap="sm">
+                <Text size="lg" fw={600}>
+                  {selectedMedia.description || 'No title'}
+                </Text>
+                <Group gap="md" wrap="wrap">
+                  <Text size="sm" c="dimmed">
+                    <strong>By:</strong> {selectedMedia.submittedBy.username}
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    <strong>Added:</strong> {new Date(selectedMedia.createdAt).toLocaleDateString()}
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    <strong>Owner:</strong> {selectedMedia.ownerType} {selectedMedia.ownerId}
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    <strong>Purpose:</strong> {selectedMedia.purpose.replace('_', ' ')}
+                  </Text>
+                  {selectedMedia.chapterNumber && (
+                    <Text size="sm" c="dimmed">
+                      <strong>Chapter:</strong> {selectedMedia.chapterNumber}
+                    </Text>
+                  )}
+                </Group>
+              </Stack>
+            </Paper>
+          </Stack>
+        )}
+      </Modal>
     </Box>
   )
 }
-

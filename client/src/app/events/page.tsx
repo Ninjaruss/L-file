@@ -1,69 +1,38 @@
 import React from 'react'
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  CircularProgress,
-  Alert,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent
-} from '@mui/material'
-import { CalendarSearch, Eye, Calendar, Search } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
-import Link from 'next/link'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
-import { motion } from 'motion/react'
+import EventsPageContent from './EventsPageContent'
 import type { Event, Arc } from '../../types'
 import { EventStatus } from '../../types'
-import EventsPageContent from './EventsPageContent'
 
 interface EventsPageProps {
-  searchParams: Promise<{ search?: string; type?: string; status?: string }>
+  searchParams: Promise<{ page?: string; search?: string; type?: string; status?: string }>
 }
+
+interface GroupedEventsResponse {
+  arcs: Array<{ arc: Arc; events: Event[] }>
+  noArc: Event[]
+}
+
+const EVENTS_LIMIT = 100
 
 export async function generateMetadata({ searchParams }: EventsPageProps) {
   const resolvedSearchParams = await searchParams
   const search = resolvedSearchParams.search
   const type = resolvedSearchParams.type
-  const status = resolvedSearchParams.status
+  const status = resolvedSearchParams.status as EventStatus | undefined
 
-  let title = 'Events - Usogui Fansite'
-  let description = 'Explore key events and turning points in the Usogui story. Browse story events organized by arcs, including gambles, decisions, reveals, and major plot developments.'
+  const title = search
+    ? `Events matching "${search}" - Usogui Fansite`
+    : 'Events - Usogui Fansite'
 
-  if (search && type && status) {
-    title = `Events matching "${search}" (${type}, ${status}) - Usogui Fansite`
-    description = `Browse Usogui story events matching "${search}" filtered by type: ${type} and status: ${status}.`
-  } else if (search && type) {
-    title = `Events matching "${search}" (${type}) - Usogui Fansite`
-    description = `Browse Usogui story events matching "${search}" of type: ${type}.`
-  } else if (search && status) {
-    title = `Events matching "${search}" (${status}) - Usogui Fansite`
-    description = `Browse Usogui story events matching "${search}" with status: ${status}.`
-  } else if (search) {
-    title = `Events matching "${search}" - Usogui Fansite`
-    description = `Browse Usogui story events matching "${search}". Discover key plot points and turning moments.`
-  } else if (type && status) {
-    title = `${type} Events (${status}) - Usogui Fansite`
-    description = `Browse Usogui ${type} events with status: ${status}. Explore key story moments and plot developments.`
-  } else if (type) {
-    title = `${type} Events - Usogui Fansite`
-    description = `Browse Usogui ${type} events. Explore key story moments and plot developments of this type.`
-  } else if (status) {
-    title = `${status} Events - Usogui Fansite`
-    description = `Browse Usogui events with status: ${status}. Explore key story moments and plot developments.`
-  }
+  const description = search
+    ? `Browse key Usogui events that match "${search}". Filter by type or status to explore the timeline.`
+    : type
+    ? `Explore Usogui events filtered by ${type}. Discover gambles, reveals, decisions, and more.`
+    : status
+      ? `Review Usogui events by status (${status}). Track approved or pending entries in the database.`
+      : 'Explore key moments in the Usogui story. Filter by type or status to navigate the timeline.'
 
   return {
     title,
@@ -71,8 +40,8 @@ export async function generateMetadata({ searchParams }: EventsPageProps) {
     openGraph: {
       title,
       description,
-      type: 'website',
-    },
+      type: 'website'
+    }
   }
 }
 
@@ -80,41 +49,33 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   const resolvedSearchParams = await searchParams
   const search = resolvedSearchParams.search || ''
   const type = resolvedSearchParams.type || ''
-  const status = resolvedSearchParams.status || ''
+  const status = (resolvedSearchParams.status as EventStatus | '') || ''
 
-  let groupedEvents: {
-    arcs: Array<{ arc: Arc; events: Event[] }>
-    noArc: Event[]
-  } = { arcs: [], noArc: [] }
+  let groupedEvents: GroupedEventsResponse = { arcs: [], noArc: [] }
   let error = ''
 
   try {
     if (search) {
-      // Fall back to regular search when searching
-      const params: Record<string, string | number> = { page: 1, limit: 100, title: search }
+      const params: Record<string, string | number> = { page: 1, limit: EVENTS_LIMIT, title: search }
       if (type) params.type = type
       if (status) params.status = status
-      
       const response = await api.getEvents(params)
       groupedEvents = {
         arcs: [],
-        noArc: response.data
+        noArc: response.data || []
       }
     } else {
-      // Use grouped endpoint when not searching
       const params: Record<string, string> = {}
       if (type) params.type = type
       if (status) params.status = status
-      
-      const response = await api.getEventsGroupedByArc(params)
-      groupedEvents = response
+      groupedEvents = await api.getEventsGroupedByArc(params)
     }
   } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'Failed to fetch events'
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <EventsPageContent
         initialGroupedEvents={groupedEvents}
         initialSearch={search}

@@ -20,13 +20,13 @@
 :root {
   --font-opti-goudy-text: 'OPTI Goudy Text', serif;
   --font-noto-sans: 'Noto Sans', system-ui, sans-serif;
-  
+
   /* Usogui Theme Colors - Main Palette */
   --usogui-red: #e11d48;
   --usogui-black: #0a0a0a;
   --usogui-purple: #7c3aed;
   --usogui-white: #ffffff;
-  
+
   /* Semantic Colors for Content Types */
   --color-gamble: #d32f2f;
   --color-character: #1976d2;
@@ -35,13 +35,30 @@
   --color-guide: #388e3c;
   --color-media: #7b1fa2;
   --color-quote: #00796b;
-  
-  /* Alpha variants for backgrounds and borders */
+
+  /* Semantic state colors */
+  --color-success: #388e3c;
+  --color-warning: #f57c00;
+  --color-error: #d32f2f;
+  --color-info: #1976d2;
+
+  /* Alpha variants for consistent transparency */
+  --usogui-red-alpha-05: rgba(225, 29, 72, 0.05);
   --usogui-red-alpha-10: rgba(225, 29, 72, 0.1);
   --usogui-red-alpha-20: rgba(225, 29, 72, 0.2);
   --usogui-red-alpha-30: rgba(225, 29, 72, 0.3);
-  
-  /* Legacy variables updated to Usogui theme */
+  --usogui-red-alpha-40: rgba(225, 29, 72, 0.4);
+
+  /* Background variations */
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --bg-overlay: rgba(10, 10, 10, 0.95);
+
+  /* Transitions for consistency */
+  --transition-standard: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-short: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Legacy variables */
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 10, 10, 10;
   --background-end-rgb: 10, 10, 10;
@@ -58,16 +75,18 @@ body {
 }
 
 .gambling-card {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-card);
   border: 1px solid var(--usogui-red-alpha-20);
   border-radius: 0.5rem;
   box-shadow: 0 10px 15px -3px var(--usogui-red-alpha-10), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  transition: var(--transition-standard);
+  transition-property: border-color, box-shadow, transform, background-color;
   backdrop-filter: blur(10px);
 }
 
 .gambling-card:hover {
   border-color: var(--usogui-red);
+  background-color: var(--bg-card-hover);
   box-shadow: 0 20px 25px -5px var(--usogui-red-alpha-30), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
 }
@@ -130,4 +149,59 @@ body {
 .gamble-description-preview * {
   color: rgba(255, 255, 255, 0.7) !important;
   font-size: 0.875rem !important;
+}
+
+/* Theme utility classes for consistent styling */
+.themed-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--usogui-red-alpha-20);
+  backdrop-filter: blur(10px);
+  transition: var(--transition-standard);
+  transition-property: border-color, box-shadow, transform, background-color;
+}
+
+.themed-card:hover {
+  border-color: var(--usogui-red);
+  background-color: var(--bg-card-hover);
+}
+
+.themed-overlay {
+  background-color: var(--bg-overlay);
+  backdrop-filter: blur(10px);
+}
+
+.themed-gradient {
+  background: linear-gradient(135deg, var(--usogui-black), #1a0a0a, var(--usogui-red));
+}
+
+.themed-transition {
+  transition: var(--transition-standard);
+}
+
+.themed-transition-short {
+  transition: var(--transition-short);
+}
+
+/* Entity-specific background classes with proper alpha */
+.bg-gamble-alpha { background-color: rgba(211, 47, 47, 0.1); }
+.bg-character-alpha { background-color: rgba(25, 118, 210, 0.1); }
+.bg-arc-alpha { background-color: rgba(220, 0, 78, 0.1); }
+.bg-event-alpha { background-color: rgba(245, 124, 0, 0.1); }
+.bg-guide-alpha { background-color: rgba(56, 142, 60, 0.1); }
+.bg-media-alpha { background-color: rgba(123, 31, 162, 0.1); }
+.bg-quote-alpha { background-color: rgba(0, 121, 107, 0.1); }
+
+/* Border colors for entity types */
+.border-gamble-alpha { border-color: rgba(211, 47, 47, 0.3); }
+.border-character-alpha { border-color: rgba(25, 118, 210, 0.3); }
+.border-arc-alpha { border-color: rgba(220, 0, 78, 0.3); }
+.border-event-alpha { border-color: rgba(245, 124, 0, 0.3); }
+.border-guide-alpha { border-color: rgba(56, 142, 60, 0.3); }
+.border-media-alpha { border-color: rgba(123, 31, 162, 0.3); }
+.border-quote-alpha { border-color: rgba(0, 121, 107, 0.3); }
+
+/* Focus states for accessibility */
+.themed-focus {
+  outline: 2px solid var(--usogui-red-alpha-40);
+  outline-offset: 2px;
 }

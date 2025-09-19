@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Avatar } from '@mui/material'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Avatar, useMantineTheme } from '@mantine/core'
 import { User } from 'lucide-react'
 import { api } from '../lib/api'
 
@@ -9,7 +9,6 @@ interface AuthorProfileImageProps {
   author: {
     id: number
     username: string
-    // Minimal author info from guides API
     role?: string
     profilePictureType?: 'discord' | 'character_media' | null
     selectedCharacterMediaId?: number | null
@@ -49,23 +48,22 @@ export default function AuthorProfileImage({
   showFallback = true,
   className
 }: AuthorProfileImageProps) {
+  const theme = useMantineTheme()
   const [fullProfile, setFullProfile] = useState<FullUserProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
-  // Check if we already have profile data
   const hasProfileData = author.profilePictureType || author.discordAvatar || author.selectedCharacterMedia
 
   useEffect(() => {
-    // Only fetch profile data if we don't already have it
     if (!hasProfileData && !loading && !fullProfile) {
       const fetchUserProfile = async () => {
         try {
           setLoading(true)
           const profile = await api.getPublicUserProfile(author.id)
           setFullProfile(profile)
-        } catch (error) {
-          console.log(`Could not fetch profile for user ${author.id}:`, error)
+        } catch (fetchError) {
+          console.error(`Could not fetch profile for user ${author.id}:`, fetchError)
           setError(true)
         } finally {
           setLoading(false)
@@ -74,93 +72,85 @@ export default function AuthorProfileImage({
 
       fetchUserProfile()
     }
-  }, [author.id, hasProfileData, loading, fullProfile])
+  }, [author.id, fullProfile, hasProfileData, loading])
 
-  // Use full profile data if available, otherwise use author data
   const userToRender = fullProfile || author
+  const fallbackLetter = useMemo(() => userToRender.username?.[0]?.toUpperCase() ?? '', [userToRender.username])
+  const fallbackBackground = theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48'
+  const fallbackIconSize = Math.round(size * 0.5)
+  const commonStyles = {
+    root: {
+      backgroundColor: fallbackBackground,
+      fontSize: `${size * 0.4}px`,
+      fontWeight: 700
+    }
+  } as const
 
-  // Discord avatar
-  if (userToRender.profilePictureType === 'discord' && userToRender.discordAvatar && userToRender.discordId) {
-    const discordAvatarUrl = userToRender.discordAvatar.startsWith('http')
+  const getDiscordUrl = () => {
+    if (!userToRender.discordAvatar || !userToRender.discordId) return null
+    return userToRender.discordAvatar.startsWith('http')
       ? userToRender.discordAvatar
       : `https://cdn.discordapp.com/avatars/${userToRender.discordId}/${userToRender.discordAvatar}.png?size=256`
-
-    return (
-      <Avatar
-        src={discordAvatarUrl}
-        alt={`${userToRender.username}'s Discord avatar`}
-        className={className}
-        sx={{
-          width: size,
-          height: size,
-        }}
-        onError={() => setError(true)}
-      >
-        {(error || !userToRender.discordAvatar) && showFallback && userToRender.username[0]?.toUpperCase()}
-      </Avatar>
-    )
   }
 
-  // Character media image
-  if (userToRender.profilePictureType === 'character_media' && userToRender.selectedCharacterMedia && !error) {
-    const media = userToRender.selectedCharacterMedia
-    const imageUrl = media.url
+  if (userToRender.profilePictureType === 'discord' && !error) {
+    const discordAvatarUrl = getDiscordUrl()
+    if (discordAvatarUrl) {
+      return (
+        <Avatar
+          src={discordAvatarUrl}
+          alt={`${userToRender.username}'s Discord avatar`}
+          className={className}
+          size={size}
+          radius="xl"
+          onError={() => setError(true)}
+          styles={commonStyles}
+        >
+          {(error || !userToRender.discordAvatar) && showFallback && fallbackLetter}
+        </Avatar>
+      )
+    }
+  }
 
+  if (userToRender.profilePictureType === 'character_media' && userToRender.selectedCharacterMedia && !error) {
+    const imageUrl = userToRender.selectedCharacterMedia.url
     return (
       <Avatar
         src={imageUrl}
         alt={`${userToRender.username}'s profile image`}
         className={className}
-        sx={{
-          width: size,
-          height: size,
-        }}
+        size={size}
+        radius="xl"
         onError={() => setError(true)}
+        styles={commonStyles}
       >
-        {showFallback && userToRender.username[0]?.toUpperCase()}
+        {showFallback && fallbackLetter}
       </Avatar>
     )
   }
 
-  // Fallback Discord avatar (when profilePictureType is not set but Discord data exists)
-  if (!userToRender.profilePictureType && userToRender.discordAvatar && userToRender.discordId && !error) {
-    const discordAvatarUrl = userToRender.discordAvatar.startsWith('http')
-      ? userToRender.discordAvatar
-      : `https://cdn.discordapp.com/avatars/${userToRender.discordId}/${userToRender.discordAvatar}.png?size=256`
-
-    return (
-      <Avatar
-        src={discordAvatarUrl}
-        alt={`${userToRender.username}'s Discord avatar`}
-        className={className}
-        sx={{
-          width: size,
-          height: size,
-        }}
-        onError={() => setError(true)}
-      >
-        {(error || !userToRender.discordAvatar) && showFallback && userToRender.username[0]?.toUpperCase()}
-      </Avatar>
-    )
+  if (!userToRender.profilePictureType && !error) {
+    const discordAvatarUrl = getDiscordUrl()
+    if (discordAvatarUrl) {
+      return (
+        <Avatar
+          src={discordAvatarUrl}
+          alt={`${userToRender.username}'s Discord avatar`}
+          className={className}
+          size={size}
+          radius="xl"
+          onError={() => setError(true)}
+          styles={commonStyles}
+        >
+          {(error || !userToRender.discordAvatar) && showFallback && fallbackLetter}
+        </Avatar>
+      )
+    }
   }
 
-  // Fallback to first letter of username
   return (
-    <Avatar
-      className={className}
-      sx={{
-        width: size,
-        height: size,
-        bgcolor: 'primary.main',
-        fontSize: `${size * 0.4}px`,
-        fontWeight: 'bold'
-      }}
-    >
-      {showFallback ? (
-        userToRender.username[0]?.toUpperCase() || <User size={size * 0.5} />
-      ) : (
-        <User size={size * 0.5} />
-      )}
+    <Avatar className={className} size={size} radius="xl" styles={commonStyles}>
+      {showFallback ? fallbackLetter || <User size={fallbackIconSize} /> : <User size={fallbackIconSize} />}
     </Avatar>
   )
 }

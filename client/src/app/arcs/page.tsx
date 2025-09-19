@@ -1,32 +1,5 @@
-import React, { Suspense } from 'react'
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  CircularProgress,
-  Alert,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Snackbar
-} from '@mui/material'
-import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
-import Link from 'next/link'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
-import { motion } from 'motion/react'
-import MediaThumbnail from '../../components/MediaThumbnail'
+import React from 'react'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
 import ArcsPageContent from './ArcsPageContent'
 
@@ -55,16 +28,16 @@ export async function generateMetadata({ searchParams }: ArcsPageProps) {
   const title = character
     ? `Story Arcs featuring ${character} - Usogui Fansite`
     : search
-      ? `Arcs matching "${search}" - Page ${page} - Usogui Fansite`
-      : page > 1
-        ? `Story Arcs - Page ${page} - Usogui Fansite`
-        : 'Story Arcs - Usogui Fansite'
+        ? `Arcs matching "${search}" - Page ${page} - Usogui Fansite`
+        : page > 1
+          ? `Story Arcs - Page ${page} - Usogui Fansite`
+          : 'Story Arcs - Usogui Fansite'
 
   const description = character
     ? `Explore story arcs from Usogui featuring ${character}. Detailed analysis and storylines.`
     : search
-      ? `Browse Usogui story arcs matching "${search}". Major storylines and plot developments.`
-      : 'Explore the major storylines and arcs of Usogui. From the Tower of Doors to Air Poker, discover every major arc.'
+        ? `Browse Usogui story arcs matching "${search}". Major storylines and plot developments.`
+        : 'Explore the major storylines and arcs of Usogui. From the Tower of Doors to Air Poker, discover every major arc.'
 
   return {
     title,
@@ -72,8 +45,8 @@ export async function generateMetadata({ searchParams }: ArcsPageProps) {
     openGraph: {
       title,
       description,
-      type: 'website',
-    },
+      type: 'website'
+    }
   }
 }
 
@@ -89,33 +62,25 @@ export default async function ArcsPage({ searchParams }: ArcsPageProps) {
   let error = ''
 
   try {
-    let response
+    let response: { data: Arc[]; total: number; totalPages: number }
 
     if (character) {
-      // First find the character ID by name
       const charactersResponse = await api.getCharacters({ name: character, limit: 1 })
       if (charactersResponse.data.length > 0) {
         const characterId = charactersResponse.data[0].id
-        // Get character-specific arcs
         const characterArcsResponse = await api.getCharacterArcs(characterId)
-        // For character filtering, we'll simulate pagination client-side
-        const allArcs = characterArcsResponse.data || []
+        const allArcs: Arc[] = characterArcsResponse.data || []
         const startIndex = (page - 1) * 12
-        const endIndex = startIndex + 12
-        const paginatedArcs = allArcs.slice(startIndex, endIndex)
-
+        const paginatedArcs = allArcs.slice(startIndex, startIndex + 12)
         response = {
           data: paginatedArcs,
           total: allArcs.length,
-          totalPages: Math.ceil(allArcs.length / 12),
-          page
+          totalPages: Math.max(1, Math.ceil(allArcs.length / 12))
         }
       } else {
-        // Character not found, return empty results
-        response = { data: [], total: 0, totalPages: 1, page: 1 }
+        response = { data: [], total: 0, totalPages: 1 }
       }
     } else {
-      // Normal arc fetching with search
       const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
       if (search) params.name = search
       response = await api.getArcs(params)
@@ -129,7 +94,7 @@ export default async function ArcsPage({ searchParams }: ArcsPageProps) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <ArcsPageContent
         initialArcs={arcs}
         initialTotalPages={totalPages}

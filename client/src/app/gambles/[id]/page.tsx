@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Container,
-  Box,
-  Button,
-  Alert
-} from '@mui/material'
+import { Alert, Button, Container, Stack } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -37,30 +32,23 @@ interface Gamble {
   updatedAt: string
 }
 
-// Fetch gamble data at build time or request time
 async function getGambleData(id: string): Promise<Gamble | null> {
   try {
-    // Validate that ID is a valid number
     if (!id || isNaN(Number(id))) {
       throw new Error('Invalid gamble ID')
     }
-
     const gambleId = Number(id)
-
-    // Additional safety check for negative or zero IDs
     if (gambleId <= 0) {
       throw new Error('Invalid gamble ID')
     }
 
-    const gambleData = await api.getGamble(gambleId)
-    return gambleData
+    return await api.getGamble(gambleId)
   } catch (error: unknown) {
     console.error('Error fetching gamble data:', error)
     return null
   }
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const gamble = await getGambleData(id)
@@ -75,16 +63,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const chapterInfo = gamble.chapter
     ? `Chapter ${gamble.chapter.number}${gamble.chapter.title ? ` - ${gamble.chapter.title}` : ''}`
     : `Chapter ${gamble.chapterId}`
-
-  const participantCount = gamble.participants?.length || 0
+  const participantCount = gamble.participants?.length ?? 0
 
   return {
     title: `${gamble.name} - Gamble Details | Usogui Fansite`,
-    description: `Explore the ${gamble.name} gamble from ${chapterInfo}${participantCount > 0 ? ` with ${participantCount} participants` : ''}. ${gamble.description ? gamble.description.slice(0, 120) + '...' : gamble.rules.slice(0, 120) + '...'}`,
-    keywords: `Usogui, ${gamble.name}, gamble, ${chapterInfo}, manga, gambling, rules${gamble.participants?.map(p => `, ${p.name}`).join('') || ''}`,
+    description: `Explore the ${gamble.name} gamble from ${chapterInfo}${participantCount > 0 ? ` with ${participantCount} participants` : ''}. ${(gamble.description || gamble.rules).slice(0, 120)}...`,
+    keywords: `Usogui, ${gamble.name}, gamble, ${chapterInfo}, manga, gambling${gamble.participants?.map((p) => `, ${p.name}`).join('') || ''}`,
     openGraph: {
       title: `${gamble.name} - Usogui Gamble`,
-      description: `${gamble.name} is a gamble from ${chapterInfo}${participantCount > 0 ? ` featuring ${participantCount} participants` : ''}.`,
+      description: `${gamble.name} originates from ${chapterInfo}${participantCount > 0 ? ` and features ${participantCount} participants` : ''}.`,
       type: 'article'
     },
     twitter: {
@@ -101,21 +88,27 @@ export default async function GambleDetailPage({ params }: PageProps) {
 
   if (!gamble) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Gamble not found
-        </Alert>
-        <Button component={Link} href="/gambles" variant="outlined" startIcon={<ArrowLeft />}>
-          Back to Gambles
-        </Button>
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          <Alert color="red" radius="md">
+            Gamble not found
+          </Alert>
+          <Button
+            component={Link}
+            href="/gambles"
+            variant="subtle"
+            color="gray"
+            leftSection={<ArrowLeft size={18} />}
+            maw={220}
+          >
+            Back to Gambles
+          </Button>
+        </Stack>
       </Container>
     )
   }
 
-  return (
-    <GamblePageClient initialGamble={gamble} />
-  )
+  return <GamblePageClient initialGamble={gamble} />
 }
 
-// Force dynamic rendering to ensure SSR
 export const dynamic = 'force-dynamic'

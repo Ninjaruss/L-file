@@ -1,20 +1,21 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
+  Alert,
+  Badge,
   Box,
   Button,
-  Typography,
-  Alert,
-  FormControl,
-  InputLabel,
+  Group,
+  NumberInput,
   Select,
-  MenuItem,
-  TextField,
-  Chip,
-  CircularProgress,
-} from '@mui/material'
-import { Upload, Image, Video, FileText } from 'lucide-react'
+  Stack,
+  Text,
+  Textarea,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
+import { Upload, Image, Video, FileText, X } from 'lucide-react'
 
 interface MediaUploadFormProps {
   onUpload: (file: File, data: {
@@ -58,6 +59,8 @@ export default function MediaUploadForm({
     purpose: 'gallery' as 'gallery' | 'entity_display',
   })
   const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const theme = useMantineTheme()
 
   const handleFileSelect = (file: File) => {
     // Validate file type
@@ -141,204 +144,181 @@ export default function MediaUploadForm({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
+  const ownerSelectData = () => {
+    if (dataLoading) {
+      return [{ value: 'loading', label: 'Loading...', disabled: true }]
+    }
+
+    switch (formData.ownerType) {
+      case 'character':
+        return characters.map((character) => ({ value: String(character.id), label: character.name }))
+      case 'arc':
+        return arcs.map((arc) => ({ value: String(arc.id), label: arc.name }))
+      case 'event':
+        return events.map((event) => ({ value: String(event.id), label: event.title }))
+      case 'gamble':
+        return gambles.map((gamble) => ({ value: String(gamble.id), label: gamble.name }))
+      case 'organization':
+        return organizations.map((organization) => ({ value: String(organization.id), label: organization.name }))
+      case 'user':
+        return users.map((user) => ({ value: String(user.id), label: user.username }))
+      default:
+        return []
+    }
+  }
+
   return (
     <Box>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+        <Alert color="red" radius="md" mb="md">
+          <Text size="sm">{error}</Text>
         </Alert>
       )}
 
       <form onSubmit={handleSubmit}>
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            File Upload
-          </Typography>
-          
-          <Box
-            sx={{
-              border: 2,
-              borderStyle: 'dashed',
-              borderColor: dragActive ? 'primary.main' : 'primary.main',
-              borderRadius: 2,
-              p: 4,
-              textAlign: 'center',
-              bgcolor: dragActive ? 'action.hover' : 'background.paper',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
+        <Stack gap="lg">
+          <Stack gap="sm">
+            <Title order={4}>File Upload</Title>
+
+            <Box
+              style={{
+                border: `2px dashed ${theme.colors.red?.[6] ?? '#e11d48'}`,
+                borderRadius: theme.radius.lg,
+                padding: '2.5rem 1.5rem',
+                textAlign: 'center',
+                backgroundColor: dragActive ? 'rgba(225, 29, 72, 0.08)' : 'rgba(10, 10, 10, 0.6)',
+                cursor: 'pointer',
+                transition: 'all 150ms ease'
+              }}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            onClick={() => document.getElementById('file-input')?.click()}
+            onClick={() => fileInputRef.current?.click()}
           >
             <input
-              id="file-input"
               type="file"
               hidden
               accept="image/jpeg,image/png,image/webp,image/gif"
+              ref={fileInputRef}
               onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
             />
             
             <Upload size={48} color="#666" style={{ marginBottom: '16px' }} />
             
             {selectedFile ? (
-              <Box>
-                <Chip
-                  icon={getFileIcon(formData.type)}
-                  label={`${selectedFile.name} (${formatFileSize(selectedFile.size)})`}
-                  onDelete={() => setSelectedFile(null)}
-                  color="primary"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="body2" color="text.secondary">
+              <Stack gap="xs" align="center">
+                <Group gap="xs" align="center">
+                  <Badge radius="lg" color="red" size="lg">
+                    <Group gap={6} align="center">
+                      {getFileIcon(formData.type)}
+                      <span>{selectedFile.name} ({formatFileSize(selectedFile.size)})</span>
+                    </Group>
+                  </Badge>
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    size="xs"
+                    leftSection={<X size={14} />}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setSelectedFile(null)
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </Group>
+                <Text size="sm" c="dimmed">
                   Click to change file or drag and drop a new one
-                </Typography>
-              </Box>
+                </Text>
+              </Stack>
             ) : (
-              <Box>
-                <Typography variant="h6" gutterBottom>
+              <Stack gap={4} align="center">
+                <Title order={5}>
                   Drag and drop your file here
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
+                </Title>
+                <Text size="sm" c="dimmed">
                   or click to browse files
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
+                </Text>
+                <Text size="xs" c="dimmed">
                   Supported formats: JPEG, PNG, WebP, GIF • Max size: 10MB
-                </Typography>
-              </Box>
+                </Text>
+              </Stack>
             )}
           </Box>
-        </Box>
+          </Stack>
 
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Media Type</InputLabel>
           <Select
-            value={formData.type}
             label="Media Type"
-            onChange={(e) => handleInputChange('type', e.target.value)}
-          >
-            <MenuItem value="image">Image</MenuItem>
-            <MenuItem value="video" disabled>Video (Coming Soon)</MenuItem>
-            <MenuItem value="audio" disabled>Audio (Coming Soon)</MenuItem>
-          </Select>
-        </FormControl>
+            value={formData.type}
+            onChange={(value) => value && handleInputChange('type', value)}
+            data={[
+              { value: 'image', label: 'Image' },
+              { value: 'video', label: 'Video (Coming Soon)', disabled: true },
+              { value: 'audio', label: 'Audio (Coming Soon)', disabled: true }
+            ]}
+          />
 
-        <TextField
-          fullWidth
-          label="Description"
-          multiline
-          rows={3}
-          value={formData.description}
-          onChange={(e) => handleInputChange('description', e.target.value)}
-          placeholder="Describe this media, credit the artist if known, or provide context..."
-          sx={{ mb: 2 }}
-        />
+          <Textarea
+            label="Description"
+            minRows={3}
+            value={formData.description}
+            onChange={(event) => handleInputChange('description', event.currentTarget.value)}
+            placeholder="Describe this media, credit the artist if known, or provide context..."
+          />
 
-        <FormControl fullWidth sx={{ mb: 2 }} disabled={dataLoading}>
-          <InputLabel>Related Entity (Optional)</InputLabel>
           <Select
-            value={formData.ownerType}
             label="Related Entity (Optional)"
-            onChange={(e) => {
-              handleInputChange('ownerType', e.target.value)
-              handleInputChange('ownerId', null) // Reset owner ID when type changes
+            placeholder="Select entity type"
+            value={formData.ownerType}
+            disabled={dataLoading}
+            clearable
+            onChange={(value) => {
+              handleInputChange('ownerType', (value as typeof formData.ownerType) || '')
+              handleInputChange('ownerId', null)
             }}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            <MenuItem value="character">Character</MenuItem>
-            <MenuItem value="arc">Arc</MenuItem>
-            <MenuItem value="event">Event</MenuItem>
-            <MenuItem value="gamble">Gamble</MenuItem>
-            <MenuItem value="organization">Organization</MenuItem>
-            <MenuItem value="user">User</MenuItem>
-          </Select>
-        </FormControl>
+            data={[
+              { value: 'character', label: 'Character' },
+              { value: 'arc', label: 'Arc' },
+              { value: 'event', label: 'Event' },
+              { value: 'gamble', label: 'Gamble' },
+              { value: 'organization', label: 'Organization' },
+              { value: 'user', label: 'User' }
+            ]}
+          />
 
-        {formData.ownerType && (
-          <FormControl fullWidth sx={{ mb: 2 }} disabled={dataLoading}>
-            <InputLabel>Specific Entity</InputLabel>
+          {formData.ownerType && (
             <Select
-              value={formData.ownerId || ''}
               label="Specific Entity"
-              onChange={(e) => handleInputChange('ownerId', e.target.value || null)}
-            >
-              <MenuItem value="">
-                <em>Choose {formData.ownerType}...</em>
-              </MenuItem>
-              {dataLoading ? (
-                <MenuItem value="" disabled>
-                  Loading...
-                </MenuItem>
-              ) : formData.ownerType === 'character' ? (
-                characters.map((character) => (
-                  <MenuItem key={character.id} value={character.id}>
-                    {character.name}
-                  </MenuItem>
-                ))
-              ) : formData.ownerType === 'arc' ? (
-                arcs.map((arc) => (
-                  <MenuItem key={arc.id} value={arc.id}>
-                    {arc.name}
-                  </MenuItem>
-                ))
-              ) : formData.ownerType === 'event' ? (
-                events.map((event) => (
-                  <MenuItem key={event.id} value={event.id}>
-                    {event.title}
-                  </MenuItem>
-                ))
-              ) : formData.ownerType === 'gamble' ? (
-                gambles.map((gamble) => (
-                  <MenuItem key={gamble.id} value={gamble.id}>
-                    {gamble.name}
-                  </MenuItem>
-                ))
-              ) : formData.ownerType === 'organization' ? (
-                organizations.map((organization) => (
-                  <MenuItem key={organization.id} value={organization.id}>
-                    {organization.name}
-                  </MenuItem>
-                ))
-              ) : formData.ownerType === 'user' ? (
-                users.map((user) => (
-                  <MenuItem key={user.id} value={user.id}>
-                    {user.username}
-                  </MenuItem>
-                ))
-              ) : null}
-            </Select>
-          </FormControl>
-        )}
-
-        {formData.ownerType && formData.ownerId && (
-          <>
-            <TextField
-              fullWidth
-              type="number"
-              label="Chapter Number (Optional)"
-              value={formData.chapterNumber || ''}
-              onChange={(e) => handleInputChange('chapterNumber', e.target.value ? parseInt(e.target.value) : null)}
-              placeholder="e.g. 45"
-              sx={{ mb: 2 }}
+              placeholder={`Choose ${formData.ownerType}...`}
+              disabled={dataLoading}
+              value={formData.ownerId ? String(formData.ownerId) : null}
+              onChange={(value) => handleInputChange('ownerId', value ? parseInt(value, 10) : null)}
+              data={ownerSelectData()}
             />
-            
-          </>
-        )}
+          )}
 
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          fullWidth
-          disabled={!selectedFile || loading}
-          startIcon={loading ? <CircularProgress size={16} /> : <Upload />}
-        >
-          {loading ? 'Uploading...' : 'Upload Media'}
-        </Button>
+          {formData.ownerType && formData.ownerId && (
+            <NumberInput
+              label="Chapter Number (Optional)"
+              value={formData.chapterNumber ?? undefined}
+              onChange={(value) => handleInputChange('chapterNumber', typeof value === 'number' ? value : null)}
+              placeholder="e.g. 45"
+              min={1}
+            />
+          )}
+
+          <Button
+            type="submit"
+            size="lg"
+            fullWidth
+            disabled={!selectedFile || loading}
+            leftSection={<Upload size={18} />}
+            loading={loading}
+          >
+            {loading ? 'Uploading...' : 'Upload Media'}
+          </Button>
+        </Stack>
       </form>
     </Box>
   )

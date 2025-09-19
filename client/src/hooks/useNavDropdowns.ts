@@ -9,35 +9,35 @@ export interface NavDropdowns {
 
 export function useNavDropdowns(): NavDropdowns {
   const closeAll = () => {
-    browse[1].onClose()
-    community[1].onClose()
-    submit[1].onClose()
+    browse[1].close()
+    community[1].close()
+    submit[1].close()
   }
 
   const browse = useDropdown({
-    buttonLeaveDelay: 500,
-    dropdownLeaveDelay: 300,
+    openDelay: 0,
+    closeDelay: 400,
     closeOthers: () => {
-      community[1].onClose()
-      submit[1].onClose()
+      community[1].close()
+      submit[1].close()
     }
   })
 
   const community = useDropdown({
-    buttonLeaveDelay: 500,
-    dropdownLeaveDelay: 300,
+    openDelay: 0,
+    closeDelay: 400,
     closeOthers: () => {
-      browse[1].onClose()
-      submit[1].onClose()
+      browse[1].close()
+      submit[1].close()
     }
   })
 
   const submit = useDropdown({
-    buttonLeaveDelay: 500,
-    dropdownLeaveDelay: 300,
+    openDelay: 0,
+    closeDelay: 400,
     closeOthers: () => {
-      browse[1].onClose()
-      community[1].onClose()
+      browse[1].close()
+      community[1].close()
     }
   })
 

@@ -1,273 +1,71 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
-  Chip, 
-  IconButton,
+import React, { useCallback, useMemo, useState } from 'react'
+import {
+  ActionIcon,
+  Badge,
+  Box,
   Button,
-  useTheme,
-  Tooltip
-} from '@mui/material'
-import { Calendar, Crown, ArrowRight, Filter, X, AlertTriangle } from 'lucide-react'
+  Card,
+  Group,
+  Stack,
+  Text,
+  Tooltip,
+  rem,
+  useMantineTheme,
+  type MantineTheme
+} from '@mantine/core'
+import { AlertTriangle, ArrowRight, Calendar, Crown, Filter, X } from 'lucide-react'
 import Link from 'next/link'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
 
-// Helper functions for event types (these should match the existing ones)
-const getEventTypeColor = (type: string): string => {
-  switch (type) {
-    case 'gamble': return '#ff9800' // orange
-    case 'decision': return '#2196f3' // blue  
-    case 'reveal': return '#9c27b0' // purple
-    case 'shift': return '#ff5722' // deep orange
-    case 'resolution': return '#4caf50' // green
-    default: return '#757575' // grey
-  }
+const EVENT_COLOR_KEYS: Record<string, keyof MantineTheme['colors']> = {
+  gamble: 'orange',
+  decision: 'blue',
+  reveal: 'grape',
+  shift: 'red',
+  resolution: 'green'
 }
 
-const getEventTypeIcon = (type: string) => {
-  // Return a component function that accepts props
-  const EventTypeIcon = ({ size = 16 }: { size?: number }) => {
-    switch (type) {
-      case 'gamble': return <Crown size={size} />
-      case 'decision': return <ArrowRight size={size} />
-      case 'reveal': return <Calendar size={size} />
-      case 'shift': return <Filter size={size} />
-      case 'resolution': return <X size={size} />
-      default: return <Calendar size={size} />
-    }
-  }
-  EventTypeIcon.displayName = `EventTypeIcon_${type}`
-  return EventTypeIcon
+const EVENT_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
+  gamble: Crown,
+  decision: ArrowRight,
+  reveal: Calendar,
+  shift: Filter,
+  resolution: X
 }
 
-const getEventTypeLabel = (type: string): string => {
-  switch (type) {
-    case 'gamble': return 'Gamble'
-    case 'decision': return 'Decision'
-    case 'reveal': return 'Reveal'
-    case 'shift': return 'Shift'
-    case 'resolution': return 'Resolution'
-    default: return type.charAt(0).toUpperCase() + type.slice(1)
-  }
-}
-// CSS-in-JS styles for performance
-const globalStyles = `
-  .gamble-timeline-highlight {
-    background-color: var(--mui-palette-warning-light) !important;
-    border: 2px solid var(--mui-palette-warning-main) !important;
-    box-shadow: 0 0 8px var(--mui-palette-warning-light) !important;
-    transition: all 0.2s ease !important;
-  }
-`
-
-// Inject styles once
-if (typeof document !== 'undefined' && !document.getElementById('gamble-timeline-styles')) {
-  const styleSheet = document.createElement('style')
-  styleSheet.id = 'gamble-timeline-styles'
-  styleSheet.textContent = globalStyles
-  document.head.appendChild(styleSheet)
+const EVENT_LABEL_MAP: Record<string, string> = {
+  gamble: 'Gamble',
+  decision: 'Decision',
+  reveal: 'Reveal',
+  shift: 'Shift',
+  resolution: 'Resolution'
 }
 
-// Memoized Timeline Display Component
-const TimelineDisplay = React.memo(function TimelineDisplay({ 
-  visiblePhases, 
-  arcs, 
-  getPhaseColor, 
-  theme 
-}: {
-  visiblePhases: Array<{
-    title: string
-    description: string
-    events: GambleTimelineEvent[]
-    phase: string
-  }>
-  arcs: Arc[]
-  getPhaseColor: (phase: string) => string
-  theme: any
-}) {
-  return (
-    <Box>
-      {visiblePhases.map((phase, phaseIndex) => (
-        <Box key={phaseIndex} sx={{ mb: 3 }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2, 
-            mb: 2,
-            pb: 1,
-            borderBottom: `2px solid ${getPhaseColor(phase.phase)}`
-          }}>
-            <Crown size={20} color={getPhaseColor(phase.phase)} />
-            <Typography variant="h6" sx={{ color: getPhaseColor(phase.phase) }}>
-              {phase.title}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {phase.description}
-            </Typography>
-          </Box>
-          
-          <Box sx={{ pl: 2 }}>
-            {phase.events.map((event, eventIndex) => (
-              <TimelineEventCard
-                key={event.id}
-                event={event}
-                arcs={arcs}
-                theme={theme}
-                getEventTypeColor={getEventTypeColor}
-                getEventTypeIcon={getEventTypeIcon}
-                getEventTypeLabel={getEventTypeLabel}
-                isLastInPhase={eventIndex === phase.events.length - 1}
-                getPhaseColor={getPhaseColor}
-                phaseType={phase.phase}
-              />
-            ))}
-          </Box>
-          
-          {/* Phase transition arrow */}
-          {phaseIndex < visiblePhases.length - 1 && (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              my: 2 
-            }}>
-              <ArrowRight size={24} color={theme.palette.text.secondary} />
-            </Box>
-          )}
-        </Box>
-      ))}
-    </Box>
-  )
-})
+const DEFAULT_EVENT_COLOR: keyof MantineTheme['colors'] = 'red'
 
-// Memoized Event Card Component 
-const TimelineEventCard = React.memo(function TimelineEventCard({ 
-  event,
-  arcs,
-  theme,
-  getEventTypeColor,
-  getEventTypeIcon,
-  getEventTypeLabel,
-  isLastInPhase,
-  getPhaseColor,
-  phaseType
-}: {
-  event: GambleTimelineEvent
-  arcs: Arc[]
-  theme: any
-  getEventTypeColor: (type: string) => string
-  getEventTypeIcon: (type: string) => React.ComponentType<{ size?: number }>
-  getEventTypeLabel: (type: string) => string
-  isLastInPhase: boolean
-  getPhaseColor: (phase: string) => string
-  phaseType: string
-}) {
-  const arc = arcs.find(a => a.id === event.arcId)
-  
-  return (
-    <TimelineSpoilerWrapper event={event}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'flex-start', 
-        gap: 2, 
-        mb: 2,
-        p: 2,
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: 1,
-        backgroundColor: theme.palette.background.paper,
-        position: 'relative',
-        // Performance optimizations
-        willChange: 'transform',
-        transform: 'translateZ(0)', // Hardware acceleration
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease', // Reduced transition duration
-        '&:hover': {
-          transform: 'translateY(-2px) translateZ(0)',
-          boxShadow: theme.shadows[4],
-        }
-      }}>
-        {/* Event type indicator */}
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          backgroundColor: event.type ? getEventTypeColor(event.type) : theme.palette.grey[400],
-          color: 'white',
-          flexShrink: 0,
-          // Performance optimization
-          willChange: 'transform',
-        }}>
-          {event.type && React.createElement(getEventTypeIcon(event.type), { size: 16 })}
-        </Box>
-        
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'medium', mb: 1 }}>
-            {event.title}
-          </Typography>
-          
-          {event.description && (
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-              {event.description}
-            </Typography>
-          )}
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Chip
-              label={`Chapter ${event.chapterNumber}`}
-              size="small"
-              component={Link}
-              href={`/chapters/${event.chapterNumber}`}
-              clickable
-              sx={{ textDecoration: 'none' }}
-            />
-            
-            {arc && (
-              <Chip
-                label={arc.name}
-                size="small"
-                variant="outlined"
-                component={Link}
-                href={`/arcs/${arc.id}`}
-                clickable
-                sx={{ textDecoration: 'none' }}
-              />
-            )}
-            
-            {event.type && (
-              <Chip
-                label={getEventTypeLabel(event.type)}
-                size="small"
-                sx={{
-                  backgroundColor: getEventTypeColor(event.type),
-                  color: 'white'
-                }}
-              />
-            )}
-          </Box>
-        </Box>
-        
-        {/* Connection line to next event */}
-        {!isLastInPhase && (
-          <Box sx={{
-            position: 'absolute',
-            left: 31,
-            bottom: -16,
-            width: 2,
-            height: 16,
-            backgroundColor: getPhaseColor(phaseType),
-            opacity: 0.3
-          }} />
-        )}
-      </Box>
-    </TimelineSpoilerWrapper>
-  )
-})
+const resolveEventColorKey = (type?: string | null): keyof MantineTheme['colors'] => {
+  if (!type) return DEFAULT_EVENT_COLOR
+  return EVENT_COLOR_KEYS[type] ?? DEFAULT_EVENT_COLOR
+}
+
+const resolveEventColorHex = (theme: MantineTheme, type?: string | null) => {
+  const key = resolveEventColorKey(type)
+  const palette = theme.colors[key]
+  return palette ? palette[5] : theme.colors.red[5]
+}
+
+const getEventTypeLabel = (type?: string | null) => {
+  if (!type) return 'Event'
+  return EVENT_LABEL_MAP[type] ?? 'Event'
+}
+
+const getEventTypeIcon = (type?: string | null) => {
+  if (!type) return Calendar
+  return EVENT_ICON_MAP[type] ?? Calendar
+}
 
 interface GambleTimelineEvent {
   id: number
@@ -280,10 +78,7 @@ interface GambleTimelineEvent {
   isSpoiler?: boolean
   spoilerChapter?: number
   gambleId?: number
-  characters?: Array<{
-    id: number
-    name: string
-  }>
+  characters?: Array<{ id: number; name: string }>
 }
 
 interface Arc {
@@ -301,348 +96,371 @@ interface GambleTimelineProps {
   gambleChapter: number
 }
 
-const GambleTimeline = React.memo(function GambleTimeline({ 
-  events, 
-  arcs, 
-  gambleName, 
-  gambleChapter
-}: GambleTimelineProps) {
-  const theme = useTheme()
+const PHASE_COLOR_KEYS: Record<string, keyof MantineTheme['colors']> = {
+  setup: 'blue',
+  gamble: 'orange',
+  reveals: 'grape',
+  resolution: 'green'
+}
+
+const resolvePhaseColor = (theme: MantineTheme, phase: string) => {
+  const key = PHASE_COLOR_KEYS[phase] ?? 'red'
+  const palette = theme.colors[key]
+  return palette ? palette[5] : theme.colors.red[5]
+}
+
+export default React.memo(function GambleTimeline({ events, arcs, gambleName, gambleChapter }: GambleTimelineProps) {
+  const theme = useMantineTheme()
   const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(new Set())
   const [showAllEvents, setShowAllEvents] = useState(false)
-  // Removed viewMode - always use phases view
-  const { userProgress } = useProgress()
-  const { settings } = useSpoilerSettings()
 
-  // Removed allCharacters - no longer needed for characters view
-
-  // Get all unique event types from events with memoization
   const uniqueEventTypes = useMemo(() => {
     const eventTypes = new Set<string>()
-    
-    events.forEach(event => {
+    events.forEach((event) => {
       if (event.type) eventTypes.add(event.type)
     })
-    
-    return Array.from(eventTypes).map(type => ({
-      type,
-      label: getEventTypeLabel(type),
-      icon: getEventTypeIcon(type),
-      color: getEventTypeColor(type)
-    }))
+
+    return Array.from(eventTypes)
   }, [events])
 
-  // Filter events based on event types with optimized dependencies
   const filteredEvents = useMemo(() => {
+    const base = [...events]
+    const sorted = base.sort((a, b) => a.chapterNumber - b.chapterNumber)
     if (selectedEventTypes.size === 0) {
-      return events.slice().sort((a, b) => a.chapterNumber - b.chapterNumber)
+      return sorted
     }
-
-    return events
-      .filter(event => event.type && selectedEventTypes.has(event.type))
-      .sort((a, b) => a.chapterNumber - b.chapterNumber)
+    return sorted.filter((event) => event.type && selectedEventTypes.has(event.type))
   }, [events, selectedEventTypes])
 
-  // Group events chronologically with context - enhanced for performance
   const timelinePhases = useMemo(() => {
-    const sortedEvents = filteredEvents.sort((a, b) => a.chapterNumber - b.chapterNumber)
-    
-    // Find the main gamble event
-    const mainGambleEvent = sortedEvents.find(event => 
-      event.type === 'gamble' && event.chapterNumber === gambleChapter
-    )
-    
-    const phases = []
-    
-    // Pre-gamble events (setup, decisions leading to the gamble)
-    const preGambleEvents = sortedEvents.filter(event => 
-      event.chapterNumber < gambleChapter
-    )
-    if (preGambleEvents.length > 0) {
+    const phases: Array<{
+      title: string
+      description: string
+      events: GambleTimelineEvent[]
+      phase: string
+    }> = []
+
+    const pre = filteredEvents.filter((event) => event.chapterNumber < gambleChapter)
+    if (pre.length > 0) {
       phases.push({
-        title: "Setup & Lead-up",
-        description: "Events leading to the gamble",
-        events: preGambleEvents,
+        title: 'Setup & Lead-up',
+        description: 'Events leading to the gamble',
+        events: pre,
         phase: 'setup'
       })
     }
-    
-    // The gamble event itself
-    if (mainGambleEvent) {
+
+    const main = filteredEvents.find((event) => event.type === 'gamble' && event.chapterNumber === gambleChapter)
+    if (main) {
       phases.push({
-        title: "The Gamble",
+        title: 'The Gamble',
         description: gambleName,
-        events: [mainGambleEvent],
+        events: [main],
         phase: 'gamble'
       })
     }
-    
-    // Post-gamble events (reveals, resolutions, consequences)
-    const postGambleEvents = sortedEvents.filter(event => 
-      event.chapterNumber > gambleChapter
-    )
-    if (postGambleEvents.length > 0) {
-      // Try to separate reveals from final resolution
-      const revealEvents = postGambleEvents.filter(event => 
-        event.type === 'reveal' || event.type === 'shift'
-      )
-      const resolutionEvents = postGambleEvents.filter(event => 
-        event.type === 'resolution'
-      )
-      const otherEvents = postGambleEvents.filter(event => 
-        !revealEvents.includes(event) && !resolutionEvents.includes(event)
-      )
-      
-      if (revealEvents.length > 0 || otherEvents.length > 0) {
+
+    const post = filteredEvents.filter((event) => event.chapterNumber > gambleChapter)
+    if (post.length > 0) {
+      const reveals = post.filter((event) => event.type === 'reveal' || event.type === 'shift')
+      const resolutions = post.filter((event) => event.type === 'resolution')
+      const others = post.filter((event) => !reveals.includes(event) && !resolutions.includes(event))
+
+      if (reveals.length > 0 || others.length > 0) {
         phases.push({
-          title: "Reveals & Developments", 
-          description: "Unfolding consequences and revelations",
-          events: [...revealEvents, ...otherEvents].sort((a, b) => a.chapterNumber - b.chapterNumber),
+          title: 'Reveals & Developments',
+          description: 'Unfolding consequences and revelations',
+          events: [...reveals, ...others].sort((a, b) => a.chapterNumber - b.chapterNumber),
           phase: 'reveals'
         })
       }
-      
-      if (resolutionEvents.length > 0) {
+
+      if (resolutions.length > 0) {
         phases.push({
-          title: "Resolution",
-          description: "Final outcome and conclusions",
-          events: resolutionEvents,
+          title: 'Resolution',
+          description: 'Final outcome and conclusions',
+          events: resolutions,
           phase: 'resolution'
         })
       }
     }
-    
+
     return phases
   }, [filteredEvents, gambleName, gambleChapter])
 
-  // Get visible phases based on showAllEvents with memoization
-  const visiblePhases = useMemo(() => {
-    if (showAllEvents) return timelinePhases
-    return timelinePhases.slice(0, 3) // Show first 3 phases by default
-  }, [timelinePhases, showAllEvents])
-
-  // Use useCallback for event handlers to prevent recreation
-  const clearAllFilters = useCallback(() => {
-    setSelectedEventTypes(new Set())
-  }, [])
+  const visiblePhases = useMemo(() => (showAllEvents ? timelinePhases : timelinePhases.slice(0, 3)), [timelinePhases, showAllEvents])
 
   const toggleEventType = useCallback((type: string) => {
-    setSelectedEventTypes(prev => {
-      const newSelected = new Set(prev)
-      if (newSelected.has(type)) {
-        newSelected.delete(type)
+    setSelectedEventTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(type)) {
+        next.delete(type)
       } else {
-        newSelected.add(type)
+        next.add(type)
       }
-      return newSelected
+      return next
     })
   }, [])
 
-  const toggleShowAllEvents = useCallback(() => {
-    setShowAllEvents(prev => !prev)
+  const clearFilters = useCallback(() => {
+    setSelectedEventTypes(new Set())
   }, [])
 
-  // Removed toggleViewMode - no longer needed
-
-  const getPhaseColor = useCallback((phase: string) => {
-    switch (phase) {
-      case 'setup': return theme.palette.info.main
-      case 'gamble': return theme.palette.usogui?.gamble || theme.palette.warning.main
-      case 'reveals': return theme.palette.secondary.main
-      case 'resolution': return theme.palette.success.main
-      default: return theme.palette.primary.main
-    }
-  }, [theme])
-
-  // Removed characterTimelineData - no longer needed for characters view
+  const toggleShowAll = useCallback(() => {
+    setShowAllEvents((prev) => !prev)
+  }, [])
 
   return (
-    <Card className="gambling-card">
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Calendar size={24} />
-            Gamble Timeline
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {/* Event Type Filters */}
-            {uniqueEventTypes.length > 0 && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Filter size={16} />
-                {uniqueEventTypes.map(({ type, label, color }) => (
-                  <Chip
+    <Card className="gambling-card" withBorder radius="md" shadow="lg" p="xl">
+      <Stack gap="lg">
+        <Group justify="space-between" align="flex-start" gap="md">
+          <Group gap="sm" align="center">
+            <Calendar size={22} />
+            <Text fw={600}>Gamble Timeline</Text>
+          </Group>
+          {uniqueEventTypes.length > 0 && (
+            <Group gap={6} align="center" wrap="wrap">
+              <Filter size={16} />
+              {uniqueEventTypes.map((type) => {
+                const colorKey = resolveEventColorKey(type)
+                const isSelected = selectedEventTypes.has(type)
+                const label = getEventTypeLabel(type)
+                return (
+                  <Badge
                     key={type}
-                    label={label}
-                    size="small"
-                    variant={selectedEventTypes.has(type) ? "filled" : "outlined"}
-                    sx={{ 
-                      backgroundColor: selectedEventTypes.has(type) ? color : 'transparent',
-                      borderColor: color,
-                      color: selectedEventTypes.has(type) ? 'white' : color
-                    }}
+                    color={colorKey}
+                    variant={isSelected ? 'filled' : 'outline'}
+                    radius="sm"
                     onClick={() => toggleEventType(type)}
-                  />
-                ))}
-                {selectedEventTypes.size > 0 && (
-                  <IconButton size="small" onClick={clearAllFilters}>
-                    <X size={16} />
-                  </IconButton>
-                )}
-              </Box>
-            )}
-          </Box>
-        </Box>
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {label}
+                  </Badge>
+                )
+              })}
+              {selectedEventTypes.size > 0 && (
+                <ActionIcon variant="subtle" color="red" size="sm" onClick={clearFilters}>
+                  <X size={14} />
+                </ActionIcon>
+              )}
+            </Group>
+          )}
+        </Group>
 
         {visiblePhases.length === 0 ? (
-          <Typography color="textSecondary" sx={{ textAlign: 'center', py: 4 }}>
-            No timeline events found for this gamble.
-          </Typography>
+          <Box style={{ textAlign: 'center', paddingBlock: rem(24) }}>
+            <Text c="dimmed">No timeline events found for this gamble.</Text>
+          </Box>
         ) : (
-          <TimelineDisplay 
-            visiblePhases={visiblePhases}
+          <TimelineDisplay
+            phases={visiblePhases}
             arcs={arcs}
-            getPhaseColor={getPhaseColor}
+            resolvePhaseColor={(phase) => resolvePhaseColor(theme, phase)}
             theme={theme}
           />
         )}
-        
+
         {timelinePhases.length > visiblePhases.length && (
-          <Box sx={{ textAlign: 'center', mt: 3 }}>
-            <Button
-              variant="outlined"
-              onClick={toggleShowAllEvents}
-              sx={{ minWidth: 120 }}
-            >
+          <Box style={{ textAlign: 'center' }}>
+            <Button variant="light" color="gray" size="xs" onClick={toggleShowAll}>
               {showAllEvents ? 'Show Less' : `Show All (${timelinePhases.length} phases)`}
             </Button>
           </Box>
         )}
-      </CardContent>
+      </Stack>
     </Card>
   )
 })
 
+const TimelineDisplay = React.memo(function TimelineDisplay({
+  phases,
+  arcs,
+  resolvePhaseColor,
+  theme
+}: {
+  phases: Array<{ title: string; description: string; events: GambleTimelineEvent[]; phase: string }>
+  arcs: Arc[]
+  resolvePhaseColor: (phase: string) => string
+  theme: MantineTheme
+}) {
+  return (
+    <Stack gap="xl">
+      {phases.map((phase, index) => (
+        <Stack key={`${phase.phase}-${index}`} gap="lg">
+          <Group align="flex-start" gap="md" pb="sm" style={{ borderBottom: `2px solid ${resolvePhaseColor(phase.phase)}` }}>
+            <Crown size={20} color={resolvePhaseColor(phase.phase)} />
+            <Stack gap={2} style={{ flex: 1 }}>
+              <Text fw={600} c={resolvePhaseColor(phase.phase)}>
+                {phase.title}
+              </Text>
+              <Text size="sm" c="dimmed">
+                {phase.description}
+              </Text>
+            </Stack>
+          </Group>
 
-export default GambleTimeline
+          <Stack gap="md">
+            {phase.events.map((event, eventIndex) => (
+              <TimelineEventCard
+                key={event.id}
+                event={event}
+                arcs={arcs}
+                theme={theme}
+                phaseColor={resolvePhaseColor(phase.phase)}
+                isLastInPhase={eventIndex === phase.events.length - 1}
+              />
+            ))}
+          </Stack>
 
-// Timeline Spoiler Wrapper Component
-function TimelineSpoilerWrapper({ event, children }: { event: GambleTimelineEvent, children: React.ReactNode }) {
-  const [isRevealed, setIsRevealed] = useState(false)
+          {index < phases.length - 1 && (
+            <Group justify="center" c="dimmed">
+              <ArrowRight size={20} />
+            </Group>
+          )}
+        </Stack>
+      ))}
+    </Stack>
+  )
+})
+
+const TimelineEventCard = React.memo(function TimelineEventCard({
+  event,
+  arcs,
+  theme,
+  phaseColor,
+  isLastInPhase
+}: {
+  event: GambleTimelineEvent
+  arcs: Arc[]
+  theme: MantineTheme
+  phaseColor: string
+  isLastInPhase: boolean
+}) {
+  const arc = arcs.find((a) => a.id === event.arcId)
+  const iconColor = resolveEventColorHex(theme, event.type)
+  const EventIcon = getEventTypeIcon(event.type)
+
+  return (
+    <TimelineSpoilerWrapper event={event}>
+      <Card withBorder radius="md" shadow="sm" p="md" style={{ position: 'relative' }}>
+        <Group align="flex-start" gap="md">
+          <Box
+            style={{
+              width: rem(36),
+              height: rem(36),
+              borderRadius: '50%',
+              background: iconColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              flexShrink: 0
+            }}
+          >
+            <EventIcon size={18} />
+          </Box>
+
+          <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
+            <Text fw={600}>{event.title}</Text>
+
+            {event.description && (
+              <Text size="sm" c="dimmed">
+                {event.description}
+              </Text>
+            )}
+
+            <Group gap={6} wrap="wrap">
+              <Badge component={Link} href={`/chapters/${event.chapterNumber}`} variant="outline" color="red" radius="sm">
+                Chapter {event.chapterNumber}
+              </Badge>
+
+              {arc && (
+                <Badge component={Link} href={`/arcs/${arc.id}`} variant="outline" color="purple" radius="sm">
+                  {arc.name}
+                </Badge>
+              )}
+
+              {event.type && (
+                <Badge color={resolveEventColorKey(event.type)} radius="sm">
+                  {getEventTypeLabel(event.type)}
+                </Badge>
+              )}
+            </Group>
+          </Stack>
+        </Group>
+
+        {!isLastInPhase && (
+          <Box
+            style={{
+              position: 'absolute',
+              left: rem(18),
+              bottom: rem(-16),
+              width: rem(2),
+              height: rem(16),
+              background: phaseColor,
+              opacity: 0.35
+            }}
+          />
+        )}
+      </Card>
+    </TimelineSpoilerWrapper>
+  )
+})
+
+function TimelineSpoilerWrapper({ event, children }: { event: GambleTimelineEvent; children: React.ReactNode }) {
+  const [revealed, setRevealed] = useState(false)
   const { userProgress } = useProgress()
   const { settings } = useSpoilerSettings()
-  const theme = useTheme()
+  const theme = useMantineTheme()
 
-  const shouldHideSpoiler = () => {
-    const chapterNumber = event.chapterNumber
-    
-    // First check if spoiler settings say to show all spoilers
-    if (settings.showAllSpoilers) {
-      return false
-    }
+  const effectiveProgress = settings.chapterTolerance > 0 ? settings.chapterTolerance : userProgress
+  const chapterNumber = event.chapterNumber
+  const spoilerChapter = event.spoilerChapter ?? chapterNumber
 
-    // Determine the effective progress to use for spoiler checking
-    // Priority: spoiler settings tolerance > user progress
-    const effectiveProgress = settings.chapterTolerance > 0 
-      ? settings.chapterTolerance 
-      : userProgress
+  const shouldHide = !settings.showAllSpoilers && spoilerChapter > effectiveProgress
 
-    // If we have a chapter number, use unified logic
-    if (chapterNumber) {
-      // Check if this is a spoiler based on spoilerChapter or chapterNumber
-      const spoilerChapter = event.spoilerChapter || chapterNumber
-      return spoilerChapter > effectiveProgress
-    }
-
-    // For events without chapter numbers, be conservative and hide them
-    // unless user has made significant progress
-    return effectiveProgress <= 5
-  }
-
-  // Always check client-side logic, don't rely solely on server's isSpoiler
-  // This ensures spoilers work properly when not logged in
-  const clientSideShouldHide = shouldHideSpoiler()
-  
-  // Always render the event, but with spoiler protection overlay if needed
-  if (!clientSideShouldHide || isRevealed) {
+  if (!shouldHide || revealed) {
     return <>{children}</>
   }
 
-  const handleReveal = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsRevealed(true)
-  }
-
-  const chapterNumber = event.chapterNumber
-  const effectiveProgress = settings.chapterTolerance > 0 
-    ? settings.chapterTolerance 
-    : userProgress
-
   return (
-    <Box sx={{ position: 'relative' }}>
-      {/* Render the actual content underneath */}
-      <Box sx={{ opacity: 0.3, filter: 'blur(2px)', pointerEvents: 'none' }}>
-        {children}
-      </Box>
-      
-      {/* Spoiler overlay */}
-      <Box 
-        sx={{ 
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'error.light',
-          borderRadius: 1,
-          cursor: 'pointer',
-          border: `1px solid ${theme.palette.error.main}`,
-          '&:hover': {
-            backgroundColor: 'error.dark'
-          },
-          zIndex: 100
-        }}
-        onClick={handleReveal}
+    <Box style={{ position: 'relative' }}>
+      <Box style={{ opacity: 0.25, filter: 'blur(2px)', pointerEvents: 'none' }}>{children}</Box>
+      <Tooltip
+        label={`Chapter ${chapterNumber} spoiler – you're at Chapter ${effectiveProgress}. Click to reveal.`}
+        withArrow
+        position="top"
       >
-        <Tooltip 
-          title={`Chapter ${chapterNumber} spoiler - You're at Chapter ${effectiveProgress}. Click to reveal.`}
-          placement="top"
-          arrow
+        <Card
+          withBorder
+          radius="md"
+          shadow="lg"
+          p="sm"
+          onClick={() => setRevealed(true)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: theme.fn.rgba(theme.colors.red[7], 0.9),
+            cursor: 'pointer',
+            zIndex: 10
+          }}
         >
-          <Box sx={{ textAlign: 'center', width: '100%' }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'white',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0.5,
-                fontSize: '0.75rem',
-                mb: 0.5
-              }}
-            >
-              <AlertTriangle size={14} />
-              Chapter {chapterNumber} Spoiler
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: '0.65rem',
-                display: 'block'
-              }}
-            >
+          <Stack gap={4} align="center">
+            <Group gap={6} align="center" c="white">
+              <AlertTriangle size={16} />
+              <Text size="xs" fw={700}>
+                Chapter {chapterNumber} Spoiler
+              </Text>
+            </Group>
+            <Text size="xs" c="rgba(255,255,255,0.8)">
               Click to reveal
-            </Typography>
-          </Box>
-        </Tooltip>
-      </Box>
+            </Text>
+          </Stack>
+        </Card>
+      </Tooltip>
     </Box>
   )
 }

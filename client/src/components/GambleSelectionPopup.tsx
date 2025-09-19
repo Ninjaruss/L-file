@@ -1,23 +1,21 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  List,
-  ListItem,
-  ListItemButton,
-  Typography,
+  ActionIcon,
   Box,
-  TextField,
-  InputAdornment,
-  CircularProgress,
+  Button,
+  Collapse,
+  Group,
+  Loader,
+  Modal,
   Paper,
-  Collapse
-} from '@mui/material'
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, Dices, ChevronDown, ChevronRight } from 'lucide-react'
 import GambleChip from './GambleChip'
 
@@ -47,6 +45,12 @@ export default function GambleSelectionPopup({
   const [searchTerm, setSearchTerm] = useState('')
   const [tempSelectedGamble, setTempSelectedGamble] = useState<number | null>(selectedGambleId || null)
   const [expandedGamble, setExpandedGamble] = useState<number | null>(null)
+  const theme = useMantineTheme()
+
+  const accentColor = useMemo(
+    () => theme.other?.usogui?.gamble ?? theme.colors.red?.[6] ?? '#d32f2f',
+    [theme]
+  )
 
   // Filter gambles based on search term
   const filteredGambles = gambles.filter(gamble =>
@@ -75,49 +79,63 @@ export default function GambleSelectionPopup({
   }
 
   return (
-    <Dialog
-      open={open}
+    <Modal
+      opened={open}
       onClose={handleCancel}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
+      size="lg"
+      centered
+      radius="md"
+      title={
+        <Group gap="sm">
+          <Dices size={24} />
+          <Text size="lg" fw={600}>
+            Select Favorite Gamble
+          </Text>
+        </Group>
+      }
+      styles={{
+        content: {
           height: '80vh',
           display: 'flex',
           flexDirection: 'column'
+        },
+        body: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: theme.spacing.md,
+          paddingBottom: theme.spacing.md,
+          flex: 1
+        },
+        header: {
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          marginBottom: theme.spacing.md,
+          paddingBottom: theme.spacing.sm
         }
       }}
     >
-      <DialogTitle sx={{ pb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Dices size={24} />
-          Select Favorite Gamble
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 2 }}>
+      <Stack gap="md" style={{ flex: 1 }}>
         {/* Search Field */}
-        <TextField
-          fullWidth
+        <TextInput
           placeholder="Search gambles by name or rules..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            )
-          }}
-          size="small"
+          onChange={(event) => setSearchTerm(event.currentTarget.value)}
+          leftSection={<Search size={18} />}
+          size="md"
         />
 
         {/* Current Selection */}
         {tempSelectedGamble && (
-          <Paper elevation={1} sx={{ p: 2, bgcolor: 'action.hover' }}>
-            <Typography variant="subtitle2" gutterBottom>
+          <Paper
+            withBorder
+            radius="md"
+            p="md"
+            style={{
+              backgroundColor: theme.fn?.rgba ? theme.fn.rgba(accentColor, 0.12) : 'rgba(211, 47, 47, 0.12)'
+            }}
+          >
+            <Text size="sm" fw={600} mb="xs">
               Currently Selected:
-            </Typography>
+            </Text>
             {(() => {
               const selectedGamble = gambles.find(g => g.id === tempSelectedGamble)
               return selectedGamble ? (
@@ -130,127 +148,141 @@ export default function GambleSelectionPopup({
                   />
                 </Box>
               ) : (
-                <Typography variant="body2" color="text.secondary">
+                <Text size="sm" c="dimmed">
                   Gamble not found
-                </Typography>
+                </Text>
               )
             })()}
           </Paper>
         )}
 
         {/* Gamble List */}
-        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="subtitle2" gutterBottom>
+        <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <Text size="sm" fw={600} mb="xs">
             Available Gambles ({filteredGambles.length})
-          </Typography>
+          </Text>
           
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
+            <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: '1.5rem' }}>
+              <Loader color="red" />
             </Box>
           ) : filteredGambles.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+            <Text size="sm" c="dimmed" style={{ textAlign: 'center', paddingBlock: '1.5rem' }}>
               {searchTerm ? 'No gambles found matching your search.' : 'No gambles available.'}
-            </Typography>
+            </Text>
           ) : (
-            <List sx={{ flex: 1, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 1 }}>
-              {filteredGambles.map((gamble) => (
-                <Box key={gamble.id}>
-                  <ListItem disablePadding>
-                    <ListItemButton
-                      selected={tempSelectedGamble === gamble.id}
-                      onClick={() => setTempSelectedGamble(gamble.id)}
-                      sx={{ 
-                        py: 2,
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.light',
-                          color: 'primary.contrastText',
-                          '&:hover': {
-                            bgcolor: 'primary.main'
+            <ScrollArea offsetScrollbars style={{ flex: 1 }}>
+              <Stack gap="sm">
+                {filteredGambles.map((gamble) => {
+                  const isSelected = tempSelectedGamble === gamble.id
+                  const hasLongRules = Boolean(gamble.rules && gamble.rules.length > 100)
+
+                  const cardBackground = isSelected
+                    ? theme.fn?.rgba
+                      ? theme.fn.rgba(accentColor, 0.18)
+                      : 'rgba(211, 47, 47, 0.18)'
+                    : 'rgba(10, 10, 10, 0.6)'
+
+                  return (
+                    <Box key={gamble.id}>
+                      <Paper
+                        withBorder
+                        radius="md"
+                        onClick={() => setTempSelectedGamble(gamble.id)}
+                        role="button"
+                        aria-pressed={isSelected}
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            setTempSelectedGamble(gamble.id)
                           }
-                        }
-                      }}
-                    >
-                      <Box sx={{ width: '100%', py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <GambleChip 
-                              gamble={gamble} 
-                              size="small" 
-                              variant={tempSelectedGamble === gamble.id ? "filled" : "outlined"}
-                              clickable={false}
-                            />
-                          </Box>
-                          {gamble.rules && (
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                color: tempSelectedGamble === gamble.id ? 'inherit' : 'text.secondary',
-                                opacity: 0.8
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          backgroundColor: cardBackground,
+                          borderColor: isSelected ? accentColor : 'rgba(255, 255, 255, 0.08)',
+                          padding: theme.spacing.md,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: theme.spacing.xs,
+                          transition: 'transform 150ms ease, box-shadow 150ms ease'
+                        }}
+                        shadow={isSelected ? 'md' : 'sm'}
+                      >
+                        <Group justify="space-between" align="flex-start" gap="xs">
+                          <GambleChip
+                            gamble={gamble}
+                            size="small"
+                            variant={isSelected ? 'filled' : 'outlined'}
+                            clickable={false}
+                          />
+                          {hasLongRules && (
+                            <ActionIcon
+                              variant="subtle"
+                              color={isSelected ? 'red' : 'gray'}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                toggleExpanded(gamble.id)
                               }}
                             >
-                              {gamble.rules.length > 100 
-                                ? `${gamble.rules.substring(0, 100)}...` 
-                                : gamble.rules
-                              }
-                            </Typography>
+                              {expandedGamble === gamble.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </ActionIcon>
                           )}
-                        </Box>
-                        
-                        {/* Expand button for full rules */}
-                        {gamble.rules && gamble.rules.length > 100 && (
-                          <Button
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleExpanded(gamble.id)
-                            }}
-                            sx={{ 
-                              minWidth: 'auto',
-                              color: tempSelectedGamble === gamble.id ? 'inherit' : 'text.secondary'
+                        </Group>
+
+                        {gamble.rules && (
+                          <Text
+                            size="sm"
+                            c={isSelected ? theme.white : 'rgba(255, 255, 255, 0.7)'}
+                            style={{ opacity: 0.9 }}
+                          >
+                            {hasLongRules
+                              ? `${gamble.rules.substring(0, 100)}...`
+                              : gamble.rules}
+                          </Text>
+                        )}
+                      </Paper>
+
+                      {gamble.rules && (
+                        <Collapse in={expandedGamble === gamble.id}>
+                          <Paper
+                            withBorder
+                            radius="md"
+                            p="md"
+                            style={{
+                              marginTop: theme.spacing.xs,
+                              backgroundColor: 'rgba(10, 10, 10, 0.65)'
                             }}
                           >
-                            {expandedGamble === gamble.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                          </Button>
-                        )}
-                      </Box>
-                    </ListItemButton>
-                  </ListItem>
-                  
-                  {/* Expanded rules section */}
-                  {gamble.rules && (
-                    <Collapse in={expandedGamble === gamble.id}>
-                      <Box sx={{ px: 2, pb: 2, bgcolor: 'action.hover' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Full Rules:</strong> {gamble.rules}
-                        </Typography>
-                      </Box>
-                    </Collapse>
-                  )}
-                </Box>
-              ))}
-            </List>
+                            <Text size="sm" c="dimmed">
+                              <strong>Full Rules:</strong> {gamble.rules}
+                            </Text>
+                          </Paper>
+                        </Collapse>
+                      )}
+                    </Box>
+                  )
+                })}
+              </Stack>
+            </ScrollArea>
           )}
         </Box>
-      </DialogContent>
+      </Stack>
 
-      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-        <Button onClick={handleClearSelection} color="warning" variant="outlined">
+      <Group justify="space-between" mt="auto">
+        <Button onClick={handleClearSelection} variant="outline" color="yellow">
           Clear Selection
         </Button>
-        <Box sx={{ flex: 1 }} />
-        <Button onClick={handleCancel} color="inherit">
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleConfirm} 
-          color="primary" 
-          variant="contained"
-          disabled={loading}
-        >
-          Confirm Selection
-        </Button>
-      </DialogActions>
-    </Dialog>
+        <Group gap="sm">
+          <Button onClick={handleCancel} variant="subtle" color="gray">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} color="red" disabled={loading}>
+            Confirm Selection
+          </Button>
+        </Group>
+      </Group>
+    </Modal>
   )
 }

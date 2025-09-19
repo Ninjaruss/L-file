@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Box, Text, Accordion, Paper, Anchor, Group, useMantineTheme } from '@mantine/core'
+import { Box, Text, Accordion, Paper, Anchor, Group, useMantineTheme, rgba } from '@mantine/core'
 import { ChevronDown, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -138,7 +138,7 @@ export const FAQ: React.FC<FAQProps> = ({ showTitle = true, maxItems }) => {
 
   const withAlpha = (color: string, alpha: number, fallback: string) => {
     try {
-      return theme.fn?.rgba?.(color, alpha) ?? fallback
+      return rgba(color, alpha)
     } catch (error) {
       return fallback
     }

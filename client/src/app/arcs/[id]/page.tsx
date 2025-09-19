@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Container,
-  Box,
-  Button,
-  Alert
-} from '@mui/material'
+import { Alert, Button, Container, Stack } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -47,29 +42,23 @@ interface ArcGroup {
   events: Event[]
 }
 
-// Fetch arc data at build time or request time
 async function getArcData(id: string) {
   try {
-    // Validate that ID is a valid number
     if (!id || isNaN(Number(id))) {
       throw new Error('Invalid arc ID')
     }
 
     const arcId = Number(id)
-
-    // Additional safety check for negative or zero IDs
     if (arcId <= 0) {
       throw new Error('Invalid arc ID')
     }
 
-    // Fetch arc details, arc events, and arc gambles in parallel
     const [arcData, eventsGroupedData, gamblesData] = await Promise.all([
       api.getArc(arcId),
       api.getEventsGroupedByArc(),
       api.getArcGambles(arcId)
     ])
 
-    // Find events for this specific arc
     const arcGroup = eventsGroupedData.arcs.find((group: ArcGroup) => group.arc.id === arcId)
     const events = arcGroup?.events || []
     const gambles = gamblesData.data || []
@@ -85,7 +74,6 @@ async function getArcData(id: string) {
   }
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const data = await getArcData(id)
@@ -108,10 +96,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${arc.name} - Usogui Arc`,
       description: `${arc.name} spans chapters ${arc.startChapter}-${arc.endChapter} with ${events.length} events and ${gambles.length} gambles.`,
       type: 'article',
-      images: arc.imageFileName ? [{
-        url: `/api/media/arc/${arc.imageFileName}`,
-        alt: `${arc.name} cover image`
-      }] : undefined
+      images: arc.imageFileName
+        ? [{ url: `/api/media/arc/${arc.imageFileName}`, alt: `${arc.name} cover image` }]
+        : undefined
     },
     twitter: {
       card: 'summary_large_image',
@@ -127,29 +114,22 @@ export default async function ArcDetailPage({ params }: PageProps) {
 
   if (!data?.arc) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">
-          Arc not found
-        </Alert>
-        <Box sx={{ mt: 3 }}>
-          <Button component={Link} href="/arcs" startIcon={<ArrowLeft />}>
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          <Alert color="red" radius="md">
+            Arc not found
+          </Alert>
+          <Button component={Link} href="/arcs" variant="subtle" color="gray" leftSection={<ArrowLeft size={18} />}>
             Back to Arcs
           </Button>
-        </Box>
+        </Stack>
       </Container>
     )
   }
 
   const { arc, events, gambles } = data
 
-  return (
-    <ArcPageClient
-      initialArc={arc}
-      initialEvents={events}
-      initialGambles={gambles}
-    />
-  )
+  return <ArcPageClient initialArc={arc} initialEvents={events} initialGambles={gambles} />
 }
 
-// Force dynamic rendering to ensure SSR
 export const dynamic = 'force-dynamic'

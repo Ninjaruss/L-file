@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { getEntityAccent, mantineTheme, EntityAccentKey } from '../lib/mantine-theme'
 
 export interface NavigationItem {
   label: string
@@ -18,15 +19,19 @@ export interface NavigationData {
   submit: NavigationItem[]
 }
 
+const categoryAccentMap: Record<string, EntityAccentKey> = {
+  Cast: 'character',
+  'Story Elements': 'arc',
+  'Reference Guide': 'guide'
+}
+
+const fallbackCategoryColor = mantineTheme.other?.usogui?.red ?? '#e11d48'
+
 export const getCategoryColor = (category: string): string => {
-  switch (category) {
-    case 'Cast':
-      return '#2196f3' // Bright Material Blue
-    case 'Story Elements':
-      return '#e91e63' // Bright Material Pink
-    case 'Reference Guide':
-      return '#4caf50' // Bright Material Green
-    default:
-      return '#f44336' // Bright Material Red
+  const accentKey = categoryAccentMap[category]
+  if (!accentKey) {
+    return fallbackCategoryColor
   }
+
+  return getEntityAccent(accentKey)
 }

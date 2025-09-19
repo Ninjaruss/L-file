@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Container,
-  Box,
-  Button,
-  Alert
-} from '@mui/material'
+import { Alert, Box, Button, Container, Stack, Text } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -86,15 +81,23 @@ export default async function VolumeDetailPage({ params }: PageProps) {
 
   if (!data?.volume) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">
-          Volume not found
-        </Alert>
-        <Box sx={{ mt: 3 }}>
-          <Button component={Link} href="/volumes" startIcon={<ArrowLeft />}>
-            Back to Volumes
-          </Button>
-        </Box>
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          <Alert color="red" radius="md">
+            <Text size="sm">Volume not found</Text>
+          </Alert>
+          <Box>
+            <Button
+              component={Link}
+              href="/volumes"
+              variant="outline"
+              color="red"
+              leftSection={<ArrowLeft size={16} />}
+            >
+              Back to Volumes
+            </Button>
+          </Box>
+        </Stack>
       </Container>
     )
   }

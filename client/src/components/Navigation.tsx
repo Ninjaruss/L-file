@@ -14,7 +14,8 @@ import {
   Text,
   Badge,
   Loader,
-  rem
+  rem,
+  useMantineTheme
 } from '@mantine/core'
 import {
   Menu as MenuIcon,
@@ -44,6 +45,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useNavDropdowns } from '../hooks/useNavDropdowns'
 import { DropdownButton } from './DropdownButton'
 import { NavigationData, getCategoryColor } from '../types/navigation'
+import { EntityAccentKey, getEntityAccent } from '../lib/mantine-theme'
 
 interface SearchResult {
   id: number
@@ -69,7 +71,8 @@ const Navigation: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeout = useRef<NodeJS.Timeout | null>(null)
-  const accentColor = '#e11d48'
+  const theme = useMantineTheme()
+  const accentColor = theme.other?.usogui?.red ?? theme.colors.red?.[5] ?? '#e11d48'
   const hoverOutline = 'rgba(225, 29, 72, 0.55)'
   const [accountMenuHighlight, setAccountMenuHighlight] = useState<string | null>(null)
   const [mobileAccountHighlight, setMobileAccountHighlight] = useState<string | null>(null)
@@ -122,29 +125,29 @@ const Navigation: React.FC = () => {
     }
   }
 
+  const typeAccentMap: Record<string, EntityAccentKey> = {
+    character: 'character',
+    organization: 'organization',
+    arc: 'arc',
+    gamble: 'gamble',
+    event: 'event',
+    guide: 'guide',
+    media: 'media',
+    quote: 'quote'
+  }
+
   const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'character':
-        return '#1976d2'
-      case 'organization':
-        return '#9c27b0'
-      case 'arc':
-        return '#dc004e'
-      case 'gamble':
-        return '#d32f2f'
-      case 'event':
-        return '#f57c00'
-      case 'chapter':
-        return '#607d8b'
-      case 'guide':
-        return '#388e3c'
-      case 'media':
-        return '#7b1fa2'
-      case 'quote':
-        return '#00796b'
-      default:
-        return '#e11d48'
+    const normalizedType = typeof type === 'string' ? type.toLowerCase() : type
+    const accentKey = typeAccentMap[normalizedType]
+    if (accentKey) {
+      return getEntityAccent(accentKey, theme)
     }
+
+    if (type === 'chapter') {
+      return '#607d8b'
+    }
+
+    return accentColor
   }
 
   // Search functionality
@@ -972,9 +975,9 @@ const Navigation: React.FC = () => {
               zIndex: 30
           }}
           onClick={() => {
-            dropdowns.browse[1].onClose()
-            dropdowns.community[1].onClose()
-            dropdowns.submit[1].onClose()
+            dropdowns.browse[1].close()
+            dropdowns.community[1].close()
+            dropdowns.submit[1].close()
           }}
         />
       )}

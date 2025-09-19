@@ -37,6 +37,18 @@ export class AuthDiscordController {
     // The actual redirect is handled by Passport
   }
 
+  @ApiOperation({
+    summary: 'Discord OAuth callback',
+    description: 'Handles the callback from Discord OAuth2 flow and redirects to frontend with access token',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to frontend with access token',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Discord authentication failed',
+  })
   @Get('discord/callback')
   @UseGuards(DiscordAuthGuard)
   async discordCallback(@Request() req, @Response() res) {
@@ -95,36 +107,5 @@ export class AuthDiscordController {
     }
 
     return res.json(loginResult);
-  }
-
-  // Keep legacy refresh endpoint
-  @ApiOperation({
-    summary: 'Refresh access token',
-    description: 'Get a new access token using a refresh token',
-  })
-  @Post('refresh')
-  async refresh(@Request() req) {
-    // Get refresh token from cookie (matching the main auth controller)
-    const refresh = req.cookies?.refreshToken;
-    if (!refresh) throw new UnauthorizedException('No refresh token');
-    return this.authService.refreshAccessToken(refresh);
-  }
-
-  @ApiOperation({
-    summary: 'Logout',
-    description: 'Clear refresh token and logout user',
-  })
-  @Post('logout')
-  async logout(@Body() body: { refresh_token?: string }) {
-    if (body.refresh_token) {
-      // Find user by refresh token and clear it
-      const user = await this.authService['usersService'].findByRefreshToken(
-        body.refresh_token,
-      );
-      if (user) {
-        await this.authService['usersService'].clearRefreshToken(user.id);
-      }
-    }
-    return { message: 'Logged out successfully' };
   }
 }

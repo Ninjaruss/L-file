@@ -2,294 +2,221 @@
 
 import React from 'react'
 import {
-  Container,
-  Typography,
-  Box,
-  Card,
-  CardContent,
+  Badge,
   Button,
-  Chip,
-  Grid
-} from '@mui/material'
-import { ArrowLeft, CalendarSearch, Calendar, Users, BookOpen, Dice6, Tag } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+  Card,
+  Container,
+  Grid,
+  Group,
+  Stack,
+  Text,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
+import { ArrowLeft, CalendarSearch, Calendar, BookOpen, Dice6, Tag } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import type { Event } from '../../../types'
-import { EventStatus } from '../../../types'
 
 interface EventPageClientProps {
   initialEvent: Event
 }
 
 export default function EventPageClient({ initialEvent }: EventPageClientProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
 
-  // Track page view
   usePageView('event', initialEvent.id.toString(), true)
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+    <Container size="lg" py="xl">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
           component={Link}
           href="/events"
-          variant="outlined"
-          startIcon={<ArrowLeft />}
-          sx={{ mb: 3 }}
+          variant="subtle"
+          color="gray"
+          leftSection={<ArrowLeft size={18} />}
+          mb="lg"
         >
           Back to Events
         </Button>
 
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <CalendarSearch size={48} color={theme.palette.usogui.event} />
-          </Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            {initialEvent.title}
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <Chip
-              icon={<Calendar size={16} />}
-              label={`Chapter ${initialEvent.chapterNumber}`}
-              color="primary"
-              variant="outlined"
-            />
+        <Stack align="center" gap="sm" mb="xl">
+          <CalendarSearch size={48} color={theme.other?.usogui?.event ?? theme.colors.orange?.[6]} />
+          <Title order={1}>{initialEvent.title}</Title>
+          <Group gap="sm" wrap justify="center">
+            <Badge radius="sm" variant="outline" leftSection={<Calendar size={14} />}>
+              Chapter {initialEvent.chapterNumber}
+            </Badge>
             {initialEvent.arc && (
-              <Chip
-                icon={<BookOpen size={16} />}
-                label={initialEvent.arc.name}
-                color="secondary"
-                variant="outlined"
+              <Badge
+                radius="sm"
+                variant="outline"
+                leftSection={<BookOpen size={14} />}
                 component={Link}
                 href={`/arcs/${initialEvent.arc.id}`}
-                clickable
-              />
+                style={{ textDecoration: 'none' }}
+              >
+                {initialEvent.arc.name}
+              </Badge>
             )}
             {initialEvent.gamble && (
-              <Chip
-                icon={<Dice6 size={16} />}
-                label={initialEvent.gamble.name}
-                color="info"
-                variant="outlined"
+              <Badge
+                radius="sm"
+                variant="outline"
+                leftSection={<Dice6 size={14} />}
                 component={Link}
                 href={`/gambles/${initialEvent.gamble.id}`}
-                clickable
-              />
+                style={{ textDecoration: 'none' }}
+              >
+                {initialEvent.gamble.name}
+              </Badge>
             )}
-          </Box>
-        </Box>
+            <Badge color="red" radius="sm" variant="light" leftSection={<Tag size={14} />}>
+              {initialEvent.status}
+            </Badge>
+          </Group>
+        </Stack>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Typography variant="h5" gutterBottom>
-                  Description
-                </Typography>
+        <Grid gutter="xl">
+          <Grid.Col span={{ base: 12, md: 8 }}>
+            <Card withBorder radius="md" className="gambling-card" shadow="sm">
+              <Stack gap="md" p="lg">
+                <Title order={3}>Description</Title>
                 <TimelineSpoilerWrapper chapterNumber={initialEvent.chapterNumber}>
                   <EnhancedSpoilerMarkdown
                     content={initialEvent.description}
                     className="event-description"
-                    enableEntityEmbeds={true}
+                    enableEntityEmbeds
                     compactEntityCards={false}
                   />
                 </TimelineSpoilerWrapper>
 
                 {initialEvent.gamble && (
-                  <>
-                    <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                      Related Gamble
-                    </Typography>
+                  <Stack gap="sm" mt="lg">
+                    <Title order={4}>Related Gamble</Title>
                     <TimelineSpoilerWrapper chapterNumber={initialEvent.chapterNumber}>
-                      <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                          {initialEvent.gamble.name}
-                        </Typography>
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>Rules:</Typography>
-                          <EnhancedSpoilerMarkdown
-                            content={initialEvent.gamble.rules}
-                            className="event-gamble-rules"
-                            enableEntityEmbeds={true}
-                            compactEntityCards={true}
-                          />
-                        </Box>
-                        {initialEvent.gamble.winCondition && (
-                          <Box>
-                            <Typography variant="body2" component="span" sx={{ fontWeight: 'bold' }}>Win Condition:</Typography>
+                      <Card withBorder radius="md" shadow="xs" padding="md">
+                        <Stack gap="sm">
+                          <Text fw={600}>{initialEvent.gamble.name}</Text>
+                          <Stack gap={4}>
+                            <Text size="sm" fw={600}>Rules</Text>
                             <EnhancedSpoilerMarkdown
-                              content={initialEvent.gamble.winCondition}
-                              className="event-gamble-win-condition"
-                              enableEntityEmbeds={true}
-                              compactEntityCards={true}
+                              content={initialEvent.gamble.rules}
+                              className="event-gamble-rules"
+                              enableEntityEmbeds
+                              compactEntityCards
                             />
-                          </Box>
-                        )}
-                      </Box>
+                          </Stack>
+                          {initialEvent.gamble.winCondition && (
+                            <Stack gap={4}>
+                              <Text size="sm" fw={600}>Win Condition</Text>
+                              <EnhancedSpoilerMarkdown
+                                content={initialEvent.gamble.winCondition}
+                                className="event-gamble-win-condition"
+                                enableEntityEmbeds
+                                compactEntityCards
+                              />
+                            </Stack>
+                          )}
+                        </Stack>
+                      </Card>
                     </TimelineSpoilerWrapper>
-                  </>
+                  </Stack>
                 )}
-              </CardContent>
+              </Stack>
             </Card>
-          </Grid>
+          </Grid.Col>
 
-          <Grid item xs={12} md={4}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Event Details
-                </Typography>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Card withBorder radius="md" className="gambling-card" shadow="sm">
+              <Stack gap="md" p="lg">
+                <Title order={4}>Event Details</Title>
 
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                <Stack gap={4}>
+                  <Text size="xs" c="dimmed">
                     Chapter
-                  </Typography>
-                  <Typography
-                    variant="body1"
+                  </Text>
+                  <Text
                     component={Link}
                     href={`/chapters/${initialEvent.chapterNumber}`}
-                    sx={{
-                      textDecoration: 'none',
-                      color: 'primary.main',
-                      '&:hover': { textDecoration: 'underline' }
-                    }}
+                    fw={600}
+                    style={{ textDecoration: 'none', color: theme.colors.red?.[4] ?? '#f87171' }}
                   >
-                    {initialEvent.chapterNumber}
-                  </Typography>
-                </Box>
+                    Chapter {initialEvent.chapterNumber}
+                  </Text>
+                </Stack>
 
                 {initialEvent.arc && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed">
                       Arc
-                    </Typography>
-                    <Typography
-                      variant="body1"
+                    </Text>
+                    <Text
                       component={Link}
                       href={`/arcs/${initialEvent.arc.id}`}
-                      sx={{
-                        textDecoration: 'none',
-                        color: 'primary.main',
-                        '&:hover': { textDecoration: 'underline' }
-                      }}
+                      fw={600}
+                      style={{ textDecoration: 'none', color: theme.colors.violet?.[4] ?? '#a855f7' }}
                     >
                       {initialEvent.arc.name}
-                    </Typography>
-                  </Box>
+                    </Text>
+                  </Stack>
                 )}
 
                 {initialEvent.gamble && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed">
                       Related Gamble
-                    </Typography>
-                    <Typography
-                      variant="body1"
+                    </Text>
+                    <Text
                       component={Link}
                       href={`/gambles/${initialEvent.gamble.id}`}
-                      sx={{
-                        textDecoration: 'none',
-                        color: 'primary.main',
-                        '&:hover': { textDecoration: 'underline' }
-                      }}
+                      fw={600}
+                      style={{ textDecoration: 'none', color: theme.colors.red?.[5] ?? '#e11d48' }}
                     >
                       {initialEvent.gamble.name}
-                    </Typography>
-                  </Box>
-                )}
-
-                {initialEvent.spoilerChapter && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Spoiler Chapter
-                    </Typography>
-                    <Typography variant="body1">
-                      Chapter {initialEvent.spoilerChapter}
-                    </Typography>
-                  </Box>
-                )}
-
-                {initialEvent.type && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Event Type
-                    </Typography>
-                    <Chip
-                      label={initialEvent.type.replace('_', ' ').toUpperCase()}
-                      size="small"
-                      color="secondary"
-                      variant="outlined"
-                    />
-                  </Box>
-                )}
-
-                {initialEvent.characters?.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Characters
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      {initialEvent.characters.map((character) => (
-                        <Chip
-                          key={character.id}
-                          label={character.name}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          icon={<Users size={14} />}
-                          component={Link}
-                          href={`/characters/${character.id}`}
-                          clickable
-                        />
-                      ))}
-                    </Box>
-                  </Box>
+                    </Text>
+                  </Stack>
                 )}
 
                 {initialEvent.tags && initialEvent.tags.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed">
                       Tags
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    </Text>
+                    <Group gap="xs" wrap>
                       {initialEvent.tags.map((tag) => (
-                        <Chip
-                          key={tag.id}
-                          label={tag.name}
-                          size="small"
-                          variant="outlined"
-                          color="default"
-                          icon={<Tag size={14} />}
-                        />
+                        <Badge key={tag.id} variant="outline" radius="sm">
+                          {tag.name}
+                        </Badge>
                       ))}
-                    </Box>
-                  </Box>
+                    </Group>
+                  </Stack>
                 )}
 
-                {initialEvent.status && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Status
-                    </Typography>
-                    <Chip
-                      label={initialEvent.status.replace('_', ' ').toUpperCase()}
-                      size="small"
-                      color={initialEvent.status === EventStatus.APPROVED ? 'success' : initialEvent.status === EventStatus.PENDING ? 'warning' : 'default'}
-                      variant="outlined"
-                    />
-                  </Box>
+                {initialEvent.characters && initialEvent.characters.length > 0 && (
+                  <Stack gap="sm">
+                    <Title order={5}>Featured Characters</Title>
+                    <Stack gap={4}>
+                      {initialEvent.characters.map((character) => (
+                        <Text
+                          key={character.id}
+                          component={Link}
+                          href={`/characters/${character.id}`}
+                          style={{ textDecoration: 'none', color: theme.colors.blue?.[4] ?? '#60a5fa' }}
+                        >
+                          {character.name}
+                        </Text>
+                      ))}
+                    </Stack>
+                  </Stack>
                 )}
-              </CardContent>
+              </Stack>
             </Card>
-          </Grid>
+          </Grid.Col>
         </Grid>
       </motion.div>
     </Container>

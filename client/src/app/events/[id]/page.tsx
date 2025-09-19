@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Container,
-  Box,
-  Button,
-  Alert
-} from '@mui/material'
+import { Alert, Button, Container, Stack } from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -16,30 +11,22 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-// Fetch event data at build time or request time
-async function getEventData(id: string) {
+async function getEventData(id: string): Promise<Event | null> {
   try {
-    // Validate that ID is a valid number
     if (!id || isNaN(Number(id))) {
       throw new Error('Invalid event ID')
     }
-
     const eventId = Number(id)
-
-    // Additional safety check for negative or zero IDs
     if (eventId <= 0) {
       throw new Error('Invalid event ID')
     }
-
-    const eventData = await api.getEvent(eventId)
-    return eventData
+    return await api.getEvent(eventId)
   } catch (error: unknown) {
     console.error('Error fetching event data:', error)
     return null
   }
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const event = await getEventData(id)
@@ -53,8 +40,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${event.title} - Event Details | Usogui Fansite`,
-    description: `Explore the ${event.title} event from Chapter ${event.chapterNumber}. ${event.description ? event.description.slice(0, 150) + '...' : ''}`,
-    keywords: `Usogui, ${event.title}, event, chapter ${event.chapterNumber}, manga, gambling${event.arc ? `, ${event.arc.name}` : ''}${event.gamble ? `, ${event.gamble.name}` : ''}`,
+    description: `Explore the ${event.title} event from Chapter ${event.chapterNumber}. ${(event.description || '').slice(0, 150)}...`,
+    keywords: `Usogui, ${event.title}, event, chapter ${event.chapterNumber}, manga${event.arc ? `, ${event.arc.name}` : ''}${event.gamble ? `, ${event.gamble.name}` : ''}`,
     openGraph: {
       title: `${event.title} - Usogui Event`,
       description: `${event.title} occurs in Chapter ${event.chapterNumber}${event.arc ? ` of the ${event.arc.name} arc` : ''}.`,
@@ -74,21 +61,26 @@ export default async function EventDetailPage({ params }: PageProps) {
 
   if (!event) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Event not found
-        </Alert>
-        <Button component={Link} href="/events" variant="outlined" startIcon={<ArrowLeft />}>
-          Back to Events
-        </Button>
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          <Alert color="red" radius="md">
+            Event not found
+          </Alert>
+          <Button
+            component={Link}
+            href="/events"
+            variant="subtle"
+            color="gray"
+            leftSection={<ArrowLeft size={18} />}
+          >
+            Back to Events
+          </Button>
+        </Stack>
       </Container>
     )
   }
 
-  return (
-    <EventPageClient initialEvent={event} />
-  )
+  return <EventPageClient initialEvent={event} />
 }
 
-// Force dynamic rendering to ensure SSR
 export const dynamic = 'force-dynamic'

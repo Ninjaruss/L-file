@@ -1,21 +1,21 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
-  Box,
-  TextField,
-  Button,
-  IconButton,
-  Typography,
-  Tooltip,
+  ActionIcon,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
-import { Edit, Save, X, Star } from 'lucide-react';
-import { api } from '../lib/api';
+  Box,
+  Button,
+  Group,
+  Modal,
+  Stack,
+  Text,
+  TextInput,
+  Tooltip,
+  useMantineTheme
+} from '@mantine/core'
+import { Edit, Save, X, Star } from 'lucide-react'
+import { api } from '../lib/api'
 
 interface CustomRoleEditorProps {
   currentRole: string | null;
@@ -28,196 +28,185 @@ export default function CustomRoleEditor({
   isActiveSupporterUser,
   onUpdate
 }: CustomRoleEditorProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedRole, setEditedRole] = useState(currentRole || '');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedRole, setEditedRole] = useState(currentRole || '')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const theme = useMantineTheme()
 
   const handleSave = async () => {
     if (editedRole.trim().length > 50) {
-      setError('Custom role must be 50 characters or less');
-      return;
+      setError('Custom role must be 50 characters or less')
+      return
     }
 
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
-      const roleToSave = editedRole.trim() || null;
+      const roleToSave = editedRole.trim() || null
       
       if (roleToSave) {
-        await api.updateCustomRole(roleToSave);
+        await api.updateCustomRole(roleToSave)
       } else {
-        await api.removeCustomRole();
+        await api.removeCustomRole()
       }
 
-      onUpdate(roleToSave);
-      setIsEditing(false);
+      onUpdate(roleToSave)
+      setIsEditing(false)
     } catch (err: any) {
-      setError(err.message || 'Failed to update custom role');
+      setError(err.message || 'Failed to update custom role')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleCancel = () => {
-    setEditedRole(currentRole || '');
-    setIsEditing(false);
-    setError('');
-  };
+    setEditedRole(currentRole || '')
+    setIsEditing(false)
+    setError('')
+  }
 
   const handleRemove = async () => {
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
-      await api.removeCustomRole();
-      onUpdate(null);
-      setConfirmDialogOpen(false);
+      await api.removeCustomRole()
+      onUpdate(null)
+      setConfirmDialogOpen(false)
     } catch (err: any) {
-      setError(err.message || 'Failed to remove custom role');
+      setError(err.message || 'Failed to remove custom role')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (!isActiveSupporterUser) {
     return (
-      <Box sx={{ mb: 2 }}>
-        <Alert severity="info" sx={{ borderRadius: 2 }}>
-          <Typography variant="body2">
+      <Box style={{ marginBottom: theme.spacing.md }}>
+        <Alert color="blue" radius="md">
+          <Text size="sm">
             Custom cosmetic roles are available for Active Supporter badge holders. Support the project to unlock this feature!
-          </Typography>
+          </Text>
         </Alert>
       </Box>
-    );
+    )
   }
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+    <Box style={{ marginBottom: theme.spacing.md }}>
+      <Group align="center" gap="xs" mb="xs">
         <Star size={18} color="#9c27b0" />
-        <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 'bold' }}>
+        <Text size="sm" c="red" fw={700}>
           Custom Cosmetic Role
-        </Typography>
-      </Box>
+        </Text>
+      </Group>
 
       {!isEditing ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Group align="center" gap="xs" wrap="wrap">
           {currentRole ? (
             <Box
-              sx={{
+              style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 0.5,
-                backgroundColor: '#f3e5f5',
-                color: '#7b1fa2',
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 3,
-                border: '1px solid #ce93d8',
+                gap: '0.5rem',
+                backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                color: '#c084fc',
+                paddingInline: '0.75rem',
+                paddingBlock: '0.4rem',
+                borderRadius: theme.radius.xl,
+                border: '1px solid rgba(192, 132, 252, 0.5)',
                 fontSize: '0.875rem',
-                fontWeight: 500,
+                fontWeight: 500
               }}
             >
               <Star size={14} />
               {currentRole}
             </Box>
           ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+            <Text size="sm" c="dimmed" style={{ fontStyle: 'italic' }}>
               No custom role set
-            </Typography>
+            </Text>
           )}
           
-          <Tooltip title="Edit custom role">
-            <IconButton
-              size="small"
-              onClick={() => setIsEditing(true)}
-              sx={{ ml: 1 }}
-            >
+          <Tooltip label="Edit custom role" openDelay={200}>
+            <ActionIcon size="sm" variant="light" color="grape" onClick={() => setIsEditing(true)}>
               <Edit size={16} />
-            </IconButton>
+            </ActionIcon>
           </Tooltip>
 
           {currentRole && (
-            <Tooltip title="Remove custom role">
-              <IconButton
-                size="small"
+            <Tooltip label="Remove custom role" openDelay={200}>
+              <ActionIcon
+                size="sm"
+                variant="light"
+                color="red"
                 onClick={() => setConfirmDialogOpen(true)}
-                color="error"
               >
                 <X size={16} />
-              </IconButton>
+              </ActionIcon>
             </Tooltip>
           )}
-        </Box>
+        </Group>
       ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <TextField
-            fullWidth
-            size="small"
+        <Stack gap="sm">
+          <TextInput
             value={editedRole}
-            onChange={(e) => setEditedRole(e.target.value)}
+            onChange={(event) => setEditedRole(event.currentTarget.value)}
             placeholder="Enter your custom cosmetic role..."
-            variant="outlined"
-            inputProps={{ maxLength: 50 }}
-            helperText={`${editedRole.length}/50 characters`}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-              },
-            }}
+            size="md"
+            maxLength={50}
+            description={`${editedRole.length}/50 characters`}
           />
           
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Group gap="sm">
             <Button
-              variant="contained"
-              size="small"
               onClick={handleSave}
               disabled={loading}
-              startIcon={<Save size={16} />}
-              sx={{ borderRadius: 2 }}
+              leftSection={<Save size={16} />}
+              color="violet"
             >
               Save
             </Button>
             <Button
-              variant="outlined"
-              size="small"
+              variant="outline"
               onClick={handleCancel}
               disabled={loading}
-              sx={{ borderRadius: 2 }}
+              color="gray"
             >
               Cancel
             </Button>
-          </Box>
-        </Box>
+          </Group>
+        </Stack>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mt: 1, borderRadius: 2 }}>
-          {error}
+        <Alert color="red" radius="md" mt="sm">
+          <Text size="sm">{error}</Text>
         </Alert>
       )}
 
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Remove Custom Role</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to remove your custom cosmetic role? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleRemove}
-            color="error"
-            disabled={loading}
-          >
+      <Modal
+        opened={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        title={<Text fw={600}>Remove Custom Role</Text>}
+        centered
+        radius="md"
+      >
+        <Text size="sm" mb="md">
+          Are you sure you want to remove your custom cosmetic role? This action cannot be undone.
+        </Text>
+        <Group justify="flex-end" gap="sm">
+          <Button variant="subtle" color="gray" onClick={() => setConfirmDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleRemove} disabled={loading}>
             Remove
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Group>
+      </Modal>
     </Box>
-  );
+  )
 }

@@ -26,7 +26,8 @@ import {
   NumberInput,
   useCreate,
   useNotify,
-  useRefresh
+  useRefresh,
+  useDataProvider
 } from 'react-admin'
 import {
   Dialog,
@@ -60,35 +61,37 @@ const BadgeAwardModal = ({ open, onClose, userId, username }: {
   const [availableBadges, setAvailableBadges] = useState<any[]>([]);
   const [loadingBadges, setLoadingBadges] = useState(true);
 
-  const [create] = useCreate();
-  const notify = useNotify();
-  const refresh = useRefresh();
+  const [create] = useCreate()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const dataProvider = useDataProvider()
 
   // Fetch available badges when modal opens
   React.useEffect(() => {
     if (open) {
       const fetchBadges = async () => {
         try {
-          setLoadingBadges(true);
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/badges`);
-          if (response.ok) {
-            const data = await response.json();
-            setAvailableBadges(Array.isArray(data) ? data : data.data || []);
-          } else {
-            throw new Error('Failed to fetch badges');
-          }
+          setLoadingBadges(true)
+          const badgeResponse = await dataProvider.getList('badges', {
+            pagination: { page: 1, perPage: 1000 },
+            sort: { field: 'name', order: 'ASC' },
+            filter: {}
+          })
+
+          const data = Array.isArray(badgeResponse?.data) ? badgeResponse.data : []
+          setAvailableBadges(data)
         } catch (error) {
-          console.error('Error fetching badges:', error);
-          notify('Failed to load available badges', { type: 'error' });
-          setAvailableBadges([]);
+          console.error('Error fetching badges:', error)
+          notify('Failed to load available badges', { type: 'error' })
+          setAvailableBadges([])
         } finally {
-          setLoadingBadges(false);
+          setLoadingBadges(false)
         }
       };
 
       fetchBadges();
     }
-  }, [open, notify]);
+  }, [open, dataProvider, notify]);
 
   const handleSubmit = async () => {
     if (!badgeId) {

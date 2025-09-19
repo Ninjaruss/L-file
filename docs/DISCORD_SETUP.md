@@ -93,23 +93,17 @@ yarn typeorm migration:run
 2. Existing account updated with latest Discord info
 3. Role preserved (unless promoted to admin)
 
-## Legacy Authentication
-
-The old email/password authentication has been moved to `/auth/legacy/*` endpoints and is preserved in the `server/src/modules/auth/legacy/` folder for future reference. The frontend no longer uses these endpoints.
-
 ## API Endpoints
 
-### New Discord Endpoints
+### Authentication Endpoints
 - `GET /api/auth/discord` - Start Discord OAuth flow
 - `GET /api/auth/discord/callback` - Handle Discord callback
 - `POST /api/auth/dev-login` - Development bypass (dev only)
 - `POST /api/auth/refresh` - Refresh access token
 - `POST /api/auth/logout` - Logout user
-
-### Legacy Endpoints (Preserved)
-- `POST /auth/legacy/register` - Legacy registration
-- `POST /auth/legacy/login` - Legacy login
-- All other legacy auth endpoints preserved
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user profile
 
 ## Troubleshooting
 

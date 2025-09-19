@@ -2,50 +2,51 @@
 
 import React from 'react'
 import {
+  Alert,
+  Badge,
   Box,
   Card,
-  CardContent,
-  Typography,
-  Slider,
-  Switch,
-  FormControlLabel,
   Divider,
-  Chip,
-  Alert
-} from '@mui/material'
+  Group,
+  Slider,
+  Stack,
+  Switch,
+  Text,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
 import { Settings, Eye, EyeOff } from 'lucide-react'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
 
 const SpoilerSettings: React.FC = () => {
   const { settings, updateChapterTolerance, toggleShowAllSpoilers } = useSpoilerSettings()
+  const theme = useMantineTheme()
 
-  const handleChapterChange = (_: Event, newValue: number | number[]) => {
-    updateChapterTolerance(newValue as number)
+  const handleChapterChange = (value: number) => {
+    updateChapterTolerance(value)
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Card withBorder radius="md" padding="xl">
+      <Stack gap="lg">
+        <Group align="center" gap="sm">
           <Settings size={24} />
-          <Typography variant="h5" sx={{ ml: 1 }}>
+          <Title order={3}>
             Spoiler Settings
-          </Typography>
-        </Box>
+          </Title>
+        </Group>
 
-        <Alert severity="info" sx={{ mb: 3 }}>
+        <Alert color="blue" radius="md">
           Configure how spoilers are handled throughout the site. You can always reveal individual spoilers by clicking on them.
         </Alert>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Reading Progress
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Stack gap="sm">
+          <Title order={5}>Reading Progress</Title>
+          <Text size="sm" c="dimmed">
             Hide spoilers beyond chapter {settings.chapterTolerance}
-          </Typography>
-          
-          <Box sx={{ px: 2 }}>
+          </Text>
+
+          <Box style={{ paddingInline: theme.spacing.sm }}>
             <Slider
               value={settings.chapterTolerance}
               onChange={handleChapterChange}
@@ -60,59 +61,45 @@ const SpoilerSettings: React.FC = () => {
                 { value: 400, label: '400' },
                 { value: 539, label: 'End' }
               ]}
-              valueLabelDisplay="on"
-              sx={{ mt: 2 }}
+              labelAlwaysOn
+              color="red"
             />
           </Box>
-        </Box>
+        </Stack>
 
-        <Divider sx={{ my: 3 }} />
+        <Divider my="md" color="rgba(255, 255, 255, 0.12)" />
 
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={settings.showAllSpoilers}
-                onChange={toggleShowAllSpoilers}
-                icon={<EyeOff size={16} />}
-                checkedIcon={<Eye size={16} />}
-              />
-            }
-            label={
-              <Box>
-                <Typography variant="body1">
-                  Show All Spoilers
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Override chapter tolerance and show all content
-                </Typography>
-              </Box>
-            }
-          />
-        </Box>
+        <Switch
+          checked={settings.showAllSpoilers}
+          onChange={toggleShowAllSpoilers}
+          label={
+            <Stack gap={2}>
+              <Text fw={600}>Show All Spoilers</Text>
+              <Text size="sm" c="dimmed">
+                Override chapter tolerance and show all content
+              </Text>
+            </Stack>
+          }
+          size="md"
+          thumbIcon={settings.showAllSpoilers ? <Eye size={14} /> : <EyeOff size={14} />}
+        />
 
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="body2" color="text.secondary">
+        <Stack gap={4}>
+          <Text size="sm" c="dimmed">
             Current Status:
-          </Typography>
-          <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Chip 
-              size="small" 
-              label={`Reading up to Chapter ${settings.chapterTolerance}`}
-              color="primary"
-              variant="outlined"
-            />
+          </Text>
+          <Group gap="xs" wrap="wrap">
+            <Badge variant="outline" color="red">
+              Reading up to Chapter {settings.chapterTolerance}
+            </Badge>
             {settings.showAllSpoilers && (
-              <Chip 
-                size="small" 
-                label="All spoilers visible"
-                color="warning"
-                variant="filled"
-              />
+              <Badge color="yellow" variant="filled">
+                All spoilers visible
+              </Badge>
             )}
-          </Box>
-        </Box>
-      </CardContent>
+          </Group>
+        </Stack>
+      </Stack>
     </Card>
   )
 }

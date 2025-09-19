@@ -2,22 +2,25 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  CircularProgress,
   Alert,
-  Chip
-} from '@mui/material'
+  Badge,
+  Box,
+  Card,
+  CloseButton,
+  Container,
+  Grid,
+  Group,
+  Loader,
+  Pagination,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, Quote } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
 import api from '@/lib/api'
 
@@ -33,7 +36,8 @@ interface Quote {
 }
 
 export default function QuotesPageContent() {
-  const theme = useTheme()
+  const theme = useMantineTheme()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,190 +103,152 @@ export default function QuotesPageContent() {
     setCurrentPage(1)
   }
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
 
+  const clearCharacterFilter = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('characterId')
+    const next = params.toString()
+    router.push(next ? `/quotes?${next}` : '/quotes')
+  }
+
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Quote size={48} color={theme.palette.primary.main} />
+        <Stack ta="center" gap="lg">
+          <Box style={{ display: 'flex', justifyContent: 'center' }}>
+            <Quote size={48} color={theme.other?.usogui?.red ?? theme.colors.red[5]} />
           </Box>
-          <Typography variant="h3" component="h1" gutterBottom>
+          <Title order={2} component="h1">
             Memorable Quotes
-          </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+          </Title>
+          <Text size="lg" c="dimmed">
             Iconic lines and wisdom from the world of Usogui
-          </Typography>
-        </Box>
+          </Text>
+        </Stack>
 
-        <Box sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
+        <Stack gap="md" mt="xl" mb="lg" align="center">
+          <TextInput
+            size="md"
             placeholder="Search quotes, speakers, or tags..."
             value={searchQuery}
             onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
+            leftSection={<Search size={18} />}
+            style={{ maxWidth: rem(500) }}
           />
           {searchParams.get('characterId') && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Chip
-                label={`Filtered by character: ${characterName || 'Loading...'}`}
-                variant="filled"
-                color="primary"
-                onDelete={() => {
-                  const newUrl = new URL(window.location.href)
-                  newUrl.searchParams.delete('characterId')
-                  window.history.pushState({}, '', newUrl.toString())
-                  window.location.reload()
-                }}
-              />
-            </Box>
+            <Badge
+              variant="filled"
+              color="red"
+              size="lg"
+              rightSection={<CloseButton size="sm" onClick={clearCharacterFilter} />}
+            >
+              Filtered by character: {characterName || 'Loading...'}
+            </Badge>
           )}
-        </Box>
+        </Stack>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert color="red" variant="light" mb="md">
             {error}
           </Alert>
         )}
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress size={50} />
+          <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: theme.spacing.xl }}>
+            <Loader size="lg" />
           </Box>
         ) : (
           <>
-            <Typography variant="h6" sx={{ mb: 3 }}>
+            <Text size="lg" fw={600} mb="md">
               {total} quote{total !== 1 ? 's' : ''} found
-            </Typography>
+            </Text>
 
-            <Grid container spacing={4}>
+            <Grid gutter="xl">
               {quotes.map((quote, index) => (
-                <Grid item xs={12} md={6} lg={4} key={quote.id}>
+                <Grid.Col span={{ base: 12, md: 6, lg: 4 }} key={quote.id}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   >
                     <Card
                       className="gambling-card h-full"
-                      sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'transform 0.2s',
-                        '&:hover': { transform: 'translateY(-4px)' }
-                      }}
+                      shadow="lg"
+                      radius="md"
+                      withBorder
+                      style={{ height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s' }}
                     >
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                          <Quote size={24} color={theme.palette.primary.main} />
+                      <Stack gap="md" p="xl" style={{ flex: 1 }}>
+                        <Box style={{ display: 'flex', justifyContent: 'center' }}>
+                          <Quote size={24} color={theme.other?.usogui?.red ?? theme.colors.red[5]} />
                         </Box>
 
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            mb: 3,
-                            fontStyle: 'italic',
-                            textAlign: 'center',
-                            fontSize: '1.1rem',
-                            lineHeight: 1.6
-                          }}
+                        <Text
+                          size="lg"
+                          fs="italic"
+                          ta="center"
+                          style={{ lineHeight: 1.6 }}
                         >
                           &ldquo;{quote.text}&rdquo;
-                        </Typography>
+                        </Text>
 
-                        <Typography
-                          variant="h6"
-                          component="div"
-                          sx={{
-                            mb: 1,
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            color: 'primary.main'
-                          }}
-                        >
+                        <Text ta="center" fw={700} c={theme.other?.usogui?.red ?? theme.colors.red[5]}>
                           — {quote.speaker}
-                        </Typography>
+                        </Text>
 
                         {quote.context && (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mb: 2, textAlign: 'center', fontStyle: 'italic' }}
-                          >
+                          <Text size="sm" c="dimmed" ta="center" fs="italic">
                             {quote.context}
-                          </Typography>
+                          </Text>
                         )}
 
                         {(quote.chapter || quote.volume) && (
-                          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                              {quote.volume && `Volume ${quote.volume}`}
-                              {quote.volume && quote.chapter && ', '}
-                              {quote.chapter && `Chapter ${quote.chapter}`}
-                            </Typography>
-                          </Box>
+                          <Text size="sm" c="dimmed" ta="center">
+                            {quote.volume && `Volume ${quote.volume}`}
+                            {quote.volume && quote.chapter && ', '}
+                            {quote.chapter && `Chapter ${quote.chapter}`}
+                          </Text>
                         )}
 
                         {quote.tags?.length > 0 && (
-                          <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+                          <Group gap={6} justify="center" wrap="wrap">
                             {quote.tags.map((tag, tagIndex) => (
-                              <Chip
-                                key={`${quote.id}-tag-${tagIndex}`}
-                                label={tag}
-                                size="small"
-                                variant="outlined"
-                                color="secondary"
-                                sx={{ mr: 0.5, mb: 0.5 }}
-                              />
+                              <Badge key={`${quote.id}-tag-${tagIndex}`} variant="outline" color="purple">
+                                {tag}
+                              </Badge>
                             ))}
-                          </Box>
+                          </Group>
                         )}
-
-                      </CardContent>
+                      </Stack>
                     </Card>
                   </motion.div>
-                </Grid>
+                </Grid.Col>
               ))}
             </Grid>
 
             {quotes.length === 0 && !loading && (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Quote size={64} color={theme.palette.text.secondary} />
-                <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
+              <Stack align="center" gap="sm" py="xl">
+                <Quote size={64} color="rgba(255, 255, 255, 0.4)" />
+                <Title order={4} c="dimmed">
                   No quotes found
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                </Title>
+                <Text size="sm" c="dimmed">
                   {searchQuery ? 'Try adjusting your search terms.' : 'Be the first to submit a memorable quote!'}
-                </Typography>
-              </Box>
+                </Text>
+              </Stack>
             )}
 
             {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={handlePageChange}
-                  color="primary"
-                  size="large"
-                />
+              <Box style={{ display: 'flex', justifyContent: 'center', marginTop: theme.spacing.xl }}>
+                <Pagination total={totalPages} value={currentPage} onChange={handlePageChange} size="lg" color="red" />
               </Box>
             )}
           </>

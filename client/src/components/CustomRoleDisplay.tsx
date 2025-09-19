@@ -1,13 +1,13 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { Chip, Tooltip } from '@mui/material';
-import { Star } from 'lucide-react';
+import React from 'react'
+import { Badge, useMantineTheme } from '@mantine/core'
+import { Star } from 'lucide-react'
 
 interface CustomRoleDisplayProps {
-  customRole: string | null;
-  size?: 'small' | 'medium';
-  showIcon?: boolean;
+  customRole: string | null
+  size?: 'small' | 'medium'
+  showIcon?: boolean
 }
 
 export default function CustomRoleDisplay({
@@ -15,46 +15,53 @@ export default function CustomRoleDisplay({
   size = 'medium',
   showIcon = true
 }: CustomRoleDisplayProps) {
+  const theme = useMantineTheme()
+
   if (!customRole) {
-    return null;
+    return null
   }
 
+  const gradient = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)'
+  const hoverGradient = 'linear-gradient(135deg, #8e24aa 0%, #5e35b1 100%)'
+  const fontSize = size === 'small' ? '0.75rem' : '0.8125rem'
+
   return (
-    <Chip
-      icon={showIcon ? <Star size={size === 'small' ? 12 : 14} /> : undefined}
-      label={customRole}
-      size={size}
-      sx={{
-        background: 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)',
-        color: 'white',
-        border: '1px solid rgba(156, 39, 176, 0.3)',
-        fontWeight: 600,
-        fontSize: size === 'small' ? '0.75rem' : '0.8125rem',
-        boxShadow: '0 2px 4px rgba(156, 39, 176, 0.2)',
-        // Allow the chip to grow with content but set a reasonable max-width
-        maxWidth: '300px',
-        '& .MuiChip-icon': {
-          color: 'white',
-        },
-        '& .MuiChip-label': {
-          paddingLeft: showIcon ? '8px' : '12px',
-          paddingRight: '12px',
-          // Allow text to wrap if needed
+    <Badge
+      size={size === 'small' ? 'sm' : 'md'}
+      variant="filled"
+      radius="md"
+      leftSection={showIcon ? <Star size={size === 'small' ? 12 : 14} /> : undefined}
+      styles={{
+        root: {
+          backgroundImage: gradient,
+          color: '#ffffff',
+          border: '1px solid rgba(156, 39, 176, 0.3)',
+          fontWeight: 600,
+          fontSize,
+          boxShadow: '0 2px 4px rgba(156, 39, 176, 0.2)',
+          maxWidth: '300px',
+          transition: 'all 0.2s ease-in-out',
+          display: 'flex',
+          alignItems: 'center',
           whiteSpace: 'normal',
           wordBreak: 'break-word',
           lineHeight: 1.2,
           textAlign: 'center',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          paddingLeft: showIcon ? theme.spacing.sm : theme.spacing.md,
+          paddingRight: theme.spacing.md,
+          '&:hover': {
+            backgroundImage: hoverGradient,
+            boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)',
+            transform: 'translateY(-1px)'
+          }
         },
-        '&:hover': {
-          background: 'linear-gradient(135deg, #8e24aa 0%, #5e35b1 100%)',
-          boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)',
-          transform: 'translateY(-1px)',
-        },
-        transition: 'all 0.2s ease-in-out',
+        leftSection: {
+          color: '#ffffff',
+          marginRight: showIcon ? theme.spacing.xs : 0
+        }
       }}
-    />
-  );
+    >
+      {customRole}
+    </Badge>
+  )
 }

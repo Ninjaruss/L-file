@@ -1,31 +1,27 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Chip,
-  TextField,
-  Alert,
   Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  IconButton,
+  ActionIcon,
+  Alert,
+  Box,
+  Button,
+  Modal,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
   Tooltip,
-  Divider
-} from '@mui/material'
-import { 
-  HelpCircle, 
-  Code, 
-  Copy, 
+  rem,
+  useMantineTheme,
+  rgba
+} from '@mantine/core'
+import {
+  Code,
+  Copy,
+  HelpCircle,
   ChevronDown,
   User,
   BookOpen,
@@ -36,295 +32,319 @@ import {
   Volume2,
   Quote
 } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+import { getEntityAccent, EntityAccentKey } from '../lib/mantine-theme'
 
 interface EntityEmbedHelperProps {
   onInsertEmbed?: (embedCode: string) => void
 }
 
-const EntityEmbedHelper: React.FC<EntityEmbedHelperProps> = ({ onInsertEmbed }) => {
-  const theme = useTheme()
-  const [open, setOpen] = useState(false)
+interface EmbedExample {
+  code: string
+  description: string
+}
 
-  const entityTypes = [
-    {
-      type: 'character',
-      label: 'Character',
-      icon: <User size={16} />,
-      color: theme.palette.usogui?.character || theme.palette.primary.main,
-      description: 'Link to character profiles',
-      examples: [
-        { code: '{{character:1}}', description: 'Basic character embed' },
-        { code: '{{character:1:Baku Madarame}}', description: 'Character with custom text' }
-      ]
-    },
-    {
-      type: 'arc',
-      label: 'Arc',
-      icon: <BookOpen size={16} />,
-      color: theme.palette.usogui?.arc || theme.palette.secondary.main,
-      description: 'Link to story arcs',
-      examples: [
-        { code: '{{arc:5}}', description: 'Basic arc embed' },
-        { code: '{{arc:5:Tower Arc}}', description: 'Arc with custom text' }
-      ]
-    },
-    {
-      type: 'gamble',
-      label: 'Gamble',
-      icon: <Dice6 size={16} />,
-      color: theme.palette.usogui?.gamble || theme.palette.warning.main,
-      description: 'Link to gambling events',
-      examples: [
-        { code: '{{gamble:12}}', description: 'Basic gamble embed' },
-        { code: '{{gamble:12:Air Poker}}', description: 'Gamble with custom text' }
-      ]
-    },
-    {
-      type: 'guide',
-      label: 'Guide',
-      icon: <FileText size={16} />,
-      color: theme.palette.usogui?.guide || theme.palette.success.main,
-      description: 'Link to other guides',
-      examples: [
-        { code: '{{guide:3}}', description: 'Basic guide embed' },
-        { code: '{{guide:3:Gambling Rules Guide}}', description: 'Guide with custom text' }
-      ]
-    },
-    {
-      type: 'organization',
-      label: 'Organization',
-      icon: <Users size={16} />,
-      color: theme.palette.info.main,
-      description: 'Link to organizations and groups',
-      examples: [
-        { code: '{{organization:2}}', description: 'Basic organization embed' },
-        { code: '{{organization:2:Kakerou}}', description: 'Organization with custom text' }
-      ]
-    },
-    {
-      type: 'chapter',
-      label: 'Chapter',
-      icon: <Hash size={16} />,
-      color: theme.palette.primary.main,
-      description: 'Link to specific chapters',
-      examples: [
-        { code: '{{chapter:150}}', description: 'Basic chapter embed' },
-        { code: '{{chapter:150:The Final Gamble}}', description: 'Chapter with custom text' }
-      ]
-    },
-    {
-      type: 'volume',
-      label: 'Volume',
-      icon: <Volume2 size={16} />,
-      color: theme.palette.secondary.main,
-      description: 'Link to manga volumes',
-      examples: [
-        { code: '{{volume:20}}', description: 'Basic volume embed' },
-        { code: '{{volume:20:The Conclusion}}', description: 'Volume with custom text' }
-      ]
-    },
-    {
-      type: 'quote',
-      label: 'Quote',
-      icon: <Quote size={16} />,
-      color: theme.palette.text.secondary,
-      description: 'Link to memorable quotes',
-      examples: [
-        { code: '{{quote:45}}', description: 'Basic quote embed' }
-      ]
-    }
+interface EmbedEntityType {
+  type: EntityAccentKey | 'chapter' | 'volume'
+  label: string
+  description: string
+  icon: React.ReactNode
+  color: string
+  examples: EmbedExample[]
+}
+
+const baseExamples: Record<EntityAccentKey | 'chapter' | 'volume', EmbedExample[]> = {
+  character: [
+    { code: '{{character:1}}', description: 'Basic character embed' },
+    { code: '{{character:1:Baku Madarame}}', description: 'Character with custom text' }
+  ],
+  arc: [
+    { code: '{{arc:5}}', description: 'Basic arc embed' },
+    { code: '{{arc:5:Tower Arc}}', description: 'Arc with custom text' }
+  ],
+  gamble: [
+    { code: '{{gamble:12}}', description: 'Basic gamble embed' },
+    { code: '{{gamble:12:Air Poker}}', description: 'Gamble with custom text' }
+  ],
+  guide: [
+    { code: '{{guide:3}}', description: 'Basic guide embed' },
+    { code: '{{guide:3:Gambling Rules Guide}}', description: 'Guide with custom text' }
+  ],
+  organization: [
+    { code: '{{organization:2}}', description: 'Basic organization embed' },
+    { code: '{{organization:2:Kakerou}}', description: 'Organization with custom text' }
+  ],
+  quote: [{ code: '{{quote:45}}', description: 'Basic quote embed' }],
+  media: [],
+  event: [],
+  chapter: [
+    { code: '{{chapter:150}}', description: 'Basic chapter embed' },
+    { code: '{{chapter:150:The Final Gamble}}', description: 'Chapter with custom text' }
+  ],
+  volume: [
+    { code: '{{volume:20}}', description: 'Basic volume embed' },
+    { code: '{{volume:20:The Conclusion}}', description: 'Volume with custom text' }
   ]
+}
+
+const EntityEmbedHelper: React.FC<EntityEmbedHelperProps> = ({ onInsertEmbed }) => {
+  const theme = useMantineTheme()
+  const [opened, setOpened] = useState(false)
+
+  const accent = (key: EntityAccentKey, fallback: string) =>
+    getEntityAccent(key, theme) || fallback
+
+  const entityTypes: EmbedEntityType[] = useMemo(
+    () => [
+      {
+        type: 'character',
+        label: 'Character',
+        icon: <User size={16} />,
+        color: accent('character', theme.colors.blue[6] || '#1976d2'),
+        description: 'Link to character profiles',
+        examples: baseExamples.character
+      },
+      {
+        type: 'arc',
+        label: 'Arc',
+        icon: <BookOpen size={16} />,
+        color: accent('arc', theme.colors.pink[5] || '#dc004e'),
+        description: 'Link to story arcs',
+        examples: baseExamples.arc
+      },
+      {
+        type: 'gamble',
+        label: 'Gamble',
+        icon: <Dice6 size={16} />,
+        color: accent('gamble', theme.colors.red[6] || '#d32f2f'),
+        description: 'Link to gambling events',
+        examples: baseExamples.gamble
+      },
+      {
+        type: 'guide',
+        label: 'Guide',
+        icon: <FileText size={16} />,
+        color: accent('guide', theme.colors.green[6] || '#388e3c'),
+        description: 'Link to other guides',
+        examples: baseExamples.guide
+      },
+      {
+        type: 'organization',
+        label: 'Organization',
+        icon: <Users size={16} />,
+        color: accent('organization', theme.colors.violet[6] || '#7c3aed'),
+        description: 'Link to organizations and groups',
+        examples: baseExamples.organization
+      },
+      {
+        type: 'chapter',
+        label: 'Chapter',
+        icon: <Hash size={16} />,
+        color: theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48',
+        description: 'Link to specific chapters',
+        examples: baseExamples.chapter
+      },
+      {
+        type: 'volume',
+        label: 'Volume',
+        icon: <Volume2 size={16} />,
+        color: theme.other?.usogui?.purple ?? theme.colors.violet[5] ?? '#7c3aed',
+        description: 'Link to manga volumes',
+        examples: baseExamples.volume
+      },
+      {
+        type: 'quote',
+        label: 'Quote',
+        icon: <Quote size={16} />,
+        color: accent('quote', theme.colors.teal[6] || '#00796b'),
+        description: 'Link to memorable quotes',
+        examples: baseExamples.quote
+      }
+    ],
+    [theme]
+  )
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error('Clipboard copy failed', err)
+    })
   }
 
   const handleInsertEmbed = (embedCode: string) => {
-    if (onInsertEmbed) {
-      onInsertEmbed(embedCode)
-    }
+    onInsertEmbed?.(embedCode)
     copyToClipboard(embedCode)
   }
 
-  const exampleContent = `# Example Guide with Entity Embeds
-
-This guide demonstrates how entity embeds work in practice.
-
-## Characters
-Meet the main character: {{character:1:Baku Madarame}}
-
-## Story Arcs
-This event happens during the {{arc:5:Tower Arc}}.
-
-## Gambles
-The most complex gamble was {{gamble:12:Air Poker}}.
-
-## References
-For more details, see {{guide:3:Gambling Rules Guide}} and {{chapter:150}}.`
-
   return (
     <>
-      <Card sx={{ 
-        mb: 3,
-        border: `1px solid ${theme.palette.primary.main}30`,
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`
-      }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Code size={20} color={theme.palette.primary.main} />
-              <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Paper
+        withBorder
+        radius="md"
+        shadow="lg"
+        mb="lg"
+        p="lg"
+        style={{
+          border: `1px solid ${(theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48')}30`,
+          background: `linear-gradient(135deg, ${(theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48')}08 0%, transparent 100%)`
+        }}
+      >
+        <Stack gap="md">
+          <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
+              <Code size={20} color={theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48'} />
+              <Title order={4} c={theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48'}>
                 Entity Embeds
-              </Typography>
+              </Title>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<HelpCircle size={16} />}
-                onClick={() => setOpen(true)}
-              >
-                Help
-              </Button>
-            </Box>
+            <Button
+              variant="outline"
+              size="xs"
+              leftSection={<HelpCircle size={14} />}
+              onClick={() => setOpened(true)}
+            >
+              Help
+            </Button>
           </Box>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            You can embed interactive cards for characters, arcs, gambles, and more using the syntax: <code>{'{{type:id}}'}</code> or <code>{'{{type:id:custom_text}}'}</code>
-          </Typography>
+          <Text size="sm" c="dimmed">
+            Embed interactive cards using <Text component="code">{'{{type:id}}'}</Text> or{' '}
+            <Text component="code">{'{{type:id:custom_text}}'}</Text> to keep readers engaged with related
+            content.
+          </Text>
 
-          {/* Quick Insert Buttons */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Box style={{ display: 'flex', flexWrap: 'wrap', gap: rem(8) }}>
             {entityTypes.slice(0, 4).map((entityType) => (
-              <Chip
+              <Button
                 key={entityType.type}
-                label={entityType.label}
-                icon={entityType.icon}
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderColor: entityType.color,
-                  color: entityType.color,
-                  '&:hover': {
-                    backgroundColor: `${entityType.color}10`
+                variant="outline"
+                size="xs"
+                leftSection={entityType.icon}
+                onClick={() => handleInsertEmbed(`{{${entityType.type}:1}}`)}
+                styles={{
+                  root: {
+                    borderColor: entityType.color,
+                    color: entityType.color,
+                    '&:hover': {
+                        backgroundColor: rgba(entityType.color, 0.08)
+                    }
                   }
                 }}
-                onClick={() => handleInsertEmbed(`{{${entityType.type}:1}}`)}
-              />
+              >
+                {entityType.label}
+              </Button>
             ))}
           </Box>
-        </CardContent>
-      </Card>
+        </Stack>
+      </Paper>
 
-      {/* Help Dialog */}
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="md"
-        fullWidth
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        radius="lg"
+        size="lg"
+        title={
+          <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
+            <Code size={20} />
+            <Text fw={600}>Entity Embed Guide</Text>
+          </Box>
+        }
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Code size={20} />
-          Entity Embed Guide
-        </DialogTitle>
-        
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Entity embeds allow you to create interactive cards that link to characters, arcs, gambles, 
-            and other content. They make your guides more engaging and help readers discover related content.
+        <Stack gap="xl">
+          <Alert color="blue" variant="light" radius="md">
+            Entity embeds create interactive cards linking to characters, arcs, gambles, and more. They make
+            guides richer and help readers discover related content quickly.
           </Alert>
 
-          <Typography variant="h6" gutterBottom>
-            Basic Syntax
-          </Typography>
-          <Typography variant="body2" paragraph>
-            Use double curly braces with the entity type and ID: <code>{'{{character:1}}'}</code>
-          </Typography>
-          <Typography variant="body2" paragraph>
-            You can add custom display text: <code>{'{{character:1:Baku Madarame}}'}</code>
-          </Typography>
+          <Stack gap="xs">
+            <Title order={5}>Basic Syntax</Title>
+            <Text size="sm">
+              Use double curly braces with the entity type and ID:{' '}
+              <Text component="code">{'{{character:1}}'}</Text>
+            </Text>
+            <Text size="sm">
+              Add custom display text when needed:{' '}
+              <Text component="code">{'{{character:1:Baku Madarame}}'}</Text>
+            </Text>
+          </Stack>
 
-          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Available Entity Types
-          </Typography>
-
-          {entityTypes.map((entityType) => (
-            <Accordion key={entityType.type}>
-              <AccordionSummary expandIcon={<ChevronDown size={16} />}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ color: entityType.color }}>
-                    {entityType.icon}
+          <Accordion radius="md" chevron={<ChevronDown size={16} />}>
+            {entityTypes.map((entityType) => (
+              <Accordion.Item key={entityType.type} value={entityType.type}>
+                <Accordion.Control>
+                  <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
+                    <Box style={{ color: entityType.color }}>{entityType.icon}</Box>
+                    <Text fw={600}>{entityType.label}</Text>
+                    <Text size="xs" c="dimmed">
+                      {entityType.description}
+                    </Text>
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {entityType.label}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {entityType.description}
-                  </Typography>
-                </Box>
-              </AccordionSummary>
-              
-              <AccordionDetails>
-                <Grid container spacing={2}>
-                  {entityType.examples.map((example, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
-                      <Card variant="outlined" sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <SimpleGrid cols={2} spacing="sm" breakpoints={[{ maxWidth: 'sm', cols: 1 }]}> 
+                    {entityType.examples.map((example, index) => (
+                      <Paper key={index} withBorder radius="md" p="sm">
+                        <Box
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: rem(8)
+                          }}
+                        >
+                          <Text size="sm" ff="monospace">
                             {example.code}
-                          </Typography>
-                          <Tooltip title="Copy to clipboard">
-                            <IconButton 
-                              size="small"
+                          </Text>
+                          <Tooltip label="Copy to clipboard" withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              size="sm"
+                              aria-label="Copy embed"
                               onClick={() => handleInsertEmbed(example.code)}
                             >
                               <Copy size={14} />
-                            </IconButton>
+                            </ActionIcon>
                           </Tooltip>
                         </Box>
-                        <Typography variant="caption" color="text.secondary">
+                        <Text size="xs" c="dimmed">
                           {example.description}
-                        </Typography>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </AccordionDetails>
-            </Accordion>
-          ))}
+                        </Text>
+                      </Paper>
+                    ))}
+                  </SimpleGrid>
+                </Accordion.Panel>
+              </Accordion.Item>
+            ))}
+          </Accordion>
 
-          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Tips for Using Entity Embeds
-          </Typography>
-          <Box component="ul" sx={{ pl: 2 }}>
-            <li>
-              <Typography variant="body2" paragraph>
-                Use entity embeds to reference key characters, events, or concepts mentioned in your guide
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2" paragraph>
-                Custom display text helps provide context: <code>{'{{character:5:the main antagonist}}'}</code>
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2" paragraph>
-                Entity embeds are interactive and will show up as clickable cards in your published guide
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2" paragraph>
-                You can embed multiple entities in the same paragraph for comprehensive references
-              </Typography>
-            </li>
+          <Stack gap="xs">
+            <Title order={5}>Tips for Using Entity Embeds</Title>
+            <Box component="ul" style={{ paddingInlineStart: rem(18), margin: 0 }}>
+              <li>
+                <Text size="sm">
+                  Reference key characters, events, or concepts to give readers deeper context.
+                </Text>
+              </li>
+              <li>
+                <Text size="sm">
+                  Use custom text to clarify references, e.g.{' '}
+                  <Text component="code">{'{{character:5:the main antagonist}}'}</Text>.
+                </Text>
+              </li>
+              <li>
+                <Text size="sm">Embeds render as interactive cards in the published guide.</Text>
+              </li>
+              <li>
+                <Text size="sm">Combine multiple embeds in a section for comprehensive references.</Text>
+              </li>
+            </Box>
+          </Stack>
+
+          <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={() => setOpened(false)} variant="light" color="red" radius="md">
+              Close
+            </Button>
           </Box>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </Stack>
+      </Modal>
     </>
   )
 }

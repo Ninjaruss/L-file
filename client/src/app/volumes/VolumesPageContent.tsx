@@ -1,19 +1,22 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-  Typography,
+  Alert,
+  Badge,
   Box,
   Card,
-  CardContent,
   Grid,
-  TextField,
-  Chip,
-  CircularProgress,
-  Alert,
+  Group,
+  Loader,
   Pagination,
-  InputAdornment
-} from '@mui/material'
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, Book, Hash } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -50,6 +53,7 @@ export default function VolumesPageContent({
 }: VolumesPageContentProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const theme = useMantineTheme()
   
   const [volumes, setVolumes] = useState<Volume[]>(initialVolumes)
   const [loading, setLoading] = useState(false)
@@ -58,6 +62,15 @@ export default function VolumesPageContent({
   const [page, setPage] = useState(initialPage)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [total, setTotal] = useState(initialTotal)
+  const searchTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        window.clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Update URL params when search or page changes
   const updateURL = (newSearch: string, newPage: number) => {
@@ -100,16 +113,17 @@ export default function VolumesPageContent({
     setSearchTerm(newSearch)
     setPage(1)
     updateURL(newSearch, 1)
-    
-    // Debounce the API call
-    const timeoutId = setTimeout(() => {
+
+    if (searchTimeoutRef.current) {
+      window.clearTimeout(searchTimeoutRef.current)
+    }
+
+    searchTimeoutRef.current = window.setTimeout(() => {
       fetchVolumes(newSearch, 1)
     }, 300)
-    
-    return () => clearTimeout(timeoutId)
   }
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (value: number) => {
     setPage(value)
     updateURL(searchTerm, value)
     fetchVolumes(searchTerm, value)
@@ -117,7 +131,9 @@ export default function VolumesPageContent({
 
   if (error) {
     return (
-      <Alert severity="error">{error}</Alert>
+      <Alert color="red" radius="md">
+        <Text size="sm">{error}</Text>
+      </Alert>
     )
   }
 
@@ -127,66 +143,66 @@ export default function VolumesPageContent({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Box sx={{ textAlign: 'center', mb: 6 }}>
-        <Book size={48} style={{ marginBottom: 16 }} />
-        <Typography variant="h2" component="h1" gutterBottom>
-          Volumes
-        </Typography>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
+      <Stack align="center" gap="xs" mb="xl">
+        <Book size={48} style={{ marginBottom: rem(8) }} />
+        <Title order={1}>Volumes</Title>
+        <Text size="lg" c="dimmed">
           Explore the complete collection of Usogui volumes
-        </Typography>
-      </Box>
+        </Text>
+      </Stack>
 
-      <Box sx={{ mb: 4 }}>
-        <TextField
-          fullWidth
+      <Box mb="lg">
+        <TextInput
           placeholder="Search volumes by number..."
           value={searchTerm}
           onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
+          size="md"
+          leftSection={<Search size={18} />}
         />
       </Box>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress size={50} />
+        <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: rem(64) }}>
+          <Loader size="lg" color="red" />
         </Box>
       ) : (
         <>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary">
+          <Box mb="sm">
+            <Text size="sm" c="dimmed">
               {total} volumes found
-            </Typography>
+            </Text>
           </Box>
 
-          <Grid container spacing={3}>
+          <Grid gutter="xl">
             {volumes.map((volume) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={volume.id}>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }} key={volume.id}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card 
+                  <Card
+                    withBorder
+                    radius="md"
+                    padding="md"
                     className="gambling-card"
-                    sx={{ 
+                    style={{
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
-                      transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                      '&:hover': { 
-                        transform: 'translateY(-4px)',
-                        boxShadow: 6
-                      }
+                      transition: 'transform 200ms ease, box-shadow 200ms ease',
+                      boxShadow: theme.shadows.sm
+                    }}
+                    onMouseEnter={(event) => {
+                      event.currentTarget.style.transform = 'translateY(-4px)'
+                      event.currentTarget.style.boxShadow = theme.shadows.lg
+                    }}
+                    onMouseLeave={(event) => {
+                      event.currentTarget.style.transform = 'none'
+                      event.currentTarget.style.boxShadow = theme.shadows.sm
                     }}
                   >
-                    <Box sx={{ position: 'relative' }}>
+                    <Box style={{ position: 'relative' }}>
                       <MediaThumbnail
                         entityType="volume"
                         entityId={volume.id}
@@ -197,94 +213,79 @@ export default function VolumesPageContent({
                       />
                     </Box>
                     
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Typography 
-                          variant="h5" 
+                    <Stack gap="sm" style={{ flex: 1, marginTop: rem(12) }}>
+                      <Group justify="space-between" align="flex-start">
+                        <Text
                           component={Link}
                           href={`/volumes/${volume.id}`}
-                          sx={{ 
-                            textDecoration: 'none', 
-                            color: 'primary.main',
-                            '&:hover': { textDecoration: 'underline' }
+                          fw={600}
+                          size="lg"
+                          className="hover:underline"
+                          style={{
+                            color: theme.colors.red?.[5] ?? '#e11d48',
+                            textDecoration: 'none'
                           }}
                         >
                           Volume {volume.number}
-                        </Typography>
-                        <Chip 
-                          label={`Vol. ${volume.number}`}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                        />
-                      </Box>
+                        </Text>
+                        <Badge variant="outline" color="red" radius="sm">
+                          Vol. {volume.number}
+                        </Badge>
+                      </Group>
 
                       {volume.title && (
-                        <Typography 
-                          variant="h6" 
-                          color="text.secondary" 
-                          gutterBottom
-                          sx={{ fontSize: '1rem', fontWeight: 500 }}
-                        >
+                        <Text size="md" fw={500} c="dimmed">
                           {volume.title}
-                        </Typography>
+                        </Text>
                       )}
 
-                      <Box sx={{ mb: 2 }}>
-                        <Chip
-                          label={`Ch. ${volume.startChapter}-${volume.endChapter}`}
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                          icon={<Hash size={14} />}
-                        />
-                      </Box>
+                      <Badge variant="outline" color="violet" radius="sm">
+                        <Group gap={6} align="center">
+                          <Hash size={14} />
+                          <span>Ch. {volume.startChapter}-{volume.endChapter}</span>
+                        </Group>
+                      </Badge>
 
                       {volume.description && (
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary"
-                          sx={{ 
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            mt: 'auto'
-                          }}
-                        >
+                        <Text size="sm" c="dimmed" style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}>
                           {volume.description}
-                        </Typography>
+                        </Text>
                       )}
 
-                      <Box sx={{ mt: 2, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                        <Typography variant="caption" color="text.secondary">
+                      <Box style={{ marginTop: rem(12), paddingTop: rem(8), borderTop: `1px solid rgba(255, 255, 255, 0.08)` }}>
+                        <Text size="xs" c="dimmed">
                           {volume.endChapter - volume.startChapter + 1} chapters
-                        </Typography>
+                        </Text>
                       </Box>
-                    </CardContent>
+                    </Stack>
                   </Card>
                 </motion.div>
-              </Grid>
+              </Grid.Col>
             ))}
           </Grid>
 
           {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+            <Box style={{ display: 'flex', justifyContent: 'center', marginTop: theme.spacing.xl }}>
               <Pagination
-                count={totalPages}
-                page={page}
+                total={totalPages}
+                value={page}
                 onChange={handlePageChange}
-                color="primary"
-                size="large"
+                color="red"
+                size="md"
               />
             </Box>
           )}
 
           {volumes.length === 0 && !loading && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <Typography variant="h6" color="text.secondary">
+            <Box style={{ textAlign: 'center', paddingBlock: rem(64) }}>
+              <Text size="lg" c="dimmed">
                 No volumes found
-              </Typography>
+              </Text>
             </Box>
           )}
         </>

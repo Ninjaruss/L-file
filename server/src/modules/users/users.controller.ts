@@ -45,7 +45,7 @@ export class UsersController {
 
   // Public users listing endpoint (no authentication required)
   @Get('public')
-  @ApiTags('public')
+  @ApiTags('users')
   @ApiOperation({
     summary: 'Get all public user profiles',
     description:
@@ -158,7 +158,7 @@ export class UsersController {
   }
 
   @Get('public/:id')
-  @ApiTags('public')
+  @ApiTags('users')
   @ApiOperation({
     summary: 'Get public user profile',
     description:

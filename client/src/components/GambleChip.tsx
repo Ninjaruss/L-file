@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Chip, useTheme } from '@mui/material'
+import { Badge, useMantineTheme, darken, rgba } from '@mantine/core'
 import { Dices } from 'lucide-react'
 import Link from 'next/link'
 
@@ -17,49 +17,67 @@ interface GambleChipProps {
   clickable?: boolean
 }
 
-export default function GambleChip({ 
-  gamble, 
-  size = 'medium', 
+export default function GambleChip({
+  gamble,
+  size = 'medium',
   variant = 'filled',
   onClick,
   clickable = true
 }: GambleChipProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
+  const primary = theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48'
+  const backgroundFilled = primary
+  const backgroundOutlined = 'transparent'
+  const textColorFilled = '#ffffff'
+  const textColorOutlined = primary
 
-  const chipProps = {
-    label: gamble.name,
-    icon: <Dices size={16} />,
-    size,
-    variant,
-    sx: {
-      backgroundColor: variant === 'filled' ? 'primary.main' : 'transparent',
-      color: variant === 'filled' ? 'primary.contrastText' : 'primary.main',
-      border: variant === 'outlined' ? 1 : 0,
-      borderColor: 'primary.main',
-      fontWeight: 'bold',
-      cursor: clickable ? 'pointer' : 'default',
-      '&:hover': clickable ? {
-        backgroundColor: variant === 'filled' ? 'primary.dark' : 'primary.light',
-        color: variant === 'filled' ? 'primary.contrastText' : 'primary.contrastText',
-        transform: 'translateY(-1px)',
-        boxShadow: theme.shadows[4]
-      } : {},
-      transition: 'all 0.2s ease-in-out',
-      boxShadow: theme.shadows[2]
-    }
-  }
+  const badgeSize = size === 'small' ? 'xs' : 'sm'
+
+  const hoverBackgroundFilled = darken(backgroundFilled, 0.1)
+  const hoverBackgroundOutlined = rgba(primary, 0.1)
+
+  const badge = (
+    <Badge
+      size={badgeSize}
+      radius="lg"
+      leftSection={<Dices size={16} />}
+      onClick={onClick}
+      styles={{
+        root: {
+          backgroundColor: variant === 'filled' ? backgroundFilled : backgroundOutlined,
+          color: variant === 'filled' ? textColorFilled : textColorOutlined,
+          border: variant === 'outlined' ? `1px solid ${primary}` : 'none',
+          fontWeight: 700,
+          cursor: clickable || onClick ? 'pointer' : 'default',
+          transition: 'all 0.2s ease-in-out',
+          boxShadow: variant === 'filled' ? '0 2px 4px rgba(225, 29, 72, 0.3)' : 'none',
+          '&:hover': clickable || onClick ? {
+            backgroundColor: variant === 'filled' ? hoverBackgroundFilled : hoverBackgroundOutlined,
+            color: textColorFilled,
+            transform: 'translateY(-1px)',
+            boxShadow: '0 2px 6px rgba(225, 29, 72, 0.25)'
+          } : undefined
+        },
+        leftSection: {
+          color: variant === 'filled' ? textColorFilled : textColorOutlined
+        }
+      }}
+    >
+      {gamble.name}
+    </Badge>
+  )
 
   if (onClick) {
-    return <Chip {...chipProps} onClick={onClick} />
+    return badge
   }
 
   if (clickable) {
     return (
-      <Link href={`/gambles/${gamble.id}`} style={{ textDecoration: 'none' }}>
-        <Chip {...chipProps} />
+      <Link href={`/gambles/${gamble.id}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+        {badge}
       </Link>
     )
   }
 
-  return <Chip {...chipProps} />
+  return badge
 }

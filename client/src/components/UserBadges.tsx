@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { UserBadge } from '../types';
-import BadgeDisplay from './BadgeDisplay';
+import React, { useState, useEffect } from 'react'
+import { UserBadge } from '../types'
+import { api } from '../lib/api'
+import BadgeDisplay from './BadgeDisplay'
 
 interface UserBadgesProps {
   userId: number;
@@ -17,30 +18,32 @@ export default function UserBadges({
   maxDisplay = 5,
   className = ''
 }: UserBadgesProps) {
-  const [badges, setBadges] = useState<UserBadge[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [badges, setBadges] = useState<UserBadge[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchBadges = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/badges`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch badges');
-        }
-        const data = await response.json();
-        // Handle different response formats - sometimes data is wrapped in a data property
-        const badgesArray = Array.isArray(data) ? data : (data.data || []);
-        setBadges(badgesArray);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load badges');
-      } finally {
-        setLoading(false);
+      if (!userId) {
+        setBadges([])
+        setLoading(false)
+        return
       }
-    };
 
-    fetchBadges();
-  }, [userId]);
+      try {
+        const data = await api.getUserBadges(userId)
+        const badgesArray = Array.isArray(data) ? data : data?.data || []
+        setBadges(badgesArray)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load badges')
+        setBadges([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBadges()
+  }, [userId])
 
   if (loading) {
     return (

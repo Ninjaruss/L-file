@@ -2,20 +2,23 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-  Container,
-  Typography,
+  Alert,
+  Badge,
   Box,
   Card,
-  CardContent,
+  Container,
   Grid,
-  TextField,
-  Chip,
-  CircularProgress,
-  Alert,
+  Group,
+  Loader,
   Pagination,
-  InputAdornment,
-  LinearProgress
-} from '@mui/material'
+  Progress,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, Users, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
@@ -47,6 +50,7 @@ interface PublicUser {
 }
 
 export default function UsersPageContent() {
+  const theme = useMantineTheme()
   const [users, setUsers] = useState<PublicUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -85,194 +89,164 @@ export default function UsersPageContent() {
     setPage(1) // Reset to first page when searching
   }
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (value: number) => {
     setPage(value)
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">{error}</Alert>
+      <Container size="lg" py="xl">
+        <Alert color="red" variant="light">
+          {error}
+        </Alert>
       </Container>
     )
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Users size={48} style={{ marginBottom: 16 }} />
-          <Typography variant="h2" component="h1" gutterBottom>
+        <Stack ta="center" gap="sm" mb="xl">
+          <Users size={48} style={{ margin: '0 auto 16px' }} />
+          <Title order={2} component="h1">
             Community
-          </Typography>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+          </Title>
+          <Text size="lg" c="dimmed">
             Meet the L-file community members
-          </Typography>
-        </Box>
+          </Text>
+        </Stack>
 
-        <Box sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            placeholder="Search users by username..."
-            value={searchTerm}
-            onChange={handleSearch}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
+        <TextInput
+          size="md"
+          placeholder="Search users by username..."
+          value={searchTerm}
+          onChange={handleSearch}
+          leftSection={<Search size={18} />}
+          mb="lg"
+        />
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress size={50} />
+          <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: theme.spacing.xl }}>
+            <Loader size="lg" />
           </Box>
         ) : (
           <>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                {total} community members
-              </Typography>
-            </Box>
+            <Text size="sm" c="dimmed" mb="md">
+              {total} community members
+            </Text>
 
-            <Grid container spacing={3}>
+            <Grid gutter="xl">
               {users.map((user) => {
                 const progressPercentage = Math.round((user.userProgress / 539) * 100)
                 
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={user.id}>
+                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={user.id}>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3 }}
+                      whileHover={{ y: -4, transition: { duration: 0.2 } }}
                     >
-                      <Card 
+                      <Card
                         className="gambling-card"
-                        sx={{ 
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                          '&:hover': { 
-                            transform: 'translateY(-4px)',
-                            boxShadow: 6
-                          }
-                        }}
+                        shadow="lg"
+                        radius="md"
+                        withBorder
+                        style={{ height: '100%' }}
                       >
-                        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Stack gap="md" align="center" p="xl" style={{ height: '100%' }}>
                           <UserProfileImage
                             user={user}
                             size={60}
                             showFallback={true}
                             className="user-profile-avatar"
                           />
-                          
-                          <Typography
-                            variant="h6"
+
+                          <Text
                             component={Link}
                             href={`/users/${user.id}`}
-                            sx={{ 
-                              textDecoration: 'none', 
-                              color: 'primary.main',
-                              '&:hover': { textDecoration: 'underline' },
-                              mb: 1,
-                              textAlign: 'center',
-                              mt: 2
-                            }}
+                            fw={600}
+                            c={theme.other?.usogui?.red ?? theme.colors.red[5]}
+                            ta="center"
+                            style={{ textDecoration: 'none' }}
                           >
                             {user.username}
-                          </Typography>
+                          </Text>
 
                           {/* User Role Display with Custom Roles */}
-                          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-                            <UserRoleDisplay
-                              userRole={user.role as 'admin' | 'moderator' | 'user'}
-                              customRole={user.customRole}
-                              size="small"
-                              spacing={0.5}
-                            />
-                          </Box>
+                          <UserRoleDisplay
+                            userRole={user.role as 'admin' | 'moderator' | 'user'}
+                            customRole={user.customRole}
+                            size="small"
+                            spacing={0.5}
+                          />
 
                           {/* User Badges */}
-                          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-                            <UserBadges userId={user.id} size="sm" maxDisplay={4} />
-                          </Box>
+                          <UserBadges userId={user.id} size="sm" maxDisplay={4} />
 
-                          <Box sx={{ width: '100%', mb: 2 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                              <Typography variant="caption" color="text.secondary">
+                          <Stack gap={6} w="100%">
+                            <Group justify="space-between" gap={theme.spacing.xs}>
+                              <Text size="xs" c="dimmed">
                                 Reading Progress
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              </Text>
+                              <Text size="xs" c="dimmed">
                                 Ch. {user.userProgress}
-                              </Typography>
-                            </Box>
-                            <LinearProgress
-                              variant="determinate"
-                              value={progressPercentage}
-                              sx={{
-                                height: 6,
-                                borderRadius: 1,
-                                '& .MuiLinearProgress-bar': {
-                                  borderRadius: 1,
-                                },
-                              }}
-                            />
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5 }}>
+                              </Text>
+                            </Group>
+                            <Progress value={progressPercentage} size="sm" radius="md" color="red" />
+                            <Text size="xs" c="dimmed" ta="center">
                               {progressPercentage}% complete
-                            </Typography>
-                          </Box>
+                            </Text>
+                          </Stack>
 
                           {user.guidesCount !== undefined && user.guidesCount > 0 && (
-                            <Box sx={{ mt: 'auto', pt: 1, borderTop: 1, borderColor: 'divider', width: '100%' }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                <Chip
-                                  label={`${user.guidesCount} guide${user.guidesCount !== 1 ? 's' : ''}`}
-                                  size="small"
-                                  color="secondary"
-                                  variant="outlined"
-                                  icon={<BookOpen size={14} />}
-                                />
-                              </Box>
+                            <Box
+                              style={{
+                                marginTop: 'auto',
+                                paddingTop: theme.spacing.sm,
+                                borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <Badge
+                                variant="outline"
+                                color="purple"
+                                leftSection={<BookOpen size={14} />}
+                              >
+                                {user.guidesCount} guide{user.guidesCount !== 1 ? 's' : ''}
+                              </Badge>
                             </Box>
                           )}
 
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                          <Text size="xs" c="dimmed" ta="center">
                             Joined {new Date(user.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </CardContent>
+                          </Text>
+                        </Stack>
                       </Card>
                     </motion.div>
-                  </Grid>
+                  </Grid.Col>
                 )
               })}
             </Grid>
 
             {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-                <Pagination
-                  count={totalPages}
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                  size="large"
-                />
+              <Box style={{ display: 'flex', justifyContent: 'center', marginTop: theme.spacing.xl }}>
+                <Pagination total={totalPages} value={page} onChange={handlePageChange} size="lg" color="red" />
               </Box>
             )}
 
             {users.length === 0 && !loading && (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="h6" color="text.secondary">
+              <Stack align="center" gap="sm" py="xl">
+                <Title order={4} c="dimmed">
                   No users found
-                </Typography>
-              </Box>
+                </Title>
+              </Stack>
             )}
           </>
         )}

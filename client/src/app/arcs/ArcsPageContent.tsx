@@ -1,42 +1,38 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  CircularProgress,
+  ActionIcon,
   Alert,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Snackbar
-} from '@mui/material'
-import { Search, BookOpen, Eye, Edit, Upload, X } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+  Badge,
+  Box,
+  Button,
+  Card,
+  Group,
+  Loader,
+  Modal,
+  Pagination,
+  Paper,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { Search, BookOpen, Edit, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
+import { motion, AnimatePresence } from 'motion/react'
+import MediaThumbnail from '../../components/MediaThumbnail'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
-import { motion } from 'motion/react'
-import MediaThumbnail from '../../components/MediaThumbnail'
 
 interface Arc {
   id: number
   name: string
-  description: string
+  description?: string
   startChapter?: number
   endChapter?: number
   createdAt?: string
@@ -55,6 +51,8 @@ interface ArcsPageContentProps {
   initialError: string
 }
 
+const PAGE_SIZE = 12
+
 export default function ArcsPageContent({
   initialArcs,
   initialTotalPages,
@@ -65,7 +63,7 @@ export default function ArcsPageContent({
   initialError
 }: ArcsPageContentProps) {
   const { user } = useAuth()
-  const theme = useTheme()
+  const theme = useMantineTheme()
   const router = useRouter()
 
   const [arcs, setArcs] = useState<Arc[]>(initialArcs)
@@ -77,101 +75,198 @@ export default function ArcsPageContent({
   const [total, setTotal] = useState(initialTotal)
   const [characterFilter, setCharacterFilter] = useState<string | null>(initialCharacter || null)
 
-  // Image upload state
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
   const [selectedArc, setSelectedArc] = useState<Arc | null>(null)
   const [imageDisplayName, setImageDisplayName] = useState('')
   const [uploading, setUploading] = useState(false)
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [dragActive, setDragActive] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const searchDebounceRef = useRef<number | null>(null)
+
+  // Hover modal state
+  const [hoveredArc, setHoveredArc] = useState<Arc | null>(null)
+  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
+  const hoverTimeoutRef = useRef<number | null>(null)
+  const hoveredElementRef = useRef<HTMLElement | null>(null)
 
   const isModeratorOrAdmin = user?.role === 'moderator' || user?.role === 'admin'
 
-  const fetchArcs = async (page = 1, search = '', characterName?: string) => {
-    setLoading(true)
-    try {
-      let response
+  const fetchArcs = useCallback(
+    async (pageValue = 1, searchValue = '', characterName?: string | null) => {
+      setLoading(true)
+      try {
+        let response: { data: Arc[]; total: number; totalPages: number }
 
-      if (characterName) {
-        // First find the character ID by name
-        const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
-        if (charactersResponse.data.length > 0) {
-          const characterId = charactersResponse.data[0].id
-          // Get character-specific arcs
-          const characterArcsResponse = await api.getCharacterArcs(characterId)
-          // For character filtering, we'll simulate pagination client-side
-          const allArcs = characterArcsResponse.data || []
-          const startIndex = (page - 1) * 12
-          const endIndex = startIndex + 12
-          const paginatedArcs = allArcs.slice(startIndex, endIndex)
-
-          response = {
-            data: paginatedArcs,
-            total: allArcs.length,
-            totalPages: Math.ceil(allArcs.length / 12),
-            page
+        if (characterName) {
+          const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
+          if (charactersResponse.data.length > 0) {
+            const characterId = charactersResponse.data[0].id
+            const characterArcsResponse = await api.getCharacterArcs(characterId)
+            const allArcs: Arc[] = characterArcsResponse.data || []
+            const startIndex = (pageValue - 1) * PAGE_SIZE
+            const paginatedArcs = allArcs.slice(startIndex, startIndex + PAGE_SIZE)
+            response = {
+              data: paginatedArcs,
+              total: allArcs.length,
+              totalPages: Math.max(1, Math.ceil(allArcs.length / PAGE_SIZE))
+            }
+          } else {
+            response = { data: [], total: 0, totalPages: 1 }
           }
         } else {
-          // Character not found, return empty results
-          response = { data: [], total: 0, totalPages: 1, page: 1 }
+          const params: { page: number; limit: number; name?: string } = { page: pageValue, limit: PAGE_SIZE }
+          if (searchValue.trim()) {
+            params.name = searchValue.trim()
+          }
+          response = await api.getArcs(params)
         }
-      } else {
-        // Normal arc fetching with search
-        const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
-        if (search) params.name = search
-        response = await api.getArcs(params)
-      }
 
-      setArcs(response.data)
-      setTotalPages(response.totalPages)
-      setTotal(response.total)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to fetch arcs')
-    } finally {
-      setLoading(false)
-    }
-  }
+        setArcs(response.data)
+        setTotal(response.total)
+        setTotalPages(response.totalPages)
+        setError('')
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch arcs'
+        setError(message)
+        notifications.show({ message, color: 'red' })
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
 
   useEffect(() => {
-    // Only fetch if different from initial data
-    if (currentPage !== initialPage || searchQuery !== initialSearch || characterFilter !== initialCharacter) {
-      fetchArcs(currentPage, searchQuery, characterFilter || undefined)
+    if (
+      currentPage !== initialPage ||
+      searchQuery !== initialSearch ||
+      characterFilter !== initialCharacter
+    ) {
+      fetchArcs(currentPage, searchQuery, characterFilter)
     }
-  }, [currentPage, searchQuery, characterFilter, initialPage, initialSearch, initialCharacter])
+  }, [currentPage, searchQuery, characterFilter, initialPage, initialSearch, initialCharacter, fetchArcs])
 
-  const updateUrl = (newPage: number, newSearch: string, newCharacter?: string) => {
-    const params = new URLSearchParams()
-    if (newSearch) params.set('search', newSearch)
-    if (newCharacter) params.set('character', newCharacter)
-    if (newPage > 1) params.set('page', newPage.toString())
+  // Function to update modal position based on hovered element
+  const updateModalPosition = useCallback((arc?: Arc) => {
+    const currentArc = arc || hoveredArc
+    if (hoveredElementRef.current && currentArc) {
+      const rect = hoveredElementRef.current.getBoundingClientRect()
+      const modalWidth = 300 // rem(300) from the modal width
+      const modalHeight = 180 // Approximate modal height
+      const navbarHeight = 60 // Height of the sticky navbar
+      const buffer = 10 // Additional buffer space
 
-    const newUrl = params.toString() ? `?${params.toString()}` : '/arcs'
-    router.push(newUrl, { scroll: false })
-  }
+      let x = rect.left + rect.width / 2
+      let y = rect.top - modalHeight - buffer
+
+      // Check if modal would overlap with navbar
+      if (y < navbarHeight + buffer) {
+        // Position below the card instead
+        y = rect.bottom + buffer
+      }
+
+      // Ensure modal doesn't go off-screen horizontally
+      const modalLeftEdge = x - modalWidth / 2
+      const modalRightEdge = x + modalWidth / 2
+
+      if (modalLeftEdge < buffer) {
+        x = modalWidth / 2 + buffer
+      } else if (modalRightEdge > window.innerWidth - buffer) {
+        x = window.innerWidth - modalWidth / 2 - buffer
+      }
+
+      setHoverModalPosition({ x, y })
+    }
+  }, [hoveredArc])
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current)
+      }
+      if (hoverTimeoutRef.current) {
+        window.clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Add scroll and resize listeners to update modal position
+  useEffect(() => {
+    if (hoveredArc && hoveredElementRef.current) {
+      const handleScroll = () => {
+        updateModalPosition()
+      }
+
+      const handleResize = () => {
+        updateModalPosition()
+      }
+
+      window.addEventListener('scroll', handleScroll)
+      document.addEventListener('scroll', handleScroll)
+      window.addEventListener('resize', handleResize)
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll)
+        document.removeEventListener('scroll', handleScroll)
+        window.removeEventListener('resize', handleResize)
+      }
+    }
+  }, [hoveredArc, updateModalPosition])
+
+  const updateUrl = useCallback(
+    (newPage: number, newSearch: string, newCharacter?: string | null) => {
+      const params = new URLSearchParams()
+      if (newSearch) params.set('search', newSearch)
+      if (newCharacter) params.set('character', newCharacter)
+      if (newPage > 1) params.set('page', newPage.toString())
+      const href = params.toString() ? `/arcs?${params.toString()}` : '/arcs'
+      router.push(href, { scroll: false })
+    },
+    [router]
+  )
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.target.value
-    setSearchQuery(newSearch)
+    const value = event.target.value
+    setSearchQuery(value)
     setCurrentPage(1)
-    updateUrl(1, newSearch, characterFilter || undefined)
-  }
+    updateUrl(1, value, characterFilter)
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setCurrentPage(page)
-    updateUrl(page, searchQuery, characterFilter || undefined)
-  }
-
-  const getChapterCount = (arc: Arc) => {
-    if (typeof arc.startChapter === 'undefined' || typeof arc.endChapter === 'undefined') {
-      return null
+    if (searchDebounceRef.current) {
+      window.clearTimeout(searchDebounceRef.current)
     }
-    return arc.endChapter - arc.startChapter + 1
+
+    searchDebounceRef.current = window.setTimeout(() => {
+      fetchArcs(1, value, characterFilter)
+    }, 300)
+  }
+
+  const handlePageChange = (pageValue: number) => {
+    setCurrentPage(pageValue)
+    updateUrl(pageValue, searchQuery, characterFilter)
+    fetchArcs(pageValue, searchQuery, characterFilter)
+  }
+
+  const handleClearSearch = () => {
+    setSearchQuery('')
+    setCurrentPage(1)
+    setCharacterFilter(null)
+    updateUrl(1, '', null)
+    fetchArcs(1, '', null)
+  }
+
+
+  const formatChapterRange = (arc: Arc) => {
+    if (typeof arc.startChapter === 'number' && typeof arc.endChapter === 'number') {
+      return `Ch. ${arc.startChapter}-${arc.endChapter}`
+    }
+    return null
   }
 
   const handleEditImage = (arc: Arc) => {
     setSelectedArc(arc)
     setImageDisplayName(arc.imageDisplayName || '')
+    setSelectedFile(null)
     setImageDialogOpen(true)
   }
 
@@ -180,28 +275,62 @@ export default function ArcsPageContent({
     setSelectedArc(null)
     setImageDisplayName('')
     setSelectedFile(null)
+    setPreviewUrl(null)
+    setDragActive(false)
+  }
+
+  const validateAndSetFile = (file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      notifications.show({
+        message: 'Please select a valid image file (JPEG, PNG, WebP, or GIF)',
+        color: 'red'
+      })
+      return false
+    }
+
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      notifications.show({ message: 'File size must be less than 10MB', color: 'red' })
+      return false
+    }
+
+    setSelectedFile(file)
+
+    // Create preview URL
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setPreviewUrl(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+
+    return true
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-      if (!allowedTypes.includes(file.type)) {
-        setSnackbarMessage('Please select a valid image file (JPEG, PNG, WebP, or GIF)')
-        setSnackbarOpen(true)
-        return
-      }
+    if (!file) return
+    validateAndSetFile(file)
+  }
 
-      // Validate file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024
-      if (file.size > maxSize) {
-        setSnackbarMessage('File size must be less than 10MB')
-        setSnackbarOpen(true)
-        return
-      }
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
 
-      setSelectedFile(file)
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    const files = e.dataTransfer.files
+    if (files && files[0]) {
+      validateAndSetFile(files[0])
     }
   }
 
@@ -211,14 +340,12 @@ export default function ArcsPageContent({
     setUploading(true)
     try {
       await api.uploadArcImage(selectedArc.id, selectedFile, imageDisplayName.trim() || undefined)
-
-      await fetchArcs(currentPage, searchQuery, characterFilter || undefined)
-      setSnackbarMessage('Arc image uploaded successfully!')
-      setSnackbarOpen(true)
+      await fetchArcs(currentPage, searchQuery, characterFilter)
+      notifications.show({ message: 'Arc image uploaded successfully!', color: 'green' })
       handleCloseImageDialog()
     } catch (error: unknown) {
-      setSnackbarMessage(error instanceof Error ? error.message : 'Failed to upload image')
-      setSnackbarOpen(true)
+      const message = error instanceof Error ? error.message : 'Failed to upload image'
+      notifications.show({ message, color: 'red' })
     } finally {
       setUploading(false)
     }
@@ -230,308 +357,645 @@ export default function ArcsPageContent({
     setUploading(true)
     try {
       await api.removeArcImage(selectedArc.id)
-
-      await fetchArcs(currentPage, searchQuery, characterFilter || undefined)
-      setSnackbarMessage('Arc image removed successfully!')
-      setSnackbarOpen(true)
+      await fetchArcs(currentPage, searchQuery, characterFilter)
+      notifications.show({ message: 'Arc image removed successfully!', color: 'green' })
       handleCloseImageDialog()
     } catch (error: unknown) {
-      setSnackbarMessage(error instanceof Error ? error.message : 'Failed to remove image')
-      setSnackbarOpen(true)
+      const message = error instanceof Error ? error.message : 'Failed to remove image'
+      notifications.show({ message, color: 'red' })
     } finally {
       setUploading(false)
     }
   }
 
+  // Hover modal handlers
+  const handleArcMouseEnter = (arc: Arc, event: React.MouseEvent) => {
+    const element = event.currentTarget as HTMLElement
+    hoveredElementRef.current = element
+
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setHoveredArc(arc)
+      updateModalPosition(arc) // Pass arc directly to ensure position calculation works immediately
+    }, 500) // 500ms delay before showing
+  }
+
+  const handleArcMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+
+    // Small delay before hiding to allow moving to modal
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setHoveredArc(null)
+      setHoverModalPosition(null)
+      hoveredElementRef.current = null
+    }, 200)
+  }
+
+  const handleModalMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+  }
+
+  const handleModalMouseLeave = () => {
+    setHoveredArc(null)
+    setHoverModalPosition(null)
+    hoveredElementRef.current = null
+  }
+
+  const accentArc = theme.other?.usogui?.arc ?? theme.colors.pink?.[5] ?? '#dc004e'
+  const hasSearchQuery = Boolean(searchQuery || characterFilter)
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <BookOpen size={48} color={theme.palette.usogui.arc} />
-        </Box>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Story Arcs
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          {characterFilter
-            ? `Arcs featuring ${characterFilter}`
-            : 'Explore the major storylines and arcs of Usogui'
-          }
-        </Typography>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      {/* Hero Section */}
+      <Box
+        style={{
+          background: `linear-gradient(135deg, ${accentArc}15, ${accentArc}08)`,
+          borderRadius: theme.radius.lg,
+          border: `1px solid ${accentArc}25`,
+          marginBottom: rem(24)
+        }}
+        p="md"
+      >
+        <Stack align="center" gap="xs">
+          <Box
+            style={{
+              background: `linear-gradient(135deg, ${accentArc}, ${accentArc}CC)`,
+              borderRadius: '50%',
+              width: rem(40),
+              height: rem(40),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: `0 4px 16px ${accentArc}40`
+            }}
+          >
+            <BookOpen size={20} color="white" />
+          </Box>
+
+          <Stack align="center" gap="xs">
+            <Title order={1} size="1.5rem" fw={700} ta="center" c={accentArc}>
+              Story Arcs
+            </Title>
+            <Text size="md" c="dimmed" ta="center" maw={400}>
+              {characterFilter
+                ? `Discover the epic arcs featuring ${characterFilter}`
+                : 'Explore the major storylines and narrative arcs that define the world of Usogui'}
+            </Text>
+
+            {total > 0 && (
+              <Badge size="md" variant="light" color="pink" radius="xl" mt="xs">
+                {total} arc{total !== 1 ? 's' : ''} available
+              </Badge>
+            )}
+          </Stack>
+        </Stack>
       </Box>
 
-      <Box sx={{ mb: 4 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search arcs..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
-        />
+      {/* Search and Filters */}
+      <Box mb="xl">
+        <Group justify="center" mb="md">
+          <Box style={{ maxWidth: rem(600), width: '100%' }}>
+            <TextInput
+              placeholder="Search arcs by name or description..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              leftSection={<Search size={20} />}
+              size="lg"
+              radius="xl"
+              rightSection={
+                hasSearchQuery ? (
+                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                    <X size={16} />
+                  </ActionIcon>
+                ) : null
+              }
+              styles={{
+                input: {
+                  fontSize: rem(16),
+                  paddingLeft: rem(50),
+                  paddingRight: hasSearchQuery ? rem(50) : rem(20)
+                }
+              }}
+            />
+          </Box>
+        </Group>
+
+        {characterFilter && (
+          <Group justify="center">
+            <Badge
+              size="lg"
+              variant="filled"
+              color="pink"
+              radius="xl"
+              rightSection={
+                <ActionIcon size="xs" color="pink" variant="transparent" onClick={() => {
+                  setCharacterFilter(null)
+                  setCurrentPage(1)
+                  updateUrl(1, searchQuery, null)
+                  fetchArcs(1, searchQuery, null)
+                }}>
+                  <X size={12} />
+                </ActionIcon>
+              }
+            >
+              Character: {characterFilter}
+            </Badge>
+          </Group>
+        )}
       </Box>
 
+      {/* Error State */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert
+          color="red"
+          radius="md"
+          mb="xl"
+          icon={<X size={16} />}
+          title="Error loading arcs"
+        >
           {error}
         </Alert>
       )}
 
+      {/* Loading State */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress size={50} />
+        <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
+          <Loader size="xl" color={accentArc} mb="md" />
+          <Text size="lg" c="dimmed">Loading arcs...</Text>
         </Box>
       ) : (
         <>
-          <Typography variant="h6" sx={{ mb: 3 }}>
-            {total} arc{total !== 1 ? 's' : ''} found
-          </Typography>
-
-          <Grid container spacing={4}>
-            {arcs.map((arc, index) => (
-              <Grid item xs={12} sm={6} md={4} key={arc.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card
-                    className="gambling-card h-full"
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s',
-                      '&:hover': { transform: 'translateY(-4px)' }
+          {/* Empty State */}
+          {arcs.length === 0 ? (
+            <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
+              <BookOpen size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
+              <Title order={3} c="dimmed" mb="sm">
+                {hasSearchQuery ? 'No arcs found' : 'No arcs available'}
+              </Title>
+              <Text size="lg" c="dimmed" mb="xl">
+                {hasSearchQuery
+                  ? 'Try adjusting your search terms or filters'
+                  : 'Check back later for new story arcs'}
+              </Text>
+              {hasSearchQuery && (
+                <Button variant="outline" color="pink" onClick={handleClearSearch}>
+                  Clear search
+                </Button>
+              )}
+            </Box>
+          ) : (
+            <>
+              {/* Results Grid */}
+              <Box
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: rem(16),
+                  justifyItems: 'center'
+                }}
+              >
+                {arcs.map((arc, index) => (
+                  <motion.div
+                    key={arc.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                    style={{
+                      width: '200px',
+                      height: '280px' // Playing card aspect ratio: 200px * 1.4 = 280px
                     }}
                   >
-                    <Box sx={{ position: 'relative' }}>
-                      <MediaThumbnail
-                        entityType="arc"
-                        entityId={arc.id}
-                        entityName={arc.name}
-                        maxWidth="100%"
-                        maxHeight="200px"
-                        allowCycling={false}
-                      />
-                      {isModeratorOrAdmin && (
-                        <IconButton
-                          onClick={() => handleEditImage(arc)}
-                          sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                            color: 'white',
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                            },
-                          }}
-                          size="small"
-                        >
-                          <Edit size={16} />
-                        </IconButton>
-                      )}
-                    </Box>
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="h2" gutterBottom>
-                        {arc.name}
-                      </Typography>
-
-                      <Box sx={{ mb: 2 }}>
-                        {arc.startChapter && arc.endChapter && (
-                          <Chip
-                            label={`Chapters ${arc.startChapter}-${arc.endChapter}`}
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                        )}
-                        {getChapterCount(arc) && (
-                          <Chip
-                            label={`${getChapterCount(arc)} chapters`}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
-                        )}
-                      </Box>
-
-                      <div style={{
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 4,
-                      }}>
-                        <EnhancedSpoilerMarkdown
-                          content={arc.description}
-                          className="arc-description-preview"
-                          enableEntityEmbeds={true}
-                          compactEntityCards={true}
-                        />
-                      </div>
-                    </CardContent>
-
-                    <CardActions>
-                      <Button
+                    <Card
                         component={Link}
                         href={`/arcs/${arc.id}`}
-                        variant="outlined"
-                        startIcon={<Eye size={16} />}
-                        fullWidth
+                        withBorder={false}
+                        radius="lg"
+                        shadow="sm"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden',
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          backgroundColor: theme.colors.dark?.[7] ?? theme.white,
+                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                          width: '100%',
+                          height: '100%'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-4px)'
+                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
+                          handleArcMouseEnter(arc, e)
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = theme.shadows.sm
+                          handleArcMouseLeave()
+                        }}
                       >
-                        View Details
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
+                        {/* Chapter Number Badge at Top Left */}
+                        {formatChapterRange(arc) && (
+                          <Badge
+                            variant="filled"
+                            color="pink"
+                            radius="sm"
+                            size="sm"
+                            style={{
+                              position: 'absolute',
+                              top: rem(8),
+                              left: rem(8),
+                              backgroundColor: 'rgba(220, 0, 78, 0.95)',
+                              color: 'white',
+                              fontSize: rem(10),
+                              fontWeight: 700,
+                              zIndex: 10,
+                              backdropFilter: 'blur(4px)',
+                              maxWidth: isModeratorOrAdmin ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
+                            }}
+                          >
+                            {formatChapterRange(arc)}
+                          </Badge>
+                        )}
 
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-              />
-            </Box>
+                        {/* Edit Button at Top Right */}
+                        {isModeratorOrAdmin && (
+                          <ActionIcon
+                            size="xs"
+                            variant="filled"
+                            color="dark"
+                            radius="xl"
+                            style={{
+                              position: 'absolute',
+                              top: rem(8),
+                              right: rem(8),
+                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                              backdropFilter: 'blur(4px)',
+                              zIndex: 10,
+                              width: rem(24),
+                              height: rem(24)
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleEditImage(arc)
+                            }}
+                          >
+                            <Edit size={12} />
+                          </ActionIcon>
+                        )}
+
+                        {/* Main Image Section - Takes up most of the card */}
+                        <Box style={{
+                          position: 'relative',
+                          overflow: 'hidden',
+                          flex: 1,
+                          minHeight: 0
+                        }}>
+                          <MediaThumbnail
+                            entityType="arc"
+                            entityId={arc.id}
+                            entityName={arc.name}
+                            maxWidth="100%"
+                            maxHeight="100%"
+                            allowCycling={false}
+                          />
+                        </Box>
+
+                        {/* Arc Name at Bottom */}
+                        <Box
+                          p={rem(6)}
+                          ta="center"
+                          style={{
+                            backgroundColor: 'transparent',
+                            minHeight: rem(40),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Text
+                            size="sm"
+                            fw={700}
+                            lineClamp={2}
+                            c={accentArc}
+                            ta="center"
+                            style={{
+                              lineHeight: 1.2,
+                              textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.2)',
+                              fontSize: rem(13),
+                              background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                              backdropFilter: 'blur(4px)',
+                              borderRadius: rem(6),
+                              padding: `${rem(4)} ${rem(8)}`,
+                              border: `1px solid rgba(255,255,255,0.1)`
+                            }}
+                          >
+                            {arc.name}
+                          </Text>
+                        </Box>
+                      </Card>
+                    </motion.div>
+                ))}
+              </Box>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Box style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
+                  <Pagination
+                    total={totalPages}
+                    value={currentPage}
+                    onChange={handlePageChange}
+                    color="pink"
+                    size="lg"
+                    radius="xl"
+                    withEdges
+                  />
+                </Box>
+              )}
+            </>
           )}
         </>
       )}
 
-      {/* Image Edit Dialog */}
-      <Dialog open={imageDialogOpen} onClose={handleCloseImageDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Edit Image for {selectedArc?.name}
-          <IconButton
-            onClick={handleCloseImageDialog}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
+      {/* Image Upload Modal */}
+      <Modal
+        opened={imageDialogOpen}
+        onClose={handleCloseImageDialog}
+        title={`Edit Image for ${selectedArc?.name || 'Arc'}`}
+        radius="lg"
+        centered
+        size="lg"
+        overlayProps={{ opacity: 0.65, blur: 8 }}
+      >
+        <Stack gap="lg">
+          <Box
+            onClick={() => document.getElementById('arc-image-upload')?.click()}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            style={{
+              border: `2px dashed ${dragActive ? theme.colors.green?.[5] : accentArc}`,
+              borderRadius: theme.radius.lg,
+              padding: rem(24),
+              cursor: 'pointer',
+              textAlign: 'center',
+              transition: 'all 0.3s ease',
+              backgroundColor: dragActive ? `${theme.colors.green?.[5]}08` : `${accentArc}08`,
+              transform: dragActive ? 'scale(1.02)' : 'scale(1)'
             }}
           >
-            <X />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Upload a new image file to replace the current image:
-          </Typography>
-
-          {/* File Upload Section */}
-          <Box sx={{ mb: 3, p: 2, border: '1px dashed', borderColor: 'primary.main', borderRadius: 1 }}>
-            <Typography variant="h6" gutterBottom>
-              Upload New Image
-            </Typography>
             <input
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              style={{ display: 'none' }}
               id="arc-image-upload"
               type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              style={{ display: 'none' }}
               onChange={handleFileSelect}
             />
-            <label htmlFor="arc-image-upload">
-              <Button
-                variant="outlined"
-                component="span"
-                fullWidth
-                sx={{ mb: 2 }}
-                startIcon={<Upload />}
-                disabled={uploading}
-              >
-                Select Image File
-              </Button>
-            </label>
-            {selectedFile && (
-              <Box>
-                <Typography variant="body2" color="primary">
-                  Selected: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
-                </Typography>
-              </Box>
+            <Upload size={40} color={dragActive ? theme.colors.green?.[5] : accentArc} style={{ marginBottom: rem(16) }} />
+            {selectedFile ? (
+              <Stack gap="xs" align="center">
+                <Text size="lg" fw={600} c={accentArc}>
+                  {selectedFile.name}
+                </Text>
+                <Text size="sm" c="dimmed">
+                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                </Text>
+              </Stack>
+            ) : (
+              <Stack gap="xs" align="center">
+                <Text size="lg" fw={600} c={dragActive ? theme.colors.green?.[5] : accentArc}>
+                  {dragActive ? 'Drop image here' : 'Select or Drop Image File'}
+                </Text>
+                <Text size="sm" c="dimmed">
+                  Supported: JPEG, PNG, WebP, GIF • Max size: 10MB
+                </Text>
+              </Stack>
             )}
-            <Typography variant="caption" color="text.secondary">
-              Supported: JPEG, PNG, WebP, GIF • Max size: 10MB
-            </Typography>
           </Box>
 
-          <TextField
-            fullWidth
+          {/* Image Preview */}
+          {previewUrl && (
+            <Box ta="center">
+              <Text size="sm" c="dimmed" mb="md" fw={500}>
+                New Image Preview
+              </Text>
+              <Box
+                style={{
+                  maxWidth: rem(300),
+                  margin: '0 auto',
+                  border: `1px solid ${theme.colors.gray?.[3]}`,
+                  borderRadius: theme.radius.md,
+                  overflow: 'hidden'
+                }}
+              >
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: rem(200),
+                    objectFit: 'contain'
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+
+          <TextInput
             label="Display Name (Optional)"
             placeholder="e.g., Official Cover Art"
             value={imageDisplayName}
-            onChange={(e) => setImageDisplayName(e.target.value)}
-            margin="normal"
-            helperText="Optional descriptive name for the image"
+            onChange={(event) => setImageDisplayName(event.currentTarget.value)}
+            size="md"
+            radius="md"
           />
 
+          {selectedFile && (
+            <Group justify="center">
+              <Button
+                variant="subtle"
+                color="gray"
+                leftSection={<X size={16} />}
+                onClick={() => {
+                  setSelectedFile(null)
+                  setPreviewUrl(null)
+                  const input = document.getElementById('arc-image-upload') as HTMLInputElement
+                  if (input) input.value = ''
+                }}
+                size="sm"
+                radius="xl"
+              >
+                Clear Selection
+              </Button>
+            </Group>
+          )}
+
           {selectedArc?.imageFileName && (
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Current Image:
-              </Typography>
+            <Box ta="center">
+              <Text size="sm" c="dimmed" mb="md" fw={500}>
+                Current Image
+              </Text>
               <MediaThumbnail
                 entityType="arc"
                 entityId={selectedArc.id}
                 entityName={selectedArc.name}
-                maxWidth={200}
-                maxHeight={200}
+                maxWidth="200px"
+                maxHeight="200px"
                 allowCycling={false}
               />
             </Box>
           )}
-        </DialogContent>
-        <DialogActions>
-          {selectedArc?.imageFileName && (
-            <Button
-              onClick={handleRemoveImage}
-              color="error"
-              disabled={uploading}
-              startIcon={<X />}
-            >
-              Remove Image
-            </Button>
-          )}
-          <Button onClick={handleCloseImageDialog} disabled={uploading}>
-            Cancel
-          </Button>
-          {selectedFile && (
-            <Button
-              onClick={handleUploadImage}
-              variant="contained"
-              disabled={uploading}
-              startIcon={uploading ? <CircularProgress size={16} /> : <Upload />}
-            >
-              {uploading ? 'Uploading...' : 'Upload Image'}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
 
-      {/* Success/Error Snackbar */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        message={snackbarMessage}
-      />
+          <Group justify="space-between" mt="md">
+            {selectedArc?.imageFileName ? (
+              <Button
+                variant="outline"
+                color="gray"
+                leftSection={<X size={16} />}
+                onClick={handleRemoveImage}
+                loading={uploading}
+                radius="xl"
+              >
+                Remove Image
+              </Button>
+            ) : (
+              <Box />
+            )}
+
+            <Group gap="sm">
+              <Button
+                variant="subtle"
+                color="gray"
+                onClick={handleCloseImageDialog}
+                disabled={uploading}
+                radius="xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="gradient"
+                gradient={{ from: accentArc, to: 'pink' }}
+                leftSection={!uploading ? <Upload size={16} /> : undefined}
+                onClick={handleUploadImage}
+                disabled={!selectedFile}
+                loading={uploading}
+                radius="xl"
+              >
+                {uploading ? 'Uploading…' : 'Upload Image'}
+              </Button>
+            </Group>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Hover Modal */}
+      <AnimatePresence>
+        {hoveredArc && hoverModalPosition && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed',
+              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
+              top: hoverModalPosition.y, // Use calculated position directly
+              zIndex: 1001, // Higher than navbar (which is 1000)
+              pointerEvents: 'auto'
+            }}
+            onMouseEnter={handleModalMouseEnter}
+            onMouseLeave={handleModalMouseLeave}
+          >
+            <Paper
+              shadow="xl"
+              radius="lg"
+              p="md"
+              style={{
+                backgroundColor: theme.colors.dark?.[7] ?? theme.white,
+                border: `2px solid ${accentArc}`,
+                backdropFilter: 'blur(10px)',
+                width: rem(300),
+                maxWidth: '90vw'
+              }}
+            >
+              <Stack gap="sm">
+                {/* Arc Name */}
+                <Title
+                  order={4}
+                  size="md"
+                  fw={700}
+                  c={accentArc}
+                  ta="center"
+                  lineClamp={2}
+                >
+                  {hoveredArc.name}
+                </Title>
+
+                {/* Arc Number/Order */}
+                <Group justify="center" gap="xs">
+                  <Badge
+                    variant="light"
+                    color="pink"
+                    size="sm"
+                    fw={600}
+                  >
+                    Arc #{arcs.findIndex(a => a.id === hoveredArc.id) + 1 + (currentPage - 1) * PAGE_SIZE}
+                  </Badge>
+                  {formatChapterRange(hoveredArc) && (
+                    <Badge
+                      variant="filled"
+                      color="pink"
+                      size="sm"
+                      fw={600}
+                    >
+                      {formatChapterRange(hoveredArc)}
+                    </Badge>
+                  )}
+                </Group>
+
+                {/* Description */}
+                {hoveredArc.description && (
+                  <Text
+                    size="sm"
+                    c="dimmed"
+                    ta="center"
+                    lineClamp={3}
+                    style={{
+                      lineHeight: 1.4,
+                      maxHeight: rem(60)
+                    }}
+                  >
+                    {hoveredArc.description}
+                  </Text>
+                )}
+
+                {/* Start Chapter */}
+                {hoveredArc.startChapter && (
+                  <Group justify="center" gap="xs">
+                    <Text size="xs" c="dimmed">
+                      Starts:
+                    </Text>
+                    <Text size="xs" fw={500} c={accentArc}>
+                      Chapter {hoveredArc.startChapter}
+                    </Text>
+                  </Group>
+                )}
+              </Stack>
+            </Paper>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

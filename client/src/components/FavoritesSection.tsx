@@ -11,7 +11,8 @@ import {
   Skeleton,
   Alert,
   Group,
-  useMantineTheme
+  useMantineTheme,
+  rgba
 } from '@mantine/core'
 import { Quote, Dices, User, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
@@ -27,7 +28,7 @@ export function FavoritesSection() {
 
   const withAlpha = (color: string, alpha: number, fallback: string) => {
     try {
-      return theme.fn?.rgba?.(color, alpha) ?? fallback
+      return rgba(color, alpha)
     } catch (error) {
       return fallback
     }

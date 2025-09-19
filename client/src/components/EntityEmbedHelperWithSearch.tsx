@@ -1,38 +1,28 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Chip,
-  TextField,
-  Alert,
   Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  IconButton,
+  ActionIcon,
+  Alert,
+  Box,
+  Button,
+  Loader,
+  Modal,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Title,
   Tooltip,
-  Divider,
-  Autocomplete,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  Paper
-} from '@mui/material'
-import { 
-  HelpCircle, 
-  Code, 
-  Copy, 
+  rem,
+  useMantineTheme
+} from '@mantine/core'
+import {
+  Code,
+  Copy,
+  HelpCircle,
   ChevronDown,
   User,
   BookOpen,
@@ -41,15 +31,16 @@ import {
   Users,
   Hash,
   Volume2,
-  Quote
+  Quote,
+  Search
 } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import { api } from '../lib/api'
+import { EntityAccentKey, getEntityAccent } from '../lib/mantine-theme'
 
 interface EntityOption {
   id: number
   name: string
-  type: 'character' | 'arc' | 'gamble' | 'guide' | 'organization' | 'chapter' | 'volume' | 'quote'
+  type: EntityAccentKey | 'chapter' | 'volume'
   subtitle?: string
 }
 
@@ -57,123 +48,144 @@ interface EntityEmbedHelperProps {
   onInsertEmbed?: (embedCode: string) => void
 }
 
+interface EmbedExample {
+  code: string
+  description: string
+}
+
+interface EmbedEntityType {
+  type: EntityAccentKey | 'chapter' | 'volume'
+  label: string
+  description: string
+  icon: React.ReactNode
+  color: string
+  examples: EmbedExample[]
+}
+
+const baseExamples: Record<EntityAccentKey | 'chapter' | 'volume', EmbedExample[]> = {
+  character: [
+    { code: '{{character:1}}', description: 'Basic character embed' },
+    { code: '{{character:1|Baku Madarame}}', description: 'Character with custom text' }
+  ],
+  arc: [
+    { code: '{{arc:5}}', description: 'Basic arc embed' },
+    { code: '{{arc:5|Tower Arc}}', description: 'Arc with custom text' }
+  ],
+  gamble: [
+    { code: '{{gamble:12}}', description: 'Basic gamble embed' },
+    { code: '{{gamble:12|Air Poker}}', description: 'Gamble with custom text' }
+  ],
+  guide: [
+    { code: '{{guide:3}}', description: 'Basic guide embed' },
+    { code: '{{guide:3|Gambling Rules Guide}}', description: 'Guide with custom text' }
+  ],
+  organization: [
+    { code: '{{organization:2}}', description: 'Basic organization embed' },
+    { code: '{{organization:2|Kakerou}}', description: 'Organization with custom text' }
+  ],
+  quote: [{ code: '{{quote:45}}', description: 'Basic quote embed' }],
+  media: [],
+  event: [],
+  chapter: [
+    { code: '{{chapter:150}}', description: 'Basic chapter embed' },
+    { code: '{{chapter:150|The Final Gamble}}', description: 'Chapter with custom text' }
+  ],
+  volume: [
+    { code: '{{volume:20}}', description: 'Basic volume embed' },
+    { code: '{{volume:20|The Conclusion}}', description: 'Volume with custom text' }
+  ]
+}
+
 const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInsertEmbed }) => {
-  const theme = useTheme()
-  const [open, setOpen] = useState(false)
+  const theme = useMantineTheme()
+  const [opened, setOpened] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchResults, setSearchResults] = useState<EntityOption[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [allEntities, setAllEntities] = useState<{
-    characters: any[]
-    arcs: any[]
-    gambles: any[]
-    guides: any[]
-    organizations: any[]
-    chapters: any[]
-    volumes: any[]
-    quotes: any[]
-  }>({
-    characters: [],
-    arcs: [],
-    gambles: [],
-    guides: [],
-    organizations: [],
-    chapters: [],
-    volumes: [],
-    quotes: []
+  const [allEntities, setAllEntities] = useState({
+    characters: [] as any[],
+    arcs: [] as any[],
+    gambles: [] as any[],
+    guides: [] as any[],
+    organizations: [] as any[],
+    chapters: [] as any[],
+    volumes: [] as any[],
+    quotes: [] as any[]
   })
 
-  const entityTypes = [
-    {
-      type: 'character',
-      label: 'Character',
-      icon: <User size={16} />,
-      color: theme.palette.usogui?.character || theme.palette.primary.main,
-      description: 'Link to character profiles',
-      examples: [
-        { code: '{{character:1}}', description: 'Basic character embed' },
-        { code: '{{character:1|Baku Madarame}}', description: 'Character with custom text' }
-      ]
-    },
-    {
-      type: 'arc',
-      label: 'Arc',
-      icon: <BookOpen size={16} />,
-      color: theme.palette.usogui?.arc || theme.palette.secondary.main,
-      description: 'Link to story arcs',
-      examples: [
-        { code: '{{arc:5}}', description: 'Basic arc embed' },
-        { code: '{{arc:5|Tower Arc}}', description: 'Arc with custom text' }
-      ]
-    },
-    {
-      type: 'gamble',
-      label: 'Gamble',
-      icon: <Dice6 size={16} />,
-      color: theme.palette.usogui?.gamble || theme.palette.warning.main,
-      description: 'Link to gambling events',
-      examples: [
-        { code: '{{gamble:12}}', description: 'Basic gamble embed' },
-        { code: '{{gamble:12|Air Poker}}', description: 'Gamble with custom text' }
-      ]
-    },
-    {
-      type: 'guide',
-      label: 'Guide',
-      icon: <FileText size={16} />,
-      color: theme.palette.usogui?.guide || theme.palette.success.main,
-      description: 'Link to other guides',
-      examples: [
-        { code: '{{guide:3}}', description: 'Basic guide embed' },
-        { code: '{{guide:3|Gambling Rules Guide}}', description: 'Guide with custom text' }
-      ]
-    },
-    {
-      type: 'organization',
-      label: 'Organization',
-      icon: <Users size={16} />,
-      color: theme.palette.info.main,
-      description: 'Link to organizations and groups',
-      examples: [
-        { code: '{{organization:2}}', description: 'Basic organization embed' },
-        { code: '{{organization:2|Kakerou}}', description: 'Organization with custom text' }
-      ]
-    },
-    {
-      type: 'chapter',
-      label: 'Chapter',
-      icon: <Hash size={16} />,
-      color: theme.palette.primary.main,
-      description: 'Link to specific chapters',
-      examples: [
-        { code: '{{chapter:150}}', description: 'Basic chapter embed' },
-        { code: '{{chapter:150|The Final Gamble}}', description: 'Chapter with custom text' }
-      ]
-    },
-    {
-      type: 'volume',
-      label: 'Volume',
-      icon: <Volume2 size={16} />,
-      color: theme.palette.secondary.main,
-      description: 'Link to manga volumes',
-      examples: [
-        { code: '{{volume:20}}', description: 'Basic volume embed' },
-        { code: '{{volume:20|The Conclusion}}', description: 'Volume with custom text' }
-      ]
-    },
-    {
-      type: 'quote',
-      label: 'Quote',
-      icon: <Quote size={16} />,
-      color: theme.palette.text.secondary,
-      description: 'Link to memorable quotes',
-      examples: [
-        { code: '{{quote:45}}', description: 'Basic quote embed' }
-      ]
-    }
-  ]
+  const accent = (key: EntityAccentKey, fallback: string) =>
+    getEntityAccent(key, theme) || fallback
 
-  // Load all entities on mount (similar to admin guides page approach)
+  const entityTypes: EmbedEntityType[] = useMemo(
+    () => [
+      {
+        type: 'character',
+        label: 'Character',
+        icon: <User size={16} />,
+        color: accent('character', theme.colors.blue[6] || '#1976d2'),
+        description: 'Link to character profiles',
+        examples: baseExamples.character
+      },
+      {
+        type: 'arc',
+        label: 'Arc',
+        icon: <BookOpen size={16} />,
+        color: accent('arc', theme.colors.pink[5] || '#dc004e'),
+        description: 'Link to story arcs',
+        examples: baseExamples.arc
+      },
+      {
+        type: 'gamble',
+        label: 'Gamble',
+        icon: <Dice6 size={16} />,
+        color: accent('gamble', theme.colors.red[6] || '#d32f2f'),
+        description: 'Link to gambling events',
+        examples: baseExamples.gamble
+      },
+      {
+        type: 'guide',
+        label: 'Guide',
+        icon: <FileText size={16} />,
+        color: accent('guide', theme.colors.green[6] || '#388e3c'),
+        description: 'Link to other guides',
+        examples: baseExamples.guide
+      },
+      {
+        type: 'organization',
+        label: 'Organization',
+        icon: <Users size={16} />,
+        color: accent('organization', theme.colors.violet[6] || '#7c3aed'),
+        description: 'Link to organizations and groups',
+        examples: baseExamples.organization
+      },
+      {
+        type: 'chapter',
+        label: 'Chapter',
+        icon: <Hash size={16} />,
+        color: theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48',
+        description: 'Link to specific chapters',
+        examples: baseExamples.chapter
+      },
+      {
+        type: 'volume',
+        label: 'Volume',
+        icon: <Volume2 size={16} />,
+        color: theme.other?.usogui?.purple ?? theme.colors.violet[5] ?? '#7c3aed',
+        description: 'Link to manga volumes',
+        examples: baseExamples.volume
+      },
+      {
+        type: 'quote',
+        label: 'Quote',
+        icon: <Quote size={16} />,
+        color: accent('quote', theme.colors.teal[6] || '#00796b'),
+        description: 'Link to memorable quotes',
+        examples: baseExamples.quote
+      }
+    ],
+    [theme]
+  )
+
   useEffect(() => {
     const loadAllEntities = async () => {
       try {
@@ -183,17 +195,14 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
           api.getGambles({ limit: 100 }),
           api.getQuotes({ limit: 100 })
         ])
-        
-        setAllEntities({
+
+        setAllEntities((current) => ({
+          ...current,
           characters: charactersRes.data || [],
           arcs: arcsRes.data || [],
           gambles: gamblesRes.data || [],
-          guides: [], // These would need separate API calls
-          organizations: [], // These would need separate API calls
-          chapters: [], // These would need separate API calls
-          volumes: [], // These would need separate API calls
           quotes: quotesRes.data || []
-        })
+        }))
       } catch (error) {
         console.error('Error loading entities:', error)
       }
@@ -202,153 +211,14 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
     loadAllEntities()
   }, [])
 
-  // Client-side search function (similar to admin guides page)
-  const searchEntities = useCallback((query: string) => {
-    if (!query.trim() || query.length < 2) {
-      setSearchResults([])
-      return
-    }
-
-    setSearchLoading(true)
-    try {
-      const results: EntityOption[] = []
-      const searchLower = query.toLowerCase()
-
-      // Search characters
-      const matchingCharacters = allEntities.characters
-        .filter(c => c.name.toLowerCase().includes(searchLower))
-        .map(c => ({
-          id: c.id,
-          name: c.name,
-          type: 'character' as EntityOption['type'],
-          subtitle: c.description || c.arc?.name
-        }))
-      results.push(...matchingCharacters.slice(0, 5))
-
-      // Search arcs
-      const matchingArcs = allEntities.arcs
-        .filter(a => a.name.toLowerCase().includes(searchLower))
-        .map(a => ({
-          id: a.id,
-          name: a.name,
-          type: 'arc' as EntityOption['type'],
-          subtitle: a.description
-        }))
-      results.push(...matchingArcs.slice(0, 5))
-
-      // Search gambles
-      const matchingGambles = allEntities.gambles
-        .filter(g => g.name.toLowerCase().includes(searchLower))
-        .map(g => ({
-          id: g.id,
-          name: g.name,
-          type: 'gamble' as EntityOption['type'],
-          subtitle: g.description || g.arc?.name
-        }))
-      results.push(...matchingGambles.slice(0, 5))
-
-      // Search guides
-      const matchingGuides = allEntities.guides
-        .filter(g => g.title.toLowerCase().includes(searchLower))
-        .map(g => ({
-          id: g.id,
-          name: g.title,
-          type: 'guide' as EntityOption['type'],
-          subtitle: g.description
-        }))
-      results.push(...matchingGuides.slice(0, 5))
-
-      // Search organizations
-      const matchingOrganizations = allEntities.organizations
-        .filter((o: any) => o.name.toLowerCase().includes(searchLower))
-        .map((o: any) => ({
-          id: o.id,
-          name: o.name,
-          type: 'organization' as EntityOption['type'],
-          subtitle: o.description
-        }))
-      results.push(...matchingOrganizations.slice(0, 3))
-
-      // Search chapters
-      const matchingChapters = allEntities.chapters
-        .filter(c => 
-          (c.title && c.title.toLowerCase().includes(searchLower)) ||
-          c.number.toString().includes(query)
-        )
-        .map(c => ({
-          id: c.id,
-          name: c.title || `Chapter ${c.number}`,
-          type: 'chapter' as EntityOption['type'],
-          subtitle: c.summary
-        }))
-      results.push(...matchingChapters.slice(0, 3))
-
-      // Search volumes
-      const matchingVolumes = allEntities.volumes
-        .filter(v => 
-          (v.name && v.name.toLowerCase().includes(searchLower)) ||
-          v.number.toString().includes(query)
-        )
-        .map(v => ({
-          id: v.id,
-          name: v.name || `Volume ${v.number}`,
-          type: 'volume' as EntityOption['type'],
-          subtitle: v.description
-        }))
-      results.push(...matchingVolumes.slice(0, 3))
-
-      // Search quotes
-      const matchingQuotes = allEntities.quotes
-        .filter(q => q.text.toLowerCase().includes(searchLower))
-        .map(q => ({
-          id: q.id,
-          name: q.text.substring(0, 50) + (q.text.length > 50 ? '...' : ''),
-          type: 'quote' as EntityOption['type'],
-          subtitle: q.character?.name || q.source
-        }))
-      results.push(...matchingQuotes.slice(0, 3))
-
-      // Sort by relevance (exact matches first, then partial matches)
-      const sortedResults = results.sort((a, b) => {
-        const aExact = a.name.toLowerCase() === searchLower
-        const bExact = b.name.toLowerCase() === searchLower
-        if (aExact && !bExact) return -1
-        if (!aExact && bExact) return 1
-        
-        const aStarts = a.name.toLowerCase().startsWith(searchLower)
-        const bStarts = b.name.toLowerCase().startsWith(searchLower)
-        if (aStarts && !bStarts) return -1
-        if (!aStarts && bStarts) return 1
-        
-        return a.name.localeCompare(b.name)
-      })
-
-      setSearchResults(sortedResults.slice(0, 20)) // Limit to 20 results
-    } catch (error) {
-      console.error('Search error:', error)
-      setSearchResults([])
-    } finally {
-      setSearchLoading(false)
-    }
-  }, [allEntities])
-
-  // Debounce search queries
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      searchEntities(searchQuery)
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [searchQuery, searchEntities])
-
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error('Clipboard copy failed', err)
+    })
   }
 
   const handleInsertEmbed = (embedCode: string) => {
-    if (onInsertEmbed) {
-      onInsertEmbed(embedCode)
-    }
+    onInsertEmbed?.(embedCode)
     copyToClipboard(embedCode)
   }
 
@@ -359,234 +229,368 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
     setSearchResults([])
   }
 
-  const getEntityColor = (type: string) => {
-    return entityTypes.find(et => et.type === type)?.color || '#666'
-  }
+  const searchEntities = useCallback(
+    (query: string) => {
+      if (!query.trim() || query.length < 2) {
+        setSearchResults([])
+        return
+      }
 
-  const exampleContent = `# Example Guide with Entity Embeds
+      setSearchLoading(true)
+      try {
+        const results: EntityOption[] = []
+        const searchLower = query.toLowerCase()
 
-This guide demonstrates how entity embeds work in practice.
+        const pushMatches = <T extends { [key: string]: any }>(items: T[], mapper: (item: T) => EntityOption, limit = 5) => {
+          results.push(...items.filter(Boolean).map(mapper).filter(Boolean).slice(0, limit))
+        }
 
-## Characters
-Meet the main character: {{character:1|Baku Madarame}}
+        pushMatches(allEntities.characters.filter((c) => c.name?.toLowerCase().includes(searchLower)), (c) => ({
+          id: c.id,
+          name: c.name,
+          type: 'character',
+          subtitle: c.description || c.arc?.name
+        }))
 
-## Story Arcs
-This event happens during the {{arc:5|Tower Arc}}.
+        pushMatches(allEntities.arcs.filter((a) => a.name?.toLowerCase().includes(searchLower)), (a) => ({
+          id: a.id,
+          name: a.name,
+          type: 'arc',
+          subtitle: a.description
+        }))
 
-## Gambles
-The most complex gamble was {{gamble:12|Air Poker}}.
+        pushMatches(allEntities.gambles.filter((g) => g.name?.toLowerCase().includes(searchLower)), (g) => ({
+          id: g.id,
+          name: g.name,
+          type: 'gamble',
+          subtitle: g.description || g.arc?.name
+        }))
 
-## References
-For more details, see {{guide:3|Gambling Rules Guide}} and {{chapter:150}}.`
+        pushMatches(allEntities.guides.filter((g) => g.title?.toLowerCase().includes(searchLower)), (g) => ({
+          id: g.id,
+          name: g.title,
+          type: 'guide',
+          subtitle: g.description
+        }))
+
+        pushMatches(allEntities.organizations.filter((o: any) => o.name?.toLowerCase().includes(searchLower)), (o: any) => ({
+          id: o.id,
+          name: o.name,
+          type: 'organization',
+          subtitle: o.description
+        }), 3)
+
+        pushMatches(
+          allEntities.chapters.filter(
+            (c) =>
+              (c.title && c.title.toLowerCase().includes(searchLower)) ||
+              c.number?.toString().includes(query)
+          ),
+          (c) => ({
+            id: c.id,
+            name: c.title || `Chapter ${c.number}`,
+            type: 'chapter',
+            subtitle: c.summary
+          }),
+          3
+        )
+
+        pushMatches(
+          allEntities.volumes.filter(
+            (v) =>
+              (v.name && v.name.toLowerCase().includes(searchLower)) ||
+              v.number?.toString().includes(query)
+          ),
+          (v) => ({
+            id: v.id,
+            name: v.name || `Volume ${v.number}`,
+            type: 'volume',
+            subtitle: v.description
+          }),
+          3
+        )
+
+        pushMatches(allEntities.quotes.filter((q) => q.text?.toLowerCase().includes(searchLower)), (q) => ({
+          id: q.id,
+          name: q.text ? `${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}` : 'Quote',
+          type: 'quote',
+          subtitle: q.character?.name || q.source
+        }), 3)
+
+        const sortedResults = results
+          .filter((option, index, self) => self.findIndex((other) => other.type === option.type && other.id === option.id) === index)
+          .sort((a, b) => {
+            const lowerQuery = searchLower
+            const aName = a.name.toLowerCase()
+            const bName = b.name.toLowerCase()
+            const aExact = aName === lowerQuery
+            const bExact = bName === lowerQuery
+            if (aExact && !bExact) return -1
+            if (!aExact && bExact) return 1
+
+            const aStarts = aName.startsWith(lowerQuery)
+            const bStarts = bName.startsWith(lowerQuery)
+            if (aStarts && !bStarts) return -1
+            if (!aStarts && bStarts) return 1
+
+            return aName.localeCompare(bName)
+          })
+
+        setSearchResults(sortedResults.slice(0, 20))
+      } catch (error) {
+        console.error('Search error:', error)
+        setSearchResults([])
+      } finally {
+        setSearchLoading(false)
+      }
+    },
+    [allEntities]
+  )
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchEntities(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, searchEntities])
 
   return (
     <>
-      <Card sx={{ 
-        mb: 3,
-        border: `1px solid ${theme.palette.primary.main}30`,
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`
-      }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Code size={20} color={theme.palette.primary.main} />
-              <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Paper
+        withBorder
+        radius="md"
+        shadow="lg"
+        mb="lg"
+        p="lg"
+        style={{
+          border: `1px solid ${(theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48')}30`,
+          background: `linear-gradient(135deg, ${(theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48')}08 0%, transparent 100%)`
+        }}
+      >
+        <Stack gap="md">
+          <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
+              <Code size={20} color={theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48'} />
+              <Title order={4} c={theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48'}>
                 Entity Embeds
-              </Typography>
+              </Title>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<HelpCircle size={16} />}
-                onClick={() => setOpen(true)}
-              >
-                Help
-              </Button>
-            </Box>
+            <Button
+              variant="outline"
+              size="xs"
+              leftSection={<HelpCircle size={14} />}
+              onClick={() => setOpened(true)}
+            >
+              Help
+            </Button>
           </Box>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            You can embed interactive cards for characters, arcs, gambles, and more using the syntax: <code>{'{{type:id}}'}</code> or <code>{'{{type:id|custom_text}}'}</code>
-          </Typography>
-          
-          {/* Debug info */}
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-            Entities loaded: {allEntities.characters.length} characters, {allEntities.arcs.length} arcs, {allEntities.gambles.length} gambles, {allEntities.guides.length} guides
-          </Typography>
+          <Text size="sm" c="dimmed">
+            Use embeds to reference characters, arcs, gambles, and more. Search for specific entities below or
+            use the quick insert buttons.
+          </Text>
 
-          {/* Search Section */}
-          <Paper sx={{ p: 2, mb: 2, backgroundColor: 'background.default' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Search Entities:
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Type to search characters, arcs, gambles, etc..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                endAdornment: searchLoading && <CircularProgress size={20} />
-              }}
-              sx={{ mb: 1 }}
-            />
-            
-            {searchResults.length > 0 && (
-              <List sx={{ maxHeight: 200, overflow: 'auto' }}>
-                {searchResults.map((entity) => (
-                  <ListItem key={`${entity.type}-${entity.id}`} disablePadding>
-                    <ListItemButton onClick={() => handleInsertEntity(entity)}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <Chip
-                          label={entity.type}
-                          size="small"
-                          sx={{
-                            backgroundColor: getEntityColor(entity.type),
-                            color: 'white',
-                            minWidth: 80
-                          }}
-                        />
-                        <ListItemText
-                          primary={entity.name}
-                          secondary={entity.subtitle}
-                          primaryTypographyProps={{ fontSize: '0.875rem' }}
-                          secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                        />
-                      </Box>
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-            
-            {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                No entities found matching "{searchQuery}"
-              </Typography>
-            )}
-          </Paper>
-        </CardContent>
-      </Card>
+          <TextInput
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.currentTarget.value)}
+            placeholder="Search for characters, arcs, gambles..."
+            size="sm"
+            leftSection={<Search size={16} />}
+            rightSection={searchLoading ? <Loader size="xs" /> : undefined}
+          />
 
-      {/* Help Dialog */}
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="md"
-        fullWidth
+          {searchQuery.length >= 2 && (
+            <Paper withBorder radius="md" shadow="sm" p="xs">
+              {searchResults.length === 0 && !searchLoading ? (
+                <Text size="sm" c="dimmed" ta="center" py="sm">
+                  No entities found.
+                </Text>
+              ) : (
+                <Stack gap={4}>
+                  {searchResults.map((result) => {
+                    const entityColor = entityTypes.find((entity) => entity.type === result.type)?.color ?? '#666'
+
+                    return (
+                      <Button
+                        key={`${result.type}-${result.id}`}
+                        variant="default"
+                        fullWidth
+                        size="xs"
+                        onClick={() => handleInsertEntity(result)}
+                        styles={{
+                          root: {
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : '#fff',
+                            border: `1px solid ${rgba(entityColor, 0.25)}`,
+                            borderRadius: rem(8),
+                            padding: `${rem(10)} ${rem(12)}`,
+                            textAlign: 'left',
+                            color: theme.colorScheme === 'dark' ? theme.colors.gray[2] : theme.black,
+                            transition: 'background-color 120ms ease',
+                            '&:hover': {
+                              backgroundColor: rgba(entityColor, 0.08)
+                            }
+                          }
+                        }}
+                      >
+                        <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                          <Text size="sm" fw={600}>
+                            {result.name}
+                          </Text>
+                          {result.subtitle && (
+                            <Text size="xs" c="dimmed">
+                              {result.subtitle}
+                            </Text>
+                          )}
+                        </Box>
+                        <Text size="xs" fw={600} style={{ color: entityColor }}>
+                          {result.type.toUpperCase()}
+                        </Text>
+                      </Button>
+                    )
+                  })}
+                </Stack>
+              )}
+            </Paper>
+          )}
+
+          <Box style={{ display: 'flex', flexWrap: 'wrap', gap: rem(8) }}>
+            {entityTypes.slice(0, 4).map((entityType) => (
+              <Button
+                key={entityType.type}
+                variant="outline"
+                size="xs"
+                leftSection={entityType.icon}
+                onClick={() => handleInsertEmbed(`{{${entityType.type}:1}}`)}
+                styles={{
+                  root: {
+                    borderColor: entityType.color,
+                    color: entityType.color,
+                    '&:hover': {
+                      backgroundColor: rgba(entityType.color, 0.08)
+                    }
+                  }
+                }}
+              >
+                {entityType.label}
+              </Button>
+            ))}
+          </Box>
+        </Stack>
+      </Paper>
+
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        radius="lg"
+        size="lg"
+        title={
+          <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
+            <Code size={20} />
+            <Text fw={600}>Entity Embed Guide</Text>
+          </Box>
+        }
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Code size={20} />
-          Entity Embed Guide
-        </DialogTitle>
-        
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Entity embeds allow you to create interactive cards that link to characters, arcs, gambles, 
-            and other content. They make your guides more engaging and help readers discover related content.
+        <Stack gap="xl">
+          <Alert color="blue" variant="light" radius="md">
+            Entity embeds create interactive cards linking to characters, arcs, gambles, and more. They make
+            guides richer and help readers discover related content quickly.
           </Alert>
 
-          <Typography variant="h6" gutterBottom>
-            Basic Syntax
-          </Typography>
-          <Typography variant="body2" paragraph>
-            Use double curly braces with the entity type and ID: <code>{'{{character:1}}'}</code>
-          </Typography>
-          <Typography variant="body2" paragraph>
-            You can add custom display text: <code>{'{{character:1|Baku Madarame}}'}</code>
-          </Typography>
+          <Stack gap="xs">
+            <Title order={5}>Basic Syntax</Title>
+            <Text size="sm">
+              Use double curly braces with the entity type and ID:{' '}
+              <Text component="code">{'{{character:1}}'}</Text>
+            </Text>
+            <Text size="sm">
+              Add custom display text when needed:{' '}
+              <Text component="code">{'{{character:1|Baku Madarame}}'}</Text>
+            </Text>
+          </Stack>
 
-          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            How to Use
-          </Typography>
-          <Typography variant="body2" paragraph>
-            1. <strong>Search Method:</strong> Type in the search field to find entities by name
-          </Typography>
-          <Typography variant="body2" paragraph>
-            2. <strong>Manual Entry:</strong> Type the embed syntax directly in your markdown
-          </Typography>
-
-          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Available Entity Types
-          </Typography>
-
-          {entityTypes.map((entityType) => (
-            <Accordion key={entityType.type}>
-              <AccordionSummary expandIcon={<ChevronDown size={16} />}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ color: entityType.color }}>
-                    {entityType.icon}
+          <Accordion radius="md" chevron={<ChevronDown size={16} />}>
+            {entityTypes.map((entityType) => (
+              <Accordion.Item key={entityType.type} value={entityType.type}>
+                <Accordion.Control>
+                  <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
+                    <Box style={{ color: entityType.color }}>{entityType.icon}</Box>
+                    <Text fw={600}>{entityType.label}</Text>
+                    <Text size="xs" c="dimmed">
+                      {entityType.description}
+                    </Text>
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {entityType.label}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {entityType.description}
-                  </Typography>
-                </Box>
-              </AccordionSummary>
-              
-              <AccordionDetails>
-                <Grid container spacing={2}>
-                  {entityType.examples.map((example, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
-                      <Card variant="outlined" sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <SimpleGrid cols={2} spacing="sm" breakpoints={[{ maxWidth: 'sm', cols: 1 }]}> 
+                    {entityType.examples.map((example, index) => (
+                      <Paper key={index} withBorder radius="md" p="sm">
+                        <Box
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: rem(8)
+                          }}
+                        >
+                          <Text size="sm" ff="monospace">
                             {example.code}
-                          </Typography>
-                          <Tooltip title="Copy to clipboard">
-                            <IconButton 
-                              size="small"
+                          </Text>
+                          <Tooltip label="Copy to clipboard" withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              size="sm"
+                              aria-label="Copy embed"
                               onClick={() => handleInsertEmbed(example.code)}
                             >
                               <Copy size={14} />
-                            </IconButton>
+                            </ActionIcon>
                           </Tooltip>
                         </Box>
-                        <Typography variant="caption" color="text.secondary">
+                        <Text size="xs" c="dimmed">
                           {example.description}
-                        </Typography>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </AccordionDetails>
-            </Accordion>
-          ))}
+                        </Text>
+                      </Paper>
+                    ))}
+                  </SimpleGrid>
+                </Accordion.Panel>
+              </Accordion.Item>
+            ))}
+          </Accordion>
 
-          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Tips for Using Entity Embeds
-          </Typography>
-          <Box component="ul" sx={{ pl: 2 }}>
-            <li>
-              <Typography variant="body2" paragraph>
-                Use entity embeds to reference key characters, events, or concepts mentioned in your guide
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2" paragraph>
-                Custom display text helps provide context: <code>{'{{character:5|the main antagonist}}'}</code>
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2" paragraph>
-                Entity embeds are interactive and will show up as clickable cards in your published guide
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body2" paragraph>
-                You can embed multiple entities in the same paragraph for comprehensive references
-              </Typography>
-            </li>
+          <Stack gap="xs">
+            <Title order={5}>Tips for Using Entity Embeds</Title>
+            <Box component="ul" style={{ paddingInlineStart: rem(18), margin: 0 }}>
+              <li>
+                <Text size="sm">
+                  Reference key characters, events, or concepts to give readers deeper context.
+                </Text>
+              </li>
+              <li>
+                <Text size="sm">
+                  Use custom text to clarify references, e.g.{' '}
+                  <Text component="code">{'{{character:5:the main antagonist}}'}</Text>.
+                </Text>
+              </li>
+              <li>
+                <Text size="sm">Embeds render as interactive cards in the published guide.</Text>
+              </li>
+              <li>
+                <Text size="sm">Combine multiple embeds in a section for comprehensive references.</Text>
+              </li>
+            </Box>
+          </Stack>
+
+          <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={() => setOpened(false)} variant="light" color="red" radius="md">
+              Close
+            </Button>
           </Box>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </Stack>
+      </Modal>
     </>
   )
 }

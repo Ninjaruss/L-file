@@ -2,19 +2,20 @@
 
 import React, { useState } from 'react'
 import {
-  Container,
-  Typography,
+  Badge,
   Box,
-  Card,
-  CardContent,
-  Grid,
   Button,
-  Chip,
+  Card,
+  Container,
+  Grid,
+  Group,
+  Stack,
   Tabs,
-  Tab
-} from '@mui/material'
+  Text,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
 import { ArrowLeft, BookOpen, Calendar, Eye } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
@@ -59,20 +60,15 @@ interface ArcPageClientProps {
 }
 
 export default function ArcPageClient({ initialArc, initialEvents, initialGambles }: ArcPageClientProps) {
-  const theme = useTheme()
-  const [activeTab, setActiveTab] = useState(0)
+  const theme = useMantineTheme()
+  const [activeTab, setActiveTab] = useState<string>('overview')
 
-  // Track page view
   usePageView('arc', initialArc.id.toString(), true)
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
 
   const chapterCount = initialArc.endChapter - initialArc.startChapter + 1
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <ArcStructuredData
         arc={{
           id: initialArc.id,
@@ -83,448 +79,171 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
           imageUrl: initialArc.imageFileName ? `/api/media/arc/${initialArc.imageFileName}` : undefined
         }}
       />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
           component={Link}
           href="/arcs"
-          startIcon={<ArrowLeft />}
-          sx={{ mb: 3 }}
+          variant="subtle"
+          color="gray"
+          leftSection={<ArrowLeft size={18} />}
+          mb="lg"
         >
           Back to Arcs
         </Button>
 
-        {/* Enhanced Arc Header */}
-        <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4} alignItems="center">
-              <Grid item xs={12} md={4} lg={3}>
-                <Box sx={{
-                  textAlign: 'center',
-                  position: 'relative'
-                }}>
-                  <MediaThumbnail
-                    entityType="arc"
-                    entityId={initialArc.id}
-                    entityName={initialArc.name}
-                    allowCycling={true}
-                    maxWidth={280}
-                    maxHeight={320}
-                    className="arc-thumbnail"
-                  />
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={8} lg={9}>
-                <Box sx={{ pl: { md: 2 } }}>
-                  {/* Arc Name with Gradient */}
-                  <Typography
-                    variant="h2"
-                    component="h1"
-                    sx={{
-                      mb: 2,
-                      fontWeight: 700,
-                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.usogui.arc} 100%)`,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent',
-                      fontSize: { xs: '2.5rem', md: '3rem' }
-                    }}
-                  >
-                    {initialArc.name}
-                  </Typography>
-
-                  {/* Key Information Cards */}
-                  <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Card sx={{
-                        p: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.usogui.arc}08 0%, transparent 100%)`,
-                        border: `1px solid ${theme.palette.usogui.arc}20`,
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[4]
-                        }
-                      }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          Chapter Range
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'usogui.arc' }}>
-                          {initialArc.startChapter}-{initialArc.endChapter}
-                        </Typography>
-                      </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Card sx={{
-                        p: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.secondary.main}08 0%, transparent 100%)`,
-                        border: `1px solid ${theme.palette.secondary.main}20`,
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[4]
-                        }
-                      }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          Total Chapters
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {chapterCount} chapters
-                        </Typography>
-                      </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Card sx={{
-                        p: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, transparent 100%)`,
-                        border: `1px solid ${theme.palette.primary.main}20`,
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[4]
-                        }
-                      }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          Key Events
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {initialEvents.length} events
-                        </Typography>
-                      </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Card sx={{
-                        p: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.usogui.gamble}08 0%, transparent 100%)`,
-                        border: `1px solid ${theme.palette.usogui.gamble}20`,
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[4]
-                        }
-                      }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          Gambles
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'usogui.gamble' }}>
-                          {initialGambles.length} gambles
-                        </Typography>
-                      </Card>
-                    </Grid>
-                  </Grid>
-
-                  {/* Enhanced Stats Chips */}
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                    <Chip
-                      label={`${initialEvents.length} Event${initialEvents.length !== 1 ? 's' : ''}`}
-                      size="medium"
-                      variant="filled"
-                      color="primary"
-                      sx={{
-                        fontWeight: 600,
-                        '& .MuiChip-label': { px: 2 }
-                      }}
-                    />
-                    <Chip
-                      label={`${initialGambles.length} Gamble${initialGambles.length !== 1 ? 's' : ''}`}
-                      size="medium"
-                      variant="filled"
-                      sx={{
-                        fontWeight: 600,
-                        backgroundColor: theme.palette.usogui.gamble,
-                        color: 'white',
-                        '& .MuiChip-label': { px: 2 }
-                      }}
-                    />
-                    <Chip
-                      label={`Arc ${initialArc.order || 'N/A'}`}
-                      size="medium"
-                      variant="filled"
-                      sx={{
-                        fontWeight: 600,
-                        backgroundColor: theme.palette.usogui.arc,
-                        color: 'white',
-                        '& .MuiChip-label': { px: 2 }
-                      }}
-                    />
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Tab Navigation */}
-        <Card className="gambling-card" sx={{ mb: 0 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              sx={{ px: 2 }}
-            >
-              <Tab
-                label="Overview"
-                icon={<BookOpen size={18} />}
-                iconPosition="start"
-                sx={{ minHeight: 48 }}
-              />
-              <Tab
-                label="Timeline"
-                icon={<Calendar size={18} />}
-                iconPosition="start"
-                sx={{ minHeight: 48 }}
-                disabled={initialEvents.length === 0}
-              />
-              <Tab
-                label="Media"
-                icon={<Eye size={18} />}
-                iconPosition="start"
-                sx={{ minHeight: 48 }}
-              />
-            </Tabs>
-          </Box>
-
-          {/* Tab Content */}
-          <Box sx={{ p: 0 }}>
-            {/* Overview Tab */}
-            {activeTab === 0 && (
-              <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-                <Grid container spacing={3}>
-                  {/* Main Content - Left Column */}
-                  <Grid item xs={12} lg={8}>
-                    {/* Enhanced About Section */}
-                    <Card className="gambling-card" sx={{
-                      mb: 3,
-                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 3,
-                      boxShadow: theme.shadows[2],
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: theme.shadows[6],
-                        transform: 'translateY(-2px)'
-                      }
-                    }}>
-                      <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                        <Box sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: 3,
-                          pb: 2,
-                          borderBottom: `2px solid ${theme.palette.divider}`,
-                          position: 'relative',
-                          '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -2,
-                            left: 0,
-                            width: '60px',
-                            height: '2px',
-                            background: `linear-gradient(90deg, ${theme.palette.usogui.arc} 0%, transparent 100%)`
-                          }
-                        }}>
-                          <BookOpen size={24} style={{ marginRight: 12 }} color={theme.palette.usogui.arc} />
-                          <Typography variant="h4" sx={{
-                            fontWeight: 700,
-                            color: 'usogui.arc',
-                            letterSpacing: '-0.5px'
-                          }}>
-                            About
-                          </Typography>
-                        </Box>
-
-                        <TimelineSpoilerWrapper
-                          chapterNumber={initialArc.startChapter}
-                        >
-                          <EnhancedSpoilerMarkdown
-                            content={initialArc.description}
-                            className="arc-description"
-                            enableEntityEmbeds={true}
-                            compactEntityCards={false}
-                          />
-                        </TimelineSpoilerWrapper>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-
-                  {/* Right Column - Additional Info */}
-                  <Grid item xs={12} lg={4}>
-                    {/* Chapter Navigation */}
-                    <Card className="gambling-card" sx={{
-                      background: `linear-gradient(135deg, ${theme.palette.info.main}08 0%, transparent 100%)`,
-                      border: `1px solid ${theme.palette.info.main}15`,
-                      position: 'sticky',
-                      top: 20,
-                      borderRadius: 3,
-                      boxShadow: theme.shadows[2],
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: theme.shadows[6],
-                        transform: 'translateY(-2px)'
-                      }
-                    }}>
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" sx={{
-                          mb: 3,
-                          fontWeight: 700,
-                          color: 'info.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          letterSpacing: '-0.3px'
-                        }}>
-                          <BookOpen size={20} />
-                          Chapter Range
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <Button
-                            component={Link}
-                            href={`/chapters/${initialArc.startChapter}`}
-                            variant="outlined"
-                            color="info"
-                            fullWidth
-                            sx={{
-                              borderRadius: '12px',
-                              py: 1.5,
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              fontSize: '0.95rem',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                transform: 'scale(1.02)',
-                                boxShadow: theme.shadows[4]
-                              }
-                            }}
-                          >
-                            Start: Chapter {initialArc.startChapter}
-                          </Button>
-                          <Button
-                            component={Link}
-                            href={`/chapters/${initialArc.endChapter}`}
-                            variant="contained"
-                            color="info"
-                            fullWidth
-                            sx={{
-                              borderRadius: '12px',
-                              py: 1.5,
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              fontSize: '0.95rem',
-                              boxShadow: theme.shadows[3],
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                transform: 'scale(1.02)',
-                                boxShadow: theme.shadows[6]
-                              }
-                            }}
-                          >
-                            End: Chapter {initialArc.endChapter}
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-
-            {/* Timeline Tab */}
-            {activeTab === 1 && initialEvents.length > 0 && (
-              <Box>
-                <ArcTimeline
-                  events={initialEvents.map(event => ({
-                    id: event.id,
-                    title: event.title,
-                    chapterNumber: event.chapterNumber,
-                    type: event.type as 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution',
-                    characters: event.characters?.map(char => char.name),
-                    description: event.description,
-                    isSpoiler: event.chapterNumber > initialArc.startChapter
-                  }))}
-                  arcName={initialArc.name}
-                  startChapter={initialArc.startChapter}
-                  endChapter={initialArc.endChapter}
+        <Card withBorder radius="md" className="gambling-card" shadow="md" mb="xl">
+          <Grid gutter="xl" align="center">
+            <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
+              <Box ta="center">
+                <MediaThumbnail
+                  entityType="arc"
+                  entityId={initialArc.id}
+                  entityName={initialArc.name}
+                  allowCycling
+                  maxWidth="260px"
+                  maxHeight="320px"
                 />
               </Box>
-            )}
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+              <Stack gap="md">
+                <Title order={1}>{initialArc.name}</Title>
 
-            {/* Enhanced Media Tab */}
-            {activeTab === 2 && (
-              <Box sx={{
-                p: { xs: 2, sm: 3, md: 4 },
-                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
-              }}>
-                {/* Enhanced Media Header */}
-                <Box sx={{ mb: 4 }}>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      mb: 2,
-                      fontWeight: 700,
-                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.primary.main} 100%)`,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      letterSpacing: '-0.5px'
-                    }}
-                  >
-                    <Eye size={32} color={theme.palette.primary.main} />
-                    Media Gallery
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{
-                      fontSize: '1.1rem',
-                      fontWeight: 500,
-                      maxWidth: '600px'
-                    }}
-                  >
+                <Grid gutter="md">
+                  <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                    <Card withBorder radius="md" shadow="xs" padding="md">
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                        Chapter Range
+                      </Text>
+                      <Text fw={600} size="lg" c="pink.4">
+                        {initialArc.startChapter}-{initialArc.endChapter}
+                      </Text>
+                    </Card>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                    <Card withBorder radius="md" shadow="xs" padding="md">
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                        Total Chapters
+                      </Text>
+                      <Text fw={600} size="lg">
+                        {chapterCount} chapters
+                      </Text>
+                    </Card>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                    <Card withBorder radius="md" shadow="xs" padding="md">
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                        Key Events
+                      </Text>
+                      <Text fw={600} size="lg">
+                        {initialEvents.length} events
+                      </Text>
+                    </Card>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                    <Card withBorder radius="md" shadow="xs" padding="md">
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                        Gambles
+                      </Text>
+                      <Text fw={600} size="lg" c="red.4">
+                        {initialGambles.length} gambles
+                      </Text>
+                    </Card>
+                  </Grid.Col>
+                </Grid>
+
+                <Group gap="sm" wrap>
+                  <Badge color="red" radius="lg" variant="filled">
+                    {initialEvents.length} Event{initialEvents.length !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge color="violet" radius="lg" variant="filled">
+                    {initialGambles.length} Gamble{initialGambles.length !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge color="pink" radius="lg" variant="light">
+                    Arc {initialArc.order ?? 'N/A'}
+                  </Badge>
+                </Group>
+              </Stack>
+            </Grid.Col>
+          </Grid>
+        </Card>
+
+        <Card withBorder radius="md" className="gambling-card" shadow="md">
+          <Tabs value={activeTab} onChange={(value) => value && setActiveTab(value)} keepMounted={false}>
+            <Tabs.List>
+              <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
+              <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={initialEvents.length === 0}>
+                Timeline
+              </Tabs.Tab>
+              <Tabs.Tab value="media" leftSection={<Eye size={16} />}>Media</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="overview" pt="md">
+              <Grid gutter="xl">
+                <Grid.Col span={{ base: 12, lg: 8 }}>
+                  <Card withBorder radius="md" shadow="sm" mb="lg">
+                    <Stack gap="md" p="lg">
+                      <Group gap="sm">
+                        <BookOpen size={20} color={theme.colors.red?.[5]} />
+                        <Title order={3}>About</Title>
+                      </Group>
+                      <TimelineSpoilerWrapper chapterNumber={initialArc.startChapter}>
+                        <EnhancedSpoilerMarkdown
+                          content={initialArc.description}
+                          className="arc-description"
+                          enableEntityEmbeds
+                          compactEntityCards={false}
+                        />
+                      </TimelineSpoilerWrapper>
+                    </Stack>
+                  </Card>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, lg: 4 }}>
+                  <Card withBorder radius="md" shadow="sm" style={{ position: 'sticky', top: 24 }}>
+                    <Stack gap="md" p="lg">
+                      <Title order={4}>Chapter Range</Title>
+                      <Button component={Link} href={`/chapters/${initialArc.startChapter}`} variant="outline" color="red" fullWidth>
+                        Start: Chapter {initialArc.startChapter}
+                      </Button>
+                      <Button component={Link} href={`/chapters/${initialArc.endChapter}`} color="red" fullWidth>
+                        End: Chapter {initialArc.endChapter}
+                      </Button>
+                    </Stack>
+                  </Card>
+                </Grid.Col>
+              </Grid>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="timeline" pt="md">
+              <ArcTimeline
+                events={initialEvents.map((event) => ({
+                  id: event.id,
+                  title: event.title,
+                  chapterNumber: event.chapterNumber,
+                  type: event.type as 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution',
+                  characters: event.characters?.map((char) => char.name),
+                  description: event.description,
+                  isSpoiler: event.chapterNumber > initialArc.startChapter
+                }))}
+                arcName={initialArc.name}
+                startChapter={initialArc.startChapter}
+                endChapter={initialArc.endChapter}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="media" pt="md">
+              <Card withBorder radius="md" shadow="sm">
+                <Stack gap="sm" p="lg">
+                  <Title order={3}>Media Gallery</Title>
+                  <Text size="sm" c="dimmed">
                     Explore fan art, videos, and other media related to {initialArc.name}
-                  </Typography>
-                </Box>
-
-                {/* Enhanced Media Gallery Container */}
-                <Box sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.02) 100%)`,
-                  borderRadius: 3,
-                  p: { xs: 2, md: 3 },
-                  border: `1px solid ${theme.palette.divider}`,
-                  boxShadow: theme.shadows[1],
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `radial-gradient(circle at 20% 80%, ${theme.palette.primary.main}03 0%, transparent 50%)`,
-                    borderRadius: 3,
-                    pointerEvents: 'none'
-                  }
-                }}>
-                  <MediaGallery
-                    arcId={initialArc.id}
-                    limit={20}
-                    showTitle={false}
-                    compactMode={false}
-                  />
-                </Box>
-              </Box>
-            )}
-          </Box>
+                  </Text>
+                  <MediaGallery arcId={initialArc.id} limit={20} showTitle={false} compactMode={false} />
+                </Stack>
+              </Card>
+            </Tabs.Panel>
+          </Tabs>
         </Card>
       </motion.div>
     </Container>

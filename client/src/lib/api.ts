@@ -755,6 +755,10 @@ class ApiClient {
     return this.get<any>(`/users/public/${id}`)
   }
 
+  async getUserBadges(userId: number) {
+    return this.get<any>(`/users/${userId}/badges`)
+  }
+
   async getPublicUsers(params?: {
     page?: number
     limit?: number

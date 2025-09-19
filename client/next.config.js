@@ -69,6 +69,12 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '**.wixmp.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'www.pixiv.net',
         port: '',
         pathname: '/**',

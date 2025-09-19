@@ -7,13 +7,16 @@
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Donation linking to badges; badge system with perks
 
+## 2025-09-19
+- Finished layout/styling of arcs list page
+- Added detail modal for arcs list page
 ## 2025-09-18
 ### Changes
-- 
+- Conversion of all public pages from MUI to Mantine
 
 ### Notes
 - So after a long day of attempts, I've decided to scrap the idea of migrating to shadcn from MUI. This is mainly due to the fact I've built most of the project already and shadcn for my project would be using a set of base components that need a lot of adjustment. Bascially, in the future I will consider using shadcn when starting from scratch.
-- Doing a bit of research, a good alternative I am working to migrate to is Mantine. It seems to be simiar to MUI, but a lot less opinionated in its approach and seems a lot easier to work with for SSR.
+- Doing a bit of research, a good alternative I am working to migrate to is Mantine. It seems to be simiar to MUI, but a lot less opinionated in its approach and seems a lot easier to work with for SSR. Another reason to use Mantine is that I am not very interested in having to fine tune components at the moment; I am satisfied with a good base that allows for some decent flexibility (which MUI was not providing as seen by SSR/hydration issues and strict styling)
 - I have bought a subscription to Codex and at least first impression, it is clearly a step above Claude right now. There was a specific issue where I wanted to migrate the Navbar to start using Matine instead of MUI, but Claude Code would consistently give broken code. It could be that the Serena MCP could be interfering for the results or as usual my prompting, but will further test to see consistency. Those Claude Code performance issues might have some validity as I noted in earlier notes.
 
 ## 2025-09-16

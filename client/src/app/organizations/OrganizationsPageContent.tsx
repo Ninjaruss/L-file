@@ -2,19 +2,22 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-  Container,
-  Typography,
+  Alert,
+  Anchor,
+  Badge,
   Box,
   Card,
-  CardContent,
+  Container,
   Grid,
-  TextField,
-  Chip,
-  CircularProgress,
-  Alert,
+  Group,
+  Loader,
   Pagination,
-  InputAdornment
-} from '@mui/material'
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
@@ -49,6 +52,7 @@ export default function OrganizationsPageContent({
 }: OrganizationsPageContentProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const theme = useMantineTheme()
   
   const [organizations, setOrganizations] = useState<Organization[]>(initialOrganizations)
   const [loading, setLoading] = useState(false)
@@ -107,15 +111,17 @@ export default function OrganizationsPageContent({
     updateURL(newSearch, 1)
   }
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (value: number) => {
     setPage(value)
     updateURL(searchTerm, value)
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">{error}</Alert>
+      <Container size="lg" py="xl">
+        <Alert color="red" variant="light">
+          {error}
+        </Alert>
       </Container>
     )
   }
@@ -126,66 +132,53 @@ export default function OrganizationsPageContent({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Box sx={{ textAlign: 'center', mb: 6 }}>
-        <Shield size={48} style={{ marginBottom: 16 }} />
-        <Typography variant="h2" component="h1" gutterBottom>
-          Organizations
-        </Typography>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          Explore the various groups and organizations in Usogui
-        </Typography>
-      </Box>
+      <Stack gap="lg">
+        <Box ta="center">
+          <Shield size={48} style={{ marginBottom: 16 }} />
+          <Title order={2} component="h1">
+            Organizations
+          </Title>
+          <Text size="lg" c="dimmed">
+            Explore the various groups and organizations in Usogui
+          </Text>
+        </Box>
 
-      <Box sx={{ mb: 4 }}>
-        <TextField
-          fullWidth
+        <TextInput
+          size="md"
+          leftSection={<Search size={18} />}
           placeholder="Search organizations by name..."
           value={searchTerm}
           onChange={handleSearch}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
         />
-      </Box>
+      </Stack>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress size={50} />
+        <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: theme.spacing.xl }}>
+          <Loader size="lg" />
         </Box>
       ) : (
         <>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              {total} organizations found
-            </Typography>
-          </Box>
+          <Text size="sm" c="dimmed" mb="sm">
+            {total} organizations found
+          </Text>
 
-          <Grid container spacing={3}>
+          <Grid gutter="xl">
             {organizations.map((organization) => (
-              <Grid item xs={12} sm={6} md={4} key={organization.id}>
+              <Grid.Col key={organization.id} span={{ base: 12, sm: 6, md: 4 }}>
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  style={{ height: '100%' }}
                 >
-                  <Card 
-                    className="gambling-card"
-                    sx={{ 
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                      '&:hover': { 
-                        transform: 'translateY(-4px)',
-                        boxShadow: 6
-                      }
-                    }}
+                  <Card
+                    shadow="lg"
+                    radius="md"
+                    withBorder
+                    style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
                   >
-                    <Box sx={{ position: 'relative' }}>
+                    <Box style={{ position: 'relative' }}>
                       <MediaThumbnail
                         entityType="organization"
                         entityId={organization.id}
@@ -196,77 +189,80 @@ export default function OrganizationsPageContent({
                       />
                     </Box>
 
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Shield size={24} style={{ marginRight: 8 }} />
-                        <Typography 
-                          variant="h5" 
+                    <Stack gap="sm" style={{ flex: 1 }} mt="md">
+                      <Group align="center" gap="sm">
+                        <Shield size={24} />
+                        <Anchor
                           component={Link}
                           href={`/organizations/${organization.id}`}
-                          sx={{ 
-                            textDecoration: 'none', 
-                            color: 'primary.main',
-                            '&:hover': { textDecoration: 'underline' },
-                            flex: 1
-                          }}
+                          fw={600}
+                          size="lg"
+                          c={theme.other.usogui.red}
                         >
                           {organization.name}
-                        </Typography>
-                      </Box>
+                        </Anchor>
+                      </Group>
 
                       {organization.description && (
-                        <div style={{ 
-                          display: '-webkit-box',
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          marginBottom: '16px',
-                          flexGrow: 1
-                        }}>
+                        <Box
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            flexGrow: 1
+                          }}
+                        >
                           <EnhancedSpoilerMarkdown
                             content={organization.description}
                             className="organization-description-preview"
-                            enableEntityEmbeds={true}
-                            compactEntityCards={true}
-                          />
-                        </div>
-                      )}
-
-                      {organization.memberCount !== undefined && (
-                        <Box sx={{ mt: 'auto', pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                          <Chip
-                            label={`${organization.memberCount} members`}
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                            icon={<Users size={14} />}
+                            enableEntityEmbeds
+                            compactEntityCards
                           />
                         </Box>
                       )}
-                    </CardContent>
+
+                      {organization.memberCount !== undefined && (
+                        <Box
+                          style={{
+                            marginTop: 'auto',
+                            paddingTop: theme.spacing.sm,
+                            borderTop: `1px solid rgba(255, 255, 255, 0.12)`
+                          }}
+                        >
+                          <Badge
+                            variant="outline"
+                            color="purple"
+                            leftSection={<Users size={14} />}
+                          >
+                            {organization.memberCount} members
+                          </Badge>
+                        </Box>
+                      )}
+                    </Stack>
                   </Card>
                 </motion.div>
-              </Grid>
+              </Grid.Col>
             ))}
           </Grid>
 
           {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+            <Box style={{ display: 'flex', justifyContent: 'center', marginTop: theme.spacing.xl }}>
               <Pagination
-                count={totalPages}
-                page={page}
+                total={totalPages}
+                value={page}
                 onChange={handlePageChange}
-                color="primary"
-                size="large"
+                size="lg"
+                color="red"
               />
             </Box>
           )}
 
           {organizations.length === 0 && !loading && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <Typography variant="h6" color="text.secondary">
+            <Box ta="center" py="xl">
+              <Text size="lg" c="dimmed">
                 No organizations found
-              </Typography>
+              </Text>
             </Box>
           )}
         </>

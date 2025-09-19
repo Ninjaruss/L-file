@@ -1,39 +1,35 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  CircularProgress,
-  Alert,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
   Accordion,
-  AccordionSummary,
-  AccordionDetails
-} from '@mui/material'
+  Alert,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Grid,
+  Group,
+  Loader,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { CalendarSearch, Eye, Calendar, Search, BookOpen, Dice6, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { api } from '../../lib/api'
-import type { Event, Arc } from '../../types'
+import type { Arc, Event } from '../../types'
 import { EventStatus } from '../../types'
 
-const eventTypes = [
+const eventTypeOptions = [
   { value: '', label: 'All Types' },
   { value: 'gamble', label: 'Gamble' },
   { value: 'decision', label: 'Decision' },
@@ -42,7 +38,7 @@ const eventTypes = [
   { value: 'resolution', label: 'Resolution' }
 ]
 
-const eventStatuses = [
+const eventStatusOptions = [
   { value: '', label: 'All Statuses' },
   { value: EventStatus.APPROVED, label: 'Approved' },
   { value: EventStatus.PENDING, label: 'Pending' },
@@ -67,375 +63,332 @@ export default function EventsPageContent({
   initialStatus,
   initialError
 }: EventsPageContentProps) {
+  const theme = useMantineTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   const [groupedEvents, setGroupedEvents] = useState(initialGroupedEvents)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [selectedType, setSelectedType] = useState(initialType)
   const [selectedStatus, setSelectedStatus] = useState(initialStatus)
+  const searchDebounceRef = useRef<number | null>(null)
 
-  const updateURL = (search: string, type: string, status: string) => {
-    const params = new URLSearchParams()
-    if (search) params.set('search', search)
-    if (type) params.set('type', type)
-    if (status) params.set('status', status)
-    
-    const queryString = params.toString()
-    router.push(`/events${queryString ? `?${queryString}` : ''}`)
-  }
+  const updateUrl = useCallback(
+    (search: string, type: string, status: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (search) params.set('search', search)
+      else params.delete('search')
+      if (type) params.set('type', type)
+      else params.delete('type')
+      if (status) params.set('status', status)
+      else params.delete('status')
+      const qs = params.toString()
+      router.push(qs ? `/events?${qs}` : '/events', { scroll: false })
+    },
+    [router, searchParams]
+  )
 
-  const fetchEvents = async (search: string, type: string, status: string) => {
-    try {
+  const fetchEvents = useCallback(
+    async (search: string, type: string, status: string) => {
       setLoading(true)
-      setError('')
-      
-      if (search) {
-        // Fall back to regular search when searching
-        const params: Record<string, string | number> = { page: 1, limit: 100, title: search }
-        if (type) params.type = type
-        if (status) params.status = status
-        
-        const response = await api.getEvents(params)
-        setGroupedEvents({
-          arcs: [],
-          noArc: response.data
-        })
-      } else {
-        // Use grouped endpoint when not searching
-        const params: Record<string, string> = {}
-        if (type) params.type = type
-        if (status) params.status = status
-        
-        const response = await api.getEventsGroupedByArc(params)
-        setGroupedEvents(response)
+      try {
+        if (search) {
+          const params: Record<string, string | number> = { page: 1, limit: 100, title: search }
+          if (type) params.type = type
+          if (status) params.status = status
+          const response = await api.getEvents(params)
+          setGroupedEvents({ arcs: [], noArc: response.data || [] })
+        } else {
+          const params: Record<string, string> = {}
+          if (type) params.type = type
+          if (status) params.status = status
+          const response = await api.getEventsGroupedByArc(params)
+          setGroupedEvents(response)
+        }
+        setError('')
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch events'
+        setError(message)
+        notifications.show({ message, color: 'red' })
+      } finally {
+        setLoading(false)
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch events')
-    } finally {
-      setLoading(false)
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (
+      searchTerm !== initialSearch ||
+      selectedType !== initialType ||
+      selectedStatus !== initialStatus
+    ) {
+      fetchEvents(searchTerm, selectedType, selectedStatus)
     }
-  }
+  }, [fetchEvents, searchTerm, selectedType, selectedStatus, initialSearch, initialType, initialStatus])
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value
-    setSearchTerm(value)
-  }
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current)
+      }
+    }
+  }, [])
 
-  const handleSearchSubmit = (event: React.FormEvent) => {
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    updateURL(searchTerm, selectedType, selectedStatus)
+    updateUrl(searchTerm, selectedType, selectedStatus)
     fetchEvents(searchTerm, selectedType, selectedStatus)
   }
 
-  const handleTypeChange = (event: SelectChangeEvent) => {
-    const value = event.target.value
-    setSelectedType(value)
-    updateURL(searchTerm, value, selectedStatus)
-    fetchEvents(searchTerm, value, selectedStatus)
+  const handleTypeChange = (value: string | null) => {
+    const nextType = value ?? ''
+    setSelectedType(nextType)
+    updateUrl(searchTerm, nextType, selectedStatus)
+    fetchEvents(searchTerm, nextType, selectedStatus)
   }
 
-  const handleStatusChange = (event: SelectChangeEvent) => {
-    const value = event.target.value
-    setSelectedStatus(value)
-    updateURL(searchTerm, selectedType, value)
-    fetchEvents(searchTerm, selectedType, value)
+  const handleStatusChange = (value: string | null) => {
+    const nextStatus = value ?? ''
+    setSelectedStatus(nextStatus)
+    updateUrl(searchTerm, selectedType, nextStatus)
+    fetchEvents(searchTerm, selectedType, nextStatus)
   }
 
-  const getEventTypeColor = (type: string) => {
+  const handleSearchInput = (value: string) => {
+    setSearchTerm(value)
+    if (searchDebounceRef.current) {
+      window.clearTimeout(searchDebounceRef.current)
+    }
+    searchDebounceRef.current = window.setTimeout(() => {
+      updateUrl(value, selectedType, selectedStatus)
+      fetchEvents(value, selectedType, selectedStatus)
+    }, 400)
+  }
+
+  const eventTypeColor = (type: string): string => {
     switch (type) {
-      case 'gamble': return 'error'
-      case 'decision': return 'warning'
-      case 'reveal': return 'info'
-      case 'shift': return 'secondary'
-      case 'resolution': return 'success'
-      default: return 'default'
+      case 'gamble':
+        return 'red'
+      case 'decision':
+        return 'yellow'
+      case 'reveal':
+        return 'blue'
+      case 'shift':
+        return 'violet'
+      case 'resolution':
+        return 'green'
+      default:
+        return 'gray'
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const statusColor = (status: string): string => {
     switch (status) {
-      case EventStatus.APPROVED: return 'success'
-      case EventStatus.PENDING: return 'warning'
-      case EventStatus.REJECTED: return 'error'
-      default: return 'default'
+      case EventStatus.APPROVED:
+        return 'green'
+      case EventStatus.PENDING:
+        return 'yellow'
+      case EventStatus.REJECTED:
+        return 'red'
+      default:
+        return 'gray'
     }
   }
 
-  const renderEvent = (event: Event) => (
-    <Grid item xs={12} sm={6} md={4} key={event.id}>
+  const renderEventCard = (event: Event, index?: number) => (
+    <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={event.id}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: (index ?? 0) * 0.05 }}
       >
-        <Card 
-          className="gambling-card"
-          sx={{ 
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-            '&:hover': { 
-              transform: 'translateY(-4px)',
-              boxShadow: 6
-            }
-          }}
-        >
-          <CardContent sx={{ flexGrow: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-              <Typography variant="h6" component="h3" sx={{ flexGrow: 1, mr: 1 }}>
-                {event.title}
-              </Typography>
-              <Chip
-                size="small"
-                label={event.type}
-                color={getEventTypeColor(event.type) as any}
-                sx={{ minWidth: 'fit-content' }}
-              />
-            </Box>
+        <Card withBorder radius="md" className="gambling-card" shadow="sm" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Stack gap="sm" style={{ flex: 1, padding: rem(16) }}>
+            <Group justify="space-between" align="flex-start">
+              <Text fw={600}>{event.title}</Text>
+              <Badge color={eventTypeColor(event.type)} radius="sm">
+                {event.type}
+              </Badge>
+            </Group>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-              <Chip
-                icon={<Calendar size={14} />}
-                label={`Ch. ${event.chapterNumber}`}
-                size="small"
-                variant="outlined"
-              />
+            <Group gap="xs" wrap>
+              <Badge radius="sm" variant="outline" leftSection={<Calendar size={14} />}>
+                Ch. {event.chapterNumber}
+              </Badge>
               {event.arc && (
-                <Chip
-                  icon={<BookOpen size={14} />}
-                  label={event.arc.name}
-                  size="small"
-                  variant="outlined"
-                />
+                <Badge radius="sm" variant="outline" leftSection={<BookOpen size={14} />}>
+                  {event.arc.name}
+                </Badge>
               )}
               {event.gamble && (
-                <Chip
-                  icon={<Dice6 size={14} />}
-                  label={event.gamble.name}
-                  size="small"
-                  variant="outlined"
-                />
+                <Badge radius="sm" variant="outline" leftSection={<Dice6 size={14} />}>
+                  {event.gamble.name}
+                </Badge>
               )}
-            </Box>
+            </Group>
 
-            <Typography 
-              component="div"
-              variant="body2" 
-              color="text.secondary" 
-              sx={{ 
+            <Box
+              style={{
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
                 display: '-webkit-box',
-                WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical',
-                mb: 2
+                WebkitLineClamp: 3
               }}
             >
               <EnhancedSpoilerMarkdown
                 content={event.description}
                 className="event-description-preview"
                 enableEntityEmbeds={false}
-                compactEntityCards={true}
-              />
-            </Typography>
-
-            <Box sx={{ mt: 'auto' }}>
-              <Chip
-                size="small"
-                label={event.status}
-                color={getStatusColor(event.status) as any}
-                variant="outlined"
+                compactEntityCards
               />
             </Box>
-          </CardContent>
 
-          <CardActions>
+            <Badge color={statusColor(event.status)} variant="light" radius="sm">
+              {event.status}
+            </Badge>
+
             <Button
               component={Link}
               href={`/events/${event.id}`}
-              size="small"
-              startIcon={<Eye size={16} />}
+              variant="outline"
+              color="red"
+              leftSection={<Eye size={16} />}
+              fullWidth
             >
               View Details
             </Button>
-          </CardActions>
+          </Stack>
         </Card>
       </motion.div>
-    </Grid>
+    </Grid.Col>
   )
 
-  if (error) {
+  if (error && !loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
+      <Alert color="red" radius="md">
+        <Text size="sm">{error}</Text>
+      </Alert>
     )
   }
 
   const totalEvents = groupedEvents.arcs.reduce((total, group) => total + group.events.length, 0) + groupedEvents.noArc.length
-  const hasSearch = searchTerm.trim() !== ''
+  const hasSearch = searchTerm.trim().length > 0
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <CalendarSearch size={48} style={{ marginBottom: 16 }} />
-          <Typography variant="h2" component="h1" gutterBottom>
-            Events
-          </Typography>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Explore key moments in the Usogui story
-          </Typography>
-        </Box>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <Stack align="center" gap="xs" mb="xl">
+        <CalendarSearch size={48} color={theme.other?.usogui?.event ?? theme.colors.orange?.[6]} />
+        <Title order={1}>Events</Title>
+        <Text size="lg" c="dimmed">
+          Explore key moments in the Usogui story
+        </Text>
+      </Stack>
 
-        {/* Search and Filters */}
-        <Box sx={{ mb: 4 }}>
-          <form onSubmit={handleSearchSubmit}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  placeholder="Search events by title..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search size={20} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    value={selectedType}
-                    label="Type"
-                    onChange={handleTypeChange}
-                  >
-                    {eventTypes.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={selectedStatus}
-                    label="Status"
-                    onChange={handleStatusChange}
-                  >
-                    {eventStatuses.map((status) => (
-                      <MenuItem key={status.value} value={status.value}>
-                        {status.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+      <form onSubmit={handleSearchSubmit}>
+        <Grid gutter="md" mb="lg" align="flex-end">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <TextInput
+              placeholder="Search events by title..."
+              value={searchTerm}
+              onChange={(event) => handleSearchInput(event.currentTarget.value)}
+              leftSection={<Search size={18} />}
+              size="md"
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              label="Type"
+              value={selectedType}
+              onChange={handleTypeChange}
+              data={eventTypeOptions}
+              clearable
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              label="Status"
+              value={selectedStatus}
+              onChange={handleStatusChange}
+              data={eventStatusOptions}
+              clearable
+            />
+          </Grid.Col>
+        </Grid>
+      </form>
+
+      {loading ? (
+        <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: rem(64) }}>
+          <Loader size="lg" color="red" />
+        </Box>
+      ) : (
+        <>
+          <Text size="sm" c="dimmed" mb="md">
+            {totalEvents} event{totalEvents !== 1 ? 's' : ''} found
+          </Text>
+
+          {hasSearch ? (
+            <Grid gutter="xl">
+              {groupedEvents.noArc.map((event, index) => renderEventCard(event, index))}
             </Grid>
-          </form>
-        </Box>
+          ) : (
+            <Stack gap="md">
+              {groupedEvents.arcs.map(({ arc, events }) => (
+                <Accordion key={arc.id} defaultValue={`arc-${arc.id}`}>
+                  <Accordion.Item value={`arc-${arc.id}`}>
+                    <Accordion.Control icon={<ChevronDown size={16} />}>
+                      <Group gap="sm" align="center">
+                        <Title order={4}>{arc.name}</Title>
+                        <Badge color="red" variant="light" radius="sm">
+                          {events.length} event{events.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </Group>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Grid gutter="xl">
+                        {events.map((event, index) => renderEventCard(event, index))}
+                      </Grid>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              ))}
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress size={50} />
-          </Box>
-        ) : (
-          <>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                {totalEvents} event{totalEvents !== 1 ? 's' : ''} found
-              </Typography>
+              {groupedEvents.noArc.length > 0 && (
+                <Accordion defaultValue="no-arc">
+                  <Accordion.Item value="no-arc">
+                    <Accordion.Control icon={<ChevronDown size={16} />}>
+                      <Group gap="sm" align="center">
+                        <Title order={4}>Other Events</Title>
+                        <Badge color="violet" variant="light" radius="sm">
+                          {groupedEvents.noArc.length} event{groupedEvents.noArc.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </Group>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Grid gutter="xl">
+                        {groupedEvents.noArc.map((event, index) => renderEventCard(event, index))}
+                      </Grid>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              )}
+            </Stack>
+          )}
+
+          {totalEvents === 0 && !loading && (
+            <Box style={{ textAlign: 'center', paddingBlock: rem(64) }}>
+              <Title order={4} c="dimmed">
+                No events found
+              </Title>
+              <Text size="sm" c="dimmed">
+                Try adjusting your search terms or filters
+              </Text>
             </Box>
-
-            {hasSearch ? (
-              // Show flat list when searching
-              <Grid container spacing={3}>
-                {groupedEvents.noArc.map(renderEvent)}
-              </Grid>
-            ) : (
-              // Show grouped by arc when not searching
-              <>
-                {groupedEvents.arcs.map(({ arc, events }) => (
-                  <Accordion key={arc.id} defaultExpanded sx={{ mb: 2 }}>
-                    <AccordionSummary
-                      expandIcon={<ChevronDown />}
-                      aria-controls={`arc-${arc.id}-content`}
-                      id={`arc-${arc.id}-header`}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="h6">{arc.name}</Typography>
-                        <Chip 
-                          label={`${events.length} event${events.length !== 1 ? 's' : ''}`}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Grid container spacing={3}>
-                        {events.map(renderEvent)}
-                      </Grid>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-
-                {groupedEvents.noArc.length > 0 && (
-                  <Accordion defaultExpanded sx={{ mb: 2 }}>
-                    <AccordionSummary
-                      expandIcon={<ChevronDown />}
-                      aria-controls="no-arc-content"
-                      id="no-arc-header"
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="h6">Other Events</Typography>
-                        <Chip 
-                          label={`${groupedEvents.noArc.length} event${groupedEvents.noArc.length !== 1 ? 's' : ''}`}
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                        />
-                      </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Grid container spacing={3}>
-                        {groupedEvents.noArc.map(renderEvent)}
-                      </Grid>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-              </>
-            )}
-
-            {totalEvents === 0 && (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="h6" color="text.secondary">
-                  No events found
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Try adjusting your search terms or filters
-                </Typography>
-              </Box>
-            )}
-          </>
-        )}
-      </motion.div>
-    </Container>
+          )}
+        </>
+      )}
+    </motion.div>
   )
 }

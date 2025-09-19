@@ -1,21 +1,22 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
-  Container,
-  Typography,
+  Badge,
   Box,
-  Card,
-  CardContent,
   Button,
-  Chip,
-  Divider,
+  Card,
+  Container,
+  Grid,
+  Group,
+  Loader,
+  Stack,
   Tabs,
-  Tab,
-  Grid
-} from '@mui/material'
-import { ArrowLeft, Crown, Users, Trophy, Calendar, BookOpen } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+  Text,
+  Title,
+  useMantineTheme
+} from '@mantine/core'
+import { ArrowLeft, Crown, Users, Trophy, Calendar, BookOpen, Eye } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
@@ -54,47 +55,36 @@ interface GamblePageClientProps {
 }
 
 export default function GamblePageClient({ initialGamble }: GamblePageClientProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
   const [arcs, setArcs] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
+  const [activeTab, setActiveTab] = useState<string>('overview')
 
-  // Track page view
   usePageView('gamble', initialGamble.id.toString(), true)
 
-  // Fetch timeline events and arcs when component mounts
   useEffect(() => {
     const fetchTimelineData = async () => {
       try {
         setTimelineLoading(true)
-
-        // Fetch events and arcs in parallel
         const [eventsResponse, arcsResponse] = await Promise.all([
           api.getEvents({ limit: 100 }),
           api.getArcs({ limit: 100 })
         ])
 
-        // Filter events to those directly related to this gamble
         const gambleChapter = initialGamble.chapter?.number || initialGamble.chapterId
-
         const filteredEvents = eventsResponse.data.filter((event: any) => {
-          // Include events directly linked to this gamble
           if (event.gambleId === initialGamble.id) {
             return true
           }
-
-          // Include events in the same chapter as the gamble
           if (event.chapterNumber === gambleChapter) {
             return true
           }
-
           return false
         })
 
         setTimelineEvents(filteredEvents)
         setArcs(arcsResponse.data || [])
-
       } catch (error: unknown) {
         console.error('Failed to fetch timeline data:', error)
       } finally {
@@ -105,12 +95,12 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
     fetchTimelineData()
   }, [initialGamble])
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
+  const chapterInfo = initialGamble.chapter
+    ? `Chapter ${initialGamble.chapter.number}${initialGamble.chapter.title ? `: ${initialGamble.chapter.title}` : ''}`
+    : `Chapter ${initialGamble.chapterId}`
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <GambleStructuredData
         gamble={{
           id: initialGamble.id,
@@ -118,431 +108,185 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
           description: initialGamble.description
         }}
       />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
           component={Link}
           href="/gambles"
-          variant="outlined"
-          startIcon={<ArrowLeft />}
-          sx={{ mb: 3 }}
+          variant="subtle"
+          color="gray"
+          leftSection={<ArrowLeft size={18} />}
+          mb="lg"
         >
           Back to Gambles
         </Button>
 
-        {/* Enhanced Gamble Header */}
-        <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4} alignItems="center">
-              <Grid item xs={12} md={4} lg={3}>
-                <Box sx={{
-                  textAlign: 'center',
-                  position: 'relative'
-                }}>
-                  <MediaThumbnail
-                    entityType="gamble"
-                    entityId={initialGamble.id}
-                    entityName={initialGamble.name}
-                    allowCycling={true}
-                    maxWidth={280}
-                    maxHeight={320}
-                    className="gamble-thumbnail"
-                  />
-                </Box>
-              </Grid>
+        <Card withBorder radius="md" className="gambling-card" shadow="md" mb="xl">
+          <Grid gutter="xl" align="center">
+            <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
+              <Box ta="center">
+                <MediaThumbnail
+                  entityType="gamble"
+                  entityId={initialGamble.id}
+                  entityName={initialGamble.name}
+                  allowCycling
+                  maxWidth="260px"
+                  maxHeight="320px"
+                />
+              </Box>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+              <Stack gap="md">
+                <Group gap="sm" align="center">
+                  <Crown size={32} color={theme.other?.usogui?.gamble ?? theme.colors.red?.[6]} />
+                  <Title order={1}>{initialGamble.name}</Title>
+                </Group>
 
-              <Grid item xs={12} md={8} lg={9}>
-                <Box sx={{ pl: { md: 2 } }}>
-                  {/* Gamble Name with Gradient */}
-                  <Typography
-                    variant="h2"
-                    component="h1"
-                    sx={{
-                      mb: 2,
-                      fontWeight: 700,
-                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.usogui.gamble} 100%)`,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent',
-                      fontSize: { xs: '2.5rem', md: '3rem' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2
-                    }}
-                  >
-                    <Crown size={40} color={theme.palette.usogui.gamble} />
-                    {initialGamble.name}
-                  </Typography>
-
-                  {/* Key Information */}
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
-                    <Chip
-                      label={initialGamble.chapter
-                        ? `Chapter ${initialGamble.chapter.number}${initialGamble.chapter.title ? `: ${initialGamble.chapter.title}` : ''}`
-                        : `Chapter ${initialGamble.chapterId}`
-                      }
-                      color="primary"
-                      variant="filled"
-                      sx={{ fontWeight: 600 }}
-                    />
-                    {initialGamble.participants && initialGamble.participants.length > 0 && (
-                      <Chip
-                        icon={<Users size={16} />}
-                        label={`${initialGamble.participants.length} Participants`}
-                        color="secondary"
-                        variant="filled"
-                        sx={{ fontWeight: 600 }}
-                      />
-                    )}
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
+                <Group gap="sm" wrap>
+                  <Badge color="red" radius="lg" variant="filled">
+                    {chapterInfo}
+                  </Badge>
+                  {initialGamble.participants && initialGamble.participants.length > 0 && (
+                    <Badge color="violet" radius="lg" variant="filled" leftSection={<Users size={14} />}>
+                      {initialGamble.participants.length} Participant{initialGamble.participants.length !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {initialGamble.winCondition && (
+                    <Badge color="teal" radius="lg" variant="light" leftSection={<Trophy size={14} />}>
+                      Win Condition Included
+                    </Badge>
+                  )}
+                </Group>
+              </Stack>
+            </Grid.Col>
+          </Grid>
         </Card>
 
-        {/* Tab Navigation */}
-        <Card className="gambling-card" sx={{ mb: 0 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              sx={{ px: 2 }}
-            >
-              <Tab
-                label="Overview"
-                icon={<Crown size={18} />}
-                iconPosition="start"
-                sx={{ minHeight: 48 }}
-              />
-              <Tab
-                label="Timeline"
-                icon={<Calendar size={18} />}
-                iconPosition="start"
-                sx={{ minHeight: 48 }}
-                disabled={timelineEvents.length === 0}
-              />
-              <Tab
-                label="Media"
-                icon={<BookOpen size={18} />}
-                iconPosition="start"
-                sx={{ minHeight: 48 }}
-              />
-            </Tabs>
-          </Box>
+        <Card withBorder radius="md" className="gambling-card" shadow="md">
+          <Tabs value={activeTab} onChange={(value) => value && setActiveTab(value)} keepMounted={false}>
+            <Tabs.List>
+              <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
+              <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={timelineEvents.length === 0 && timelineLoading}>
+                Timeline
+              </Tabs.Tab>
+              <Tabs.Tab value="media" leftSection={<Eye size={16} />}>Media</Tabs.Tab>
+            </Tabs.List>
 
-          {/* Tab Content */}
-          <Box sx={{ p: 0 }}>
-            {/* Overview Tab */}
-            {activeTab === 0 && (
-              <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-                <Grid container spacing={4}>
-                  <Grid item xs={12} md={8}>
-                    <Card className="gambling-card" sx={{
-                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 3,
-                      boxShadow: theme.shadows[2],
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: theme.shadows[6],
-                        transform: 'translateY(-2px)'
-                      }
-                    }}>
-                      <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                        {/* About Section */}
-                        {initialGamble.description && (
-                          <>
-                            <Box sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: 3,
-                              pb: 2,
-                              borderBottom: `2px solid ${theme.palette.divider}`,
-                              position: 'relative',
-                              '&::after': {
-                                content: '""',
-                                position: 'absolute',
-                                bottom: -2,
-                                left: 0,
-                                width: '60px',
-                                height: '2px',
-                                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, transparent 100%)`
-                              }
-                            }}>
-                              <BookOpen size={24} style={{ marginRight: 12 }} color={theme.palette.primary.main} />
-                              <Typography variant="h4" sx={{
-                                fontWeight: 700,
-                                color: 'primary.main',
-                                letterSpacing: '-0.5px'
-                              }}>
-                                About
-                              </Typography>
-                            </Box>
+            <Tabs.Panel value="overview" pt="md">
+              <Grid gutter="xl">
+                <Grid.Col span={{ base: 12, lg: 8 }}>
+                  <Card withBorder radius="md" shadow="sm" mb="lg">
+                    <Stack gap="md" p="lg">
+                      <Group gap="sm">
+                        <Crown size={20} color={theme.other?.usogui?.gamble ?? theme.colors.red?.[6]} />
+                        <Title order={3}>Gamble Overview</Title>
+                      </Group>
 
-                            <Typography variant="body1" sx={{
-                              mb: 4,
-                              lineHeight: 1.6,
-                              fontSize: '1.1rem'
-                            }}>
-                              {initialGamble.description}
-                            </Typography>
-                          </>
-                        )}
+                      {initialGamble.description ? (
+                        <TimelineSpoilerWrapper chapterNumber={initialGamble.chapter?.number ?? initialGamble.chapterId}>
+                          <EnhancedSpoilerMarkdown
+                            content={initialGamble.description}
+                            className="gamble-description"
+                            enableEntityEmbeds
+                            compactEntityCards={false}
+                          />
+                        </TimelineSpoilerWrapper>
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          No description supplied for this gamble yet.
+                        </Text>
+                      )}
 
-                        {/* Rules Section */}
-                        <Box sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: 3,
-                          pb: 2,
-                          borderBottom: `2px solid ${theme.palette.divider}`,
-                          position: 'relative',
-                          '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -2,
-                            left: 0,
-                            width: '60px',
-                            height: '2px',
-                            background: `linear-gradient(90deg, ${theme.palette.usogui.gamble} 0%, transparent 100%)`
-                          }
-                        }}>
-                          <Crown size={24} style={{ marginRight: 12 }} color={theme.palette.usogui.gamble} />
-                          <Typography variant="h4" sx={{
-                            fontWeight: 700,
-                            color: 'usogui.gamble',
-                            letterSpacing: '-0.5px'
-                          }}>
-                            Rules
-                          </Typography>
-                        </Box>
-
+                      <Stack gap="sm">
+                        <Title order={4}>Rules</Title>
                         <EnhancedSpoilerMarkdown
                           content={initialGamble.rules}
                           className="gamble-rules"
-                          enableEntityEmbeds={true}
+                          enableEntityEmbeds
                           compactEntityCards={false}
                         />
+                      </Stack>
 
-                        {initialGamble.winCondition && (
-                          <>
-                            <Divider sx={{ my: 3 }} />
-                            <Box sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: 2,
-                              gap: 1
-                            }}>
-                              <Trophy size={20} color={theme.palette.secondary.main} />
-                              <Typography variant="h5" sx={{
-                                fontWeight: 600,
-                                color: 'secondary.main'
-                              }}>
-                                Win Condition
-                              </Typography>
-                            </Box>
-                            <EnhancedSpoilerMarkdown
-                              content={initialGamble.winCondition}
-                              className="gamble-win-condition"
-                              enableEntityEmbeds={true}
-                              compactEntityCards={false}
-                            />
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                      {initialGamble.winCondition && (
+                        <Stack gap="sm">
+                          <Title order={4}>Win Condition</Title>
+                          <EnhancedSpoilerMarkdown
+                            content={initialGamble.winCondition}
+                            className="gamble-win-condition"
+                            enableEntityEmbeds
+                            compactEntityCards={false}
+                          />
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Card>
+                </Grid.Col>
 
-                  <Grid item xs={12} md={4}>
-                    <Card className="gambling-card" sx={{
-                      background: `linear-gradient(135deg, ${theme.palette.usogui.gamble}08 0%, transparent 100%)`,
-                      border: `1px solid ${theme.palette.usogui.gamble}15`,
-                      borderRadius: 3,
-                      boxShadow: theme.shadows[2],
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: theme.shadows[6],
-                        transform: 'translateY(-2px)'
-                      }
-                    }}>
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h5" sx={{
-                          mb: 3,
-                          fontWeight: 700,
-                          color: 'usogui.gamble',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          letterSpacing: '-0.3px'
-                        }}>
-                          <Crown size={24} />
-                          Details
-                        </Typography>
+                <Grid.Col span={{ base: 12, lg: 4 }}>
+                  <Card withBorder radius="md" shadow="sm" style={{ position: 'sticky', top: 24 }}>
+                    <Stack gap="md" p="lg">
+                      <Title order={4}>Participants</Title>
+                      {initialGamble.participants && initialGamble.participants.length > 0 ? (
+                        <Stack gap="sm">
+                          {initialGamble.participants.map((participant) => (
+                            <Card key={participant.id} withBorder radius="md" shadow="xs" padding="md">
+                              <Stack gap={4}>
+                                <Text fw={600}>{participant.name}</Text>
+                                {participant.alternateNames && participant.alternateNames.length > 0 && (
+                                  <Group gap="xs" wrap>
+                                    {participant.alternateNames.slice(0, 2).map((name) => (
+                                      <Badge key={name} variant="outline" color="gray" radius="sm">
+                                        {name}
+                                      </Badge>
+                                    ))}
+                                  </Group>
+                                )}
+                                {participant.description && (
+                                  <Text size="xs" c="dimmed">
+                                    {participant.description}
+                                  </Text>
+                                )}
+                              </Stack>
+                            </Card>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          Participant details are not available for this gamble.
+                        </Text>
+                      )}
+                    </Stack>
+                  </Card>
+                </Grid.Col>
+              </Grid>
+            </Tabs.Panel>
 
-                        <Box sx={{ mb: 3 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            Chapter
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            component={Link}
-                            href={`/chapters/${initialGamble.chapter ? initialGamble.chapter.number : initialGamble.chapterId}`}
-                            sx={{
-                              textDecoration: 'none',
-                              color: 'primary.main',
-                              fontWeight: 600,
-                              '&:hover': { textDecoration: 'underline' }
-                            }}
-                          >
-                            {initialGamble.chapter
-                              ? `Chapter ${initialGamble.chapter.number}${initialGamble.chapter.title ? ` - ${initialGamble.chapter.title}` : ''}`
-                              : `Chapter ${initialGamble.chapterId}`
-                            }
-                          </Typography>
-                        </Box>
-
-                        {initialGamble.participants && initialGamble.participants.length > 0 && (
-                          <Box sx={{ mb: 3 }}>
-                            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                              Participants ({initialGamble.participants.length})
-                            </Typography>
-                            <TimelineSpoilerWrapper
-                              chapterNumber={initialGamble.chapter?.number || initialGamble.chapterId}
-                            >
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                {initialGamble.participants.map((participant) => (
-                                  <Box key={participant.id} sx={{
-                                    p: 2,
-                                    borderRadius: 2,
-                                    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-                                    border: `1px solid ${theme.palette.divider}`,
-                                    position: 'relative',
-                                    '&::before': {
-                                      content: '""',
-                                      position: 'absolute',
-                                      left: 0,
-                                      top: 0,
-                                      bottom: 0,
-                                      width: 3,
-                                      backgroundColor: 'usogui.gamble',
-                                      borderRadius: '0 2px 2px 0'
-                                    }
-                                  }}>
-                                    <Typography
-                                      variant="subtitle1"
-                                      component={Link}
-                                      href={`/characters/${participant.id}`}
-                                      sx={{
-                                        textDecoration: 'none',
-                                        color: 'primary.main',
-                                        fontWeight: 600,
-                                        display: 'block',
-                                        pl: 1,
-                                        '&:hover': { textDecoration: 'underline' }
-                                      }}
-                                    >
-                                      {participant.name}
-                                    </Typography>
-                                  </Box>
-                                ))}
-                              </Box>
-                            </TimelineSpoilerWrapper>
-                          </Box>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-
-            {/* Timeline Tab */}
-            {activeTab === 1 && timelineEvents.length > 0 && (
-              <Box>
+            <Tabs.Panel value="timeline" pt="md">
+              {timelineLoading ? (
+                <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: '2rem' }}>
+                  <Loader color="red" />
+                </Box>
+              ) : (
                 <GambleTimeline
-                  events={timelineEvents}
-                  arcs={arcs}
+                  events={timelineEvents as any}
+                  arcs={arcs as any}
                   gambleName={initialGamble.name}
-                  gambleChapter={initialGamble.chapter?.number || initialGamble.chapterId}
+                  chapterNumber={initialGamble.chapter?.number ?? initialGamble.chapterId}
                 />
-              </Box>
-            )}
+              )}
+            </Tabs.Panel>
 
-            {/* Media Tab */}
-            {activeTab === 2 && (
-              <Box sx={{
-                p: { xs: 2, sm: 3, md: 4 },
-                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
-              }}>
-                {/* Enhanced Media Header */}
-                <Box sx={{ mb: 4 }}>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      mb: 2,
-                      fontWeight: 700,
-                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.usogui.gamble} 100%)`,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      letterSpacing: '-0.5px'
-                    }}
-                  >
-                    <BookOpen size={32} color={theme.palette.usogui.gamble} />
-                    Gamble Media
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{
-                      fontSize: '1.1rem',
-                      fontWeight: 500,
-                      maxWidth: '600px'
-                    }}
-                  >
-                    Explore fan art, videos, and other media related to {initialGamble.name}
-                  </Typography>
-                </Box>
-
-                {/* Enhanced Media Gallery Container */}
-                <Box sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.02) 100%)`,
-                  borderRadius: 3,
-                  p: { xs: 2, md: 3 },
-                  border: `1px solid ${theme.palette.divider}`,
-                  boxShadow: theme.shadows[1],
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `radial-gradient(circle at 20% 80%, ${theme.palette.usogui.gamble}03 0%, transparent 50%)`,
-                    borderRadius: 3,
-                    pointerEvents: 'none'
-                  }
-                }}>
-                  <MediaGallery
-                    ownerType="gamble"
-                    ownerId={initialGamble.id}
-                    purpose="gallery"
-                    limit={12}
-                    showTitle={false}
-                    compactMode={false}
-                  />
-                </Box>
-              </Box>
-            )}
-          </Box>
+            <Tabs.Panel value="media" pt="md">
+              <Card withBorder radius="md" shadow="sm">
+                <Stack gap="sm" p="lg">
+                  <Title order={3}>Media Gallery</Title>
+                  <Text size="sm" c="dimmed">
+                    Explore media related to {initialGamble.name}
+                  </Text>
+                  <MediaGallery gambleId={initialGamble.id} limit={20} showTitle={false} compactMode={false} />
+                </Stack>
+              </Card>
+            </Tabs.Panel>
+          </Tabs>
         </Card>
       </motion.div>
     </Container>

@@ -12,6 +12,7 @@ import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
 import Script from 'next/script'
 import { FAQ } from '@/components/FAQ'
+import { textColors, headerColors } from '../lib/mantine-theme'
 
 export default function HomePage() {
   const theme = useMantineTheme()
@@ -20,32 +21,32 @@ export default function HomePage() {
   // Primary features - most important content
   const primaryFeatures = [
     {
-      icon: <Users className="w-8 h-8" style={{ color: theme.other?.usogui?.character || '#1976d2' }} />,
+      icon: <Users className="w-8 h-8" style={{ color: textColors.character }} />,
       title: 'Characters',
       description: 'Explore detailed profiles of all Usogui characters',
       href: '/characters',
-      color: theme.other?.usogui?.character || '#1976d2'
+      color: textColors.character
     },
     {
-      icon: <BookOpen className="w-8 h-8" style={{ color: theme.other?.usogui?.arc || '#dc004e' }} />,
+      icon: <BookOpen className="w-8 h-8" style={{ color: textColors.arc }} />,
       title: 'Story Arcs',
       description: 'Dive into the major arcs and storylines',
       href: '/arcs',
-      color: theme.other?.usogui?.arc || '#dc004e'
+      color: textColors.arc
     },
     {
-      icon: <Dices className="w-8 h-8" style={{ color: theme.other?.usogui?.gamble || '#d32f2f' }} />,
+      icon: <Dices className="w-8 h-8" style={{ color: textColors.gamble }} />,
       title: 'Gambles',
       description: 'Details on every gambling game and competition',
       href: '/gambles',
-      color: theme.other?.usogui?.gamble || '#d32f2f'
+      color: textColors.gamble
     },
     {
-      icon: <FileText className="w-8 h-8" style={{ color: theme.other?.usogui?.guide || '#388e3c' }} />,
+      icon: <FileText className="w-8 h-8" style={{ color: textColors.guide }} />,
       title: 'Guides',
       description: 'In-depth analysis and insights from the community',
       href: '/guides',
-      color: theme.other?.usogui?.guide || '#388e3c'
+      color: textColors.guide
     }
   ]
 
@@ -103,7 +104,7 @@ export default function HomePage() {
             order={1}
             style={{
               fontWeight: 'bold',
-              background: `linear-gradient(45deg, ${theme.other?.usogui?.character || '#1976d2'}, ${theme.other?.usogui?.arc || '#dc004e'})`,
+              background: `linear-gradient(45deg, ${textColors.character}, ${textColors.arc})`,
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               color: 'transparent',
@@ -130,9 +131,9 @@ export default function HomePage() {
               <Group justify="center" gap="md" style={{ flexWrap: 'wrap', marginBottom: '1rem' }}>
                 {landingData.stats.totalCharacters && (
                   <Badge
-                    leftSection={<Users className="w-4 h-4" style={{ color: theme.other?.usogui?.character || '#1976d2' }} />}
+                    leftSection={<Users className="w-4 h-4" style={{ color: textColors.character }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.character || '#1976d2', color: theme.other?.usogui?.character || '#1976d2' }}
+                    style={{ borderColor: textColors.character, color: textColors.character }}
                     size="lg"
                   >
                     {landingData.stats.totalCharacters.toLocaleString()} Characters
@@ -140,9 +141,9 @@ export default function HomePage() {
                 )}
                 {landingData.stats.totalArcs && (
                   <Badge
-                    leftSection={<BookOpen className="w-4 h-4" style={{ color: theme.other?.usogui?.arc || '#dc004e' }} />}
+                    leftSection={<BookOpen className="w-4 h-4" style={{ color: textColors.arc }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.arc || '#dc004e', color: theme.other?.usogui?.arc || '#dc004e' }}
+                    style={{ borderColor: textColors.arc, color: textColors.arc }}
                     size="lg"
                   >
                     {landingData.stats.totalArcs.toLocaleString()} Arcs
@@ -150,9 +151,9 @@ export default function HomePage() {
                 )}
                 {landingData.stats.totalEvents && (
                   <Badge
-                    leftSection={<CalendarSearch className="w-4 h-4" style={{ color: theme.other?.usogui?.event || '#f57c00' }} />}
+                    leftSection={<CalendarSearch className="w-4 h-4" style={{ color: textColors.event }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.event || '#f57c00', color: theme.other?.usogui?.event || '#f57c00' }}
+                    style={{ borderColor: textColors.event, color: textColors.event }}
                     size="lg"
                   >
                     {landingData.stats.totalEvents.toLocaleString()} Events
@@ -160,9 +161,9 @@ export default function HomePage() {
                 )}
                 {landingData.stats.totalGuides && (
                   <Badge
-                    leftSection={<FileText className="w-4 h-4" style={{ color: theme.other?.usogui?.guide || '#388e3c' }} />}
+                    leftSection={<FileText className="w-4 h-4" style={{ color: textColors.guide }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.guide || '#388e3c', color: theme.other?.usogui?.guide || '#388e3c' }}
+                    style={{ borderColor: textColors.guide, color: textColors.guide }}
                     size="lg"
                   >
                     {landingData.stats.totalGuides.toLocaleString()} Guides
@@ -170,9 +171,9 @@ export default function HomePage() {
                 )}
                 {landingData.stats.totalGambles && (
                   <Badge
-                    leftSection={<Dices className="w-4 h-4" style={{ color: theme.other?.usogui?.gamble || '#d32f2f' }} />}
+                    leftSection={<Dices className="w-4 h-4" style={{ color: textColors.gamble }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.gamble || '#d32f2f', color: theme.other?.usogui?.gamble || '#d32f2f' }}
+                    style={{ borderColor: textColors.gamble, color: textColors.gamble }}
                     size="lg"
                   >
                     {landingData.stats.totalGambles.toLocaleString()} Gambles
@@ -180,9 +181,9 @@ export default function HomePage() {
                 )}
                 {landingData.stats.totalMedia && (
                   <Badge
-                    leftSection={<Image className="w-4 h-4" style={{ color: theme.other?.usogui?.media || '#7b1fa2' }} />}
+                    leftSection={<Image className="w-4 h-4" style={{ color: textColors.media }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.media || '#7b1fa2', color: theme.other?.usogui?.media || '#7b1fa2' }}
+                    style={{ borderColor: textColors.media, color: textColors.media }}
                     size="lg"
                   >
                     {landingData.stats.totalMedia.toLocaleString()} Media
@@ -190,9 +191,9 @@ export default function HomePage() {
                 )}
                 {landingData.stats.totalUsers && (
                   <Badge
-                    leftSection={<Shield className="w-4 h-4" style={{ color: theme.other?.usogui?.purple || '#7c3aed' }} />}
+                    leftSection={<Shield className="w-4 h-4" style={{ color: textColors.info }} />}
                     variant="outline"
-                    style={{ borderColor: theme.other?.usogui?.purple || '#7c3aed', color: theme.other?.usogui?.purple || '#7c3aed' }}
+                    style={{ borderColor: textColors.info, color: textColors.info }}
                     size="lg"
                   >
                     {landingData.stats.totalUsers.toLocaleString()} Users
@@ -217,7 +218,7 @@ export default function HomePage() {
           <Box style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <Group justify="center" gap="xs" style={{ marginBottom: '1rem' }}>
               <Sparkles className="w-6 h-6" color={theme.colors?.red?.[5] || '#e11d48'} />
-              <Title order={2} style={{ fontWeight: 'bold' }}>
+              <Title order={2} style={{ fontWeight: 'bold', color: headerColors.h2 }}>
                 Start Exploring
               </Title>
             </Group>
@@ -252,7 +253,7 @@ export default function HomePage() {
                       <Box style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
                         {feature.icon}
                       </Box>
-                      <Title order={3} style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                      <Title order={3} style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: headerColors.h3 }}>
                         {feature.title}
                       </Title>
                       <Text size="sm" c="dimmed" style={{ marginBottom: '1.5rem' }}>
@@ -286,7 +287,7 @@ export default function HomePage() {
               <Box style={{ textAlign: 'center', marginBottom: '2rem' }}>
                 <Group justify="center" gap="xs" style={{ marginBottom: '1rem' }}>
                   <TrendingUp className="w-6 h-6" color={theme.colors?.red?.[5] || '#e11d48'} />
-                  <Title order={2} style={{ fontWeight: 'bold' }}>
+                  <Title order={2} style={{ fontWeight: 'bold', color: headerColors.h2 }}>
                     What&apos;s Popular
                   </Title>
                 </Group>
@@ -352,11 +353,11 @@ export default function HomePage() {
           >
             <Group justify="center" gap="md" style={{ marginBottom: '1rem' }}>
               <MessageCircle className="w-8 h-8" />
-              <Title order={2} style={{ fontWeight: 'bold' }}>
+              <Title order={2} style={{ fontWeight: 'bold', color: '#ffffff' }}>
                 Join Our Discord Community
               </Title>
             </Group>
-            <Text size="xl" style={{ opacity: 0.9, marginBottom: '2rem', fontWeight: 'normal' }}>
+            <Text size="xl" style={{ opacity: 0.9, marginBottom: '2rem', fontWeight: 'normal' }} c="#ffffff">
               Connect with fellow Usogui fans, discuss theories, share insights, and stay updated on the latest content
             </Text>
 
@@ -364,10 +365,10 @@ export default function HomePage() {
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <Box style={{ textAlign: 'center' }}>
                   <Users className="w-6 h-6" style={{ opacity: 0.9, margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <Text size="sm" style={{ fontWeight: 'bold' }}>
+                  <Text size="sm" style={{ fontWeight: 'bold' }} c="#ffffff">
                     Active Community
                   </Text>
-                  <Text size="xs" style={{ opacity: 0.8 }}>
+                  <Text size="xs" style={{ opacity: 0.8 }} c="#ffffff">
                     Chat with passionate fans
                   </Text>
                 </Box>
@@ -375,10 +376,10 @@ export default function HomePage() {
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <Box style={{ textAlign: 'center' }}>
                   <Sparkles className="w-6 h-6" style={{ opacity: 0.9, margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <Text size="sm" style={{ fontWeight: 'bold' }}>
+                  <Text size="sm" style={{ fontWeight: 'bold' }} c="#ffffff">
                     Latest Updates
                   </Text>
-                  <Text size="xs" style={{ opacity: 0.8 }}>
+                  <Text size="xs" style={{ opacity: 0.8 }} c="#ffffff">
                     Be first to know about new content
                   </Text>
                 </Box>
@@ -386,10 +387,10 @@ export default function HomePage() {
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <Box style={{ textAlign: 'center' }}>
                   <BookOpen className="w-6 h-6" style={{ opacity: 0.9, margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <Text size="sm" style={{ fontWeight: 'bold' }}>
+                  <Text size="sm" style={{ fontWeight: 'bold' }} c="#ffffff">
                     Theory Discussions
                   </Text>
-                  <Text size="xs" style={{ opacity: 0.8 }}>
+                  <Text size="xs" style={{ opacity: 0.8 }} c="#ffffff">
                     Dive deep into Usogui lore
                   </Text>
                 </Box>

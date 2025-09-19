@@ -1,14 +1,16 @@
 import React from 'react'
 import {
-  Container,
-  Typography,
+  Badge,
   Box,
-  Chip,
+  Button,
   Card,
-  CardContent,
+  Container,
   Grid,
-  Button
-} from '@mui/material'
+  Group,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -17,12 +19,10 @@ import { CharacterStructuredData } from '../../../components/StructuredData'
 import type { Arc, Event, Gamble, Guide, Quote } from '../../../types'
 import { GuideStatus } from '../../../types'
 import { Metadata } from 'next'
-
-// Import client components dynamically
 import dynamic from 'next/dynamic'
 
 const CharacterPageClient = dynamic(() => import('./CharacterPageClient'), {
-  loading: () => <Box sx={{ p: 2 }}>Loading...</Box>
+  loading: () => <Box py="md">Loading...</Box>
 })
 
 interface Character {
@@ -54,12 +54,10 @@ interface CharacterPageData {
   arcs: Arc[]
 }
 
-// Server-side API functions
 async function fetchCharacterData(characterId: number): Promise<CharacterPageData> {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
   try {
-    // Fetch character and related data in parallel
     const [characterRes, gamblesRes, eventsRes, guidesRes, quotesRes, allArcsRes] = await Promise.all([
       fetch(`${API_BASE_URL}/characters/${characterId}`, { next: { revalidate: 300 } }),
       fetch(`${API_BASE_URL}/characters/${characterId}/gambles?limit=5`, { next: { revalidate: 300 } }),
@@ -82,8 +80,9 @@ async function fetchCharacterData(characterId: number): Promise<CharacterPageDat
       allArcsRes.ok ? allArcsRes.json() : { data: [] }
     ])
 
-    // Filter arcs to only those that have events for this character
-    const characterArcIds = new Set(eventsData.data?.map((event: Event) => (event as Event & { arcId?: number }).arcId).filter(Boolean) || [])
+    const characterArcIds = new Set(
+      eventsData.data?.map((event: Event & { arcId?: number }) => event.arcId).filter(Boolean) || []
+    )
     const filteredArcs = allArcsData.data?.filter((arc: Arc) => characterArcIds.has(arc.id)) || []
 
     return {
@@ -100,7 +99,6 @@ async function fetchCharacterData(characterId: number): Promise<CharacterPageDat
   }
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const characterId = parseInt(id)
@@ -146,7 +144,6 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
   const { id } = await params
   const characterId = parseInt(id)
 
-  // Validate that ID is a valid number
   if (isNaN(characterId) || characterId <= 0) {
     notFound()
   }
@@ -158,12 +155,13 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
   } catch (error) {
     console.error('Error fetching character:', error)
     notFound()
+    return // This ensures TypeScript knows the function exits here
   }
 
   const { character, gambles, events, guides, quotes, arcs } = data
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <CharacterStructuredData
         character={{
           id: character.id,
@@ -175,207 +173,156 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
         }}
       />
 
-      <Button
-        component={Link}
-        href="/characters"
-        startIcon={<ArrowLeft />}
-        sx={{ mb: 3 }}
-      >
-        Back to Characters
-      </Button>
+      <Stack gap="xl">
+        <Button
+          component={Link}
+          href="/characters"
+          variant="subtle"
+          color="gray"
+          leftSection={<ArrowLeft size={18} />}
+          maw={200}
+        >
+          Back to Characters
+        </Button>
 
-      {/* Server-rendered character header */}
-      <CharacterHeader
-        character={character}
-        arcs={arcs}
-        gambles={gambles}
-        quotes={quotes}
-      />
+        <CharacterHeader character={character} arcs={arcs} gambles={gambles} quotes={quotes} />
 
-      {/* Client-side interactive tabs and content */}
-      <CharacterPageClient
-        character={character}
-        gambles={gambles}
-        events={events}
-        guides={guides}
-        quotes={quotes}
-        arcs={arcs}
-      />
+        <CharacterPageClient
+          character={character}
+          gambles={gambles}
+          events={events}
+          guides={guides}
+          quotes={quotes}
+          arcs={arcs}
+        />
+      </Stack>
     </Container>
   )
 }
 
-// Server-rendered character header component
 function CharacterHeader({ character, arcs, gambles, quotes }: {
   character: Character
   arcs: Arc[]
   gambles: Gamble[]
   quotes: Quote[]
 }) {
+
   return (
-    <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
-      <CardContent sx={{ p: 4 }}>
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} md={4} lg={3}>
-            <Box sx={{
-              textAlign: 'center',
-              position: 'relative'
-            }}>
-              <MediaThumbnail
-                entityType="character"
-                entityId={character.id}
-                entityName={character.name}
-                allowCycling={true}
-                maxWidth={280}
-                maxHeight={320}
-                className="character-thumbnail"
-              />
-            </Box>
-          </Grid>
+    <Card withBorder radius="md" className="gambling-card" shadow="md">
+      <Grid gutter="xl" align="center">
+        <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
+          <Box ta="center">
+            <MediaThumbnail
+              entityType="character"
+              entityId={character.id}
+              entityName={character.name}
+              allowCycling
+              maxWidth="260px"
+              maxHeight="320px"
+            />
+          </Box>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+          <Stack gap="lg">
+            <Stack gap={4}>
+              <Title order={1}>{character.name}</Title>
+              {character.description && (
+                <Text size="sm" c="dimmed">
+                  {character.description.substring(0, 160)}
+                  {character.description.length > 160 ? '...' : ''}
+                </Text>
+              )}
+            </Stack>
 
-          <Grid item xs={12} md={8} lg={9}>
-            <Box sx={{ pl: { md: 2 } }}>
-              {/* Character Name */}
-              <Typography
-                variant="h2"
-                component="h1"
-                sx={{
-                  mb: 2,
-                  fontWeight: 700,
-                  fontSize: { xs: '2.5rem', md: '3rem' }
-                }}
+            {character.alternateNames && character.alternateNames.length > 0 && (
+              <Stack gap={4}>
+                <Text size="sm" c="dimmed">
+                  Also known as:
+                </Text>
+                <Group gap="xs" wrap>
+                  {character.alternateNames.map((name) => (
+                    <Badge key={name} variant="outline" color="violet" radius="xl">
+                      {name}
+                    </Badge>
+                  ))}
+                </Group>
+              </Stack>
+            )}
+
+            {character.organizations && character.organizations.length > 0 && (
+              <Stack gap={4}>
+                <Text size="sm" c="dimmed">
+                  Organization Affiliations:
+                </Text>
+                <Group gap="xs" wrap>
+                  {character.organizations.map((organization) => (
+                    <Badge
+                      key={organization.id}
+                      component={Link}
+                      href={`/organizations/${organization.id}`}
+                      color="red"
+                      radius="xl"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      {organization.name}
+                    </Badge>
+                  ))}
+                </Group>
+              </Stack>
+            )}
+
+            {character.firstAppearanceChapter && (
+              <Card withBorder radius="md" shadow="xs" padding="md" maw={280}>
+                <Stack gap={4}>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                    First Appearance
+                  </Text>
+                  <Text
+                    component={Link}
+                    href={`/chapters/${character.firstAppearanceChapter}`}
+                    fw={600}
+                    size="lg"
+                    style={{ textDecoration: 'none', color: '#f87171' }}
+                  >
+                    Chapter {character.firstAppearanceChapter}
+                  </Text>
+                </Stack>
+              </Card>
+            )}
+
+            <Group gap="sm" wrap>
+              <Badge
+                component={Link}
+                href={`/arcs?character=${character.name}`}
+                color="red"
+                radius="lg"
+                style={{ textDecoration: 'none' }}
               >
-                {character.name}
-              </Typography>
-
-              {/* Alternate Names */}
-              {character.alternateNames && character.alternateNames.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Also known as:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {character.alternateNames.map((name) => (
-                      <Chip
-                        key={name}
-                        label={name}
-                        size="medium"
-                        variant="outlined"
-                        color="secondary"
-                        sx={{
-                          borderRadius: '20px',
-                          fontSize: '0.875rem'
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-
-              {/* Organization Affiliations */}
-              {character.organizations && character.organizations.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Organization Affiliations:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {character.organizations.map((organization) => (
-                      <Chip
-                        key={organization.id}
-                        label={organization.name}
-                        size="medium"
-                        variant="filled"
-                        component={Link}
-                        href={`/organizations/${organization.id}`}
-                        clickable
-                        sx={{
-                          backgroundColor: '#e91e63',
-                          color: 'white',
-                          borderRadius: '20px',
-                          fontSize: '0.875rem',
-                          textDecoration: 'none'
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-
-              {/* Key Information Cards */}
-              {character.firstAppearanceChapter && (
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Card sx={{ p: 2 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        First Appearance
-                      </Typography>
-                      <Typography
-                        variant="h6"
-                        component={Link}
-                        href={`/chapters/${character.firstAppearanceChapter}`}
-                        sx={{
-                          textDecoration: 'none',
-                          color: 'primary.main',
-                          fontWeight: 600,
-                          display: 'block',
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
-                      >
-                        Chapter {character.firstAppearanceChapter}
-                      </Typography>
-                    </Card>
-                  </Grid>
-                </Grid>
-              )}
-
-              {/* Stats Chips */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                <Chip
-                  label={`${arcs.length} Arc${arcs.length !== 1 ? 's' : ''}`}
-                  size="medium"
-                  variant="filled"
-                  color="primary"
-                  component={Link}
-                  href={`/arcs?character=${character.name}`}
-                  clickable
-                  sx={{
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    '& .MuiChip-label': { px: 2 }
-                  }}
-                />
-                <Chip
-                  label={`${gambles.length} Gamble${gambles.length !== 1 ? 's' : ''}`}
-                  size="medium"
-                  variant="filled"
-                  color="secondary"
-                  component={Link}
-                  href={`/gambles?character=${character.name}`}
-                  clickable
-                  sx={{
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    '& .MuiChip-label': { px: 2 }
-                  }}
-                />
-                <Chip
-                  label={`${quotes.length} Quote${quotes.length !== 1 ? 's' : ''}`}
-                  size="medium"
-                  variant="filled"
-                  component={Link}
-                  href={`/quotes?characterId=${character.id}`}
-                  clickable
-                  sx={{
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    '& .MuiChip-label': { px: 2 }
-                  }}
-                />
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
+                {arcs.length} Arc{arcs.length !== 1 ? 's' : ''}
+              </Badge>
+              <Badge
+                component={Link}
+                href={`/gambles?character=${character.name}`}
+                color="violet"
+                radius="lg"
+                style={{ textDecoration: 'none' }}
+              >
+                {gambles.length} Gamble{gambles.length !== 1 ? 's' : ''}
+              </Badge>
+              <Badge
+                component={Link}
+                href={`/quotes?characterId=${character.id}`}
+                color="yellow"
+                variant="light"
+                radius="lg"
+                style={{ textDecoration: 'none' }}
+              >
+                {quotes.length} Quote{quotes.length !== 1 ? 's' : ''}
+              </Badge>
+            </Group>
+          </Stack>
+        </Grid.Col>
+      </Grid>
     </Card>
   )
 }

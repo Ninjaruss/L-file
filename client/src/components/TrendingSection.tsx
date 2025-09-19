@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Card, Grid, Badge, Avatar, Group, Text, useMantineTheme } from '@mantine/core'
+import { Box, Card, Grid, Badge, Avatar, Group, Text, useMantineTheme, rgba } from '@mantine/core'
 import { TrendingUp, Eye, Users, BookOpen, Dices, CalendarSearch } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -32,7 +32,7 @@ export function TrendingSection({ title, items, type, maxItems = 3 }: TrendingSe
 
   const withAlpha = (color: string, alpha: number, fallback: string) => {
     try {
-      return theme.fn?.rgba?.(color, alpha) ?? fallback
+      return rgba(color, alpha)
     } catch (error) {
       return fallback
     }

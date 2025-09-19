@@ -12,7 +12,6 @@ import {
   Skeleton,
   rem,
   useMantineTheme,
-  Alert,
   rgba
 } from '@mantine/core'
 import {
@@ -136,26 +135,26 @@ const EntityCard: React.FC<EntityCardProps> = ({
   )
 
   const renderMeta = () => {
-    if (!data) return null
+    if (!data?.data) return null
 
-    if (type === 'character' && data.organization) {
-      return data.organization
+    if (type === 'character' && data.data.organization) {
+      return data.data.organization
     }
 
-    if (type === 'arc' && data.startChapter && data.endChapter) {
-      return `Ch. ${data.startChapter}-${data.endChapter}`
+    if (type === 'arc' && data.data.startChapter && data.data.endChapter) {
+      return `Ch. ${data.data.startChapter}-${data.data.endChapter}`
     }
 
-    if (type === 'gamble' && data.chapterNumber) {
-      return `Ch. ${data.chapterNumber}`
+    if (type === 'gamble' && data.data.chapterNumber) {
+      return `Ch. ${data.data.chapterNumber}`
     }
 
-    if (type === 'chapter' && data.number) {
-      return `#${data.number}`
+    if (type === 'chapter' && data.data.number) {
+      return `#${data.data.number}`
     }
 
-    if (type === 'volume' && data.number) {
-      return `Vol. ${data.number}`
+    if (type === 'volume' && data.data.number) {
+      return `Vol. ${data.data.number}`
     }
 
     return null
@@ -193,7 +192,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
     </Group>
   )
 
-  const renderAvatar = (label: string) => (
+  const renderAvatar = () => (
     <Avatar size={compact ? 24 : 32} radius="xl" styles={{ root: { backgroundColor: accentColor, color: '#ffffff' } }}>
       {ICON_MAP[type]}
     </Avatar>
@@ -227,7 +226,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
                 />
               </Box>
             ) : (
-              renderAvatar(finalDisplayText)
+              renderAvatar()
             )}
           </Box>
         )}

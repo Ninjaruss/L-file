@@ -65,7 +65,7 @@ Special cases:
 
 3. **Shared Atom Migration**
    - Replace `Avatar`, `Chip`, `Badge`, `Tooltip`, `IconButton` usage across shared components (`client/src/components/**`) with Mantine equivalents. Create compatibility wrappers if needed (e.g., `MantineTooltip` replicating `Tooltip` props) to minimize churn.
-  - Refactor `FloatingProgressIndicator` to Mantine `ActionIcon`, `Modal`, `NumberInput`, `Progress`. Ensure keyboard interactions remain identical.
+   - Refactor `FloatingProgressIndicator` to Mantine `ActionIcon`, `Modal`, `NumberInput`, `Progress`. Ensure keyboard interactions remain identical.
      - ✅ Completed – component now relies solely on Mantine primitives (`FloatingProgressIndicator.tsx`) while preserving gradient styling, keyboard controls, and success feedback.
      - ✅ `UserProfileImage` / `AuthorProfileImage` now use Mantine `Avatar`, maintaining fallback colors and error handling.
      - ✅ `CustomRoleDisplay`, `BadgeDisplay`, and `GambleChip` switched to Mantine `Badge`/`Tooltip` styling while keeping gradients, hover states, and role hierarchy.
@@ -97,3 +97,78 @@ Special cases:
 - Maintain a migration checklist issue in project management tool referencing this playbook.
 - Create Storybook stories (or Mantine equivalent) for migrated components to enable quick visual QA.
 - Schedule phased deployments with feature flags where risk of regression is high (media gallery, progress modal).
+
+## 7. Risk Register & Mitigations
+- **React Admin coupling**: Admin views depend on MUI + React Admin theme contracts. *Mitigation*: evaluate Mantine-compatible RA skin early; if the switch is delayed, sandbox admin bundle behind route-level code splitting so the public Mantine UI ships independently.
+- **Global style bleed**: Legacy `sx` inline styles and global CSS could override Mantine classNames. *Mitigation*: during each component migration, remove `sx` usage, move shared tokens to theme, and run Percy/Chromatic diffs to spot regressions.
+- **Accessibility regressions**: Mantine defaults differ from MUI in aria attributes (`aria-labelledby`, focus trapping). *Mitigation*: add automated axe scans in CI and extend RTL tests to assert focus order after every modal/menu swap.
+- **Performance + bundle surprises**: Lazy-loaded Mantine modules may increase route splits if tree shaking misconfigured. *Mitigation*: audit webpack/Vite config, ensure ES modules imports (`mantine/es`), and track bundle analyzer reports per phase.
+- **Schedule drift**: Migration touches high-traffic pages, risking bottlenecks. *Mitigation*: run phased milestones with clear exit criteria, maintain daily standup board, and ensure at least one spare engineer can swarm blockers.
+- **Design drift**: Mantine components ship different paddings/shadows. *Mitigation*: keep Mantine theme tokens in sync with Figma spec, and require design review sign-off before merging high-visibility pages.
+
+## 8. Reference Patterns & Checklists
+
+### 8.1 Spacing Conversion Quick Reference
+| MUI `spacing()` | Pixels | Mantine equivalent |
+| --- | --- | --- |
+| `spacing(0.5)` | 4px | `rem(4)` |
+| `spacing(1)` | 8px | `rem(8)` |
+| `spacing(1.5)` | 12px | `rem(12)` |
+| `spacing(2)` | 16px | `rem(16)` |
+| `spacing(3)` | 24px | `rem(24)` |
+| `spacing(4)` | 32px | `rem(32)` |
+| `spacing(5)` | 40px | `rem(40)` |
+| `spacing(6)` | 48px | `rem(48)` |
+
+### 8.2 Common Replacement Snippets
+```tsx
+// Box with sx spacing → Mantine Stack
+import { Stack } from '@mantine/core';
+
+// Before
+<Box sx={{ py: 4, gap: 2 }}>
+  <Card>...</Card>
+</Box>
+
+// After
+<Stack py={32} gap={16} styles={(theme) => ({
+  paddingInline: theme.spacing.xl,
+})}>
+  <Card>...</Card>
+</Stack>
+```
+```tsx
+// MUI Modal → Mantine Modal
+<Modal
+  opened={opened}
+  onClose={handleClose}
+  centered
+  transitionProps={{ transition: 'slide-up', duration: 225 }}
+  overlayProps={{ color: 'rgba(10, 10, 10, 0.75)', blur: 6 }}
+  radius="md"
+  classNames={{ body: classes.body }}
+>
+  {children}
+</Modal>
+```
+
+### 8.3 Rollout Checklist Template
+- [ ] Component parity verified by design owner.
+- [ ] Accessibility audit (axe + manual keyboard) passed.
+- [ ] Responsive snapshots recorded for `sm`, `md`, `lg` breakpoints.
+- [ ] No remaining `@mui` imports or typings for the component/page.
+- [ ] Documentation updated (`docs/CHANGELOG.md` + inline story).
+- [ ] Feature flagged and monitored post-deploy.
+
+## 9. Open Questions & Follow-Ups
+- Do we maintain a temporary design token bridge for admin, or accelerate admin rewrite to avoid dual theming? Decision needed before Phase 3.
+- Should we adopt Mantine `@mantine/form` or continue with current form state library? Audit existing validation utilities before forms migration.
+- Is Storybook the preferred preview surface, or do we invest in Mantine Playroom-style demos? Align with design/dev workflow before building new stories.
+- Confirm production monitoring hooks (Sentry breadcrumbs, analytics events) survive component swaps—might require updating instrumentation wrappers.
+
+## 10. Appendix: Useful Commands
+- `rg "@mui" client/src` – locate remaining MUI imports by file.
+- `rg "sx=" client/src` – find inline style props to convert to Mantine `style`/`styles` props.
+- `yarn depcheck --ignore-dirs=docs` – confirm unused MUI dependencies after each phase.
+- `yarn lint --max-warnings=0` – ensure lint passes with restricted MUI imports.
+- `yarn test src/components/FloatingProgressIndicator.test.tsx` – rerun modal accessibility tests after Mantine conversion tweaks.

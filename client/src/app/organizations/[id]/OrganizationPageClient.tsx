@@ -2,18 +2,22 @@
 
 import React from 'react'
 import {
-  Container,
-  Typography,
+  Anchor,
+  Badge,
   Box,
-  Chip,
-  Card,
-  CardContent,
-  Grid,
   Button,
-  Divider
-} from '@mui/material'
+  Card,
+  Container,
+  Divider,
+  Grid,
+  Group,
+  Stack,
+  Text,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
 import { ArrowLeft, Users, Shield, Crown } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
@@ -46,151 +50,120 @@ interface OrganizationPageClientProps {
 export default function OrganizationPageClient({
   initialOrganization,
   initialMembers,
-  initialEvents,
-  initialGambles
+  initialEvents: _initialEvents,
+  initialGambles: _initialGambles
 }: OrganizationPageClientProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
+  const accentRed = theme.other?.usogui?.red ?? theme.colors.red[5]
+  const accentPurple = theme.other?.usogui?.purple ?? theme.colors.purple[5]
+  const dimmedColor = 'rgba(255, 255, 255, 0.65)'
+  const headingGradient = `linear-gradient(135deg, ${theme.white} 0%, ${accentPurple} 100%)`
 
-  // Track page view
   usePageView('organization', initialOrganization.id.toString(), true)
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Button
-          component={Link}
-          href="/organizations"
-          startIcon={<ArrowLeft />}
-          sx={{ mb: 3 }}
-        >
+        <Button component={Link} href="/organizations" variant="light" color="red" leftSection={<ArrowLeft size={16} />} mb="md">
           Back to Organizations
         </Button>
 
-        {/* Enhanced Organization Header */}
-        <Card className="gambling-card" sx={{ mb: 4, overflow: 'visible' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4} alignItems="center">
-              <Grid item xs={12} md={4} lg={3}>
-                <Box sx={{
-                  textAlign: 'center',
-                  position: 'relative'
-                }}>
-                  <MediaThumbnail
-                    entityType="organization"
-                    entityId={initialOrganization.id}
-                    entityName={initialOrganization.name}
-                    allowCycling={true}
-                    maxWidth={280}
-                    maxHeight={320}
-                    className="organization-thumbnail"
-                  />
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={8} lg={9}>
-                <Box sx={{ pl: { md: 2 } }}>
-                  {/* Organization Name with Gradient */}
-                  <Typography
-                    variant="h2"
-                    component="h1"
-                    sx={{
-                      mb: 2,
-                      fontWeight: 700,
-                      background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.secondary.main} 100%)`,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent',
-                      fontSize: { xs: '2.5rem', md: '3rem' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2
-                    }}
-                  >
-                    <Shield size={40} color={theme.palette.secondary.main} />
-                    {initialOrganization.name}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
+        <Card className="gambling-card" shadow="lg" radius="md" withBorder p="xl" mb="xl">
+          <Grid align="center" gutter="xl">
+            <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
+              <Box pos="relative" ta="center">
+                <MediaThumbnail
+                  entityType="organization"
+                  entityId={initialOrganization.id}
+                  entityName={initialOrganization.name}
+                  allowCycling
+                  maxWidth={280}
+                  maxHeight={320}
+                  className="organization-thumbnail"
+                />
+              </Box>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+              <Title
+                order={1}
+                component="h1"
+                style={{
+                  marginBottom: theme.spacing.sm,
+                  fontWeight: 700,
+                  backgroundImage: headingGradient,
+                  WebkitBackgroundClip: 'text',
+                  color: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: rem(12)
+                }}
+              >
+                <Shield size={40} color={accentPurple} />
+                {initialOrganization.name}
+              </Title>
+            </Grid.Col>
+          </Grid>
         </Card>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
+        <Grid gutter="xl">
+          <Grid.Col span={{ base: 12, md: 8 }}>
             {initialOrganization.description && (
-              <Card className="gambling-card">
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
+              <Card className="gambling-card" shadow="lg" radius="md" withBorder p="xl">
+                <Stack gap="md">
+                  <Title order={3} component="h2">
                     About {initialOrganization.name}
-                  </Typography>
-                  <TimelineSpoilerWrapper
-                    chapterNumber={1}
-                  >
+                  </Title>
+                  <TimelineSpoilerWrapper chapterNumber={1}>
                     <EnhancedSpoilerMarkdown
                       content={initialOrganization.description}
                       className="organization-description"
-                      enableEntityEmbeds={true}
+                      enableEntityEmbeds
                       compactEntityCards={false}
                     />
                   </TimelineSpoilerWrapper>
-                </CardContent>
+                </Stack>
               </Card>
             )}
 
-            {/* Members Section */}
             {initialMembers.length > 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h5" sx={{
-                      fontWeight: 700,
-                      color: 'primary.main',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      <Users size={24} />
-                      Organization Members ({initialMembers.length})
-                    </Typography>
+              <Card className="gambling-card" shadow="lg" radius="md" withBorder p="xl" mt="xl">
+                <Stack gap="lg">
+                  <Group justify="space-between" align="center">
+                    <Group gap="sm" align="center">
+                      <Users size={24} color={accentRed} />
+                      <Title order={3} size="h4" c={accentRed}>
+                        Organization Members ({initialMembers.length})
+                      </Title>
+                    </Group>
                     <Button
                       component={Link}
-                      href={`/characters?organization=${initialOrganization.name}`}
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      sx={{ borderRadius: '20px' }}
+                      href={`/characters?organization=${encodeURIComponent(initialOrganization.name)}`}
+                      variant="outline"
+                      size="sm"
+                      color="red"
+                      radius="xl"
                     >
                       View All Characters
                     </Button>
-                  </Box>
-                  <Grid container spacing={3}>
+                  </Group>
+
+                  <Grid gutter="lg">
                     {initialMembers.map((member) => (
-                      <Grid item xs={12} sm={6} md={4} key={member.id}>
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'translateY(-4px)',
-                              boxShadow: theme.shadows[8],
-                              borderColor: 'primary.main'
-                            }
-                          }}
-                        >
-                          <CardContent sx={{ p: 0 }}>
-                            {/* Character Thumbnail */}
-                            <Box sx={{
-                              position: 'relative',
-                              width: '100%',
-                              height: 200,
-                              overflow: 'hidden',
-                              borderTopLeftRadius: 'inherit',
-                              borderTopRightRadius: 'inherit'
-                            }}>
+                      <Grid.Col key={member.id} span={{ base: 12, sm: 6, md: 4 }}>
+                        <motion.div whileHover={{ y: -4, transition: { duration: 0.2 } }}>
+                          <Card withBorder radius="md" shadow="md" style={{ overflow: 'hidden' }}>
+                            <Box
+                              style={{
+                                position: 'relative',
+                                width: '100%',
+                                height: 200,
+                                overflow: 'hidden'
+                              }}
+                            >
                               <MediaThumbnail
                                 entityType="character"
                                 entityId={member.id}
@@ -201,186 +174,160 @@ export default function OrganizationPageClient({
                                 className="character-thumbnail"
                               />
                             </Box>
-
-                            {/* Character Info */}
-                            <Box sx={{ p: 3 }}>
-                              <Typography
-                                variant="h6"
+                            <Stack gap="sm" px="md" py="md">
+                              <Anchor
                                 component={Link}
                                 href={`/characters/${member.id}`}
-                                sx={{
-                                  textDecoration: 'none',
-                                  color: 'primary.main',
-                                  fontWeight: 600,
-                                  display: 'block',
-                                  mb: 1,
-                                  '&:hover': { textDecoration: 'underline' }
-                                }}
+                                fw={600}
+                                c={accentRed}
+                                size="lg"
+                                style={{ textDecoration: 'none' }}
                               >
                                 {member.name}
-                              </Typography>
+                              </Anchor>
 
                               {member.alternateNames && member.alternateNames.length > 0 && (
-                                <Box sx={{ mb: 2 }}>
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                <Stack gap={4}>
+                                  <Text size="xs" c={dimmedColor} fw={500}>
                                     Also known as:
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                  </Text>
+                                  <Group gap={6} wrap="wrap">
                                     {member.alternateNames.slice(0, 2).map((name: string, index: number) => (
-                                      <Chip
+                                      <Badge
                                         key={index}
-                                        label={name}
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{
-                                          fontSize: '0.7rem',
-                                          height: '20px',
-                                          borderRadius: '10px'
-                                        }}
-                                      />
+                                        variant="outline"
+                                        color="purple"
+                                        size="sm"
+                                        radius="xl"
+                                      >
+                                        {name}
+                                      </Badge>
                                     ))}
                                     {member.alternateNames.length > 2 && (
-                                      <Chip
-                                        label={`+${member.alternateNames.length - 2} more`}
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{
-                                          fontSize: '0.7rem',
-                                          height: '20px',
-                                          borderRadius: '10px',
-                                          opacity: 0.7
-                                        }}
-                                      />
+                                      <Badge
+                                        variant="outline"
+                                        color="purple"
+                                        size="sm"
+                                        radius="xl"
+                                        style={{ opacity: 0.75 }}
+                                      >
+                                        +{member.alternateNames.length - 2} more
+                                      </Badge>
                                     )}
-                                  </Box>
-                                </Box>
+                                  </Group>
+                                </Stack>
                               )}
 
                               {member.firstAppearanceChapter && (
-                                <Box sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  mt: 1
-                                }}>
-                                  <Typography variant="caption" color="text.secondary">
+                                <Group gap="xs" align="center">
+                                  <Text size="xs" c={dimmedColor}>
                                     First appeared in Chapter {member.firstAppearanceChapter}
-                                  </Typography>
-                                </Box>
+                                  </Text>
+                                </Group>
                               )}
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
+                            </Stack>
+                          </Card>
+                        </motion.div>
+                      </Grid.Col>
                     ))}
                   </Grid>
-                </CardContent>
+                </Stack>
               </Card>
             )}
 
-            {/* No Members Message */}
             {initialMembers.length === 0 && (
-              <Card className="gambling-card" sx={{ mt: 4 }}>
-                <CardContent>
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Users size={48} color={theme.palette.text.secondary} style={{ opacity: 0.5 }} />
-                    <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
-                      No Known Members
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
-                      This organization currently has no associated character members in our database.
-                      Member relationships may be added as the story progresses.
-                    </Typography>
-                  </Box>
-                </CardContent>
+              <Card className="gambling-card" shadow="lg" radius="md" withBorder p="xl" mt="xl">
+                <Stack align="center" gap="sm">
+                  <Users size={48} color={dimmedColor} style={{ opacity: 0.5 }} />
+                  <Title order={4} c={dimmedColor}>
+                    No Known Members
+                  </Title>
+                  <Text size="sm" c={dimmedColor} ta="center" maw={400}>
+                    This organization currently has no associated character members in our database. Member relationships may be added
+                    as the story progresses.
+                  </Text>
+                </Stack>
               </Card>
             )}
 
-            {/* Media Gallery Section */}
-            <Card className="gambling-card" sx={{ mt: 4 }}>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>
+            <Card className="gambling-card" shadow="lg" radius="md" withBorder p="xl" mt="xl">
+              <Stack gap="md">
+                <Title order={3} component="h2">
                   Media Gallery
-                </Typography>
+                </Title>
                 <MediaGallery
                   ownerType="organization"
                   ownerId={initialOrganization.id}
                   purpose="gallery"
                   showTitle={false}
                   compactMode={false}
-                  showFilters={true}
-                  allowMultipleTypes={true}
+                  showFilters
+                  allowMultipleTypes
                 />
-              </CardContent>
+              </Stack>
             </Card>
-          </Grid>
+          </Grid.Col>
 
-          <Grid item xs={12} md={4}>
-            <Card className="gambling-card">
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Organization Details
-                </Typography>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Card className="gambling-card" shadow="lg" radius="md" withBorder p="xl">
+              <Stack gap="md">
+                <Title order={4}>Organization Details</Title>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
+                <Stack gap={4}>
+                  <Text size="sm" c={dimmedColor}>
                     Organization Name
-                  </Typography>
-                  <Typography variant="body1">
-                    {initialOrganization.name}
-                  </Typography>
-                </Box>
+                  </Text>
+                  <Text size="md">{initialOrganization.name}</Text>
+                </Stack>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
+                <Stack gap={4}>
+                  <Text size="sm" c={dimmedColor}>
                     Known Members
-                  </Typography>
-                  <Typography variant="body1">
+                  </Text>
+                  <Text size="md">
                     {initialMembers.length} {initialMembers.length === 1 ? 'member' : 'members'}
-                  </Typography>
-                </Box>
+                  </Text>
+                </Stack>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider my="sm" color="rgba(225, 29, 72, 0.3)" />
 
-                <Typography variant="h6" gutterBottom>
-                  Quick Links
-                </Typography>
+                <Title order={4}>Quick Links</Title>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Stack gap="sm">
                   <Button
                     component={Link}
                     href="/characters"
-                    variant="outlined"
-                    size="small"
+                    variant="outline"
+                    size="sm"
                     fullWidth
-                    startIcon={<Users size={16} />}
+                    leftSection={<Users size={16} />}
                   >
                     Browse Characters
                   </Button>
                   <Button
                     component={Link}
                     href="/events"
-                    variant="outlined"
-                    size="small"
+                    variant="outline"
+                    size="sm"
                     fullWidth
-                    startIcon={<Crown size={16} />}
+                    leftSection={<Crown size={16} />}
                   >
                     Browse Events
                   </Button>
                   <Button
                     component={Link}
                     href="/gambles"
-                    variant="outlined"
-                    size="small"
+                    variant="outline"
+                    size="sm"
                     fullWidth
-                    startIcon={<Shield size={16} />}
+                    leftSection={<Shield size={16} />}
                   >
                     Browse Gambles
                   </Button>
-                </Box>
-              </CardContent>
+                </Stack>
+              </Stack>
             </Card>
-          </Grid>
+          </Grid.Col>
         </Grid>
       </motion.div>
     </Container>

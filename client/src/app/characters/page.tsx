@@ -1,34 +1,6 @@
 import React from 'react'
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  Chip,
-  CircularProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Snackbar
-} from '@mui/material'
-import { Search, Users, Eye, Edit, Upload, X } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
-import Link from 'next/link'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
-import Image from 'next/image'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
-import { motion } from 'motion/react'
-import MediaThumbnail from '../../components/MediaThumbnail'
 import CharactersPageContent from './CharactersPageContent'
 
 interface Character {
@@ -95,12 +67,11 @@ export default async function CharactersPage({ searchParams }: CharactersPagePro
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="xl" py="xl">
       <CharactersPageContent
         initialCharacters={characters}
         initialTotalPages={totalPages}
         initialTotal={total}
-        initialPage={page}
         initialSearch={search}
         initialError={error}
       />
