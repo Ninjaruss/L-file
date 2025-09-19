@@ -1,31 +1,37 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  CircularProgress,
   Alert,
-  Chip
-} from '@mui/material'
+  Badge,
+  Box,
+  Button,
+  Card,
+  Center,
+  Grid,
+  Group,
+  Loader,
+  Pagination,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6 } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { api } from '../../lib/api'
 import { motion } from 'motion/react'
+import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
 import AuthorProfileImage from '../../components/AuthorProfileImage'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
+
+type GuideEntity = {
+  id: number
+  name: string
+}
 
 interface Guide {
   id: number
@@ -49,18 +55,9 @@ interface Guide {
     discordId?: string | null
     discordAvatar?: string | null
   }
-  characters?: Array<{
-    id: number
-    name: string
-  }>
-  arc?: {
-    id: number
-    name: string
-  }
-  gambles?: Array<{
-    id: number
-    name: string
-  }>
+  characters?: GuideEntity[]
+  arc?: GuideEntity
+  gambles?: GuideEntity[]
   likeCount: number
   userHasLiked?: boolean
   viewCount: number
@@ -79,6 +76,8 @@ interface GuidesPageContentProps {
   initialError: string
 }
 
+const sectionSpacing = rem(24)
+
 export default function GuidesPageContent({
   initialGuides,
   initialTotalPages,
@@ -90,7 +89,7 @@ export default function GuidesPageContent({
   initialError
 }: GuidesPageContentProps) {
   const { user } = useAuth()
-  const theme = useTheme()
+  const theme = useMantineTheme()
   const router = useRouter()
 
   const [guides, setGuides] = useState<Guide[]>(initialGuides)
@@ -107,7 +106,11 @@ export default function GuidesPageContent({
   const fetchGuides = async (page = 1, search = '', authorId?: string) => {
     setLoading(true)
     try {
-      const params: { page: number; limit: number; title?: string; authorId?: string; status?: string } = { page, limit: 12, status: 'approved' }
+      const params: { page: number; limit: number; title?: string; authorId?: string; status?: string } = {
+        page,
+        limit: 12,
+        status: 'approved'
+      }
       if (search) params.title = search
       if (authorId) params.authorId = authorId
 
@@ -115,15 +118,16 @@ export default function GuidesPageContent({
       setGuides(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to fetch guides')
+      setError('')
+    } catch (fetchError: unknown) {
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch guides')
+      setGuides([])
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    // Only fetch if different from initial data
     if (
       currentPage !== initialPage ||
       searchQuery !== initialSearch ||
@@ -133,14 +137,14 @@ export default function GuidesPageContent({
     }
   }, [currentPage, searchQuery, authorFilter, initialPage, initialSearch, initialAuthorId])
 
-  const updateUrl = (newPage: number, newSearch: string, newAuthorId?: string, newAuthorName?: string) => {
+  const updateUrl = (page: number, search: string, authorId?: string, authorNameParam?: string) => {
     const params = new URLSearchParams()
-    if (newSearch) params.set('search', newSearch)
-    if (newAuthorId) params.set('author', newAuthorId)
-    if (newAuthorName) params.set('authorName', newAuthorName)
-    if (newPage > 1) params.set('page', newPage.toString())
+    if (search) params.set('search', search)
+    if (authorId) params.set('author', authorId)
+    if (authorNameParam) params.set('authorName', authorNameParam)
+    if (page > 1) params.set('page', page.toString())
 
-    const newUrl = params.toString() ? `?${params.toString()}` : '/guides'
+    const newUrl = params.toString() ? `/guides?${params.toString()}` : '/guides'
     router.push(newUrl, { scroll: false })
   }
 
@@ -151,7 +155,7 @@ export default function GuidesPageContent({
     updateUrl(1, newSearch, authorFilter || undefined, authorName || undefined)
   }
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page)
     updateUrl(page, searchQuery, authorFilter || undefined, authorName || undefined)
   }
@@ -175,336 +179,224 @@ export default function GuidesPageContent({
     setLiking(guideId)
     try {
       const response = await api.toggleGuideLike(guideId)
-      setGuides(guides.map(guide =>
-        guide.id === guideId
-          ? { ...guide, likeCount: response.likeCount, userHasLiked: response.liked }
-          : guide
-      ))
-    } catch (error: unknown) {
-      console.error('Error toggling like:', error)
+      setGuides((previous) =>
+        previous.map((guide) =>
+          guide.id === guideId
+            ? { ...guide, likeCount: response.likeCount, userHasLiked: response.liked }
+            : guide
+        )
+      )
+    } catch (toggleError: unknown) {
+      console.error('Error toggling like:', toggleError)
     } finally {
       setLiking(null)
     }
   }
 
+  const accentGuide = theme.other?.usogui?.guide ?? theme.colors.green?.[5] ?? '#4ade80'
+  const accentRed = theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48'
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <FileText size={48} color={theme.palette.usogui.guide} />
-        </Box>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Community Guides
-        </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-          In-depth analysis and insights from the Usogui community
-        </Typography>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <Stack gap="xl">
+        <Stack gap="xs" align="center" mb={sectionSpacing}>
+          <FileText size={48} color={accentGuide} />
+          <Title order={2}>Community Guides</Title>
+          <Text size="sm" c="dimmed">
+            In-depth analysis and insights from the Usogui community
+          </Text>
+          <Button
+            component={Link}
+            href="/submit-guide"
+            size="md"
+            leftSection={<FileText size={16} />}
+            radius="md"
+            variant="gradient"
+            gradient={{ from: accentGuide, to: accentRed }}
+          >
+            Write Guide
+          </Button>
+        </Stack>
 
-        <Button
-          component={Link}
-          href="/submit-guide"
-          variant="contained"
-          size="large"
-          startIcon={<FileText size={20} />}
-          sx={{
-            mb: 2,
-            px: 4,
-            py: 1.5,
-            fontSize: '1.1rem'
-          }}
-        >
-          Write Guide
-        </Button>
-      </Box>
-
-      <Box sx={{ mb: 4 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search guides..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
-        />
-      </Box>
-
-      {authorFilter && authorName && (
-        <Box sx={{ mb: 3 }}>
-          <Chip
-            label={`Author: ${authorName}`}
-            onDelete={clearAuthorFilter}
-            deleteIcon={<X size={16} />}
-            color="primary"
-            variant="outlined"
-            sx={{ fontSize: '0.875rem' }}
+        <Box maw={500} mx="auto" w="100%">
+          <TextInput
+            size="md"
+            radius="md"
+            placeholder="Search guides..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            leftSection={<Search size={16} />}
           />
         </Box>
-      )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {authorFilter && authorName && (
+          <Group justify="center" gap="sm">
+            <Badge size="md" color="red" variant="filled">
+              Author: {authorName}
+            </Badge>
+            <Button
+              variant="subtle"
+              size="xs"
+              color="red"
+              leftSection={<X size={14} />}
+              onClick={clearAuthorFilter}
+            >
+              Clear
+            </Button>
+          </Group>
+        )}
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress size={50} />
-        </Box>
-      ) : (
-        <>
-          <Typography variant="h6" sx={{ mb: 3 }}>
-            {total} guide{total !== 1 ? 's' : ''} published
-          </Typography>
+        {error && (
+          <Alert color="red" variant="light" radius="md">
+            {error}
+          </Alert>
+        )}
 
-          <Grid container spacing={4}>
-            {guides.map((guide, index) => (
-              <Grid item xs={12} md={6} key={guide.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card
-                    className="gambling-card h-full"
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s',
-                      '&:hover': { transform: 'translateY(-4px)' }
-                    }}
+        {loading ? (
+          <Center py="xl">
+            <Loader size="lg" />
+          </Center>
+        ) : (
+          <Stack gap="xl">
+            <Text size="sm" c="dimmed">
+              {total} guide{total !== 1 ? 's' : ''} published
+            </Text>
+
+            <Grid gutter="xl">
+              {guides.map((guide, index) => (
+                <Grid.Col span={{ base: 12, md: 6 }} key={guide.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="h2" gutterBottom>
-                        {guide.title}
-                      </Typography>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <AuthorProfileImage
-                          author={guide.author}
-                          size={24}
-                          showFallback={true}
-                          className="guide-author-avatar"
-                        />
-                        <Box sx={{ ml: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            component={Link}
-                            href={`/users/${guide.author.id}`}
-                            sx={{
-                              textDecoration: 'none',
-                              '&:hover': {
-                                color: 'primary.main',
-                                textDecoration: 'underline'
-                              }
-                            }}
-                          >
-                            by {guide.author.username}
-                          </Typography>
-                          <UserRoleDisplay
-                            userRole={guide.author.role as 'admin' | 'moderator' | 'user' || 'user'}
-                            customRole={guide.author.customRole}
-                            size="small"
-                          />
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
-                          <Calendar size={14} />
-                          <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                            {new Date(guide.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {getContentPreview(guide.description || guide.content)}
-                      </Typography>
-
-                      {/* Related Content */}
-                      {((guide.characters && guide.characters.length > 0) || guide.arc || (guide.gambles && guide.gambles.length > 0)) && (
-                        <Box sx={{ mb: 2 }}>
-                          {guide.characters && guide.characters.length > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <Users size={14} style={{ marginRight: 4 }} />
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {guide.characters.slice(0, 2).map((character) => (
-                                  <Chip
-                                    key={character.id}
-                                    label={character.name}
-                                    size="small"
-                                    color="primary"
-                                    sx={{ fontSize: '0.75rem', height: '20px' }}
-                                  />
-                                ))}
-                                {guide.characters.length > 2 && (
-                                  <Chip
-                                    label={`+${guide.characters.length - 2}`}
-                                    size="small"
-                                    color="default"
-                                    sx={{ fontSize: '0.75rem', height: '20px' }}
-                                  />
-                                )}
-                              </Box>
-                            </Box>
-                          )}
-                          {guide.arc && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <BookOpen size={14} style={{ marginRight: 4 }} />
-                              <Chip
-                                label={guide.arc.name}
+                    <Card withBorder radius="lg" shadow="sm" h="100%" padding="lg">
+                      <Stack gap="md" h="100%">
+                        <Stack gap={4}>
+                          <Title order={4}>
+                            <Link href={`/guides/${guide.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                              {guide.title}
+                            </Link>
+                          </Title>
+                          <Group gap="sm" align="center">
+                            <AuthorProfileImage author={guide.author} size={28} showFallback />
+                            <Stack gap={2}>
+                              <Text size="sm" c="dimmed" component={Link} href={`/users/${guide.author.id}`} style={{ textDecoration: 'none' }}>
+                                by {guide.author.username}
+                              </Text>
+                              <UserRoleDisplay
+                                userRole={(guide.author.role as 'admin' | 'moderator' | 'user') || 'user'}
+                                customRole={guide.author.customRole}
                                 size="small"
-                                color="secondary"
-                                sx={{ fontSize: '0.75rem', height: '20px' }}
                               />
-                            </Box>
-                          )}
-                          {guide.gambles && guide.gambles.length > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <Dice6 size={14} style={{ marginRight: 4 }} />
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {guide.gambles.slice(0, 2).map((gamble) => (
-                                  <Chip
-                                    key={gamble.id}
-                                    label={gamble.name}
-                                    size="small"
-                                    color="info"
-                                    sx={{ fontSize: '0.75rem', height: '20px' }}
-                                  />
-                                ))}
-                                {guide.gambles.length > 2 && (
-                                  <Chip
-                                    label={`+${guide.gambles.length - 2}`}
-                                    size="small"
-                                    color="default"
-                                    sx={{ fontSize: '0.75rem', height: '20px' }}
-                                  />
-                                )}
-                              </Box>
-                            </Box>
-                          )}
-                        </Box>
-                      )}
+                            </Stack>
+                            <Group gap={4} ml="auto" align="center" c="dimmed">
+                              <Calendar size={14} />
+                              <Text size="xs">
+                                {new Date(guide.createdAt).toLocaleDateString()}
+                              </Text>
+                            </Group>
+                          </Group>
+                        </Stack>
 
-                      {guide.tags?.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                          {guide.tags.slice(0, 3).map((tag, index) => (
-                            <Chip
-                              key={`${guide.id}-tag-${index}`}
-                              label={typeof tag === 'object' ? (tag as any)?.name || String(tag) : tag}
-                              size="small"
-                              variant="outlined"
-                              color="default"
-                              sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem', opacity: 0.8 }}
-                            />
-                          ))}
-                          {guide.tags.length > 3 && (
-                            <Chip
-                              label={`+${guide.tags.length - 3} more`}
-                              size="small"
-                              variant="outlined"
-                              color="default"
-                              sx={{ mb: 0.5, fontSize: '0.7rem', opacity: 0.8 }}
-                            />
-                          )}
-                        </Box>
-                      )}
+                        <Text size="sm" c="dimmed">
+                          {getContentPreview(guide.description || guide.content)}
+                        </Text>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Eye size={16} />
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                              {guide.viewCount || 0} views
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <ThumbsUp size={16} />
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                              {guide.likeCount || 0} likes
-                            </Typography>
-                          </Box>
-                        </Box>
-                        {user && (
-                          <Button
-                            size="small"
-                            variant={guide.userHasLiked ? "contained" : "outlined"}
-                            color="primary"
-                            startIcon={<Heart size={14} />}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              handleLikeToggle(guide.id)
-                            }}
-                            disabled={liking === guide.id}
-                            sx={{ minWidth: 'auto', px: 1 }}
-                          >
-                            {liking === guide.id ? '...' : guide.userHasLiked ? 'Liked' : 'Like'}
-                          </Button>
+                        {(guide.characters?.length || guide.arc || guide.gambles?.length) && (
+                          <Stack gap={6}>
+                            {guide.characters && guide.characters.length > 0 && (
+                              <Group gap={6} align="center">
+                                <Users size={14} />
+                                <Group gap={4} wrap="wrap">
+                                  {guide.characters.slice(0, 2).map((character) => (
+                                    <Badge key={character.id} size="sm" color="red" variant="light">
+                                      {character.name}
+                                    </Badge>
+                                  ))}
+                                  {guide.characters.length > 2 && (
+                                    <Badge size="sm" color="gray" variant="light">
+                                      +{guide.characters.length - 2}
+                                    </Badge>
+                                  )}
+                                </Group>
+                              </Group>
+                            )}
+
+                            {guide.arc && (
+                              <Group gap={6} align="center">
+                                <BookOpen size={14} />
+                                <Badge size="sm" color="purple" variant="light">
+                                  {guide.arc.name}
+                                </Badge>
+                              </Group>
+                            )}
+
+                            {guide.gambles && guide.gambles.length > 0 && (
+                              <Group gap={6} align="center">
+                                <Dice6 size={14} />
+                                <Group gap={4} wrap="wrap">
+                                  {guide.gambles.slice(0, 2).map((gamble) => (
+                                    <Badge key={gamble.id} size="sm" color="red" variant="light">
+                                      {gamble.name}
+                                    </Badge>
+                                  ))}
+                                  {guide.gambles.length > 2 && (
+                                    <Badge size="sm" color="gray" variant="light">
+                                      +{guide.gambles.length - 2}
+                                    </Badge>
+                                  )}
+                                </Group>
+                              </Group>
+                            )}
+                          </Stack>
                         )}
-                      </Box>
-                    </CardContent>
 
-                    <CardActions>
-                      <Button
-                        component={Link}
-                        href={`/guides/${guide.id}`}
-                        variant="outlined"
-                        startIcon={<Eye size={16} />}
-                        fullWidth
-                      >
-                        Read Guide
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
+                        {guide.tags?.length > 0 && (
+                          <Group gap={6} wrap="wrap">
+                            {guide.tags.slice(0, 4).map((tag) => (
+                              <Badge key={tag} size="sm" color="gray" variant="outline">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </Group>
+                        )}
 
-          {guides.length === 0 && !loading && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <FileText size={64} color={theme.palette.text.secondary} />
-              <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
-                No guides found
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Be the first to contribute to the community knowledge base!
-              </Typography>
-              <Button
-                component={Link}
-                href="/submit-guide"
-                variant="contained"
-                startIcon={<FileText size={20} />}
-              >
-                Write Your First Guide
-              </Button>
-            </Box>
-          )}
+                        <Group gap="sm" mt="auto" align="center" justify="space-between">
+                          <Group gap={8} align="center">
+                            <Heart size={16} color={guide.userHasLiked ? accentRed : undefined} />
+                            <Text size="sm">{guide.likeCount}</Text>
+                          </Group>
+                          <Group gap={8} align="center">
+                            <Eye size={16} />
+                            <Text size="sm">{guide.viewCount}</Text>
+                          </Group>
+                          <Button
+                            size="xs"
+                            variant={guide.userHasLiked ? 'filled' : 'outline'}
+                            color="red"
+                            leftSection={<ThumbsUp size={14} />}
+                            loading={liking === guide.id}
+                            onClick={() => handleLikeToggle(guide.id)}
+                          >
+                            {guide.userHasLiked ? 'Liked' : 'Like'}
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  </motion.div>
+                </Grid.Col>
+              ))}
+            </Grid>
 
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-              />
-            </Box>
-          )}
-        </>
-      )}
+            {totalPages > 1 && (
+              <Group justify="center">
+                <Pagination total={totalPages} value={currentPage} onChange={handlePageChange} color="red" radius="md" />
+              </Group>
+            )}
+          </Stack>
+        )}
+      </Stack>
     </motion.div>
   )
 }

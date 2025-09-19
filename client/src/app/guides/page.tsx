@@ -1,26 +1,5 @@
 import React, { Suspense } from 'react'
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  CircularProgress,
-  Alert,
-  Chip
-} from '@mui/material'
-import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6 } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
-import Link from 'next/link'
-import { motion } from 'motion/react'
-import AuthorProfileImage from '../../components/AuthorProfileImage'
-import { UserRoleDisplay } from '../../components/BadgeDisplay'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
 import GuidesPageContent from './GuidesPageContent'
 
@@ -131,7 +110,7 @@ export default async function GuidesPage({ searchParams }: GuidesPageProps) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" style={{ paddingBlock: '2rem' }}>
       <GuidesPageContent
         initialGuides={guides}
         initialTotalPages={totalPages}

@@ -1,29 +1,38 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Pagination,
-  CircularProgress,
   Alert,
-  Chip
-} from '@mui/material'
-import { Eye, Users, Dices, Search } from 'lucide-react'
-import { useTheme } from '@mui/material/styles'
+  Badge,
+  Box,
+  Button,
+  Card,
+  Center,
+  Grid,
+  Group,
+  Loader,
+  Pagination,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+  useMantineTheme
+} from '@mantine/core'
+import { Eye, Users, Dices, Search, X } from 'lucide-react'
 import Link from 'next/link'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { api } from '../../lib/api'
 import { motion } from 'motion/react'
+import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import MediaThumbnail from '../../components/MediaThumbnail'
+import { api } from '../../lib/api'
+
+type Participant = {
+  id: number
+  name: string
+  description?: string
+  alternateNames?: string[]
+}
 
 interface Gamble {
   id: number
@@ -32,12 +41,7 @@ interface Gamble {
   rules: string
   winCondition?: string
   chapterId: number
-  participants?: Array<{
-    id: number
-    name: string
-    description?: string
-    alternateNames?: string[]
-  }>
+  participants?: Participant[]
   createdAt: string
   updatedAt: string
 }
@@ -52,6 +56,8 @@ interface GamblesPageContentProps {
   initialError: string
 }
 
+const sectionSpacing = rem(24)
+
 export default function GamblesPageContent({
   initialGambles,
   initialTotalPages,
@@ -61,10 +67,10 @@ export default function GamblesPageContent({
   initialCharacterFilter,
   initialError
 }: GamblesPageContentProps) {
-  const theme = useTheme()
+  const theme = useMantineTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   const [gambles, setGambles] = useState<Gamble[]>(initialGambles)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
@@ -74,256 +80,259 @@ export default function GamblesPageContent({
   const [total, setTotal] = useState(initialTotal)
   const [characterFilter, setCharacterFilter] = useState<string | null>(initialCharacterFilter || null)
 
-  // Update URL params when search, page, or character changes
   const updateURL = (newSearch: string, newPage: number, newCharacter?: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (newSearch) {
-      params.set('search', newSearch)
-    } else {
-      params.delete('search')
-    }
-    if (newPage > 1) {
-      params.set('page', newPage.toString())
-    } else {
-      params.delete('page')
-    }
-    if (newCharacter) {
-      params.set('character', newCharacter)
-    } else {
-      params.delete('character')
-    }
-    router.push(`/gambles?${params.toString()}`)
+    if (newSearch) params.set('search', newSearch)
+    else params.delete('search')
+
+    if (newPage > 1) params.set('page', newPage.toString())
+    else params.delete('page')
+
+    if (newCharacter) params.set('character', newCharacter)
+    else params.delete('character')
+
+    router.push(`/gambles${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   const fetchGambles = async (page = 1, search = '', characterName?: string) => {
     setLoading(true)
     try {
       let response
-      
+
       if (characterName) {
-        // First find the character ID by name
         const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
         if (charactersResponse.data.length > 0) {
           const characterId = charactersResponse.data[0].id
-          // Get character-specific gambles
           const characterGamblesResponse = await api.getCharacterGambles(characterId, { limit: 1000 })
-          // For character filtering, we'll simulate pagination client-side
           const allGambles = characterGamblesResponse.data || []
           const startIndex = (page - 1) * 12
           const endIndex = startIndex + 12
-          const paginatedGambles = allGambles.slice(startIndex, endIndex)
-          
           response = {
-            data: paginatedGambles,
+            data: allGambles.slice(startIndex, endIndex),
             total: allGambles.length,
             totalPages: Math.ceil(allGambles.length / 12),
             page
           }
         } else {
-          // Character not found, return empty results
           response = { data: [], total: 0, totalPages: 1, page: 1 }
         }
       } else {
-        // Normal gamble fetching with search
         const params: { page: number; limit: number; gambleName?: string } = { page, limit: 12 }
         if (search) params.gambleName = search
         response = await api.getGambles(params)
       }
-      
+
       setGambles(response.data)
       setTotalPages(response.totalPages)
       setTotal(response.total)
       setError('')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Failed to fetch gambles')
+    } catch (fetchError: unknown) {
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch gambles')
+      setGambles([])
     } finally {
       setLoading(false)
     }
   }
 
+  useEffect(() => {
+    if (
+      currentPage !== initialPage ||
+      searchQuery !== initialSearch ||
+      characterFilter !== (initialCharacterFilter || null)
+    ) {
+      fetchGambles(currentPage, searchQuery, characterFilter || undefined)
+    }
+  }, [currentPage, searchQuery, characterFilter, initialPage, initialSearch, initialCharacterFilter])
+
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.target.value
+    const newSearch = event.currentTarget.value
     setSearchQuery(newSearch)
     setCurrentPage(1)
     updateURL(newSearch, 1, characterFilter || undefined)
-    
-    // Debounce the API call
-    const timeoutId = setTimeout(() => {
-      fetchGambles(1, newSearch, characterFilter || undefined)
-    }, 300)
-    
-    return () => clearTimeout(timeoutId)
+    fetchGambles(1, newSearch, characterFilter || undefined)
   }
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page)
     updateURL(searchQuery, page, characterFilter || undefined)
     fetchGambles(page, searchQuery, characterFilter || undefined)
   }
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty?.toLowerCase()) {
-      case 'easy':
-        return 'success'
-      case 'medium':
-        return 'warning'
-      case 'hard':
-        return 'error'
-      default:
-        return 'default'
-    }
+  const clearCharacterFilter = () => {
+    setCharacterFilter(null)
+    setCurrentPage(1)
+    updateURL(searchQuery, 1)
+    fetchGambles(1, searchQuery)
   }
 
+  const accentGamble = theme.other?.usogui?.gamble ?? theme.colors.red?.[6] ?? '#d32f2f'
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <Dices size={48} color={theme.palette.usogui?.gamble} />
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <Stack gap="xl">
+        <Stack gap="xs" align="center" mb={sectionSpacing}>
+          <Dices size={48} color={accentGamble} />
+          <Title order={2}>Gambles</Title>
+          <Text size="sm" c="dimmed">
+            {characterFilter
+              ? `Gambles featuring ${characterFilter}`
+              : 'Discover the high-stakes games and psychological battles of Usogui'}
+          </Text>
+        </Stack>
+
+        <Box maw={500} mx="auto" w="100%">
+          <TextInput
+            size="md"
+            radius="md"
+            placeholder="Search gambles..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            leftSection={<Search size={16} />}
+          />
         </Box>
-        
-        <Typography variant="h3" component="h1" gutterBottom>
-          Gambles
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          {characterFilter 
-            ? `Gambles featuring ${characterFilter}`
-            : 'Discover the high-stakes games and competitions of Usogui'
-          }
-        </Typography>
-      </Box>
 
-      <Box sx={{ mb: 4 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search gambles..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 500, mx: 'auto', display: 'block' }}
-        />
-      </Box>
+        {characterFilter && (
+          <Group justify="center" gap="sm">
+            <Badge size="md" color="red" variant="filled">
+              Character: {characterFilter}
+            </Badge>
+            <Button
+              variant="subtle"
+              size="xs"
+              color="red"
+              leftSection={<X size={14} />}
+              onClick={clearCharacterFilter}
+            >
+              Clear
+            </Button>
+          </Group>
+        )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert color="red" variant="light">
+            {error}
+          </Alert>
+        )}
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress size={50} />
-        </Box>
-      ) : (
-        <>
-          <Typography variant="h6" sx={{ mb: 3 }}>
-            {total} gamble{total !== 1 ? 's' : ''} found
-          </Typography>
+        {loading ? (
+          <Center py="xl">
+            <Loader size="lg" />
+          </Center>
+        ) : (
+          <Stack gap="xl">
+            <Text size="sm" c="dimmed">
+              {total} gamble{total !== 1 ? 's' : ''} cataloged
+            </Text>
 
-          <Grid container spacing={4}>
-            {gambles.map((gamble, index) => (
-              <Grid item xs={12} sm={6} md={4} key={gamble.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card
-                    className="gambling-card h-full"
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s',
-                      '&:hover': { transform: 'translateY(-4px)' }
-                    }}
+            <Grid gutter="xl">
+              {gambles.map((gamble, index) => (
+                <Grid.Col span={{ base: 12, md: 6 }} key={gamble.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
-                    <Box sx={{ position: 'relative' }}>
-                      <MediaThumbnail
-                        entityType="gamble"
-                        entityId={gamble.id}
-                        entityName={gamble.name}
-                        maxWidth="100%"
-                        maxHeight="200px"
-                        allowCycling={false}
-                      />
-                    </Box>
+                    <Card withBorder radius="lg" shadow="sm" padding="lg" h="100%">
+                      <Stack gap="md" h="100%">
+                        <Group justify="space-between" align="flex-start">
+                          <Stack gap={4}>
+                            <Title order={4}>{gamble.name}</Title>
+                            <Group gap="xs">
+                              <Badge color="red" variant="light">
+                                Gamble
+                              </Badge>
+                              <Badge color="gray" variant="light">
+                                Chapter {gamble.chapterId}
+                              </Badge>
+                            </Group>
+                          </Stack>
+                          <Box w={64} h={64}>
+                            <MediaThumbnail
+                              entityType="gamble"
+                              entityId={gamble.id}
+                              entityName={gamble.name}
+                              maxWidth={64}
+                              maxHeight={64}
+                              allowCycling={false}
+                            />
+                          </Box>
+                        </Group>
 
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="h2" gutterBottom>
-                        {gamble.name}
-                      </Typography>
-
-                      <Box sx={{ mb: 2 }}>
-                        {gamble.participants && gamble.participants.length > 0 && (
-                          <Chip
-                            label={`${gamble.participants?.length || 0} Participants`}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            icon={<Users size={14} />}
-                            sx={{ mb: 1 }}
-                          />
+                        {gamble.description && (
+                          <Text size="sm" c="dimmed">
+                            {gamble.description}
+                          </Text>
                         )}
-                      </Box>
 
-                      <Box sx={{
-                        mb: 2,
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 3,
-                      }}>
-                        <EnhancedSpoilerMarkdown
-                          content={gamble.description || gamble.rules}
-                          className="gamble-description-preview"
-                          enableEntityEmbeds={true}
-                          compactEntityCards={true}
-                        />
-                      </Box>
+                        <Stack gap="xs">
+                          <Text fw={600} size="sm">
+                            Rules
+                          </Text>
+                          <EnhancedSpoilerMarkdown content={gamble.rules} compact />
+                        </Stack>
 
-                    </CardContent>
+                        {gamble.winCondition && (
+                          <Stack gap={4}>
+                            <Text fw={600} size="sm">
+                              Win Condition
+                            </Text>
+                            <Text size="sm" c="dimmed">
+                              {gamble.winCondition}
+                            </Text>
+                          </Stack>
+                        )}
 
-                    <CardActions>
-                      <Button
-                        component={Link}
-                        href={`/gambles/${gamble.id}`}
-                        variant="outlined"
-                        startIcon={<Eye size={16} />}
-                        fullWidth
-                      >
-                        View Details
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
+                        {gamble.participants && gamble.participants.length > 0 && (
+                          <Stack gap={4}>
+                            <Group gap={6} align="center">
+                              <Users size={14} />
+                              <Text fw={600} size="sm">
+                                Participants
+                              </Text>
+                            </Group>
+                            <Group gap={6} wrap="wrap">
+                              {gamble.participants.map((participant) => (
+                                <Badge key={participant.id} size="sm" color="gray" variant="outline">
+                                  {participant.name}
+                                </Badge>
+                              ))}
+                            </Group>
+                          </Stack>
+                        )}
 
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-              />
-            </Box>
-          )}
-        </>
-      )}
+                        <Group justify="space-between" mt="auto" align="center">
+                          <Group gap={6} align="center">
+                            <Eye size={16} />
+                            <Text size="sm" c="dimmed">
+                              Chapter {gamble.chapterId}
+                            </Text>
+                          </Group>
+                          <Button
+                            component={Link}
+                            href={`/gambles/${gamble.id}`}
+                            size="xs"
+                            variant="light"
+                            color="red"
+                            leftSection={<Dices size={14} />}
+                          >
+                            View Details
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  </motion.div>
+                </Grid.Col>
+              ))}
+            </Grid>
+
+            {totalPages > 1 && (
+              <Group justify="center">
+                <Pagination total={totalPages} value={currentPage} onChange={handlePageChange} color="red" radius="md" />
+              </Group>
+            )}
+          </Stack>
+        )}
+      </Stack>
     </motion.div>
   )
 }

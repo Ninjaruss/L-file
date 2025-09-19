@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container } from '@mui/material'
+import { Container } from '@mantine/core'
 import { api } from '../../lib/api'
 import GamblesPageContent from './GamblesPageContent'
 
@@ -108,7 +108,7 @@ export default async function GamblesPage({ searchParams }: GamblesPageProps) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container size="lg" style={{ paddingBlock: '2rem' }}>
       <GamblesPageContent
         initialGambles={gambles}
         initialTotalPages={totalPages}

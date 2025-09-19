@@ -1,37 +1,38 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 import {
   Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
+  Badge,
   Avatar,
-  CircularProgress,
+  Group,
+  Box,
+  Text,
+  Skeleton,
+  rem,
+  useMantineTheme,
   Alert,
-  Skeleton
-} from '@mui/material'
-import { useTheme } from '@mui/material/styles'
-import Link from 'next/link'
-import { 
-  User, 
-  BookOpen, 
-  Dice6, 
-  FileText, 
-  Users, 
-  Hash, 
-  Volume2, 
-  Quote 
+  rgba
+} from '@mantine/core'
+import {
+  User,
+  BookOpen,
+  Dice6,
+  FileText,
+  Users,
+  Hash,
+  Volume2,
+  Quote
 } from 'lucide-react'
-import { 
-  fetchEntityData, 
-  getEntityTypeLabel, 
-  getDefaultDisplayText, 
-  getEntityUrl, 
-  getEntityThemeColor,
-  EntityEmbedData 
+import {
+  fetchEntityData,
+  getEntityTypeLabel,
+  getDefaultDisplayText,
+  getEntityUrl,
+  EntityEmbedData
 } from '../lib/entityEmbedParser'
+import { getEntityAccent, EntityAccentKey } from '../lib/mantine-theme'
 import MediaThumbnail from './MediaThumbnail'
 
 interface EntityCardProps {
@@ -43,276 +44,250 @@ interface EntityCardProps {
   inline?: boolean
 }
 
-const EntityCard: React.FC<EntityCardProps> = ({ 
-  type, 
-  id, 
-  displayText, 
+type EntityAccentMap = Partial<Record<EntityCardProps['type'], EntityAccentKey>>
+
+const ENTITY_ACCENT_MAP: EntityAccentMap = {
+  character: 'character',
+  arc: 'arc',
+  gamble: 'gamble',
+  guide: 'guide',
+  organization: 'organization',
+  quote: 'quote'
+}
+
+const ICON_MAP: Record<EntityCardProps['type'], React.ReactNode> = {
+  character: <User size={18} />,
+  arc: <BookOpen size={18} />,
+  gamble: <Dice6 size={18} />,
+  guide: <FileText size={18} />,
+  organization: <Users size={18} />,
+  chapter: <Hash size={18} />,
+  volume: <Volume2 size={18} />,
+  quote: <Quote size={18} />
+}
+
+const skeletonCircle = (size: number) => (
+  <Skeleton width={size} height={size} circle radius={size / 2} />
+)
+
+const EntityCard: React.FC<EntityCardProps> = ({
+  type,
+  id,
+  displayText,
   compact = false,
   showImage = true,
   inline = false
 }) => {
-  const theme = useTheme()
-  const [data, setData] = useState<any>(null)
+  const theme = useMantineTheme()
+  const [data, setData] = useState<EntityEmbedData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    const fetchData = async () => {
+    let isMounted = true
+
+    const load = async () => {
+      setLoading(true)
+      setError(false)
       try {
         const entityData = await fetchEntityData(type, id)
-        setData(entityData)
-        setError(!entityData)
-      } catch (err) {
-        setError(true)
+        if (!isMounted) return
+        if (!entityData) {
+          setError(true)
+        }
+        setData(entityData || null)
+      } catch (networkError) {
+        if (isMounted) {
+          setError(true)
+          setData(null)
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
-    fetchData()
+    load()
+    return () => {
+      isMounted = false
+    }
   }, [type, id])
 
-  const getEntityIcon = () => {
-    const iconProps = { size: compact ? 16 : 20 }
-    switch (type) {
-      case 'character': return <User {...iconProps} />
-      case 'arc': return <BookOpen {...iconProps} />
-      case 'gamble': return <Dice6 {...iconProps} />
-      case 'guide': return <FileText {...iconProps} />
-      case 'organization': return <Users {...iconProps} />
-      case 'chapter': return <Hash {...iconProps} />
-      case 'volume': return <Volume2 {...iconProps} />
-      case 'quote': return <Quote {...iconProps} />
-      default: return <Hash {...iconProps} />
+  const accentKey = ENTITY_ACCENT_MAP[type]
+  const accentColor = accentKey ? getEntityAccent(accentKey, theme) : theme.colors.gray[5] || '#94a3b8'
+
+  const renderChip = (label: string) => (
+    <Badge
+      size="sm"
+      variant="outline"
+      radius="md"
+      styles={{
+        root: {
+          borderColor: accentColor,
+          color: accentColor,
+          textTransform: 'uppercase',
+          letterSpacing: '0.025em'
+        }
+      }}
+    >
+      {label}
+    </Badge>
+  )
+
+  const renderMeta = () => {
+    if (!data) return null
+
+    if (type === 'character' && data.organization) {
+      return data.organization
     }
+
+    if (type === 'arc' && data.startChapter && data.endChapter) {
+      return `Ch. ${data.startChapter}-${data.endChapter}`
+    }
+
+    if (type === 'gamble' && data.chapterNumber) {
+      return `Ch. ${data.chapterNumber}`
+    }
+
+    if (type === 'chapter' && data.number) {
+      return `#${data.number}`
+    }
+
+    if (type === 'volume' && data.number) {
+      return `Vol. ${data.number}`
+    }
+
+    return null
   }
 
-  const getEntityColor = () => {
-    const themeColor = getEntityThemeColor(type)
-    // Try to access the theme color, fallback to primary
-    const colorParts = themeColor.split('.')
-    let color = theme.palette
-    try {
-      for (const part of colorParts) {
-        color = (color as any)[part]
-      }
-      return typeof color === 'string' ? color : theme.palette.primary.main
-    } catch {
-      return theme.palette.primary.main
-    }
-  }
+  const renderLoading = () => (
+    <Group gap={compact ? 'xs' : 'sm'} wrap="nowrap">
+      {skeletonCircle(compact ? 24 : 32)}
+      <Box style={{ flex: 1 }}>
+        <Skeleton height={compact ? 14 : 18} width="60%" mb={compact ? 0 : 6} />
+        {!compact && <Skeleton height={12} width="40%" />}
+      </Box>
+    </Group>
+  )
+
+  const renderError = () => (
+    <Group gap={compact ? 'xs' : 'sm'} wrap="nowrap">
+      <Avatar
+        size={compact ? 24 : 32}
+        radius="xl"
+        styles={{ root: { backgroundColor: theme.colors.red[6] ?? '#ef4444', color: '#ffffff' } }}
+      >
+        {ICON_MAP[type]}
+      </Avatar>
+      <Box style={{ flex: 1 }}>
+        <Text size={compact ? 'xs' : 'sm'} fw={600} lineClamp={1} c="red.4">
+          {displayText || `${getEntityTypeLabel(type)} not found`}
+        </Text>
+        {!compact && (
+          <Text size="xs" c="dimmed" lineClamp={1}>
+            ID: {id}
+          </Text>
+        )}
+      </Box>
+    </Group>
+  )
+
+  const renderAvatar = (label: string) => (
+    <Avatar size={compact ? 24 : 32} radius="xl" styles={{ root: { backgroundColor: accentColor, color: '#ffffff' } }}>
+      {ICON_MAP[type]}
+    </Avatar>
+  )
 
   const renderContent = () => {
     if (loading) {
-      return (
-        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, maxWidth: '100%' }}>
-          <Skeleton variant="circular" width={compact ? 24 : 32} height={compact ? 24 : 32} sx={{ flexShrink: 0 }} />
-          <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
-            <Skeleton variant="text" width="60%" height={compact ? 20 : 24} />
-            {!compact && <Skeleton variant="text" width="40%" height={16} />}
-          </Box>
-        </Box>
-      )
+      return renderLoading()
     }
 
     if (error || !data) {
-      return (
-        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, maxWidth: '100%' }}>
-          <Avatar 
-            sx={{ 
-              width: compact ? 24 : 32, 
-              height: compact ? 24 : 32,
-              bgcolor: 'error.main',
-              flexShrink: 0
-            }}
-          >
-            {getEntityIcon()}
-          </Avatar>
-          <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-            <Typography 
-              component={inline ? "span" : "p"}
-              variant={compact ? 'caption' : 'body2'} 
-              color="error"
-              sx={{
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {displayText || `${getEntityTypeLabel(type)} Not Found`}
-            </Typography>
-            {!compact && (
-              <Typography 
-                component={inline ? "span" : "p"}
-                variant="caption" 
-                color="text.secondary"
-                sx={{
-                  display: 'block',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                ID: {id}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-      )
+      return renderError()
     }
 
     const finalDisplayText = displayText || getDefaultDisplayText(type, data)
-    const entityColor = getEntityColor()
+    const meta = renderMeta()
 
     return (
-      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, maxWidth: '100%' }}>
-        {/* Entity Icon/Image */}
+      <Group gap={compact ? 'xs' : 'sm'} wrap="nowrap" align="center" style={{ maxWidth: '100%' }}>
         {showImage && (
-          <Box component="span" sx={{ position: 'relative', flexShrink: 0 }}>
-            {(type === 'character' || type === 'arc' || type === 'volume') ? (
-              <Box component="span" sx={{ width: compact ? 24 : 32, height: compact ? 24 : 32, display: 'block' }}>
+          <Box style={{ position: 'relative', flexShrink: 0 }}>
+            {['character', 'arc', 'volume'].includes(type) ? (
+              <Box style={{ width: compact ? rem(24) : rem(32), height: compact ? rem(24) : rem(32) }}>
                 <MediaThumbnail
                   entityType={type as 'character' | 'arc' | 'volume'}
                   entityId={id}
                   entityName={finalDisplayText}
                   maxWidth={compact ? 24 : 32}
                   maxHeight={compact ? 24 : 32}
-                  inline={inline}
+                  inline
                 />
               </Box>
             ) : (
-              <Avatar 
-                sx={{ 
-                  width: compact ? 24 : 32, 
-                  height: compact ? 24 : 32,
-                  bgcolor: entityColor,
-                  color: 'white'
-                }}
-              >
-                {getEntityIcon()}
-              </Avatar>
+              renderAvatar(finalDisplayText)
             )}
           </Box>
         )}
 
-        {/* Entity Info */}
-        <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <Typography 
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            size={compact ? 'sm' : 'md'}
+            fw={600}
+            lineClamp={1}
             component="span"
-            variant={compact ? 'caption' : 'body2'} 
-            sx={{ 
-              fontWeight: 600,
-              color: entityColor,
-              textDecoration: 'none',
-              display: 'block',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              '&:hover': {
-                textDecoration: 'underline'
-              }
-            }}
+            style={{ color: accentColor }}
           >
             {finalDisplayText}
-          </Typography>
-          
+          </Text>
+
           {!compact && (
-            <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-              <Chip
-                label={getEntityTypeLabel(type)}
-                size="small"
-                variant="outlined"
-                sx={{
-                  height: 20,
-                  fontSize: '0.7rem',
-                  borderColor: entityColor,
-                  color: entityColor,
-                  '& .MuiChip-label': {
-                    px: 1
-                  }
-                }}
-              />
-              
-              {/* Additional context based on entity type */}
-              {type === 'character' && data.organization && (
-                <Typography 
-                  component={inline ? "span" : "p"}
-                  variant="caption" 
-                  color="text.secondary"
-                >
-                  {data.organization}
-                </Typography>
+            <Group gap="xs" mt={4} align="center">
+              {renderChip(getEntityTypeLabel(type))}
+              {meta && (
+                <Text size="xs" c="dimmed" lineClamp={1}>
+                  {meta}
+                </Text>
               )}
-              
-              {type === 'arc' && (data.startChapter && data.endChapter) && (
-                <Typography 
-                  component={inline ? "span" : "p"}
-                  variant="caption" 
-                  color="text.secondary"
-                >
-                  Ch. {data.startChapter}-{data.endChapter}
-                </Typography>
-              )}
-              
-              {type === 'gamble' && data.chapterNumber && (
-                <Typography 
-                  component={inline ? "span" : "p"}
-                  variant="caption" 
-                  color="text.secondary"
-                >
-                  Ch. {data.chapterNumber}
-                </Typography>
-              )}
-              
-              {type === 'chapter' && data.number && (
-                <Typography 
-                  component={inline ? "span" : "p"}
-                  variant="caption" 
-                  color="text.secondary"
-                >
-                  #{data.number}
-                </Typography>
-              )}
-              
-              {type === 'volume' && data.number && (
-                <Typography 
-                  component={inline ? "span" : "p"}
-                  variant="caption" 
-                  color="text.secondary"
-                >
-                  Vol. {data.number}
-                </Typography>
-              )}
-            </Box>
+            </Group>
           )}
         </Box>
-      </Box>
+      </Group>
     )
   }
+
+  const linkHref = getEntityUrl(type, id)
+  const interactiveStyles = {
+    border: `1px solid ${rgba(accentColor, 0.25)}`,
+    background: `linear-gradient(135deg, ${rgba(accentColor, 0.12)} 0%, transparent 100%)`,
+    textDecoration: 'none',
+    transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
+    display: inline ? 'inline-flex' : undefined
+  } as const
 
   if (compact || inline) {
     return (
       <Box
         component={Link}
-        href={getEntityUrl(type, id)}
-        sx={{
-          display: 'inline-flex',
+        href={linkHref}
+        style={{
+          ...interactiveStyles,
           alignItems: 'center',
-          textDecoration: 'none',
-          border: `1px solid ${getEntityColor()}30`,
-          borderRadius: 1,
-          padding: '2px 6px',
-          background: `linear-gradient(135deg, ${getEntityColor()}08 0%, transparent 100%)`,
+          padding: '4px 8px',
+          borderRadius: rem(8),
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          overflow: 'hidden',
           maxWidth: '100%',
-          '&:hover': {
-            borderColor: `${getEntityColor()}60`,
-            background: `linear-gradient(135deg, ${getEntityColor()}15 0%, transparent 100%)`,
-            transform: 'translateY(-1px)'
-          }
+          color: 'inherit'
+        }}
+        onMouseEnter={(event) => {
+          event.currentTarget.style.borderColor = rgba(accentColor, 0.6)
+          event.currentTarget.style.transform = 'translateY(-1px)'
+        }}
+        onMouseLeave={(event) => {
+          event.currentTarget.style.borderColor = rgba(accentColor, 0.25)
+          event.currentTarget.style.transform = 'none'
         }}
       >
         {renderContent()}
@@ -323,23 +298,27 @@ const EntityCard: React.FC<EntityCardProps> = ({
   return (
     <Card
       component={Link}
-      href={getEntityUrl(type, id)}
-      sx={{
-        border: `1px solid ${getEntityColor()}30`,
-        background: `linear-gradient(135deg, ${getEntityColor()}08 0%, transparent 100%)`,
-        cursor: 'pointer',
-        textDecoration: 'none',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          borderColor: `${getEntityColor()}60`,
-          boxShadow: theme.shadows[4],
-          transform: 'translateY(-2px)'
-        }
+      href={linkHref}
+      padding="md"
+      radius="md"
+      withBorder
+      style={{
+        ...interactiveStyles,
+        borderRadius: rem(12),
+        cursor: 'pointer'
+      }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.borderColor = rgba(accentColor, 0.6)
+        event.currentTarget.style.boxShadow = `0 12px 24px ${rgba(accentColor, 0.18)}`
+        event.currentTarget.style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.borderColor = rgba(accentColor, 0.25)
+        event.currentTarget.style.boxShadow = 'none'
+        event.currentTarget.style.transform = 'none'
       }}
     >
-      <CardContent sx={{ p: 2 }}>
-        {renderContent()}
-      </CardContent>
+      {renderContent()}
     </Card>
   )
 }
