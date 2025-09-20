@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
+// Note: Avoid importing Mantine Header to preserve compatibility; using native <header> element
 import {
   Group,
   Title,
@@ -73,7 +74,14 @@ const Navigation: React.FC = () => {
   const theme = useMantineTheme()
   const accentColor = theme.other?.usogui?.red ?? theme.colors.red?.[5] ?? '#e11d48'
   const hoverOutline = 'rgba(225, 29, 72, 0.55)'
-  const [accountMenuHighlight, setAccountMenuHighlight] = useState<string | null>(null)
+  // Shared styles used to provide an outline highlight on hover/focus for menu buttons/items
+  const menuHoverStyles = {
+    '&:hover, &:focus': {
+      boxShadow: `inset 0 0 0 1px ${hoverOutline}`,
+      outline: 'none'
+    }
+  }
+  // accountMenuHighlight removed - rely on CSS hover/focus styles instead
   const [mobileAccountHighlight, setMobileAccountHighlight] = useState<string | null>(null)
   const [loginButtonHighlighted, setLoginButtonHighlighted] = useState(false)
   const [browseOpened, setBrowseOpened] = useState(false)
@@ -431,8 +439,9 @@ const Navigation: React.FC = () => {
                   }}
                   styles={{
                     root: {
+                      ...menuHoverStyles,
                       '&:hover': {
-                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
                       }
                     }
                   }}
@@ -476,6 +485,7 @@ const Navigation: React.FC = () => {
                           whiteSpace: 'nowrap'
                         },
                         item: {
+                          ...menuHoverStyles,
                           '&:hover': {
                             backgroundColor: rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)',
                             color: accentColor,
@@ -537,8 +547,9 @@ const Navigation: React.FC = () => {
                   }}
                   styles={{
                     root: {
+                      ...menuHoverStyles,
                       '&:hover': {
-                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
                       }
                     }
                   }}
@@ -568,6 +579,7 @@ const Navigation: React.FC = () => {
                       whiteSpace: 'nowrap'
                     },
                     item: {
+                      ...menuHoverStyles,
                       '&:hover': {
                         backgroundColor: rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)',
                         color: accentColor,
@@ -626,8 +638,9 @@ const Navigation: React.FC = () => {
                   }}
                   styles={{
                     root: {
+                      ...menuHoverStyles,
                       '&:hover': {
-                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
                       }
                     }
                   }}
@@ -657,6 +670,7 @@ const Navigation: React.FC = () => {
                       whiteSpace: 'nowrap'
                     },
                     item: {
+                      ...menuHoverStyles,
                       '&:hover': {
                         backgroundColor: rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)',
                         color: accentColor,
@@ -883,7 +897,6 @@ const Navigation: React.FC = () => {
                 withArrow
                 arrowPosition="center"
                 offset={4}
-                onClose={() => setAccountMenuHighlight(null)}
                 styles={{
                   dropdown: {
                     backgroundColor: theme.colors.dark[8],
@@ -918,22 +931,16 @@ const Navigation: React.FC = () => {
                   component={Link}
                   href="/profile"
                   leftSection={<User size={16} />}
-                  onMouseEnter={() => setAccountMenuHighlight('profile')}
-                  onMouseLeave={() => {
-                    setAccountMenuHighlight((current) => (current === 'profile' ? null : current))
-                  }}
-                  onFocus={() => setAccountMenuHighlight('profile')}
-                  onBlur={() => {
-                    setAccountMenuHighlight((current) => (current === 'profile' ? null : current))
-                  }}
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
                     transition: 'box-shadow 0.2s ease',
-                    boxShadow: getOutlineShadow(isActivePath('/profile'), accountMenuHighlight === 'profile'),
+                    /* keep an explicit active outline when the profile route is active */
+                    boxShadow: isActivePath('/profile') ? `inset 0 0 0 1px ${accentColor}` : undefined,
                     paddingTop: rem(6),
                     paddingBottom: rem(6)
                   }}
+                  styles={{ item: menuHoverStyles }}
                 >
                   Profile
                 </Menu.Item>
@@ -941,22 +948,15 @@ const Navigation: React.FC = () => {
                   component={Link}
                   href="/about"
                   leftSection={<Heart size={16} />}
-                  onMouseEnter={() => setAccountMenuHighlight('donate')}
-                  onMouseLeave={() => {
-                    setAccountMenuHighlight((current) => (current === 'donate' ? null : current))
-                  }}
-                  onFocus={() => setAccountMenuHighlight('donate')}
-                  onBlur={() => {
-                    setAccountMenuHighlight((current) => (current === 'donate' ? null : current))
-                  }}
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
                     transition: 'box-shadow 0.2s ease',
-                    boxShadow: getOutlineShadow(isActivePath('/about'), accountMenuHighlight === 'donate'),
+                    boxShadow: isActivePath('/about') ? `inset 0 0 0 1px ${accentColor}` : undefined,
                     paddingTop: rem(6),
                     paddingBottom: rem(6)
                   }}
+                  styles={{ item: menuHoverStyles }}
                 >
                   Donate
                 </Menu.Item>
@@ -965,22 +965,14 @@ const Navigation: React.FC = () => {
                   onClick={handleLogout}
                   leftSection={<LogOut size={16} />}
                   color="red"
-                  onMouseEnter={() => setAccountMenuHighlight('logout')}
-                  onMouseLeave={() => {
-                    setAccountMenuHighlight((current) => (current === 'logout' ? null : current))
-                  }}
-                  onFocus={() => setAccountMenuHighlight('logout')}
-                  onBlur={() => {
-                    setAccountMenuHighlight((current) => (current === 'logout' ? null : current))
-                  }}
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
                     transition: 'box-shadow 0.2s ease',
-                    boxShadow: getOutlineShadow(false, accountMenuHighlight === 'logout'),
                     paddingTop: rem(6),
                     paddingBottom: rem(6)
                   }}
+                  styles={{ item: menuHoverStyles }}
                 >
                   Logout
                 </Menu.Item>
@@ -1084,9 +1076,9 @@ const Navigation: React.FC = () => {
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
-                    transition: 'box-shadow 0.2s ease',
-                    boxShadow: getOutlineShadow(isActivePath('/profile'), mobileAccountHighlight === 'profile')
+                    transition: 'box-shadow 0.2s ease'
                   }}
+                  styles={{ item: menuHoverStyles }}
                 >
                   Profile
                 </Menu.Item>
@@ -1106,9 +1098,9 @@ const Navigation: React.FC = () => {
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
-                    transition: 'box-shadow 0.2s ease',
-                    boxShadow: getOutlineShadow(isActivePath('/about'), mobileAccountHighlight === 'donate')
+                    transition: 'box-shadow 0.2s ease'
                   }}
+                  styles={{ item: menuHoverStyles }}
                 >
                   Donate
                 </Menu.Item>
@@ -1138,12 +1130,12 @@ const Navigation: React.FC = () => {
                   onBlur={() => {
                     setMobileAccountHighlight((current) => (current === 'login' ? null : current))
                   }}
-                  style={{
-                    backgroundColor: 'transparent',
-                    borderRadius: 6,
-                    transition: 'box-shadow 0.2s ease',
-                    boxShadow: getOutlineShadow(isActivePath('/login'), mobileAccountHighlight === 'login')
-                  }}
+                    style={{
+                      backgroundColor: 'transparent',
+                      borderRadius: 6,
+                      transition: 'box-shadow 0.2s ease'
+                    }}
+                    styles={{ item: menuHoverStyles }}
                 >
                   Login
                 </Menu.Item>
@@ -1176,6 +1168,7 @@ const Navigation: React.FC = () => {
                       paddingLeft: '2rem',
                       borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent'
                     }}
+                    styles={{ item: menuHoverStyles }}
                   >
                     {item.label}
                   </Menu.Item>
@@ -1208,6 +1201,7 @@ const Navigation: React.FC = () => {
                   paddingLeft: '2rem',
                   borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent'
                 }}
+                styles={{ item: menuHoverStyles }}
               >
                 {item.label}
               </Menu.Item>
@@ -1238,6 +1232,7 @@ const Navigation: React.FC = () => {
                   paddingLeft: '2rem',
                   borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent'
                 }}
+                styles={{ item: menuHoverStyles }}
               >
                 {item.label}
               </Menu.Item>
