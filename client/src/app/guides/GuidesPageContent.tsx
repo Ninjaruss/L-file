@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import {
   Alert,
   Badge,
@@ -24,6 +24,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
 import { api } from '../../lib/api'
+import { usePaged } from '../../hooks/usePagedCache'
+import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { useAuth } from '../../providers/AuthProvider'
 import AuthorProfileImage from '../../components/AuthorProfileImage'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
@@ -103,39 +105,24 @@ export default function GuidesPageContent({
   const [authorFilter, setAuthorFilter] = useState<string | null>(initialAuthorId || null)
   const [authorName, setAuthorName] = useState<string | null>(initialAuthorName || null)
 
-  const fetchGuides = async (page = 1, search = '', authorId?: string) => {
-    setLoading(true)
-    try {
-      const params: { page: number; limit: number; title?: string; authorId?: string; status?: string } = {
-        page,
-        limit: 12,
-        status: 'approved'
-      }
-      if (search) params.title = search
-      if (authorId) params.authorId = authorId
+  const fetcher = useCallback(async (page: number) => {
+    const params: any = { page, limit: 12, status: 'approved' }
+    if (searchQuery) params.title = searchQuery
+    if (authorFilter) params.authorId = authorFilter
+    const resAny = await api.getGuides(params)
+    return { data: resAny.data || [], total: resAny.total || 0, page: resAny.page || page, perPage: 12, totalPages: resAny.totalPages || Math.max(1, Math.ceil((resAny.total || 0) / 12)) }
+  }, [searchQuery, authorFilter])
 
-      const response = await api.getGuides(params)
-      setGuides(response.data)
-      setTotalPages(response.totalPages)
-      setTotal(response.total)
-      setError('')
-    } catch (fetchError: unknown) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch guides')
-      setGuides([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh, invalidate } = usePaged<Guide>('guides', currentPage, fetcher, { title: searchQuery, authorId: authorFilter }, { ttlMs: pagedCacheConfig.lists.guides.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.guides.maxEntries })
 
   useEffect(() => {
-    if (
-      currentPage !== initialPage ||
-      searchQuery !== initialSearch ||
-      authorFilter !== initialAuthorId
-    ) {
-      fetchGuides(currentPage, searchQuery, authorFilter || undefined)
+    if (pageData) {
+      setGuides(pageData.data || [])
+      setTotalPages(pageData.totalPages || 1)
+      setTotal(pageData.total || 0)
     }
-  }, [currentPage, searchQuery, authorFilter, initialPage, initialSearch, initialAuthorId])
+    setLoading(!!pageLoading)
+  }, [pageData, pageLoading])
 
   const updateUrl = (page: number, search: string, authorId?: string, authorNameParam?: string) => {
     const params = new URLSearchParams()
@@ -158,7 +145,8 @@ export default function GuidesPageContent({
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       updateUrl(currentPage, searchQuery, authorFilter || undefined, authorName || undefined)
-      fetchGuides(currentPage, searchQuery, authorFilter || undefined)
+      // trigger usePaged refresh (stale-while-revalidate)
+      refresh(false).catch(() => {})
     }, 300)
 
     return () => clearTimeout(timeoutId)
@@ -167,6 +155,7 @@ export default function GuidesPageContent({
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     updateUrl(page, searchQuery, authorFilter || undefined, authorName || undefined)
+    prefetch(page)
   }
 
   const clearAuthorFilter = () => {

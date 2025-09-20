@@ -25,6 +25,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import MediaThumbnail from '../../components/MediaThumbnail'
 import { api } from '../../lib/api'
+import { usePaged } from '../../hooks/usePagedCache'
+import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 
 type Participant = {
   id: number
@@ -100,55 +102,42 @@ export default function GamblesPageContent({
     router.push(`/gambles${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
-  const fetchGambles = async (page = 1, search = '', characterName?: string) => {
-    setLoading(true)
-    try {
-      let response
-
-      if (characterName) {
-        const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
-        if (charactersResponse.data.length > 0) {
-          const characterId = charactersResponse.data[0].id
-          const characterGamblesResponse = await api.getCharacterGambles(characterId, { limit: 1000 })
-          const allGambles = characterGamblesResponse.data || []
-          const startIndex = (page - 1) * 12
-          const endIndex = startIndex + 12
-          response = {
-            data: allGambles.slice(startIndex, endIndex),
-            total: allGambles.length,
-            totalPages: Math.ceil(allGambles.length / 12),
-            page
-          }
-        } else {
-          response = { data: [], total: 0, totalPages: 1, page: 1 }
-        }
-      } else {
-        const params: { page: number; limit: number; gambleName?: string } = { page, limit: 12 }
-        if (search) params.gambleName = search
-        response = await api.getGambles(params)
+  const fetcher = useCallback(async (page = 1) => {
+    if (characterFilter) {
+      const charactersResponse = await api.getCharacters({ name: characterFilter, limit: 1 })
+      if (charactersResponse.data.length > 0) {
+        const characterId = charactersResponse.data[0].id
+        const characterGamblesResponse = await api.getCharacterGambles(characterId, { limit: 1000 })
+        const allGambles = characterGamblesResponse.data || []
+        const startIndex = (page - 1) * 12
+        const endIndex = startIndex + 12
+        return { data: allGambles.slice(startIndex, endIndex), total: allGambles.length, page, perPage: 12, totalPages: Math.max(1, Math.ceil(allGambles.length / 12)) }
       }
-
-      setGambles(response.data)
-      setTotalPages(response.totalPages)
-      setTotal(response.total)
-      setError('')
-    } catch (fetchError: unknown) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch gambles')
-      setGambles([])
-    } finally {
-      setLoading(false)
+      return { data: [], total: 0, page: 1, perPage: 12, totalPages: 1 }
     }
-  }
+
+    const params: any = { page, limit: 12 }
+    if (searchQuery) params.gambleName = searchQuery
+    const resAny = await api.getGambles(params)
+    return { data: resAny.data || [], total: resAny.total || 0, page: resAny.page || page, perPage: 12, totalPages: resAny.totalPages || Math.max(1, Math.ceil((resAny.total || 0) / 12)) }
+  }, [characterFilter, searchQuery])
+
+  const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh } = usePaged<Gamble>(
+    'gambles',
+    currentPage,
+    fetcher,
+    { gambleName: searchQuery, character: characterFilter },
+    { ttlMs: pagedCacheConfig.lists.gambles.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.gambles.maxEntries }
+  )
 
   useEffect(() => {
-    if (
-      currentPage !== initialPage ||
-      searchQuery !== initialSearch ||
-      characterFilter !== (initialCharacterFilter || null)
-    ) {
-      fetchGambles(currentPage, searchQuery, characterFilter || undefined)
+    if (pageData) {
+      setGambles(pageData.data || [])
+      setTotalPages(pageData.totalPages || 1)
+      setTotal(pageData.total || 0)
     }
-  }, [currentPage, searchQuery, characterFilter, initialPage, initialSearch, initialCharacterFilter])
+    setLoading(!!pageLoading)
+  }, [pageData, pageLoading])
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((gamble?: Gamble) => {
@@ -255,7 +244,8 @@ export default function GamblesPageContent({
     setCharacterFilter(null)
     setCurrentPage(1)
     updateURL(searchQuery, 1)
-    fetchGambles(1, searchQuery)
+    // Use usePaged refresh to reload page data after clearing the character filter
+    refresh(true)
   }
 
   // Hover modal handlers

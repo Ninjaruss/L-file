@@ -13,6 +13,10 @@
 - Added detail modal for arcs list page
 - Adjusted styling of all public list pages
 - Fixed profile page and any edit modals
+- Data scraped from Usogui Fandom the volume covers and chapter titles
+- All 49 volume covers and 539 chapter titles are indexed and seeded properly
+- Paged hook caching implemented as well as optimizations to search and adding limits with TTL config
+
 
 ### Notes
 - Debouncing is the solution for the search function calling continuous api calls. A simple timeout delay between the first call and subsequent calls limits how many calls are made while typing in search.

@@ -11,6 +11,7 @@ import { OrganizationSeeder } from './organization.seeder';
 import { TagSeeder } from './tag.seeder';
 import { MediaSeeder } from './media.seeder';
 import { GambleSeeder } from './gamble.seeder';
+import { FandomDataSeeder } from './fandom-data.seeder';
 import { GuideSeeder } from './guide.seeder';
 import { BadgeSeeder } from './badge.seeder';
 import { Logger } from '@nestjs/common';
@@ -45,8 +46,9 @@ export class MainSeeder {
       new EventSeeder(this.dataSource), // Story events and plot points
       new QuoteSeeder(this.dataSource), // Character quotes
       new GambleSeeder(this.dataSource), // Gambling events and games
-      new MediaSeeder(this.dataSource), // Community media submissions
-      new GuideSeeder(this.dataSource), // User-generated guides and tutorials
+  new MediaSeeder(this.dataSource), // Community media submissions
+  new FandomDataSeeder(this.dataSource), // Fandom-sourced volumes/chapters and covers
+  new GuideSeeder(this.dataSource), // User-generated guides and tutorials
     ];
 
     let success = true;

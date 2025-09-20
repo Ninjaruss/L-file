@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -59,24 +59,22 @@ const PAGE_SIZE = 12
 
 export default function CharactersPageContent({
   initialCharacters = [],
-  initialTotalPages = 1,
-  initialTotal = 0,
   initialSearch = '',
   initialError = ''
 }: CharactersPageContentProps) {
   const theme = useMantineTheme()
   const accentCharacter = theme.other?.usogui?.character ?? theme.colors.blue?.[5] ?? '#1976d2'
-  const [characters, setCharacters] = useState<Character[]>(initialCharacters)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
-  const currentSearch = searchParams.get('search') || ''
 
-  const [totalPages, setTotalPages] = useState<number>(initialTotalPages)
-  const [total, setTotal] = useState<number>(initialTotal)
+  // Load all characters once - no pagination needed on API level
+  const [allCharacters, setAllCharacters] = useState<Character[]>(initialCharacters)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
-  const [searchQuery, setSearchQuery] = useState(currentSearch || initialSearch)
+  const [searchQuery, setSearchQuery] = useState(initialSearch || '')
+
+  // Client-side pagination
+  const [currentPage, setCurrentPage] = useState<number>(parseInt(searchParams.get('page') || '1', 10))
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -92,42 +90,68 @@ export default function CharactersPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
-  const fetchCharacters = useCallback(async () => {
+  // Load all characters once on mount
+  const loadAllCharacters = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: PAGE_SIZE.toString(),
-        includeOrganizations: 'true',
-        ...(searchQuery && { name: searchQuery })
-      })
-
-      const data = await api.get<{
-        data: Character[]
-        characters: Character[]
-        total: number
-        page: number
-        totalPages: number
-      }>(`/characters?${params}`)
-
-      setCharacters(data.characters || data.data || [])
-      setTotal(data.total || 0)
-      setTotalPages(Math.ceil((data.total || 0) / PAGE_SIZE))
-    } catch (error) {
-      console.error('Error fetching characters:', error)
-      setError('Failed to load characters. Please try again later.')
+      const response = await api.get<any>('/characters?limit=500&includeOrganizations=true')
+      const dataArr: Character[] = response.characters || response.data || []
+      setAllCharacters(dataArr)
+    } catch (err: any) {
+      console.error('Error loading characters:', err)
+      if (err?.status === 429) {
+        setError('Rate limit exceeded. Please wait a moment and try again.')
+      } else {
+        setError('Failed to load characters. Please try again later.')
+      }
     } finally {
       setLoading(false)
     }
-  }, [currentPage, searchQuery])
+  }, [])
 
+  // Client-side filtering and pagination
+  const filteredCharacters = useMemo(() => {
+    if (!searchQuery.trim()) return allCharacters
+
+    const query = searchQuery.toLowerCase().trim()
+    return allCharacters.filter(character => {
+      const name = character.name?.toLowerCase() || ''
+      const alias = character.alias?.toLowerCase() || ''
+      const description = character.description?.toLowerCase() || ''
+      const alternateNames = character.alternateNames?.join(' ')?.toLowerCase() || ''
+      const tags = character.tags?.join(' ')?.toLowerCase() || ''
+      const organizations = character.organizations?.map(org => org.name)?.join(' ')?.toLowerCase() || ''
+
+      return name.includes(query) || alias.includes(query) || description.includes(query) ||
+             alternateNames.includes(query) || tags.includes(query) || organizations.includes(query)
+    })
+  }, [allCharacters, searchQuery])
+
+  const paginatedCharacters = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE
+    return filteredCharacters.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredCharacters, currentPage])
+
+  const totalPages = Math.ceil(filteredCharacters.length / PAGE_SIZE)
+  const total = filteredCharacters.length
+
+  // Load all characters on mount if we don't have the expected full set
   useEffect(() => {
-    if (searchQuery !== currentSearch || characters.length === 0) {
-      fetchCharacters()
+    if (allCharacters.length === 0 || (allCharacters.length > 0 && allCharacters.length < 50)) {
+      loadAllCharacters()
     }
-  }, [currentPage, searchQuery, currentSearch, characters.length, fetchCharacters])
+  }, [allCharacters.length, loadAllCharacters])
+
+  // Sync with URL parameters - only react to searchParams changes
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '1', 10)
+    const urlSearch = searchParams.get('search') || ''
+
+    setCurrentPage(urlPage)
+    setSearchQuery(urlSearch)
+  }, [searchParams])
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((character?: Character) => {
@@ -194,39 +218,32 @@ export default function CharactersPageContent({
   }, [hoveredCharacter, updateModalPosition])
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.currentTarget.value
+    const newSearch = event.target.value
     setSearchQuery(newSearch)
+    setCurrentPage(1) // Reset to first page immediately when search changes
   }, [])
 
-  // Debounce search query changes
+  // Update URL when search or page changes (no API calls needed)
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('search', searchQuery)
-      params.set('page', '1') // Reset to first page on new search
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (currentPage > 1) params.set('page', currentPage.toString())
 
-      router.push(`/characters?${params.toString()}`)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, router])
+    const newUrl = params.toString() ? `/characters?${params.toString()}` : '/characters'
+    router.push(newUrl, { scroll: false })
+  }, [searchQuery, currentPage, router])
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
-
-    const params = new URLSearchParams()
-    params.set('page', '1')
-
-    router.push(`/characters?${params.toString()}`)
+    setCurrentPage(1)
+    router.push('/characters', { scroll: false })
+    // No API calls needed!
   }, [router])
 
   const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set('search', searchQuery)
-    params.set('page', page.toString())
-
-    router.push(`/characters?${params.toString()}`)
-  }, [router, searchQuery])
+    setCurrentPage(page) // Update local state immediately
+    // No API calls needed - everything is client-side now!
+  }, [])
 
   const handleEditImage = (character: Character) => {
     setSelectedCharacter(character)
@@ -259,9 +276,9 @@ export default function CharactersPageContent({
         color: 'green'
       })
 
-      // Close dialog and refresh
-      handleCloseImageDialog()
-      fetchCharacters()
+  // Close dialog and refresh
+  handleCloseImageDialog()
+  loadAllCharacters().catch(() => {})
     } catch (error) {
       console.error('Upload error:', error)
       notifications.show({
@@ -290,8 +307,8 @@ export default function CharactersPageContent({
         color: 'green'
       })
 
-      handleCloseImageDialog()
-      fetchCharacters()
+  handleCloseImageDialog()
+  loadAllCharacters().catch(() => {})
     } catch (error) {
       console.error('Error removing image:', error)
       notifications.show({
@@ -387,9 +404,9 @@ export default function CharactersPageContent({
               Explore the rich cast of Usogui characters, from cunning gamblers to mysterious adversaries
             </Text>
 
-            {total > 0 && (
+            {allCharacters.length > 0 && (
               <Badge size="md" variant="light" color="blue" radius="xl" mt="xs">
-                {total} character{total !== 1 ? 's' : ''} available
+                {searchQuery ? `${total} of ${allCharacters.length}` : `${allCharacters.length}`} character{(searchQuery ? total : allCharacters.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
           </Stack>
@@ -448,7 +465,7 @@ export default function CharactersPageContent({
       ) : (
         <>
           {/* Empty State */}
-          {characters.length === 0 ? (
+          {paginatedCharacters.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <User size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
               <Title order={3} c="dimmed" mb="sm">
@@ -476,7 +493,7 @@ export default function CharactersPageContent({
                   justifyItems: 'center'
                 }}
               >
-                {characters.map((character, index) => (
+                {paginatedCharacters.map((character: Character, index: number) => (
                   <motion.div
                     key={character.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -622,9 +639,24 @@ export default function CharactersPageContent({
                 ))}
               </Box>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Box style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
+              {/* Pagination Info & Controls */}
+              <Box style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: rem(48),
+                gap: rem(12)
+              }}>
+                {/* Always show pagination info when we have characters */}
+                {allCharacters.length > 0 && (
+                  <Text size="sm" c="dimmed">
+                    Showing {paginatedCharacters.length} of {total} characters
+                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                  </Text>
+                )}
+
+                {/* Show pagination controls when we have multiple pages */}
+                {totalPages > 1 && (
                   <Pagination
                     total={totalPages}
                     value={currentPage}
@@ -634,8 +666,10 @@ export default function CharactersPageContent({
                     radius="xl"
                     withEdges
                   />
-                </Box>
-              )}
+                )}
+
+                {loading && <Loader size="sm" color={accentCharacter} />}
+              </Box>
             </>
           )}
         </>

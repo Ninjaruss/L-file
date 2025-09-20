@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Alert,
   Badge,
@@ -22,6 +22,8 @@ import {
 import { Search, Users, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
+import { usePaged } from '../../hooks/usePagedCache'
+import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { motion } from 'motion/react'
 import UserProfileImage from '../../components/UserProfileImage'
 import UserBadges from '../../components/UserBadges'
@@ -32,7 +34,6 @@ interface PublicUser {
   username: string
   role: string
   customRole?: string | null
-  userProgress: number
   profilePictureType?: 'discord' | 'character_media' | null
   selectedCharacterMediaId?: number | null
   selectedCharacterMedia?: {
@@ -47,6 +48,7 @@ interface PublicUser {
   discordAvatar?: string | null
   createdAt: string
   guidesCount?: number
+  userProgress?: number
 }
 
 export default function UsersPageContent() {
@@ -61,29 +63,33 @@ export default function UsersPageContent() {
 
   const limit = 12
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      const params: any = { page, limit }
-      if (searchTerm.trim()) {
-        params.username = searchTerm
-      }
+  const fetcher = useCallback(async (p: number) => {
+    const params: any = { page: p, limit }
+    if (searchTerm.trim()) params.username = searchTerm
+    const resAny = await api.getPublicUsers(params)
+    return { data: resAny.data || [], total: resAny.total || 0, page: resAny.page || p, perPage: limit, totalPages: resAny.totalPages || Math.max(1, Math.ceil((resAny.total || 0) / limit)) }
+  }, [searchTerm, limit])
 
-      const response = await api.getPublicUsers(params)
-      setUsers(response.data)
-      setTotalPages(response.totalPages)
-      setTotal(response.total)
-    } catch (error: any) {
-      setError(error.message)
-    } finally {
-      setLoading(false)
+  const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh } = usePaged<PublicUser>(
+    'users',
+    page,
+    fetcher,
+    { username: searchTerm },
+    { ttlMs: pagedCacheConfig.lists.users.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.users.maxEntries }
+  )
+
+  useEffect(() => {
+    if (pageData) {
+      setUsers(pageData.data || [])
+      setTotalPages(pageData.totalPages || 0)
+      setTotal(pageData.total || 0)
     }
-  }
+    setLoading(!!pageLoading)
+  }, [pageData, pageLoading])
 
-  // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchUsers()
+      refresh(false).catch(() => {})
     }, 300)
 
     return () => clearTimeout(timeoutId)
@@ -146,7 +152,7 @@ export default function UsersPageContent() {
 
             <Grid gutter="xl">
               {users.map((user) => {
-                const progressPercentage = Math.round((user.userProgress / 539) * 100)
+                const progressPercentage = Math.round(((user.userProgress ?? 0) / 539) * 100)
                 
                 return (
                   <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={user.id}>
@@ -199,7 +205,7 @@ export default function UsersPageContent() {
                                 Reading Progress
                               </Text>
                               <Text size="xs" c="dimmed">
-                                Ch. {user.userProgress}
+                                 Ch. {user.userProgress ?? 0}
                               </Text>
                             </Group>
                             <Progress value={progressPercentage} size="sm" radius="md" color="red" />

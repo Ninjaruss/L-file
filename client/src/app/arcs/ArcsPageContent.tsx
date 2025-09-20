@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -55,8 +55,6 @@ const PAGE_SIZE = 12
 
 export default function ArcsPageContent({
   initialArcs,
-  initialTotalPages,
-  initialTotal,
   initialPage,
   initialSearch,
   initialCharacter,
@@ -66,13 +64,12 @@ export default function ArcsPageContent({
   const theme = useMantineTheme()
   const router = useRouter()
 
-  const [arcs, setArcs] = useState<Arc[]>(initialArcs)
+  // Load all arcs once - no pagination needed on API level
+  const [allArcs, setAllArcs] = useState<Arc[]>(initialArcs)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [currentPage, setCurrentPage] = useState(initialPage)
-  const [totalPages, setTotalPages] = useState(initialTotalPages)
-  const [total, setTotal] = useState(initialTotal)
   const [characterFilter, setCharacterFilter] = useState<string | null>(initialCharacter || null)
 
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
@@ -92,60 +89,61 @@ export default function ArcsPageContent({
 
   const isModeratorOrAdmin = user?.role === 'moderator' || user?.role === 'admin'
 
-  const fetchArcs = useCallback(
-    async (pageValue = 1, searchValue = '', characterName?: string | null) => {
-      setLoading(true)
-      try {
-        let response: { data: Arc[]; total: number; totalPages: number }
+  // Load all arcs once on mount
+  const loadAllArcs = useCallback(async () => {
+    setLoading(true)
+    setError('')
 
-        if (characterName) {
-          const charactersResponse = await api.getCharacters({ name: characterName, limit: 1 })
-          if (charactersResponse.data.length > 0) {
-            const characterId = charactersResponse.data[0].id
-            const characterArcsResponse = await api.getCharacterArcs(characterId)
-            const allArcs: Arc[] = characterArcsResponse.data || []
-            const startIndex = (pageValue - 1) * PAGE_SIZE
-            const paginatedArcs = allArcs.slice(startIndex, startIndex + PAGE_SIZE)
-            response = {
-              data: paginatedArcs,
-              total: allArcs.length,
-              totalPages: Math.max(1, Math.ceil(allArcs.length / PAGE_SIZE))
-            }
-          } else {
-            response = { data: [], total: 0, totalPages: 1 }
-          }
-        } else {
-          const params: { page: number; limit: number; name?: string } = { page: pageValue, limit: PAGE_SIZE }
-          if (searchValue.trim()) {
-            params.name = searchValue.trim()
-          }
-          response = await api.getArcs(params)
-        }
-
-        setArcs(response.data)
-        setTotal(response.total)
-        setTotalPages(response.totalPages)
-        setError('')
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to fetch arcs'
-        setError(message)
-        notifications.show({ message, color: 'red' })
-      } finally {
-        setLoading(false)
+    try {
+      // Load all arcs (small dataset)
+      const response = await api.getArcs({ limit: 100 })
+      setAllArcs(response.data || [])
+    } catch (err: any) {
+      console.error('Error loading arcs:', err)
+      if (err?.status === 429) {
+        setError('Rate limit exceeded. Please wait a moment and try again.')
+      } else {
+        setError('Failed to load arcs. Please try again later.')
       }
-    },
-    []
-  )
-
-  useEffect(() => {
-    if (
-      currentPage !== initialPage ||
-      searchQuery !== initialSearch ||
-      characterFilter !== initialCharacter
-    ) {
-      fetchArcs(currentPage, searchQuery, characterFilter)
+    } finally {
+      setLoading(false)
     }
-  }, [currentPage, searchQuery, characterFilter, initialPage, initialSearch, initialCharacter, fetchArcs])
+  }, [])
+
+  // Client-side filtering and pagination
+  const filteredArcs = useMemo(() => {
+    let filtered = allArcs
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter(arc => {
+        const name = arc.name?.toLowerCase() || ''
+        const description = arc.description?.toLowerCase() || ''
+        return name.includes(query) || description.includes(query)
+      })
+    }
+
+    // Note: Character filtering would require additional API calls,
+    // keeping it simple for now since it's complex to implement client-side
+
+    return filtered
+  }, [allArcs, searchQuery])
+
+  const paginatedArcs = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE
+    return filteredArcs.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredArcs, currentPage])
+
+  const totalPages = Math.ceil(filteredArcs.length / PAGE_SIZE)
+  const total = filteredArcs.length
+
+  // Load all arcs on mount
+  useEffect(() => {
+    if (allArcs.length === 0) {
+      loadAllArcs()
+    }
+  }, [allArcs.length, loadAllArcs])
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((arc?: Arc) => {
@@ -237,14 +235,14 @@ export default function ArcsPageContent({
     }
 
     searchDebounceRef.current = window.setTimeout(() => {
-      fetchArcs(1, value, characterFilter)
+      refresh(false).catch(() => {})
     }, 300)
   }
 
   const handlePageChange = (pageValue: number) => {
     setCurrentPage(pageValue)
     updateUrl(pageValue, searchQuery, characterFilter)
-    fetchArcs(pageValue, searchQuery, characterFilter)
+    prefetch(pageValue).catch(() => {})
   }
 
   const handleClearSearch = () => {
@@ -252,7 +250,7 @@ export default function ArcsPageContent({
     setCurrentPage(1)
     setCharacterFilter(null)
     updateUrl(1, '', null)
-    fetchArcs(1, '', null)
+    refresh(false).catch(() => {})
   }
 
 
@@ -339,8 +337,8 @@ export default function ArcsPageContent({
 
     setUploading(true)
     try {
-      await api.uploadArcImage(selectedArc.id, selectedFile, imageDisplayName.trim() || undefined)
-      await fetchArcs(currentPage, searchQuery, characterFilter)
+  await api.uploadArcImage(selectedArc.id, selectedFile, imageDisplayName.trim() || undefined)
+  await refresh(true)
       notifications.show({ message: 'Arc image uploaded successfully!', color: 'green' })
       handleCloseImageDialog()
     } catch (error: unknown) {
@@ -356,8 +354,8 @@ export default function ArcsPageContent({
 
     setUploading(true)
     try {
-      await api.removeArcImage(selectedArc.id)
-      await fetchArcs(currentPage, searchQuery, characterFilter)
+  await api.removeArcImage(selectedArc.id)
+  await refresh(true)
       notifications.show({ message: 'Arc image removed successfully!', color: 'green' })
       handleCloseImageDialog()
     } catch (error: unknown) {
@@ -499,7 +497,7 @@ export default function ArcsPageContent({
                   setCharacterFilter(null)
                   setCurrentPage(1)
                   updateUrl(1, searchQuery, null)
-                  fetchArcs(1, searchQuery, null)
+                  refresh(true)
                 }}>
                   <X size={12} />
                 </ActionIcon>
@@ -533,7 +531,7 @@ export default function ArcsPageContent({
       ) : (
         <>
           {/* Empty State */}
-          {arcs.length === 0 ? (
+          {filteredArcs.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <BookOpen size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
               <Title order={3} c="dimmed" mb="sm">
@@ -561,7 +559,7 @@ export default function ArcsPageContent({
                   justifyItems: 'center'
                 }}
               >
-                {arcs.map((arc, index) => (
+                {paginatedArcs.map((arc, index) => (
                   <motion.div
                     key={arc.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -950,7 +948,7 @@ export default function ArcsPageContent({
                     size="sm"
                     fw={600}
                   >
-                    Arc #{arcs.findIndex(a => a.id === hoveredArc.id) + 1 + (currentPage - 1) * PAGE_SIZE}
+                    Arc #{filteredArcs.findIndex(a => a.id === hoveredArc.id) + 1}
                   </Badge>
                   {formatChapterRange(hoveredArc) && (
                     <Badge

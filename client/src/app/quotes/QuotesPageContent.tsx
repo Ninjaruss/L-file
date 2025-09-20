@@ -25,6 +25,8 @@ import { Quote, Search, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
+import { usePaged } from '../../hooks/usePagedCache'
+import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { textColors } from '../../lib/mantine-theme'
 
 interface QuoteData {
@@ -89,55 +91,47 @@ export default function QuotesPageContent({
   // Use the quote accent color from the theme
   const accentQuote = theme.other?.usogui?.quote ?? theme.colors.violet?.[5] ?? '#7048e8'
 
-  // Fetch function following the pattern from characters/arcs
-  const fetchQuotes = useCallback(async (page = 1, search = '', charId?: string) => {
-    setLoading(true)
-    setError('')
-    
-    try {
-      const params: { page: number; limit: number; search?: string; characterId?: number } = { 
-        page, 
-        limit: PAGE_SIZE 
-      }
-      if (search.trim()) params.search = search.trim()
-      if (charId && !isNaN(Number(charId))) params.characterId = Number(charId)
+  const fetcher = useCallback(async (page = 1) => {
+    const params: any = { page, limit: PAGE_SIZE }
+    if (searchQuery && searchQuery.trim()) params.search = searchQuery.trim()
+    if (characterId && !isNaN(Number(characterId))) params.characterId = Number(characterId)
 
-      const response = await api.getQuotes(params)
-      
-      const transformedQuotes = response.data.map((quote: any) => ({
-        id: quote.id,
-        text: quote.text,
-        speaker: quote.character?.name || 'Unknown',
-        context: quote.description || quote.context,
-        tags: quote.tags ? (Array.isArray(quote.tags) ? quote.tags : [quote.tags]) : [],
-        chapter: quote.chapterNumber,
-        volume: quote.volumeNumber,
-        updatedAt: quote.updatedAt
-      }))
+    const resAny = await api.getQuotes(params)
+    const transformedQuotes = (resAny.data || []).map((quote: any) => ({
+      id: quote.id,
+      text: quote.text,
+      speaker: quote.character?.name || 'Unknown',
+      context: quote.description || quote.context,
+      tags: quote.tags ? (Array.isArray(quote.tags) ? quote.tags : [quote.tags]) : [],
+      chapter: quote.chapterNumber,
+      volume: quote.volumeNumber,
+      updatedAt: quote.updatedAt
+    }))
 
-      setQuotes(transformedQuotes)
-      setTotal(response.total)
-      setTotalPages(response.totalPages)
-      setError('')
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch quotes'
+    return { data: transformedQuotes, total: resAny.total || 0, page: resAny.page || page, perPage: PAGE_SIZE, totalPages: resAny.totalPages || Math.max(1, Math.ceil((resAny.total || 0) / PAGE_SIZE)) }
+  }, [searchQuery, characterId])
+
+  const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh } = usePaged<QuoteData>(
+    'quotes',
+    currentPage,
+    fetcher,
+    { search: searchQuery, characterId },
+    { ttlMs: pagedCacheConfig.lists.quotes.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.quotes.maxEntries }
+  )
+
+  useEffect(() => {
+    if (pageData) {
+      setQuotes(pageData.data || [])
+      setTotal(pageData.total || 0)
+      setTotalPages(pageData.totalPages || 1)
+    }
+    setLoading(!!pageLoading)
+    if (pageError) {
+      const message = pageError instanceof Error ? pageError.message : String(pageError)
       setError(message)
       notifications.show({ message, color: 'red' })
-    } finally {
-      setLoading(false)
     }
-  }, [])
-
-  // Effect to refetch when props change
-  useEffect(() => {
-    if (
-      currentPage !== initialPage ||
-      searchQuery !== initialSearch ||
-      characterId !== initialCharacterId
-    ) {
-      fetchQuotes(currentPage, searchQuery, characterId)
-    }
-  }, [currentPage, searchQuery, characterId, initialPage, initialSearch, initialCharacterId, fetchQuotes])
+  }, [pageData, pageLoading, pageError])
 
   // Function to update modal position based on hovered element (following arcs pattern)
   const updateModalPosition = useCallback((quote?: QuoteData) => {
@@ -221,6 +215,8 @@ export default function QuotesPageContent({
     params.set('page', '1')
     const queryString = params.toString()
     router.push(queryString ? `/quotes?${queryString}` : '/quotes')
+    // trigger refresh via usePaged
+    refresh(true)
   }
 
   const handlePageChange = (page: number) => {
@@ -231,6 +227,8 @@ export default function QuotesPageContent({
     params.set('page', page.toString())
     const queryString = params.toString()
     router.push(`/quotes?${queryString}`)
+    // prefetch the page
+    prefetch(page)
   }
 
   const clearCharacterFilter = () => {
@@ -243,6 +241,7 @@ export default function QuotesPageContent({
     params.set('page', '1')
     const queryString = params.toString()
     router.push(queryString ? `/quotes?${queryString}` : '/quotes')
+    refresh(true)
   }
 
   const clearSearch = () => {
@@ -254,6 +253,7 @@ export default function QuotesPageContent({
     params.set('page', '1')
     const queryString = params.toString()
     router.push(queryString ? `/quotes?${queryString}` : '/quotes')
+    refresh(true)
   }
 
   const hasSearchQuery = Boolean(searchQuery || characterId)

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -25,6 +25,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
 import MediaThumbnail from '../../components/MediaThumbnail'
+import ErrorBoundary from '../../components/ErrorBoundary'
 
 interface Volume {
   id: number
@@ -45,7 +46,7 @@ interface VolumesPageContentProps {
   initialError: string
 }
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 10
 
 export default function VolumesPageContent({
   initialVolumes,
@@ -57,17 +58,17 @@ export default function VolumesPageContent({
 }: VolumesPageContentProps) {
   const theme = useMantineTheme()
   const accentVolume = theme.other?.usogui?.volume ?? theme.colors.red?.[5] ?? '#ef4444'
-  const [volumes, setVolumes] = useState<Volume[]>(initialVolumes)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
-  const currentSearch = searchParams.get('search') || ''
 
-  const [totalPages, setTotalPages] = useState<number>(initialTotalPages)
-  const [total, setTotal] = useState<number>(initialTotal)
+  // Load all volumes once - no pagination needed on API level
+  const [allVolumes, setAllVolumes] = useState<Volume[]>(initialVolumes)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
-  const [searchQuery, setSearchQuery] = useState(currentSearch || initialSearch)
+  const [searchQuery, setSearchQuery] = useState(initialSearch || '')
+
+  // Client-side pagination
+  const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
   // Hover modal state
   const [hoveredVolume, setHoveredVolume] = useState<Volume | null>(null)
@@ -77,44 +78,69 @@ export default function VolumesPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
-  const fetchVolumes = useCallback(async () => {
+  // Load all volumes once on mount
+  const loadAllVolumes = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: PAGE_SIZE.toString()
-      })
-
-      if (searchQuery) {
-        // If search query is numeric, use number parameter, otherwise use title/search
-        if (!isNaN(Number(searchQuery))) {
-          params.set('number', searchQuery)
-        } else {
-          params.set('title', searchQuery)
-        }
+      const response = await api.get<any>('/volumes?limit=100') // Get all volumes
+      setAllVolumes(response.data || [])
+    } catch (err: any) {
+      console.error('Error loading volumes:', err)
+      if (err?.status === 429) {
+        setError('Rate limit exceeded. Please wait a moment and try again.')
+      } else {
+        setError('Failed to load volumes. Please try again later.')
       }
-
-      const response = await api.get(`/volumes?${params}`)
-      const data = await response.json()
-
-      setVolumes(data.data || [])
-      setTotal(data.total || 0)
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / PAGE_SIZE))
-    } catch (error) {
-      console.error('Error fetching volumes:', error)
-      setError('Failed to load volumes. Please try again later.')
     } finally {
       setLoading(false)
     }
-  }, [currentPage, searchQuery])
+  }, [])
 
+  // Client-side filtering and pagination
+  const filteredVolumes = useMemo(() => {
+    if (!searchQuery.trim()) return allVolumes
+
+    const query = searchQuery.toLowerCase().trim()
+    return allVolumes.filter(volume => {
+      // Search by volume number
+      if (!isNaN(Number(query))) {
+        return volume.number.toString().includes(query)
+      }
+
+      // Search by title or description
+      const title = volume.title?.toLowerCase() || `volume ${volume.number}`
+      const description = volume.description?.toLowerCase() || ''
+
+      return title.includes(query) || description.includes(query)
+    })
+  }, [allVolumes, searchQuery])
+
+  const paginatedVolumes = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE
+    return filteredVolumes.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredVolumes, currentPage])
+
+  const totalPages = Math.ceil(filteredVolumes.length / PAGE_SIZE)
+  const total = filteredVolumes.length
+
+  // Load all volumes on mount if we don't have the expected full set
   useEffect(() => {
-    if (searchQuery !== currentSearch || volumes.length === 0) {
-      fetchVolumes()
+    if (allVolumes.length === 0 || (allVolumes.length > 0 && allVolumes.length < 40)) {
+      loadAllVolumes()
     }
-  }, [currentPage, searchQuery, currentSearch, volumes.length, fetchVolumes])
+  }, [allVolumes.length, loadAllVolumes])
+
+  // Sync with URL parameters - only react to searchParams changes
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '1', 10)
+    const urlSearch = searchParams.get('search') || ''
+
+    setCurrentPage(urlPage)
+    setSearchQuery(urlSearch)
+  }, [searchParams])
+
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((volume?: Volume) => {
@@ -181,39 +207,32 @@ export default function VolumesPageContent({
   }, [hoveredVolume, updateModalPosition])
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.currentTarget.value
+    const newSearch = event.target.value
     setSearchQuery(newSearch)
+    setCurrentPage(1) // Reset to first page immediately when search changes
   }, [])
 
-  // Debounce search query changes
+  // Update URL when search or page changes (no API calls needed)
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('search', searchQuery)
-      params.set('page', '1') // Reset to first page on new search
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (currentPage > 1) params.set('page', currentPage.toString())
 
-      router.push(`/volumes?${params.toString()}`)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, router])
+    const newUrl = params.toString() ? `/volumes?${params.toString()}` : '/volumes'
+    router.push(newUrl, { scroll: false })
+  }, [searchQuery, currentPage, router])
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
-
-    const params = new URLSearchParams()
-    params.set('page', '1')
-
-    router.push(`/volumes?${params.toString()}`)
+    setCurrentPage(1)
+    router.push('/volumes', { scroll: false })
+    // No API calls needed!
   }, [router])
 
   const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set('search', searchQuery)
-    params.set('page', page.toString())
-
-    router.push(`/volumes?${params.toString()}`)
-  }, [router, searchQuery])
+    setCurrentPage(page) // Update local state immediately
+    // No API calls needed - everything is client-side now!
+  }, [])
 
   // Hover modal handlers
   const handleVolumeMouseEnter = (volume: Volume, event: React.MouseEvent) => {
@@ -291,9 +310,9 @@ export default function VolumesPageContent({
               Explore the complete collection of Usogui manga volumes
             </Text>
 
-            {total > 0 && (
+            {allVolumes.length > 0 && (
               <Badge size="md" variant="light" color="red" radius="xl" mt="xs">
-                {total} volume{total !== 1 ? 's' : ''} available
+                {searchQuery ? `${total} of ${allVolumes.length}` : `${allVolumes.length}`} volume{(searchQuery ? total : allVolumes.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
           </Stack>
@@ -311,18 +330,27 @@ export default function VolumesPageContent({
               leftSection={<Search size={20} />}
               size="lg"
               radius="xl"
+              disabled={loading}
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={handleClearSearch}
+                    size="sm"
+                    title="Clear search"
+                  >
                     <X size={16} />
                   </ActionIcon>
+                ) : loading ? (
+                  <Loader size="sm" />
                 ) : null
               }
               styles={{
                 input: {
                   fontSize: rem(16),
                   paddingLeft: rem(50),
-                  paddingRight: hasSearchQuery ? rem(50) : rem(20)
+                  paddingRight: (hasSearchQuery || loading) ? rem(50) : rem(20)
                 }
               }}
             />
@@ -337,9 +365,15 @@ export default function VolumesPageContent({
           radius="md"
           mb="xl"
           icon={<AlertCircle size={16} />}
-          title="Error loading volumes"
+          title={error.includes('Rate limit') ? 'Rate Limited' : 'Error loading volumes'}
+          variant={error.includes('Rate limit') ? 'light' : 'filled'}
         >
           {error}
+          {error.includes('Rate limit') && (
+            <Text size="sm" mt="xs" c="dimmed">
+              The server is receiving too many requests. Please wait a moment before trying again.
+            </Text>
+          )}
         </Alert>
       )}
 
@@ -352,7 +386,7 @@ export default function VolumesPageContent({
       ) : (
         <>
           {/* Empty State */}
-          {volumes.length === 0 ? (
+          {paginatedVolumes.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <Book size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
               <Title order={3} c="dimmed" mb="sm">
@@ -380,12 +414,12 @@ export default function VolumesPageContent({
                   justifyItems: 'center'
                 }}
               >
-                {volumes.map((volume, index) => (
+                {paginatedVolumes.map((volume, index) => (
                   <motion.div
                     key={volume.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                    transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }} // Cap animation delay
                     style={{
                       width: '200px',
                       height: '280px' // Playing card aspect ratio: 200px * 1.4 = 280px
@@ -420,17 +454,17 @@ export default function VolumesPageContent({
                         handleVolumeMouseLeave()
                       }}
                     >
-                      {/* Volume Number Badge at Top Left */}
+                      {/* Chapter range Badge at Top Left */}
                       <Badge
                         variant="filled"
-                        color="red"
+                        color="violet"
                         radius="sm"
                         size="sm"
                         style={{
                           position: 'absolute',
                           top: rem(8),
                           left: rem(8),
-                          backgroundColor: 'rgba(239, 68, 68, 0.95)',
+                          backgroundColor: 'rgba(124, 58, 237, 0.95)',
                           color: 'white',
                           fontSize: rem(10),
                           fontWeight: 700,
@@ -439,7 +473,7 @@ export default function VolumesPageContent({
                           maxWidth: 'calc(100% - 16px)'
                         }}
                       >
-                        Vol. {volume.number}
+                        Ch. {volume.startChapter}-{volume.endChapter}
                       </Badge>
 
                       {/* Main Image Section - Takes up most of the card */}
@@ -449,14 +483,17 @@ export default function VolumesPageContent({
                         flex: 1,
                         minHeight: 0
                       }}>
-                        <MediaThumbnail
-                          entityType="volume"
-                          entityId={volume.id}
-                          entityName={`Volume ${volume.number}`}
-                          maxWidth="100%"
-                          maxHeight="100%"
-                          allowCycling={false}
-                        />
+                        <ErrorBoundary>
+                          <MediaThumbnail
+                            entityType="volume"
+                            entityId={volume.id}
+                            entityName={`Volume ${volume.number}`}
+                            maxWidth="100%"
+                            maxHeight="100%"
+                            allowCycling={false}
+                            inline={false}
+                          />
+                        </ErrorBoundary>
                       </Box>
 
                       {/* Volume Title at Bottom */}
@@ -497,9 +534,24 @@ export default function VolumesPageContent({
                 ))}
               </Box>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Box style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
+              {/* Pagination Info & Controls */}
+              <Box style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: rem(48),
+                gap: rem(12)
+              }}>
+                {/* Always show pagination info when we have volumes */}
+                {allVolumes.length > 0 && (
+                  <Text size="sm" c="dimmed">
+                    Showing {paginatedVolumes.length} of {total} volumes
+                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                  </Text>
+                )}
+
+                {/* Show pagination controls when we have multiple pages */}
+                {totalPages > 1 && (
                   <Pagination
                     total={totalPages}
                     value={currentPage}
@@ -509,8 +561,10 @@ export default function VolumesPageContent({
                     radius="xl"
                     withEdges
                   />
-                </Box>
-              )}
+                )}
+
+                {loading && <Loader size="sm" color={accentVolume} />}
+              </Box>
             </>
           )}
         </>
@@ -561,14 +615,6 @@ export default function VolumesPageContent({
 
                 {/* Volume Info */}
                 <Group justify="center" gap="xs">
-                  <Badge
-                    variant="light"
-                    color="red"
-                    size="sm"
-                    fw={600}
-                  >
-                    Volume #{hoveredVolume.number}
-                  </Badge>
                   <Badge
                     variant="filled"
                     color="violet"

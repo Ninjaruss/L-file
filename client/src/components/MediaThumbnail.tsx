@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -40,6 +40,14 @@ interface MediaThumbnailProps {
   inline?: boolean
 }
 
+// Cache for media data to avoid redundant API calls
+const mediaCache = new Map<string, { data: MediaItem[], timestamp: number }>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+// Retry configuration
+const RETRY_DELAYS = [1000, 2000, 4000] // Progressive backoff
+const MAX_RETRIES = 3
+
 export default function MediaThumbnail({
   entityType,
   entityId,
@@ -56,6 +64,8 @@ export default function MediaThumbnail({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const { userProgress } = useProgress()
   const theme = useMantineTheme()
@@ -86,7 +96,8 @@ export default function MediaThumbnail({
     []
   )
 
-  const fetchCurrentThumbnail = async () => {
+  // Optimized fetchCurrentThumbnail with retry logic
+  const fetchCurrentThumbnail = useCallback(async (retryAttempt = 0): Promise<void> => {
     try {
       const thumbnail = await api.getThumbnailForUserProgress(
         entityType,
@@ -94,56 +105,130 @@ export default function MediaThumbnail({
         userProgress
       )
       setCurrentThumbnail(thumbnail)
-    } catch (thumbnailError) {
-      console.error(`Error fetching ${entityType} thumbnail:`, thumbnailError)
-      setCurrentThumbnail(null)
-    }
-  }
+      setRetryCount(0) // Reset retry count on success
+    } catch (thumbnailError: any) {
+      console.error(`Error fetching ${entityType} thumbnail (attempt ${retryAttempt + 1}):`, thumbnailError)
 
-  useEffect(() => {
-    const loadMedia = async () => {
-      setLoading(true)
-      setError(null)
-
-      let finalEntityType = entityType
-      if (finalEntityType === ('organization' as any)) {
-        finalEntityType = 'organization'
-      }
-
-      try {
-        const response = await api.getEntityDisplayMediaForCycling(
-          finalEntityType,
-          entityId,
-          userProgress
-        )
-        const mediaArray = response?.data || []
-        setAllEntityMedia(mediaArray)
-
-        if (mediaArray && mediaArray.length > 0) {
-          let startIndex = 0
-          for (let i = mediaArray.length - 1; i >= 0; i -= 1) {
-            const media = mediaArray[i]
-            if (!media.chapterNumber || media.chapterNumber <= userProgress) {
-              startIndex = i
-              break
-            }
-          }
-
-          setCurrentIndex(startIndex)
-          setCurrentThumbnail(mediaArray[startIndex])
-        } else {
-          await fetchCurrentThumbnail()
+      // Implement retry logic with progressive backoff
+      if (retryAttempt < MAX_RETRIES && thumbnailError?.status !== 404) {
+        const delay = RETRY_DELAYS[retryAttempt] || RETRY_DELAYS[RETRY_DELAYS.length - 1]
+        setTimeout(() => {
+          setRetryCount(retryAttempt + 1)
+          fetchCurrentThumbnail(retryAttempt + 1)
+        }, delay)
+      } else {
+        setCurrentThumbnail(null)
+        // Don't show error for 404s (normal when no media exists)
+        if (thumbnailError?.status !== 404) {
+          setError(`Failed to load thumbnail after ${MAX_RETRIES} attempts`)
         }
-      } catch (loadError) {
-        console.error(`Error fetching ${entityType} media:`, loadError)
+      }
+    }
+  }, [entityType, entityId, userProgress])
+
+  // Optimized loadMedia with caching and abort controllers
+  const loadMedia = useCallback(async () => {
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    abortControllerRef.current = new AbortController()
+    const signal = abortControllerRef.current.signal
+
+    setLoading(true)
+    setError(null)
+    setRetryCount(0)
+
+    let finalEntityType = entityType
+    if (finalEntityType === ('organization' as any)) {
+      finalEntityType = 'organization'
+    }
+
+    // Check cache first
+    const cacheKey = `${finalEntityType}-${entityId}-${userProgress}`
+    const cachedData = mediaCache.get(cacheKey)
+    const now = Date.now()
+
+    if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
+      const mediaArray = cachedData.data
+      setAllEntityMedia(mediaArray)
+
+      if (mediaArray && mediaArray.length > 0) {
+        let startIndex = 0
+        for (let i = mediaArray.length - 1; i >= 0; i -= 1) {
+          const media = mediaArray[i]
+          if (!media.chapterNumber || media.chapterNumber <= userProgress) {
+            startIndex = i
+            break
+          }
+        }
+        setCurrentIndex(startIndex)
+        setCurrentThumbnail(mediaArray[startIndex])
+      } else {
         await fetchCurrentThumbnail()
       }
-
       setLoading(false)
+      return
     }
 
+    try {
+      const response = await api.getEntityDisplayMediaForCycling(
+        finalEntityType,
+        entityId,
+        userProgress
+      )
+
+      // Check if request was aborted
+      if (signal.aborted) return
+
+      const mediaArray = response?.data || []
+
+      // Cache the response
+      mediaCache.set(cacheKey, { data: mediaArray, timestamp: now })
+
+      setAllEntityMedia(mediaArray)
+
+      if (mediaArray && mediaArray.length > 0) {
+        let startIndex = 0
+        for (let i = mediaArray.length - 1; i >= 0; i -= 1) {
+          const media = mediaArray[i]
+          if (!media.chapterNumber || media.chapterNumber <= userProgress) {
+            startIndex = i
+            break
+          }
+        }
+
+        setCurrentIndex(startIndex)
+        setCurrentThumbnail(mediaArray[startIndex])
+      } else {
+        await fetchCurrentThumbnail()
+      }
+    } catch (loadError: any) {
+      if (signal.aborted) return
+
+      console.error(`Error fetching ${entityType} media:`, loadError)
+      // Only try fallback thumbnail if not a rate limit error
+      if (loadError?.status !== 429) {
+        await fetchCurrentThumbnail()
+      } else {
+        setError('Rate limit exceeded. Please wait a moment and try again.')
+      }
+    }
+
+    setLoading(false)
+  }, [entityId, entityType, userProgress, fetchCurrentThumbnail])
+
+  useEffect(() => {
     loadMedia()
-  }, [entityId, entityType, userProgress])
+
+    // Cleanup function to abort request on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [loadMedia])
 
   const handlePrevious = () => {
     if (allEntityMedia.length > 1) {
@@ -175,7 +260,8 @@ export default function MediaThumbnail({
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           onError={() => {
             console.error('Image failed to load:', media.url)
-            setError('Failed to load image')
+            // Don't show error immediately, let the fallback handle it
+            // setError('Failed to load image')
           }}
         />
       )

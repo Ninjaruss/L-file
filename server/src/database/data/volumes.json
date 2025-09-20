@@ -1,0 +1,345 @@
+[
+  {
+    "number": 1,
+    "startChapter": 1,
+    "endChapter": 9,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/0/0e/Volume_1.png/revision/latest/scale-to-width-down/253?cb=20200313165055",
+    "description": null
+  },
+  {
+    "number": 2,
+    "startChapter": 10,
+    "endChapter": 20,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/2/2f/Volume_2.png/revision/latest/scale-to-width-down/253?cb=20200313165056",
+    "description": null
+  },
+  {
+    "number": 3,
+    "startChapter": 21,
+    "endChapter": 31,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/7/75/Volume_3.png/revision/latest/scale-to-width-down/253?cb=20200313165056",
+    "description": null
+  },
+  {
+    "number": 4,
+    "startChapter": 32,
+    "endChapter": 42,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/3/31/Volume_4.png/revision/latest/scale-to-width-down/253?cb=20200313165057",
+    "description": null
+  },
+  {
+    "number": 5,
+    "startChapter": 43,
+    "endChapter": 53,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/8/8a/Volume_5.png/revision/latest/scale-to-width-down/253?cb=20200313165057",
+    "description": null
+  },
+  {
+    "number": 6,
+    "startChapter": 54,
+    "endChapter": 64,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/f/fb/Volume_6.png/revision/latest/scale-to-width-down/253?cb=20200313165058",
+    "description": null
+  },
+  {
+    "number": 7,
+    "startChapter": 65,
+    "endChapter": 75,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/2/24/Volume_7.png/revision/latest/scale-to-width-down/253?cb=20200313165059",
+    "description": null
+  },
+  {
+    "number": 8,
+    "startChapter": 76,
+    "endChapter": 86,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/8/82/Volume_8.png/revision/latest/scale-to-width-down/253?cb=20200313165059",
+    "description": null
+  },
+  {
+    "number": 9,
+    "startChapter": 87,
+    "endChapter": 97,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/7/79/Volume_9.png/revision/latest/scale-to-width-down/253?cb=20200313165100",
+    "description": null
+  },
+  {
+    "number": 10,
+    "startChapter": 98,
+    "endChapter": 109,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/6/6b/Volume_10.png/revision/latest/scale-to-width-down/253?cb=20200313165101",
+    "description": null
+  },
+  {
+    "number": 11,
+    "startChapter": 110,
+    "endChapter": 120,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/1/1b/Volume_11.png/revision/latest/scale-to-width-down/253?cb=20200313165329",
+    "description": null
+  },
+  {
+    "number": 12,
+    "startChapter": 121,
+    "endChapter": 129,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/4/4e/Volume_12.png/revision/latest/scale-to-width-down/253?cb=20200313165330",
+    "description": null
+  },
+  {
+    "number": 13,
+    "startChapter": 130,
+    "endChapter": 142,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/b/b6/Volume_13.png/revision/latest/scale-to-width-down/253?cb=20200313165331",
+    "description": null
+  },
+  {
+    "number": 14,
+    "startChapter": 143,
+    "endChapter": 153,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/1/17/Volume_14.png/revision/latest/scale-to-width-down/253?cb=20200313165332",
+    "description": null
+  },
+  {
+    "number": 15,
+    "startChapter": 154,
+    "endChapter": 164,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/4/4e/Volume_15.png/revision/latest/scale-to-width-down/253?cb=20200313165333",
+    "description": null
+  },
+  {
+    "number": 16,
+    "startChapter": 165,
+    "endChapter": 175,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/4/45/Volume_16.png/revision/latest/scale-to-width-down/253?cb=20200313165333",
+    "description": null
+  },
+  {
+    "number": 17,
+    "startChapter": 176,
+    "endChapter": 186,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/6/64/Volume_17.png/revision/latest/scale-to-width-down/253?cb=20200313165334",
+    "description": null
+  },
+  {
+    "number": 18,
+    "startChapter": 187,
+    "endChapter": 197,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/a/a2/Volume_18.png/revision/latest/scale-to-width-down/253?cb=20200313165334",
+    "description": null
+  },
+  {
+    "number": 19,
+    "startChapter": 198,
+    "endChapter": 208,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/c/c9/Volume_19.png/revision/latest/scale-to-width-down/253?cb=20200313165335",
+    "description": null
+  },
+  {
+    "number": 20,
+    "startChapter": 209,
+    "endChapter": 219,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/3/32/Volume_20.png/revision/latest/scale-to-width-down/253?cb=20200313165336",
+    "description": null
+  },
+  {
+    "number": 21,
+    "startChapter": 220,
+    "endChapter": 230,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/a/a6/Volume_21.png/revision/latest/scale-to-width-down/253?cb=20200313165541",
+    "description": null
+  },
+  {
+    "number": 22,
+    "startChapter": 231,
+    "endChapter": 241,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/5/5e/Volume_22.png/revision/latest/scale-to-width-down/253?cb=20200313165541",
+    "description": null
+  },
+  {
+    "number": 23,
+    "startChapter": 242,
+    "endChapter": 252,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/5/5d/Volume_23.png/revision/latest/scale-to-width-down/253?cb=20200313165542",
+    "description": null
+  },
+  {
+    "number": 24,
+    "startChapter": 253,
+    "endChapter": 263,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/6/6a/Volume_24.png/revision/latest/scale-to-width-down/253?cb=20200313165543",
+    "description": null
+  },
+  {
+    "number": 25,
+    "startChapter": 264,
+    "endChapter": 273,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/e/ef/Volume_25.png/revision/latest/scale-to-width-down/253?cb=20200313165544",
+    "description": null
+  },
+  {
+    "number": 26,
+    "startChapter": 274,
+    "endChapter": 284,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/0/00/Volume_26.png/revision/latest/scale-to-width-down/253?cb=20200313165545",
+    "description": null
+  },
+  {
+    "number": 27,
+    "startChapter": 285,
+    "endChapter": 295,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/1/1d/Volume_27.png/revision/latest/scale-to-width-down/253?cb=20200313165546",
+    "description": null
+  },
+  {
+    "number": 28,
+    "startChapter": 296,
+    "endChapter": 306,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/a/a5/Volume_28.png/revision/latest/scale-to-width-down/253?cb=20200313165547",
+    "description": null
+  },
+  {
+    "number": 29,
+    "startChapter": 307,
+    "endChapter": 317,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/1/1a/Volume_29.png/revision/latest/scale-to-width-down/254?cb=20200313165548",
+    "description": null
+  },
+  {
+    "number": 30,
+    "startChapter": 318,
+    "endChapter": 328,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/5/52/Volume_30.png/revision/latest/scale-to-width-down/254?cb=20200313165549",
+    "description": null
+  },
+  {
+    "number": 31,
+    "startChapter": 329,
+    "endChapter": 339,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/f/f7/Volume_31.png/revision/latest/scale-to-width-down/254?cb=20200313165801",
+    "description": null
+  },
+  {
+    "number": 32,
+    "startChapter": 340,
+    "endChapter": 350,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/2/2b/Volume_32.png/revision/latest/scale-to-width-down/254?cb=20200313165802",
+    "description": null
+  },
+  {
+    "number": 33,
+    "startChapter": 351,
+    "endChapter": 361,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/e/e6/Volume_33.png/revision/latest/scale-to-width-down/254?cb=20200313165802",
+    "description": null
+  },
+  {
+    "number": 34,
+    "startChapter": 362,
+    "endChapter": 373,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/6/6c/Volume_34.png/revision/latest/scale-to-width-down/254?cb=20200313165803",
+    "description": null
+  },
+  {
+    "number": 35,
+    "startChapter": 374,
+    "endChapter": 384,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/6/65/Volume_35.png/revision/latest/scale-to-width-down/254?cb=20200313165804",
+    "description": null
+  },
+  {
+    "number": 36,
+    "startChapter": 385,
+    "endChapter": 395,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/6/63/Volume_36.png/revision/latest/scale-to-width-down/254?cb=20200313165805",
+    "description": null
+  },
+  {
+    "number": 37,
+    "startChapter": 396,
+    "endChapter": 406,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/b/bd/Volume_37.png/revision/latest/scale-to-width-down/254?cb=20200313165805",
+    "description": null
+  },
+  {
+    "number": 38,
+    "startChapter": 407,
+    "endChapter": 417,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/b/b6/Volume_38.png/revision/latest/scale-to-width-down/254?cb=20200313165806",
+    "description": null
+  },
+  {
+    "number": 39,
+    "startChapter": 418,
+    "endChapter": 428,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/4/47/Volume_39.png/revision/latest/scale-to-width-down/254?cb=20200313165807",
+    "description": null
+  },
+  {
+    "number": 40,
+    "startChapter": 429,
+    "endChapter": 439,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/2/2c/Volume_40.png/revision/latest/scale-to-width-down/254?cb=20200313165807",
+    "description": null
+  },
+  {
+    "number": 41,
+    "startChapter": 440,
+    "endChapter": 450,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/3/3a/Volume_41.png/revision/latest/scale-to-width-down/254?cb=20200313165949",
+    "description": null
+  },
+  {
+    "number": 42,
+    "startChapter": 451,
+    "endChapter": 461,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/1/16/Volume_42.png/revision/latest/scale-to-width-down/252?cb=20200313165950",
+    "description": null
+  },
+  {
+    "number": 43,
+    "startChapter": 462,
+    "endChapter": 472,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/1/15/Volume_43.png/revision/latest/scale-to-width-down/254?cb=20200313165950",
+    "description": null
+  },
+  {
+    "number": 44,
+    "startChapter": 473,
+    "endChapter": 483,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/d/d2/Volume_44.png/revision/latest/scale-to-width-down/254?cb=20200313165951",
+    "description": null
+  },
+  {
+    "number": 45,
+    "startChapter": 484,
+    "endChapter": 494,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/f/f4/Volume_45.png/revision/latest/scale-to-width-down/254?cb=20200313165951",
+    "description": null
+  },
+  {
+    "number": 46,
+    "startChapter": 495,
+    "endChapter": 505,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/c/cc/Volume_46.png/revision/latest/scale-to-width-down/254?cb=20200313165952",
+    "description": null
+  },
+  {
+    "number": 47,
+    "startChapter": 506,
+    "endChapter": 516,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/3/35/Volume_47.png/revision/latest/scale-to-width-down/254?cb=20200313165953",
+    "description": null
+  },
+  {
+    "number": 48,
+    "startChapter": 517,
+    "endChapter": 528,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/c/cd/Volume_48.png/revision/latest/scale-to-width-down/253?cb=20200313165953",
+    "description": null
+  },
+  {
+    "number": 49,
+    "startChapter": 529,
+    "endChapter": 539,
+    "coverUrl": "https://static.wikia.nocookie.net/usogui/images/d/d6/Volume_49.png/revision/latest/scale-to-width-down/254?cb=20200313165954",
+    "description": null
+  }
+]

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -51,25 +51,23 @@ const PAGE_SIZE = 20
 
 export default function ChaptersPageContent({
   initialChapters,
-  initialTotalPages,
-  initialTotal,
   initialPage,
   initialSearch,
   initialError
 }: ChaptersPageContentProps) {
   const theme = useMantineTheme()
   const accentChapter = theme.other?.usogui?.chapter ?? theme.colors.green?.[6] ?? '#16a34a'
-  const [chapters, setChapters] = useState<Chapter[]>(initialChapters)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
-  const currentSearch = searchParams.get('search') || ''
 
-  const [totalPages, setTotalPages] = useState<number>(initialTotalPages)
-  const [total, setTotal] = useState<number>(initialTotal)
+  // Load all chapters once - no pagination needed on API level
+  const [allChapters, setAllChapters] = useState<Chapter[]>(initialChapters)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
-  const [searchQuery, setSearchQuery] = useState(currentSearch || initialSearch)
+  const [searchQuery, setSearchQuery] = useState(initialSearch || '')
+
+  // Client-side pagination
+  const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
   // Hover modal state
   const [hoveredChapter, setHoveredChapter] = useState<Chapter | null>(null)
@@ -79,44 +77,69 @@ export default function ChaptersPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
-  const fetchChapters = useCallback(async () => {
+  // Load all chapters once on mount
+  const loadAllChapters = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: PAGE_SIZE.toString()
-      })
-
-      if (searchQuery) {
-        if (!isNaN(Number(searchQuery))) {
-          params.set('number', searchQuery)
-        } else {
-          params.set('title', searchQuery)
-        }
+      const response = await api.get<any>('/chapters?limit=1000') // Get all chapters
+      setAllChapters(response.data || [])
+    } catch (err: any) {
+      console.error('Error loading chapters:', err)
+      if (err?.status === 429) {
+        setError('Rate limit exceeded. Please wait a moment and try again.')
+      } else {
+        setError('Failed to load chapters. Please try again later.')
       }
-
-  const response = await api.get(`/chapters?${params}`)
-  // API client returns a fetch Response-like object; narrow to any to parse JSON
-  const data = (await (response as any).json()) as any
-
-      setChapters(data.data || [])
-      setTotal(data.total || 0)
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / PAGE_SIZE))
-    } catch (error) {
-      console.error('Error fetching chapters:', error)
-      setError('Failed to load chapters. Please try again later.')
     } finally {
       setLoading(false)
     }
-  }, [currentPage, searchQuery])
+  }, [])
 
+  // Client-side filtering and pagination
+  const filteredChapters = useMemo(() => {
+    if (!searchQuery.trim()) return allChapters
+
+    const query = searchQuery.toLowerCase().trim()
+    return allChapters.filter(chapter => {
+      // Search by chapter number
+      if (!isNaN(Number(query))) {
+        return chapter.number.toString().includes(query)
+      }
+
+      // Search by title or description
+      const title = chapter.title?.toLowerCase() || `chapter ${chapter.number}`
+      const description = chapter.description?.toLowerCase() || ''
+      const summary = chapter.summary?.toLowerCase() || ''
+
+      return title.includes(query) || description.includes(query) || summary.includes(query)
+    })
+  }, [allChapters, searchQuery])
+
+  const paginatedChapters = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE
+    return filteredChapters.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredChapters, currentPage])
+
+  const totalPages = Math.ceil(filteredChapters.length / PAGE_SIZE)
+  const total = filteredChapters.length
+
+  // Load all chapters on mount if we don't have the expected full set
   useEffect(() => {
-    if (searchQuery !== currentSearch || chapters.length === 0) {
-      fetchChapters()
+    if (allChapters.length === 0 || (allChapters.length > 0 && allChapters.length < 500)) {
+      loadAllChapters()
     }
-  }, [currentPage, searchQuery, currentSearch, chapters.length, fetchChapters])
+  }, [allChapters.length, loadAllChapters])
+
+  // Sync with URL parameters - only react to searchParams changes
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '1', 10)
+    const urlSearch = searchParams.get('search') || ''
+
+    setCurrentPage(urlPage)
+    setSearchQuery(urlSearch)
+  }, [searchParams])
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((chapter?: Chapter) => {
@@ -183,39 +206,32 @@ export default function ChaptersPageContent({
   }, [hoveredChapter, updateModalPosition])
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.currentTarget.value
+    const newSearch = event.target.value
     setSearchQuery(newSearch)
+    setCurrentPage(1) // Reset to first page immediately when search changes
   }, [])
 
-  // Debounce search query changes
+  // Update URL when search or page changes (no API calls needed)
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('search', searchQuery)
-      params.set('page', '1') // Reset to first page on new search
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (currentPage > 1) params.set('page', currentPage.toString())
 
-      router.push(`/chapters?${params.toString()}`)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, router])
+    const newUrl = params.toString() ? `/chapters?${params.toString()}` : '/chapters'
+    router.push(newUrl, { scroll: false })
+  }, [searchQuery, currentPage, router])
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
-
-    const params = new URLSearchParams()
-    params.set('page', '1')
-
-    router.push(`/chapters?${params.toString()}`)
+    setCurrentPage(1)
+    router.push('/chapters', { scroll: false })
+    // No API calls needed!
   }, [router])
 
   const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set('search', searchQuery)
-    params.set('page', page.toString())
-
-    router.push(`/chapters?${params.toString()}`)
-  }, [router, searchQuery])
+    setCurrentPage(page) // Update local state immediately
+    // No API calls needed - everything is client-side now!
+  }, [])
 
   // Hover modal handlers
   const handleChapterMouseEnter = (chapter: Chapter, event: React.MouseEvent) => {
@@ -293,9 +309,9 @@ export default function ChaptersPageContent({
               Explore the story chapter by chapter through the Usogui universe
             </Text>
 
-            {total > 0 && (
+            {allChapters.length > 0 && (
               <Badge size="md" variant="light" color="green" radius="xl" mt="xs">
-                {total} chapter{total !== 1 ? 's' : ''} available
+                {searchQuery ? `${total} of ${allChapters.length}` : `${allChapters.length}`} chapter{(searchQuery ? total : allChapters.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
           </Stack>
@@ -313,18 +329,27 @@ export default function ChaptersPageContent({
               leftSection={<Search size={20} />}
               size="lg"
               radius="xl"
+              disabled={loading}
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={handleClearSearch}
+                    size="sm"
+                    title="Clear search"
+                  >
                     <X size={16} />
                   </ActionIcon>
+                ) : loading ? (
+                  <Loader size="sm" />
                 ) : null
               }
               styles={{
                 input: {
                   fontSize: rem(16),
                   paddingLeft: rem(50),
-                  paddingRight: hasSearchQuery ? rem(50) : rem(20)
+                  paddingRight: (hasSearchQuery || loading) ? rem(50) : rem(20)
                 }
               }}
             />
@@ -339,9 +364,15 @@ export default function ChaptersPageContent({
           radius="md"
           mb="xl"
           icon={<AlertCircle size={16} />}
-          title="Error loading chapters"
+          title={error.includes('Rate limit') ? 'Rate Limited' : 'Error loading chapters'}
+          variant={error.includes('Rate limit') ? 'light' : 'filled'}
         >
           {error}
+          {error.includes('Rate limit') && (
+            <Text size="sm" mt="xs" c="dimmed">
+              The server is receiving too many requests. Please wait a moment before trying again.
+            </Text>
+          )}
         </Alert>
       )}
 
@@ -354,7 +385,7 @@ export default function ChaptersPageContent({
       ) : (
         <>
           {/* Empty State */}
-          {chapters.length === 0 ? (
+          {paginatedChapters.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <BookOpen size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
               <Title order={3} c="dimmed" mb="sm">
@@ -381,7 +412,7 @@ export default function ChaptersPageContent({
                   gap: rem(8)
                 }}
               >
-                {chapters.map((chapter, index) => (
+                {paginatedChapters.map((chapter, index) => (
                   <motion.div
                     key={chapter.id}
                     initial={{ opacity: 0, y: 6 }}
@@ -443,9 +474,24 @@ export default function ChaptersPageContent({
                 ))}
               </Box>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Box style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
+              {/* Pagination Info & Controls */}
+              <Box style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: rem(48),
+                gap: rem(12)
+              }}>
+                {/* Always show pagination info when we have chapters */}
+                {allChapters.length > 0 && (
+                  <Text size="sm" c="dimmed">
+                    Showing {paginatedChapters.length} of {total} chapters
+                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                  </Text>
+                )}
+
+                {/* Show pagination controls when we have multiple pages */}
+                {totalPages > 1 && (
                   <Pagination
                     total={totalPages}
                     value={currentPage}
@@ -455,8 +501,10 @@ export default function ChaptersPageContent({
                     radius="xl"
                     withEdges
                   />
-                </Box>
-              )}
+                )}
+
+                {loading && <Loader size="sm" color={accentChapter} />}
+              </Box>
             </>
           )}
         </>

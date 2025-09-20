@@ -48,20 +48,14 @@ export default async function VolumesPage({ searchParams }: VolumesPageProps) {
   const page = parseInt(resolvedSearchParams.page || '1', 10)
   const search = resolvedSearchParams.search || ''
 
-  // Fetch volumes server-side
+  // Load all volumes server-side for client-side pagination
   let volumes: Volume[] = []
-  let totalPages = 1
-  let total = 0
   let error = ''
 
   try {
-    const params: { page: number; limit: number; search?: string } = { page, limit: 12 }
-    if (search) params.search = search
-
-    const response = await api.getVolumes(params)
-    volumes = response.data
-    totalPages = response.totalPages
-    total = response.total
+    // Get all volumes in one request
+    const response = await api.get<any>('/volumes?limit=100')
+    volumes = response.data || []
   } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'Failed to fetch volumes'
   }
@@ -70,8 +64,8 @@ export default async function VolumesPage({ searchParams }: VolumesPageProps) {
     <Container size="lg" py="xl">
       <VolumesPageContent
         initialVolumes={volumes}
-        initialTotalPages={totalPages}
-        initialTotal={total}
+        initialTotalPages={1} // Not used with client-side pagination
+        initialTotal={volumes.length}
         initialPage={page}
         initialSearch={search}
         initialError={error}

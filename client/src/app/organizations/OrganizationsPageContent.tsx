@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -48,25 +48,23 @@ const PAGE_SIZE = 12
 
 export default function OrganizationsPageContent({
   initialOrganizations,
-  initialTotalPages,
-  initialTotal,
   initialPage,
   initialSearch,
   initialError
 }: OrganizationsPageContentProps) {
   const theme = useMantineTheme()
   const accentOrganization = theme.other?.usogui?.organization ?? theme.colors.grape?.[5] ?? '#9c36b5'
-  const [organizations, setOrganizations] = useState<Organization[]>(initialOrganizations)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
-  const currentSearch = searchParams.get('search') || ''
 
-  const [totalPages, setTotalPages] = useState<number>(initialTotalPages)
-  const [total, setTotal] = useState<number>(initialTotal)
+  // Load all organizations once - no pagination needed on API level
+  const [allOrganizations, setAllOrganizations] = useState<Organization[]>(initialOrganizations)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
-  const [searchQuery, setSearchQuery] = useState(currentSearch || initialSearch)
+  const [searchQuery, setSearchQuery] = useState(initialSearch || '')
+
+  // Client-side pagination
+  const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
   // Hover modal state
   const [hoveredOrganization, setHoveredOrganization] = useState<Organization | null>(null)
@@ -76,35 +74,62 @@ export default function OrganizationsPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
-  const fetchOrganizations = useCallback(async () => {
+  // Load all organizations once on mount
+  const loadAllOrganizations = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: PAGE_SIZE.toString(),
-        ...(searchQuery && { name: searchQuery })
-      })
-
-      const data = await api.get(`/organizations?${params}`)
-
-      setOrganizations(data.data || [])
-      setTotal(data.total || 0)
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / PAGE_SIZE))
-    } catch (error) {
-      console.error('Error fetching organizations:', error)
-      setError('Failed to load organizations. Please try again later.')
+      const response = await api.get<any>('/organizations?limit=200') // Get all organizations (small dataset)
+      setAllOrganizations(response.data || [])
+    } catch (err: any) {
+      console.error('Error loading organizations:', err)
+      if (err?.status === 429) {
+        setError('Rate limit exceeded. Please wait a moment and try again.')
+      } else {
+        setError('Failed to load organizations. Please try again later.')
+      }
     } finally {
       setLoading(false)
     }
-  }, [currentPage, searchQuery])
+  }, [])
 
+  // Client-side filtering and pagination
+  const filteredOrganizations = useMemo(() => {
+    if (!searchQuery.trim()) return allOrganizations
+
+    const query = searchQuery.toLowerCase().trim()
+    return allOrganizations.filter(organization => {
+      const name = organization.name?.toLowerCase() || ''
+      const description = organization.description?.toLowerCase() || ''
+
+      return name.includes(query) || description.includes(query)
+    })
+  }, [allOrganizations, searchQuery])
+
+  const paginatedOrganizations = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE
+    return filteredOrganizations.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredOrganizations, currentPage])
+
+  const totalPages = Math.ceil(filteredOrganizations.length / PAGE_SIZE)
+  const total = filteredOrganizations.length
+
+  // Load all organizations on mount if we don't have the expected full set
   useEffect(() => {
-    if (searchQuery !== currentSearch || organizations.length === 0) {
-      fetchOrganizations()
+    if (allOrganizations.length === 0 || (allOrganizations.length > 0 && allOrganizations.length < 10)) {
+      loadAllOrganizations()
     }
-  }, [currentPage, searchQuery, currentSearch, organizations.length, fetchOrganizations])
+  }, [allOrganizations.length, loadAllOrganizations])
+
+  // Sync with URL parameters - only react to searchParams changes
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '1', 10)
+    const urlSearch = searchParams.get('search') || ''
+
+    setCurrentPage(urlPage)
+    setSearchQuery(urlSearch)
+  }, [searchParams])
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((organization?: Organization) => {
@@ -171,39 +196,32 @@ export default function OrganizationsPageContent({
   }, [hoveredOrganization, updateModalPosition])
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.currentTarget.value
+    const newSearch = event.target.value
     setSearchQuery(newSearch)
+    setCurrentPage(1) // Reset to first page immediately when search changes
   }, [])
 
-  // Debounce search query changes
+  // Update URL when search or page changes (no API calls needed)
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('search', searchQuery)
-      params.set('page', '1') // Reset to first page on new search
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (currentPage > 1) params.set('page', currentPage.toString())
 
-      router.push(`/organizations?${params.toString()}`)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, router])
+    const newUrl = params.toString() ? `/organizations?${params.toString()}` : '/organizations'
+    router.push(newUrl, { scroll: false })
+  }, [searchQuery, currentPage, router])
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
-
-    const params = new URLSearchParams()
-    params.set('page', '1')
-
-    router.push(`/organizations?${params.toString()}`)
+    setCurrentPage(1)
+    router.push('/organizations', { scroll: false })
+    // No API calls needed!
   }, [router])
 
   const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set('search', searchQuery)
-    params.set('page', page.toString())
-
-    router.push(`/organizations?${params.toString()}`)
-  }, [router, searchQuery])
+    setCurrentPage(page) // Update local state immediately
+    // No API calls needed - everything is client-side now!
+  }, [])
 
   // Hover modal handlers
   const handleOrganizationMouseEnter = (organization: Organization, event: React.MouseEvent) => {
@@ -281,9 +299,9 @@ export default function OrganizationsPageContent({
               Explore the various groups and organizations in the Usogui universe
             </Text>
 
-            {total > 0 && (
+            {allOrganizations.length > 0 && (
               <Badge size="md" variant="light" color="grape" radius="xl" mt="xs">
-                {total} organization{total !== 1 ? 's' : ''} available
+                {searchQuery ? `${total} of ${allOrganizations.length}` : `${allOrganizations.length}`} organization{(searchQuery ? total : allOrganizations.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
           </Stack>
@@ -342,7 +360,7 @@ export default function OrganizationsPageContent({
       ) : (
         <>
           {/* Empty State */}
-          {organizations.length === 0 ? (
+          {paginatedOrganizations.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <Shield size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
               <Title order={3} c="dimmed" mb="sm">
@@ -370,7 +388,7 @@ export default function OrganizationsPageContent({
                   justifyItems: 'center'
                 }}
               >
-                {organizations.map((organization, index) => (
+                {paginatedOrganizations.map((organization: Organization, index: number) => (
                   <motion.div
                     key={organization.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -489,9 +507,24 @@ export default function OrganizationsPageContent({
                 ))}
               </Box>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Box style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
+              {/* Pagination Info & Controls */}
+              <Box style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: rem(48),
+                gap: rem(12)
+              }}>
+                {/* Always show pagination info when we have organizations */}
+                {allOrganizations.length > 0 && (
+                  <Text size="sm" c="dimmed">
+                    Showing {paginatedOrganizations.length} of {total} organizations
+                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                  </Text>
+                )}
+
+                {/* Show pagination controls when we have multiple pages */}
+                {totalPages > 1 && (
                   <Pagination
                     total={totalPages}
                     value={currentPage}
@@ -501,8 +534,10 @@ export default function OrganizationsPageContent({
                     radius="xl"
                     withEdges
                   />
-                </Box>
-              )}
+                )}
+
+                {loading && <Loader size="sm" color={accentOrganization} />}
+              </Box>
             </>
           )}
         </>
@@ -551,16 +586,8 @@ export default function OrganizationsPageContent({
                   {hoveredOrganization.name}
                 </Title>
 
-                {/* Organization Number/Order */}
+                {/* Member count (kept) */}
                 <Group justify="center" gap="xs">
-                  <Badge
-                    variant="light"
-                    color="grape"
-                    size="sm"
-                    fw={600}
-                  >
-                    Organization #{organizations.findIndex(o => o.id === hoveredOrganization.id) + 1 + (currentPage - 1) * PAGE_SIZE}
-                  </Badge>
                   {hoveredOrganization.memberCount !== undefined && (
                     <Badge
                       variant="filled"

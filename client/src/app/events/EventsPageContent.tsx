@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import { api } from '../../lib/api'
+import { usePaged } from '../../hooks/usePagedCache'
 import type { Arc, Event } from '../../types'
 import { EventStatus } from '../../types'
 
@@ -101,45 +102,36 @@ export default function EventsPageContent({
     [router, searchParams]
   )
 
-  const fetchEvents = useCallback(
-    async (search: string, type: string, status: string) => {
-      setLoading(true)
-      try {
-        if (search) {
-          const params: Record<string, string | number> = { page: 1, limit: 100, title: search }
-          if (type) params.type = type
-          if (status) params.status = status
-          const response = await api.getEvents(params)
-          setGroupedEvents({
-            arcs: [],
-            noArc: response.data || []
-          })
-        } else {
-          const params: Record<string, string> = {}
-          if (type) params.type = type
-          if (status) params.status = status
-          const groupedEventsData = await api.getEventsGroupedByArc(params)
-          setGroupedEvents(groupedEventsData)
-        }
-        setError('')
-      } catch (error: unknown) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch events')
-      } finally {
-        setLoading(false)
-      }
-    },
-    []
-  )
+  // fetcher for usePaged: returns a paginated-like envelope where `data` is the grouped events object
+  const fetcher = useCallback(async (page = 1) => {
+    // If there's a search term, return a flat list in noArc
+    if (searchTerm) {
+      const params: Record<string, string | number> = { page: 1, limit: 100, title: searchTerm }
+      if (selectedType) params.type = selectedType
+      if (selectedStatus) params.status = selectedStatus
+      const resAny = await api.getEvents(params)
+  const payload = { arcs: [], noArc: resAny.data || [] }
+  return { data: payload, total: resAny.total ?? (resAny.data ? resAny.data.length : 0), page: 1, perPage: 100, totalPages: 1 } as any
+    }
+
+    const params: Record<string, string> = {}
+    if (selectedType) params.type = selectedType
+    if (selectedStatus) params.status = selectedStatus
+    const grouped = await api.getEventsGroupedByArc(params)
+    const total = grouped.arcs.reduce((sum: number, g: any) => sum + (g.events?.length || 0), 0) + (grouped.noArc?.length || 0)
+    return { data: grouped, total, page: 1, perPage: total || 1, totalPages: 1 } as any
+  }, [searchTerm, selectedType, selectedStatus])
+
+  const { data: pageData, loading: pageLoading, error: pageError, refresh } = usePaged('events', 1, fetcher, { search: searchTerm, type: selectedType, status: selectedStatus }, { ttlMs: 120_000, persist: true, maxEntries: 100 })
 
   useEffect(() => {
-    const currentSearch = searchParams.get('search') || ''
-    const currentType = searchParams.get('type') || ''
-    const currentStatus = searchParams.get('status') || ''
-
-    if (currentSearch !== initialSearch || currentType !== initialType || currentStatus !== initialStatus) {
-      fetchEvents(currentSearch, currentType, currentStatus)
+    if (pageData) {
+      setGroupedEvents(pageData.data as any)
+      setError('')
     }
-  }, [searchParams, initialSearch, initialType, initialStatus, fetchEvents])
+    setLoading(!!pageLoading)
+    if (pageError) setError(pageError instanceof Error ? pageError.message : String(pageError))
+  }, [pageData, pageLoading, pageError])
 
   // Function to update modal position based on hovered element
   const updateModalPosition = useCallback((event?: Event) => {
@@ -216,29 +208,29 @@ export default function EventsPageContent({
     }
 
     searchDebounceRef.current = window.setTimeout(() => {
-      updateUrl(value, selectedType, selectedStatus)
-      fetchEvents(value, selectedType, selectedStatus)
+  updateUrl(value, selectedType, selectedStatus)
+  refresh(true)
     }, 300)
   }
 
   const handleClearSearch = () => {
     setSearchTerm('')
-    updateUrl('', selectedType, selectedStatus)
-    fetchEvents('', selectedType, selectedStatus)
+  updateUrl('', selectedType, selectedStatus)
+  refresh(true)
   }
 
   const handleTypeChange = (value: string | null) => {
     const newType = value || ''
     setSelectedType(newType)
-    updateUrl(searchTerm, newType, selectedStatus)
-    fetchEvents(searchTerm, newType, selectedStatus)
+  updateUrl(searchTerm, newType, selectedStatus)
+  refresh(true)
   }
 
   const handleStatusChange = (value: string | null) => {
     const newStatus = value || ''
     setSelectedStatus(newStatus)
-    updateUrl(searchTerm, selectedType, newStatus)
-    fetchEvents(searchTerm, selectedType, newStatus)
+  updateUrl(searchTerm, selectedType, newStatus)
+  refresh(true)
   }
 
   // Hover modal handlers
