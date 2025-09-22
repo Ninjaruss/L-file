@@ -23,6 +23,7 @@ import {
   rgba
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import {
   Image as ImageIcon,
   Play,
@@ -314,14 +315,14 @@ export default function MediaGallery({
   if (loading) {
     return (
       <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: rem(32) }}>
-        <Loader size="lg" color="red" />
+        <Loader size="lg" style={{ color: getEntityThemeColor(theme, 'gamble') }} />
       </Box>
     )
   }
 
   if (error) {
     return (
-      <Alert color="red" variant="light" radius="md">
+      <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" radius="md">
         {error}
       </Alert>
     )

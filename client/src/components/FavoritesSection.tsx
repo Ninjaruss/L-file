@@ -14,6 +14,7 @@ import {
   useMantineTheme,
   rgba
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Quote, Dices, User, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -40,7 +41,7 @@ export function FavoritesSection() {
 
   if (error) {
     return (
-      <Alert color="red" variant="light" style={{ marginBottom: '1.5rem' }}>
+      <Alert variant="light" style={{ color: getEntityThemeColor(theme, 'gamble'), marginBottom: '1.5rem' }}>
         Unable to load favorites data. Please check your connection and try again.
       </Alert>
     )
@@ -148,7 +149,7 @@ export function FavoritesSection() {
                           </Text>
                           <Group justify="space-between" align="center">
                             <Link href={`/characters/${item.quote.character.id}`} style={{ textDecoration: 'none' }}>
-                              <Badge color="red" variant="light" size="sm" style={{ cursor: 'pointer' }}>
+                              <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
                                 {item.quote.character.name}
                               </Badge>
                             </Link>
@@ -214,7 +215,7 @@ export function FavoritesSection() {
                           </Text>
                           <Group justify="space-between" align="center">
                             <Link href={`/gambles/${item.gamble.id}`} style={{ textDecoration: 'none' }}>
-                              <Badge color="red" variant="light" size="sm" style={{ cursor: 'pointer' }}>
+                              <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
                                 View Details
                               </Badge>
                             </Link>
@@ -276,7 +277,7 @@ export function FavoritesSection() {
                           </Group>
                           <Group justify="space-between" align="center">
                             <Link href={`/characters/${item.media.character.id}`} style={{ textDecoration: 'none' }}>
-                              <Badge color="red" variant="light" size="sm" style={{ cursor: 'pointer' }}>
+                              <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
                                 Ch. {item.media.chapterNumber || 'N/A'}
                               </Badge>
                             </Link>

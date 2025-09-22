@@ -15,6 +15,7 @@ import {
   TextInput,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Search, Quote as QuoteIcon } from 'lucide-react'
 
 interface Quote {
@@ -151,7 +152,7 @@ export default function QuoteSelectionPopup({
                       return typeof foundQuote.character === 'string' ? foundQuote.character : foundQuote.character.name;
                     })()}
                   </Badge>
-                  <Badge color="red" radius="sm" variant="light">
+                  <Badge style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm" variant="light">
                     Ch. {quotes.find(q => q.id === tempSelectedQuote)!.chapterNumber}
                   </Badge>
                 </Group>
@@ -172,7 +173,7 @@ export default function QuoteSelectionPopup({
           
           {loading ? (
             <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: '1.5rem' }}>
-              <Loader color="red" />
+              <Loader style={{ color: getEntityThemeColor(theme, 'gamble') }} />
             </Box>
           ) : filteredQuotes.length === 0 ? (
             <Text size="sm" c="dimmed" style={{ textAlign: 'center', paddingBlock: '1.5rem' }}>
@@ -231,7 +232,7 @@ export default function QuoteSelectionPopup({
                         </Badge>
                         <Badge
                           variant={isSelected ? 'filled' : 'outline'}
-                          color="red"
+                          style={{ color: getEntityThemeColor(theme, 'gamble') }}
                           radius="sm"
                         >
                           Ch. {quote.chapterNumber}
@@ -247,14 +248,14 @@ export default function QuoteSelectionPopup({
       </Stack>
 
       <Group justify="space-between" mt="auto">
-        <Button onClick={handleClearSelection} variant="outline" color="yellow">
+        <Button onClick={handleClearSelection} variant="outline" style={{ color: semanticColors.warning }}>
           Clear Selection
         </Button>
         <Group gap="sm">
           <Button onClick={handleCancel} variant="subtle" color="gray">
             Cancel
           </Button>
-          <Button onClick={handleConfirm} color="red" disabled={loading}>
+          <Button onClick={handleConfirm} style={{ color: getEntityThemeColor(theme, 'gamble') }} disabled={loading}>
             Confirm Selection
           </Button>
         </Group>

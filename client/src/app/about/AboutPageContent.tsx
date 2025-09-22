@@ -15,6 +15,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { Heart, Mail, Coffee, Github, Twitter } from 'lucide-react'
 
 const supportItems = [
@@ -178,7 +179,7 @@ export function AboutPageContent() {
                     leftSection={<Coffee size={16} />}>
                     Ko-fi (Coming Soon)
                   </Button>
-                  <Button size="md" variant="outline" color="red" leftSection={<Github size={16} />}>
+                  <Button size="md" variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} leftSection={<Github size={16} />}>
                     GitHub (Coming Soon)
                   </Button>
                 </Group>

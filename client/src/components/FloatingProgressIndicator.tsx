@@ -19,6 +19,7 @@ import {
   useMantineTheme,
   Loader
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { BookOpen, Edit3, Check, X, User } from 'lucide-react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'motion/react'
@@ -289,7 +290,7 @@ export const FloatingProgressIndicator: React.FC = () => {
             }}
           >
             <Badge
-              color="green"
+              style={{ color: getEntityThemeColor(theme, 'guide') }}
               size="lg"
               variant="filled"
               leftSection={<Check size={16} />}
@@ -349,7 +350,7 @@ export const FloatingProgressIndicator: React.FC = () => {
             </Group>
             {user && (
               <Badge
-                color="red"
+                style={{ color: getEntityThemeColor(theme, 'gamble') }}
                 variant="light"
                 radius="sm"
                 leftSection={<User size={14} />}
@@ -377,9 +378,9 @@ export const FloatingProgressIndicator: React.FC = () => {
               value={modalProgressPercentage}
               size={12}
               radius="xl"
-              color="red"
               w="100%"
               style={{
+                color: getEntityThemeColor(theme, 'gamble'),
                 backgroundImage: progressGradient
               }}
             />
@@ -440,7 +441,7 @@ export const FloatingProgressIndicator: React.FC = () => {
 
           {error && (
             <Alert
-              color="red"
+              style={{ color: getEntityThemeColor(theme, 'gamble') }}
               variant="light"
               icon={<X size={14} />}
               radius="sm"

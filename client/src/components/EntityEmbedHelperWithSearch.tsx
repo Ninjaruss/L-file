@@ -35,7 +35,7 @@ import {
   Search
 } from 'lucide-react'
 import { api } from '../lib/api'
-import { EntityAccentKey, getEntityAccent } from '../lib/mantine-theme'
+import { EntityAccentKey, getEntityAccent, getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 
 interface EntityOption {
   id: number
@@ -492,7 +492,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
         }
       >
         <Stack gap="xl">
-          <Alert color="blue" variant="light" radius="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
             Entity embeds create interactive cards linking to characters, arcs, gambles, and more. They make
             guides richer and help readers discover related content quickly.
           </Alert>
@@ -582,7 +582,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
           </Stack>
 
           <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setOpened(false)} variant="light" color="red" radius="md">
+            <Button onClick={() => setOpened(false)} variant="light" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md">
               Close
             </Button>
           </Box>

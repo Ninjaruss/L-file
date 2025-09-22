@@ -45,7 +45,7 @@ import { useProgress } from '../providers/ProgressProvider'
 import { api } from '../lib/api'
 import { motion, AnimatePresence } from 'motion/react'
 import { NavigationData, getCategoryColor } from '../types/navigation'
-import { EntityAccentKey, getEntityAccent } from '../lib/mantine-theme'
+import { EntityAccentKey, getEntityAccent, getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 
 interface SearchResult {
   id: number
@@ -880,7 +880,7 @@ const Navigation: React.FC = () => {
                   component={Link}
                   href="/admin"
                   variant="subtle"
-                  color="red"
+                  style={{ color: getEntityThemeColor(theme, 'gamble') }}
                   leftSection={<Crown size={16} />}
                   visibleFrom="md"
                 >
@@ -964,7 +964,7 @@ const Navigation: React.FC = () => {
                 <Menu.Item
                   onClick={handleLogout}
                   leftSection={<LogOut size={16} />}
-                  color="red"
+                  style={{ color: getEntityThemeColor(theme, 'gamble') }}
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
@@ -1245,7 +1245,7 @@ const Navigation: React.FC = () => {
                 <Menu.Item
                   onClick={handleLogout}
                   leftSection={<LogOut size={16} />}
-                  color="red"
+                  style={{ color: getEntityThemeColor(theme, 'gamble') }}
                   onMouseEnter={() => setMobileAccountHighlight('logout')}
                   onMouseLeave={() => {
                     setMobileAccountHighlight((current) => (current === 'logout' ? null : current))

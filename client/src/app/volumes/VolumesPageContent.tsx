@@ -19,6 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { AlertCircle, Search, Book, Hash, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -311,7 +312,7 @@ export default function VolumesPageContent({
             </Text>
 
             {allVolumes.length > 0 && (
-              <Badge size="md" variant="light" color="red" radius="xl" mt="xs">
+              <Badge size="md" variant="light" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="xl" mt="xs">
                 {searchQuery ? `${total} of ${allVolumes.length}` : `${allVolumes.length}`} volume{(searchQuery ? total : allVolumes.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
@@ -361,7 +362,7 @@ export default function VolumesPageContent({
       {/* Error State */}
       {error && (
         <Alert
-          color="red"
+          style={{ color: getEntityThemeColor(theme, 'gamble') }}
           radius="md"
           mb="xl"
           icon={<AlertCircle size={16} />}
@@ -398,7 +399,7 @@ export default function VolumesPageContent({
                   : 'Check back later for new volumes'}
               </Text>
               {hasSearchQuery && (
-                <Button variant="outline" color="red" onClick={handleClearSearch}>
+                <Button variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} onClick={handleClearSearch}>
                   Clear search
                 </Button>
               )}
@@ -419,7 +420,7 @@ export default function VolumesPageContent({
                     key={volume.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }} // Cap animation delay
+                    transition={{ duration: 0.4, delay: Math.min(index * 0.1, 1.0) }} // Increased stagger for better loading
                     style={{
                       width: '200px',
                       height: '280px' // Playing card aspect ratio: 200px * 1.4 = 280px
@@ -439,7 +440,7 @@ export default function VolumesPageContent({
                         cursor: 'pointer',
                         textDecoration: 'none',
                         backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                         width: '100%',
                         height: '100%'
                       }}
@@ -457,15 +458,14 @@ export default function VolumesPageContent({
                       {/* Chapter range Badge at Top Left */}
                       <Badge
                         variant="filled"
-                        color="violet"
                         radius="sm"
                         size="sm"
                         style={{
+                          color: getEntityThemeColor(theme, 'media'),
                           position: 'absolute',
                           top: rem(8),
                           left: rem(8),
-                          backgroundColor: 'rgba(124, 58, 237, 0.95)',
-                          color: 'white',
+                          backgroundColor: accentVolume,
                           fontSize: rem(10),
                           fontWeight: 700,
                           zIndex: 10,
@@ -517,9 +517,8 @@ export default function VolumesPageContent({
                           ta="center"
                           style={{
                             lineHeight: 1.2,
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.2)',
                             fontSize: rem(13),
-                            background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
                             backdropFilter: 'blur(4px)',
                             borderRadius: rem(6),
                             padding: `${rem(4)} ${rem(8)}`,
@@ -556,7 +555,7 @@ export default function VolumesPageContent({
                     total={totalPages}
                     value={currentPage}
                     onChange={handlePageChange}
-                    color="red"
+                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
                     size="lg"
                     radius="xl"
                     withEdges
@@ -617,7 +616,7 @@ export default function VolumesPageContent({
                 <Group justify="center" gap="xs">
                   <Badge
                     variant="filled"
-                    color="violet"
+                    style={{ color: getEntityThemeColor(theme, 'media') }}
                     size="sm"
                     fw={600}
                     leftSection={<Hash size={12} />}

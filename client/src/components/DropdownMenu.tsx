@@ -37,11 +37,15 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
       href={item.href}
       onMouseEnter={handlers.onDropdownEnter}
       onMouseLeave={handlers.onDropdownLeave}
-      style={{
-        paddingLeft: isCategorized ? 24 : 16,
-        borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent'
-      }}
-      leftSection={<Box style={{ display: 'flex' }}>{item.icon}</Box>}
+      leftSection={
+        <Box style={{
+          paddingLeft: isCategorized ? 24 : 16,
+          borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent',
+          display: 'flex'
+        }}>
+          {item.icon}
+        </Box>
+      }
     >
       {item.label}
     </Menu.Item>

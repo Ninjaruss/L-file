@@ -13,6 +13,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft, CalendarSearch, Calendar, BookOpen, Dice6, Tag } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
@@ -37,7 +38,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
           component={Link}
           href="/events"
           variant="subtle"
-          color="gray"
+          c={semanticColors.neutral}
           leftSection={<ArrowLeft size={18} />}
           mb="lg"
         >
@@ -45,7 +46,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
         </Button>
 
         <Stack align="center" gap="sm" mb="xl">
-          <CalendarSearch size={48} color={theme.other?.usogui?.event ?? theme.colors.orange?.[6]} />
+          <CalendarSearch size={48} color={getEntityThemeColor(theme, 'event')} />
           <Title order={1}>{initialEvent.title}</Title>
           <Group gap="sm" wrap="wrap" justify="center">
             <Badge radius="sm" variant="outline" leftSection={<Calendar size={14} />}>
@@ -75,7 +76,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
                 {initialEvent.gamble.name}
               </Badge>
             )}
-            <Badge color="red" radius="sm" variant="light" leftSection={<Tag size={14} />}>
+            <Badge style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm" variant="light" leftSection={<Tag size={14} />}>
               {initialEvent.status}
             </Badge>
           </Group>
@@ -144,7 +145,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
                     component={Link}
                     href={`/chapters/${initialEvent.chapterNumber}`}
                     fw={600}
-                    style={{ textDecoration: 'none', color: theme.colors.red?.[4] ?? '#f87171' }}
+                    style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'character') }}
                   >
                     Chapter {initialEvent.chapterNumber}
                   </Text>
@@ -159,7 +160,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
                       component={Link}
                       href={`/arcs/${initialEvent.arc.id}`}
                       fw={600}
-                      style={{ textDecoration: 'none', color: theme.colors.violet?.[4] ?? '#a855f7' }}
+                      style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'gamble') }}
                     >
                       {initialEvent.arc.name}
                     </Text>
@@ -175,7 +176,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
                       component={Link}
                       href={`/gambles/${initialEvent.gamble.id}`}
                       fw={600}
-                      style={{ textDecoration: 'none', color: theme.colors.red?.[5] ?? '#e11d48' }}
+                      style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'arc') }}
                     >
                       {initialEvent.gamble.name}
                     </Text>
@@ -206,7 +207,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
                           key={character.id}
                           component={Link}
                           href={`/characters/${character.id}`}
-                          style={{ textDecoration: 'none', color: theme.colors.blue?.[4] ?? '#60a5fa' }}
+                          style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'event') }}
                         >
                           {character.name}
                         </Text>

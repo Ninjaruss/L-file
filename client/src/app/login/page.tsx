@@ -2,6 +2,7 @@
 
 import React, { useEffect, Suspense } from 'react'
 import { Button, Card, Container, Stack, Text, Title } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { API_BASE_URL } from '../../../src/lib/api'
@@ -48,7 +49,7 @@ function LoginContent() {
 
           <Text size="sm" c="dimmed" ta="center">
             New to the community?{' '}
-            <Button variant="subtle" component={Link} href="/register" color="red" size="compact-sm">
+            <Button variant="subtle" component={Link} href="/register" style={{ color: getEntityThemeColor(theme, 'gamble') }} size="compact-sm">
               Join us
             </Button>
           </Text>

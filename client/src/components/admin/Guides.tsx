@@ -377,19 +377,49 @@ const GuideFilterToolbar = () => {
           api.getArcs({ limit: 100 }),
           api.getGambles({ limit: 100 })
         ])
-        
-        setEntities({
+
+        const loadedEntities = {
           characters: charactersRes.data || [],
           arcs: arcsRes.data || [],
           gambles: gamblesRes.data || []
-        })
+        }
+
+        setEntities(loadedEntities)
+
+        // Initialize selected entities from URL parameters
+        const newSelectedEntities: {
+          characters: any[]
+          arcs: any[]
+          gambles: any[]
+        } = {
+          characters: [],
+          arcs: [],
+          gambles: []
+        }
+
+        if (filterValues?.characterIds) {
+          const characterIds = filterValues.characterIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.characters = loadedEntities.characters.filter(c => characterIds.includes(c.id))
+        }
+
+        if (filterValues?.arcIds) {
+          const arcIds = filterValues.arcIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.arcs = loadedEntities.arcs.filter(a => arcIds.includes(a.id))
+        }
+
+        if (filterValues?.gambleIds) {
+          const gambleIds = filterValues.gambleIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.gambles = loadedEntities.gambles.filter(g => gambleIds.includes(g.id))
+        }
+
+        setSelectedEntities(newSelectedEntities)
       } catch (error) {
         console.error('Error loading entities:', error)
       }
     }
-    
+
     loadEntities()
-  }, [])
+  }, [filterValues?.characterIds, filterValues?.arcIds, filterValues?.gambleIds])
 
   const handleStatusFilter = (status: string) => {
     const newFilters = status === 'all' 

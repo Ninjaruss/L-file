@@ -7,6 +7,12 @@
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Donation linking to badges; badge system with perks
 
+## 2025-09-20
+### Changes
+- Added filter only volumes for media
+- Centeralized Mantine theme; needs adjustment of text colors (some are using overlapping colors)
+- Characters detail page layout updated
+
 ## 2025-09-19
 ### Changes
 - Finished layout/styling of arcs list page

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Alert, Button, Container, Stack } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -54,7 +55,7 @@ export default async function ChapterDetailPage({ params }: PageProps) {
     return (
       <Container size="lg" py="xl">
         <Stack gap="md">
-          <Alert color="red" radius="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md">
             Chapter not found
           </Alert>
           <Button component={Link} href="/chapters" variant="subtle" color="gray" leftSection={<ArrowLeft size={18} />}>

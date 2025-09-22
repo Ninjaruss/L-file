@@ -14,7 +14,6 @@ import {
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import MediaThumbnail from '../../../components/MediaThumbnail'
 import { CharacterStructuredData } from '../../../components/StructuredData'
 import type { Arc, Event, Gamble, Guide, Quote } from '../../../types'
 import { GuideStatus } from '../../../types'
@@ -59,7 +58,7 @@ async function fetchCharacterData(characterId: number): Promise<CharacterPageDat
   try {
     const [characterRes, gamblesRes, eventsRes, guidesRes, quotesRes, allArcsRes] = await Promise.all([
       fetch(`${API_BASE_URL}/characters/${characterId}`, { next: { revalidate: 300 } }),
-      fetch(`${API_BASE_URL}/characters/${characterId}/gambles?limit=5`, { next: { revalidate: 300 } }),
+      fetch(`${API_BASE_URL}/characters/${characterId}/gambles`, { next: { revalidate: 300 } }),
       fetch(`${API_BASE_URL}/characters/${characterId}/events`, { next: { revalidate: 300 } }),
       fetch(`${API_BASE_URL}/characters/${characterId}/guides?limit=5&status=${GuideStatus.APPROVED}`, { next: { revalidate: 300 } }),
       fetch(`${API_BASE_URL}/characters/${characterId}/quotes?limit=10`, { next: { revalidate: 300 } }),
@@ -79,14 +78,25 @@ async function fetchCharacterData(characterId: number): Promise<CharacterPageDat
       allArcsRes.ok ? allArcsRes.json() : { data: [] }
     ])
 
+    // Filter arcs based on character events
     const characterArcIds = new Set(
       eventsData.data?.map((event: Event & { arcId?: number }) => event.arcId).filter(Boolean) || []
     )
     const filteredArcs = allArcsData.data?.filter((arc: Arc) => characterArcIds.has(arc.id)) || []
 
+    // Note: Gambles are already filtered by the API endpoint `/characters/${characterId}/gambles`
+    // This endpoint returns gambles that are related to the character through events
+    const characterGambles = gamblesData.data || []
+
+    // Debug logging
+    console.log('Character ID:', characterId)
+    console.log('Gambles response status:', gamblesRes.ok)
+    console.log('Gambles data:', gamblesData)
+    console.log('Character gambles:', characterGambles)
+
     return {
       character,
-      gambles: gamblesData.data || [],
+      gambles: characterGambles,
       events: eventsData.data || [],
       guides: guidesData.data || [],
       quotes: quotesData.data || [],
@@ -154,10 +164,22 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
   } catch (error) {
     console.error('Error fetching character:', error)
     notFound()
-    return // This ensures TypeScript knows the function exits here
   }
 
   const { character, gambles, events, guides, quotes, arcs } = data
+
+  // Transform events to match the timeline component's expected interface
+  const timelineEvents = events.map(event => ({
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    chapterNumber: event.chapterNumber,
+    type: event.type,
+    arcId: event.arcId || 0,
+    arcName: event.arc?.name || 'Unknown Arc',
+    isSpoiler: event.spoilerChapter !== undefined,
+    spoilerChapter: event.spoilerChapter
+  }))
 
   return (
     <Container size="lg" py="xl">
@@ -184,144 +206,15 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
           Back to Characters
         </Button>
 
-        <CharacterHeader character={character} arcs={arcs} gambles={gambles} quotes={quotes} />
-
         <CharacterPageClient
           character={character}
           gambles={gambles}
-          events={events}
+          events={timelineEvents}
           guides={guides}
           quotes={quotes}
           arcs={arcs}
         />
       </Stack>
     </Container>
-  )
-}
-
-function CharacterHeader({ character, arcs, gambles, quotes }: {
-  character: Character
-  arcs: Arc[]
-  gambles: Gamble[]
-  quotes: Quote[]
-}) {
-
-  return (
-    <Card withBorder radius="md" className="gambling-card" shadow="md">
-      <Grid gutter="xl" align="center">
-        <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
-          <Box ta="center">
-            <MediaThumbnail
-              entityType="character"
-              entityId={character.id}
-              entityName={character.name}
-              allowCycling
-              maxWidth="260px"
-              maxHeight="320px"
-            />
-          </Box>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
-          <Stack gap="lg">
-            <Stack gap={4}>
-              <Title order={1}>{character.name}</Title>
-              {character.description && (
-                <Text size="sm" c="dimmed">
-                  {character.description.substring(0, 160)}
-                  {character.description.length > 160 ? '...' : ''}
-                </Text>
-              )}
-            </Stack>
-
-            {character.alternateNames && character.alternateNames.length > 0 && (
-              <Stack gap={4}>
-                <Text size="sm" c="dimmed">
-                  Also known as:
-                </Text>
-                <Group gap="xs" wrap="wrap">
-                  {character.alternateNames.map((name) => (
-                    <Badge key={name} variant="outline" color="violet" radius="xl">
-                      {name}
-                    </Badge>
-                  ))}
-                </Group>
-              </Stack>
-            )}
-
-            {character.organizations && character.organizations.length > 0 && (
-              <Stack gap={4}>
-                <Text size="sm" c="dimmed">
-                  Organization Affiliations:
-                </Text>
-                <Group gap="xs" wrap="wrap">
-                  {character.organizations.map((organization) => (
-                    <Badge
-                      key={organization.id}
-                      component={Link}
-                      href={`/organizations/${organization.id}`}
-                      color="red"
-                      radius="xl"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      {organization.name}
-                    </Badge>
-                  ))}
-                </Group>
-              </Stack>
-            )}
-
-            {character.firstAppearanceChapter && (
-              <Card withBorder radius="md" shadow="xs" padding="md" maw={280}>
-                <Stack gap={4}>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                    First Appearance
-                  </Text>
-                  <Text
-                    component={Link}
-                    href={`/chapters/${character.firstAppearanceChapter}`}
-                    fw={600}
-                    size="lg"
-                    style={{ textDecoration: 'none', color: '#f87171' }}
-                  >
-                    Chapter {character.firstAppearanceChapter}
-                  </Text>
-                </Stack>
-              </Card>
-            )}
-
-            <Group gap="sm" wrap="wrap">
-              <Badge
-                component={Link}
-                href={`/arcs?character=${character.name}`}
-                color="red"
-                radius="lg"
-                style={{ textDecoration: 'none' }}
-              >
-                {arcs.length} Arc{arcs.length !== 1 ? 's' : ''}
-              </Badge>
-              <Badge
-                component={Link}
-                href={`/gambles?character=${character.name}`}
-                color="violet"
-                radius="lg"
-                style={{ textDecoration: 'none' }}
-              >
-                {gambles.length} Gamble{gambles.length !== 1 ? 's' : ''}
-              </Badge>
-              <Badge
-                component={Link}
-                href={`/quotes?characterId=${character.id}`}
-                color="yellow"
-                variant="light"
-                radius="lg"
-                style={{ textDecoration: 'none' }}
-              >
-                {quotes.length} Quote{quotes.length !== 1 ? 's' : ''}
-              </Badge>
-            </Group>
-          </Stack>
-        </Grid.Col>
-      </Grid>
-    </Card>
   )
 }

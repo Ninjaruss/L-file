@@ -19,7 +19,7 @@ import { AlertTriangle, ArrowRight, Calendar, Crown, Filter, X } from 'lucide-re
 import Link from 'next/link'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
-import { getAlphaColor } from '../lib/mantine-theme'
+import { getAlphaColor, getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 
 const EVENT_COLOR_KEYS: Record<string, keyof MantineTheme['colors']> = {
   gamble: 'orange',
@@ -240,7 +240,7 @@ export default React.memo(function GambleTimeline({ events, arcs, gambleName, ga
                 )
               })}
               {selectedEventTypes.size > 0 && (
-                <ActionIcon variant="subtle" color="red" size="sm" onClick={clearFilters}>
+                <ActionIcon variant="subtle" style={{ color: getEntityThemeColor(theme, 'gamble') }} size="sm" onClick={clearFilters}>
                   <X size={14} />
                 </ActionIcon>
               )}
@@ -371,12 +371,12 @@ const TimelineEventCard = React.memo(function TimelineEventCard({
             )}
 
             <Group gap={6} wrap="wrap">
-              <Badge component={Link} href={`/chapters/${event.chapterNumber}`} variant="outline" color="red" radius="sm">
+              <Badge component={Link} href={`/chapters/${event.chapterNumber}`} variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm">
                 Chapter {event.chapterNumber}
               </Badge>
 
               {arc && (
-                <Badge component={Link} href={`/arcs/${arc.id}`} variant="outline" color="purple" radius="sm">
+                <Badge component={Link} href={`/arcs/${arc.id}`} variant="outline" style={{ color: getEntityThemeColor(theme, 'media') }} radius="sm">
                   {arc.name}
                 </Badge>
               )}

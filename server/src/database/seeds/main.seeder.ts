@@ -46,9 +46,9 @@ export class MainSeeder {
       new EventSeeder(this.dataSource), // Story events and plot points
       new QuoteSeeder(this.dataSource), // Character quotes
       new GambleSeeder(this.dataSource), // Gambling events and games
-  new MediaSeeder(this.dataSource), // Community media submissions
-  new FandomDataSeeder(this.dataSource), // Fandom-sourced volumes/chapters and covers
-  new GuideSeeder(this.dataSource), // User-generated guides and tutorials
+      new MediaSeeder(this.dataSource), // Community media submissions
+      new FandomDataSeeder(this.dataSource), // Fandom-sourced volumes/chapters and covers
+      new GuideSeeder(this.dataSource), // User-generated guides and tutorials
     ];
 
     let success = true;

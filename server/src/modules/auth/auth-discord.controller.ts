@@ -39,7 +39,8 @@ export class AuthDiscordController {
 
   @ApiOperation({
     summary: 'Discord OAuth callback',
-    description: 'Handles the callback from Discord OAuth2 flow and redirects to frontend with access token',
+    description:
+      'Handles the callback from Discord OAuth2 flow and redirects to frontend with access token',
   })
   @ApiResponse({
     status: 302,

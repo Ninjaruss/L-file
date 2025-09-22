@@ -1,5 +1,6 @@
 import React from 'react'
 import { Alert, Box, Button, Container, Stack, Text } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -33,9 +34,16 @@ async function getVolumeData(id: string) {
       api.getVolumeChapters(volumeId)
     ])
 
+    // Fetch detailed chapter information for each chapter number
+    const chapterDetails = await Promise.all(
+      chaptersData.chapters.map(chapterNumber =>
+        api.getChapterByNumber(chapterNumber)
+      )
+    )
+
     return {
       volume: volumeData,
-      chapters: chaptersData.chapters
+      chapters: chapterDetails
     }
   } catch (error: unknown) {
     console.error('Error fetching volume data:', error)
@@ -83,7 +91,7 @@ export default async function VolumeDetailPage({ params }: PageProps) {
     return (
       <Container size="lg" py="xl">
         <Stack gap="md">
-          <Alert color="red" radius="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md">
             <Text size="sm">Volume not found</Text>
           </Alert>
           <Box>
@@ -91,7 +99,7 @@ export default async function VolumeDetailPage({ params }: PageProps) {
               component={Link}
               href="/volumes"
               variant="outline"
-              color="red"
+              style={{ color: getEntityThemeColor(theme, 'gamble') }}
               leftSection={<ArrowLeft size={16} />}
             >
               Back to Volumes

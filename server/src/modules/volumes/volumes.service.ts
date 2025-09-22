@@ -32,7 +32,9 @@ export class VolumesService {
       query.andWhere('volume.number = :number', { number: filters.number });
     }
     if (filters.title) {
-      query.andWhere('volume.title ILIKE :title', { title: `%${filters.title}%` });
+      query.andWhere('volume.title ILIKE :title', {
+        title: `%${filters.title}%`,
+      });
     }
 
     // Sorting: only allow certain fields for safety

@@ -23,6 +23,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { FileText, Send, Plus, BookOpen, Eye } from 'lucide-react'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
@@ -208,7 +209,7 @@ export default function SubmitGuidePageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert color="yellow" variant="light">
+        <Alert style={{ color: semanticColors.warning }} variant="light">
           Please log in to submit a guide.
         </Alert>
       </Container>
@@ -233,13 +234,13 @@ export default function SubmitGuidePageContent() {
         </Stack>
 
         {error && (
-          <Alert color="red" variant="light" mb="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" mb="md">
             {error}
           </Alert>
         )}
 
         {success && (
-          <Alert color="green" variant="light" mb="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'guide') }} variant="light" mb="md">
             {success}
           </Alert>
         )}
@@ -491,7 +492,7 @@ export default function SubmitGuidePageContent() {
                     <Badge
                       key={tag}
                       variant="outline"
-                      color="red"
+                      style={{ color: getEntityThemeColor(theme, 'gamble') }}
                       rightSection={<CloseButton size="sm" onClick={() => removeTag(tag)} />}
                     >
                       {tag}
@@ -515,7 +516,7 @@ export default function SubmitGuidePageContent() {
                   />
                   <Button
                     variant="outline"
-                    color="red"
+                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
                     leftSection={<Plus size={16} />}
                     onClick={addTag}
                     disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
@@ -532,7 +533,7 @@ export default function SubmitGuidePageContent() {
               <Button
                 type="submit"
                 size="lg"
-                color="red"
+                style={{ color: getEntityThemeColor(theme, 'gamble') }}
                 fullWidth
                 loading={loading}
                 leftSection={loading ? undefined : <Send size={18} />}
@@ -544,7 +545,7 @@ export default function SubmitGuidePageContent() {
           </form>
         </Card>
 
-        <Alert color="blue" variant="light" mt="xl">
+        <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" mt="xl">
           <Text size="sm">
             <strong>Guide Writing Tips:</strong>
             <br />• Be thorough and informative

@@ -15,6 +15,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft, FileText, Calendar, Heart, Edit, Save, X, Users, BookOpen, Dice6 } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../../lib/api'
@@ -126,13 +127,13 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
     if (!guide.author.role) return null
     switch (guide.author.role) {
       case 'admin':
-        return { label: 'Admin', color: theme.colors.red?.[5] ?? '#e11d48' }
+        return { label: 'Admin', color: theme.other?.usogui?.red ?? '#e11d48' }
       case 'moderator':
-        return { label: 'Moderator', color: theme.colors.yellow?.[5] ?? '#facc15' }
+        return { label: 'Moderator', color: theme.other?.usogui?.warning ?? '#facc15' }
       default:
         return null
     }
-  }, [guide.author.role, theme.colors.red, theme.colors.yellow])
+  }, [guide.author.role])
 
   const handleLikeToggle = async () => {
     try {
@@ -177,14 +178,14 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
     <Container size="lg" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Group justify="space-between" align="flex-start" mb="lg">
-          <Button component={Link} href="/guides" variant="subtle" color="gray" leftSection={<ArrowLeft size={18} />}>
+          <Button component={Link} href="/guides" variant="subtle" c={semanticColors.neutral} leftSection={<ArrowLeft size={18} />}>
             Back to Guides
           </Button>
           <Group gap="sm">
             {/* publish/unpublish removed from UI per requirements */}
             <Button
               variant={guide.userHasLiked ? 'filled' : 'outline'}
-              color="red"
+              style={{ color: getEntityThemeColor(theme, 'gamble') }}
               leftSection={<Heart size={16} />}
               onClick={handleLikeToggle}
             >
@@ -209,7 +210,7 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
                   <Text size="sm" c="dimmed" component={Link} href={`/users/${guide.author.id}`} style={{ textDecoration: 'none' }}>
                     By {guide.author.username}
                   </Text>
-                  {guide.author.customRole && <Badge color="violet" variant="outline" radius="sm">{guide.author.customRole}</Badge>}
+                  {guide.author.customRole && <Badge style={{ color: getEntityThemeColor(theme, 'media') }} variant="outline" radius="sm">{guide.author.customRole}</Badge>}
                   {roleBadge && (
                     <Badge color={roleBadge.color} variant="light" radius="sm">
                       {roleBadge.label}
@@ -223,13 +224,13 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
                   />
                 </Group>
                 <Group gap="xs" align="center">
-                  <Badge color="red" radius="sm" variant="light" leftSection={<Calendar size={14} />}>
+                  <Badge style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm" variant="light" leftSection={<Calendar size={14} />}>
                     Published {new Date(guide.createdAt).toLocaleDateString()}
                   </Badge>
-                  <Badge color="blue" radius="sm" variant="light">
+                  <Badge style={{ color: getEntityThemeColor(theme, 'character') }} radius="sm" variant="light">
                     {guide.viewCount} view{guide.viewCount !== 1 ? 's' : ''}
                   </Badge>
-                  <Badge color="violet" radius="sm" variant="light">
+                  <Badge style={{ color: getEntityThemeColor(theme, 'media') }} radius="sm" variant="light">
                     {guide.likeCount} like{guide.likeCount !== 1 ? 's' : ''}
                   </Badge>
                 </Group>
@@ -341,10 +342,10 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
                       placeholder="Update guide content"
                     />
                     <Group gap="sm">
-                      <Button variant="outline" color="gray" onClick={handleCancel} leftSection={<X size={16} />}>
+                      <Button variant="outline" c={semanticColors.neutral} onClick={handleCancel} leftSection={<X size={16} />}>
                         Cancel
                       </Button>
-                      <Button color="red" onClick={handleSave} loading={saving} leftSection={!saving ? <Save size={16} /> : undefined}>
+                      <Button style={{ color: getEntityThemeColor(theme, 'gamble') }} onClick={handleSave} loading={saving} leftSection={!saving ? <Save size={16} /> : undefined}>
                         Save Guide
                       </Button>
                     </Group>

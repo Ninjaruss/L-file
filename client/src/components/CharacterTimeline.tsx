@@ -13,11 +13,11 @@ import {
   useMantineTheme,
   type MantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors, getAlphaColor } from '../lib/mantine-theme'
 import { Calendar, BookOpen, Eye, EyeOff, X, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
-import { getAlphaColor } from '../lib/mantine-theme'
 
 export interface TimelineEvent {
   id: number
@@ -303,14 +303,14 @@ const CharacterTimeline = React.memo(function CharacterTimeline({
             <Calendar size={20} />
             <Text fw={600}>{characterName} Timeline</Text>
           </Group>
-          <Button component={Link} href={`/events?character=${encodeURIComponent(characterName)}`} size="xs" variant="outline" color="red">
+          <Button component={Link} href={`/events?character=${encodeURIComponent(characterName)}`} size="xs" variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }}>
             View All Events
           </Button>
         </Group>
 
         {firstAppearanceChapter ? (
           <Badge
-            color="purple"
+            style={{ color: getEntityThemeColor(theme, 'media') }}
             variant="filled"
             leftSection={<BookOpen size={14} />}
             radius="sm"
@@ -370,7 +370,7 @@ const CharacterTimeline = React.memo(function CharacterTimeline({
                     <Badge
                       key={section.arc.id}
                       variant="outline"
-                      color="red"
+                      style={{ color: getEntityThemeColor(theme, 'gamble') }}
                       radius="sm"
                       onClick={() => scrollToArc(section.arc.id)}
                       style={{ cursor: 'pointer' }}
@@ -392,7 +392,7 @@ const CharacterTimeline = React.memo(function CharacterTimeline({
                     <Badge
                       key={chapter}
                       variant="outline"
-                      color="purple"
+                      style={{ color: getEntityThemeColor(theme, 'media') }}
                       radius="sm"
                       onClick={() => scrollToChapter(chapter)}
                       data-chapter={chapter}
@@ -476,7 +476,7 @@ const TimelineDisplay = React.memo(function TimelineDisplay({
                 {section.arc.description}
               </Text>
             )}
-            <Badge color="purple" variant="outline" radius="sm">
+            <Badge style={{ color: getEntityThemeColor(theme, 'media') }} variant="outline" radius="sm">
               Chapters {section.arc.startChapter}
               {section.arc.endChapter && section.arc.endChapter !== section.arc.startChapter
                 ? `-${section.arc.endChapter}`
@@ -553,7 +553,7 @@ const TimelineEventCard = React.memo(function TimelineEventCard({ event }: { eve
         <Card withBorder radius="md" shadow="sm" p="md" style={{ width: '100%' }}>
           <Stack gap="sm" align="center">
             <Group gap={6} justify="center" wrap="wrap">
-              <Badge color="red" variant="outline" radius="sm">
+              <Badge style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="outline" radius="sm">
                 Ch. {event.chapterNumber}
               </Badge>
               {event.type && (

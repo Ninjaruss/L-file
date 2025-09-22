@@ -15,6 +15,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft, BookOpen, Calendar, Eye } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
@@ -62,6 +63,8 @@ interface ArcPageClientProps {
 export default function ArcPageClient({ initialArc, initialEvents, initialGambles }: ArcPageClientProps) {
   const theme = useMantineTheme()
   const [activeTab, setActiveTab] = useState<string>('overview')
+  const arcColor = getEntityThemeColor(theme, 'arc')
+  const gambleColor = getEntityThemeColor(theme, 'gamble')
 
   usePageView('arc', initialArc.id.toString(), true)
 
@@ -84,7 +87,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
           component={Link}
           href="/arcs"
           variant="subtle"
-          color="gray"
+          c={semanticColors.neutral}
           leftSection={<ArrowLeft size={18} />}
           mb="lg"
         >
@@ -115,7 +118,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                       <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
                         Chapter Range
                       </Text>
-                      <Text fw={600} size="lg" c="pink.4">
+                      <Text fw={600} size="lg" style={{ color: arcColor }}>
                         {initialArc.startChapter}-{initialArc.endChapter}
                       </Text>
                     </Card>
@@ -145,7 +148,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                       <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
                         Gambles
                       </Text>
-                      <Text fw={600} size="lg" c="red.4">
+                      <Text fw={600} size="lg" style={{ color: gambleColor }}>
                         {initialGambles.length} gambles
                       </Text>
                     </Card>
@@ -153,13 +156,13 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                 </Grid>
 
                 <Group gap="sm" wrap="wrap">
-                  <Badge color="red" radius="lg" variant="filled">
+                  <Badge style={{ backgroundColor: arcColor }} radius="lg" variant="filled">
                     {initialEvents.length} Event{initialEvents.length !== 1 ? 's' : ''}
                   </Badge>
-                  <Badge color="violet" radius="lg" variant="filled">
+                  <Badge style={{ backgroundColor: gambleColor }} radius="lg" variant="filled">
                     {initialGambles.length} Gamble{initialGambles.length !== 1 ? 's' : ''}
                   </Badge>
-                  <Badge color="pink" radius="lg" variant="light">
+                  <Badge style={{ backgroundColor: `${arcColor}20`, color: arcColor, borderColor: arcColor }} radius="lg" variant="light">
                     Arc {initialArc.order ?? 'N/A'}
                   </Badge>
                 </Group>
@@ -184,7 +187,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                   <Card withBorder radius="md" shadow="sm" mb="lg">
                     <Stack gap="md" p="lg">
                       <Group gap="sm">
-                        <BookOpen size={20} color={theme.colors.red?.[5]} />
+                        <BookOpen size={20} color={arcColor} />
                         <Title order={3}>About</Title>
                       </Group>
                       <TimelineSpoilerWrapper chapterNumber={initialArc.startChapter}>
@@ -203,10 +206,10 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                   <Card withBorder radius="md" shadow="sm" style={{ position: 'sticky', top: 24 }}>
                     <Stack gap="md" p="lg">
                       <Title order={4}>Chapter Range</Title>
-                      <Button component={Link} href={`/chapters/${initialArc.startChapter}`} variant="outline" color="red" fullWidth>
+                      <Button component={Link} href={`/chapters/${initialArc.startChapter}`} variant="outline" c={getEntityThemeColor(theme, 'gamble')} fullWidth>
                         Start: Chapter {initialArc.startChapter}
                       </Button>
-                      <Button component={Link} href={`/chapters/${initialArc.endChapter}`} color="red" fullWidth>
+                      <Button component={Link} href={`/chapters/${initialArc.endChapter}`} c={getEntityThemeColor(theme, 'gamble')} fullWidth>
                         End: Chapter {initialArc.endChapter}
                       </Button>
                     </Stack>

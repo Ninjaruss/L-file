@@ -474,7 +474,7 @@ export class MediaService {
       .take(limit);
 
     const [data, total] = await query.getManyAndCount();
-    
+
     // Add character information for media with ownerType 'character'
     const enrichedData = await Promise.all(
       data.map(async (media: any) => {
@@ -488,13 +488,16 @@ export class MediaService {
               return { ...media, character };
             }
           } catch (error) {
-            console.error(`Failed to fetch character for media ${media.id}:`, error);
+            console.error(
+              `Failed to fetch character for media ${media.id}:`,
+              error,
+            );
           }
         }
         return media;
-      })
+      }),
     );
-    
+
     return {
       data: enrichedData,
       total,

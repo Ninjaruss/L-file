@@ -22,6 +22,7 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import {
   User,
   BookOpen,
@@ -314,7 +315,7 @@ export default function ProfilePageClient() {
         <Alert
           icon={<User size={16} />}
           title="Authentication Required"
-          color="blue"
+          style={{ color: getEntityThemeColor(theme, 'character') }}
           variant="light"
         >
           <Stack gap="md">
@@ -556,7 +557,7 @@ export default function ProfilePageClient() {
                 <Stack gap="sm">
                   <Text fw={500} size="md">Custom Role</Text>
                   {!hasActiveSupporterBadge ? (
-                    <Alert color="blue" variant="light">
+                    <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light">
                       <Stack gap="xs">
                         <Text size="sm" fw={500}>Custom roles are exclusive to active supporters!</Text>
                         <Text size="sm">
@@ -568,7 +569,7 @@ export default function ProfilePageClient() {
                           target="_blank" 
                           rel="noopener noreferrer"
                           size="sm"
-                          color="blue"
+                          style={{ color: getEntityThemeColor(theme, 'character') }}
                         >
                           Support on Ko-fi
                         </Button>

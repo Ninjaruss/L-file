@@ -19,6 +19,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
+import { getEntityThemeColor, semanticColors } from '../../../lib/mantine-theme'
 
 interface Volume {
   id: number
@@ -59,16 +60,16 @@ interface Chapter {
 
 interface ChapterPageClientProps {
   initialChapter: Chapter
-  initialEvents: Event[]
-  initialQuotes: Quote[]
-  initialCharacters: Character[]
+  initialEvents?: Event[]
+  initialQuotes?: Quote[]
+  initialCharacters?: Character[]
 }
 
 export default function ChapterPageClient({
   initialChapter,
-  initialEvents,
-  initialQuotes,
-  initialCharacters
+  initialEvents = [],
+  initialQuotes = [],
+  initialCharacters = []
 }: ChapterPageClientProps) {
   const theme = useMantineTheme()
 
@@ -81,7 +82,7 @@ export default function ChapterPageClient({
           component={Link}
           href="/chapters"
           variant="subtle"
-          color="gray"
+          style={{ color: semanticColors.neutral }}
           leftSection={<ArrowLeft size={18} />}
           mb="lg"
         >
@@ -89,7 +90,7 @@ export default function ChapterPageClient({
         </Button>
 
         <Stack align="center" gap="sm" mb="xl">
-          <BookOpen size={48} color={theme.other?.usogui?.guide ?? theme.colors.green?.[6]} />
+          <BookOpen size={48} color={getEntityThemeColor(theme, 'guide')} />
           <Title order={1}>Chapter {initialChapter.number}</Title>
           {initialChapter.title && (
             <Text size="lg" c="dimmed">
@@ -100,10 +101,9 @@ export default function ChapterPageClient({
             <Badge
               component={Link}
               href={`/volumes/${initialChapter.volume.id}`}
-              color="violet"
               variant="outline"
               radius="lg"
-              style={{ textDecoration: 'none' }}
+              style={{ color: getEntityThemeColor(theme, 'media'), textDecoration: 'none' }}
             >
               Volume {initialChapter.volume.number}
               {initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
@@ -126,7 +126,7 @@ export default function ChapterPageClient({
               </Card>
             )}
 
-            {initialEvents.length > 0 && (
+            {initialEvents && initialEvents.length > 0 && (
               <Card withBorder radius="md" className="gambling-card" shadow="sm" mb="lg">
                 <Stack gap="md" p="lg">
                   <Title order={3}>Chapter Events</Title>
@@ -138,7 +138,7 @@ export default function ChapterPageClient({
                             component={Link}
                             href={`/events/${event.id}`}
                             fw={600}
-                            style={{ textDecoration: 'none', color: theme.colors.red?.[4] ?? '#f87171' }}
+                            style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'character') }}
                           >
                             {event.title}
                           </Text>
@@ -153,7 +153,7 @@ export default function ChapterPageClient({
               </Card>
             )}
 
-            {initialQuotes.length > 0 && (
+            {initialQuotes && initialQuotes.length > 0 && (
               <Card withBorder radius="md" className="gambling-card" shadow="sm">
                 <Stack gap="md" p="lg">
                   <Title order={3}>Memorable Quotes</Title>
@@ -198,7 +198,7 @@ export default function ChapterPageClient({
                       component={Link}
                       href={`/volumes/${initialChapter.volume.id}`}
                       fw={600}
-                      style={{ textDecoration: 'none', color: theme.colors.violet?.[4] ?? '#a855f7' }}
+                      style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'gamble') }}
                     >
                       Volume {initialChapter.volume.number}
                       {initialChapter.volume.title ? ` — ${initialChapter.volume.title}` : ''}
@@ -208,7 +208,7 @@ export default function ChapterPageClient({
 
                 <Divider color="rgba(255, 255, 255, 0.12)" />
 
-                {initialCharacters.length > 0 ? (
+                {initialCharacters && initialCharacters.length > 0 ? (
                   <Stack gap="sm">
                     <Title order={5}>Featured Characters</Title>
                     <Stack gap={4}>
@@ -217,7 +217,7 @@ export default function ChapterPageClient({
                           key={character.id}
                           component={Link}
                           href={`/characters/${character.id}`}
-                          style={{ textDecoration: 'none', color: theme.colors.blue?.[4] ?? '#60a5fa' }}
+                          style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'event') }}
                         >
                           {character.name}
                         </Text>
@@ -225,7 +225,7 @@ export default function ChapterPageClient({
                     </Stack>
                   </Stack>
                 ) : (
-                  <Alert radius="md" color="gray" title="No character data" variant="light">
+                  <Alert radius="md" style={{ color: semanticColors.neutral }} title="No character data" variant="light">
                     Character information isn’t available for this chapter yet.
                   </Alert>
                 )}

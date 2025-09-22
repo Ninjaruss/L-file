@@ -334,13 +334,6 @@ export const mantineTheme: MantineThemeOverride = {
 
     Tabs: {
       styles: () => ({
-        tab: {
-          color: 'rgba(255, 255, 255, 0.65)',
-          transition: 'color 150ms ease, border-color 150ms ease',
-          '&:hover': {
-            color: '#f43f5e'
-          }
-        },
         panel: {
           color: '#ffffff'
         }

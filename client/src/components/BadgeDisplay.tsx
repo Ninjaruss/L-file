@@ -183,7 +183,7 @@ export default function BadgeDisplay({
       styles={{
         tooltip: {
           maxWidth: rem(300),
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          backgroundColor: `${theme.colors.dark?.[9] ?? '#000000'}E6`,
           color: '#ffffff',
           fontSize: '0.875rem',
           padding: '8px 12px'

@@ -14,6 +14,7 @@ import {
   Tooltip,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Edit, Save, X, Star } from 'lucide-react'
 import { api } from '../lib/api'
 
@@ -86,7 +87,7 @@ export default function CustomRoleEditor({
   if (!isActiveSupporterUser) {
     return (
       <Box style={{ marginBottom: theme.spacing.md }}>
-        <Alert color="blue" radius="md">
+        <Alert style={{ color: getEntityThemeColor(theme, 'character') }} radius="md">
           <Text size="sm">
             Custom cosmetic roles are available for Active Supporter badge holders. Support the project to unlock this feature!
           </Text>
@@ -142,7 +143,7 @@ export default function CustomRoleEditor({
               <ActionIcon
                 size="sm"
                 variant="light"
-                color="red"
+                style={{ color: getEntityThemeColor(theme, 'gamble') }}
                 onClick={() => setConfirmDialogOpen(true)}
               >
                 <X size={16} />
@@ -166,7 +167,7 @@ export default function CustomRoleEditor({
               onClick={handleSave}
               disabled={loading}
               leftSection={<Save size={16} />}
-              color="violet"
+              style={{ color: getEntityThemeColor(theme, 'media') }}
             >
               Save
             </Button>
@@ -183,7 +184,7 @@ export default function CustomRoleEditor({
       )}
 
       {error && (
-        <Alert color="red" radius="md" mt="sm">
+        <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md" mt="sm">
           <Text size="sm">{error}</Text>
         </Alert>
       )}
@@ -202,7 +203,7 @@ export default function CustomRoleEditor({
           <Button variant="subtle" color="gray" onClick={() => setConfirmDialogOpen(false)}>
             Cancel
           </Button>
-          <Button color="red" onClick={handleRemove} disabled={loading}>
+          <Button style={{ color: getEntityThemeColor(theme, 'gamble') }} onClick={handleRemove} disabled={loading}>
             Remove
           </Button>
         </Group>

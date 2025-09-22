@@ -12,12 +12,14 @@ import {
   useMantineTheme,
   rgba
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import Image from 'next/image'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
 import { api } from '../lib/api'
+import { analyzeMediaUrl, analyzeMediaUrlAsync, getPlaceholderInfo } from '../lib/media-utils'
 
 interface MediaItem {
   id: number
@@ -47,6 +49,103 @@ const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 // Retry configuration
 const RETRY_DELAYS = [1000, 2000, 4000] // Progressive backoff
 const MAX_RETRIES = 3
+// Image component with loading states and retry logic
+function ImageWithRetry({ 
+  src, 
+  alt, 
+  onLoad, 
+  onError,
+  ...props 
+}: {
+  src: string
+  alt: string
+  onLoad?: () => void
+  onError?: () => void
+  [key: string]: any
+}) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+  const theme = useMantineTheme()
+
+  const handleLoad = () => {
+    setLoading(false)
+    setError(false)
+    onLoad?.()
+  }
+
+  const handleError = () => {
+    console.error('Image failed to load:', src)
+    
+    if (retryCount < 2) {
+      // Retry with progressive delay
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1)
+        setError(false)
+        setLoading(true)
+      }, 1000 * (retryCount + 1))
+    } else {
+      setLoading(false)
+      setError(true)
+      onError?.()
+    }
+  }
+
+  if (error) {
+    return (
+      <Box
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.colors.gray?.[1],
+          color: theme.colors.gray?.[6]
+        }}
+      >
+        <ImageIcon size={24} style={{ marginBottom: '8px' }} />
+        <Text size="xs" ta="center">Image unavailable</Text>
+      </Box>
+    )
+  }
+
+  return (
+    <>
+      {loading && (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: `${theme.colors.dark?.[5] ?? theme.colors.gray?.[2]}20`,
+            zIndex: 1
+          }}
+        >
+          <Loader size="sm" color={theme.colors.red?.[5]} />
+        </Box>
+      )}
+      <Image
+        {...props}
+        src={`${src}?retry=${retryCount}`}
+        alt={alt}
+        onLoad={handleLoad}
+        onError={handleError}
+        priority={false}
+        loading="lazy"
+      />
+    </>
+  )
+}
 
 export default function MediaThumbnail({
   entityType,
@@ -65,6 +164,7 @@ export default function MediaThumbnail({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const [resolvedMediaInfo, setResolvedMediaInfo] = useState<Record<string, any>>({})
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const { userProgress } = useProgress()
@@ -230,6 +330,31 @@ export default function MediaThumbnail({
     }
   }, [loadMedia])
 
+  // Resolve media URLs for special platforms
+  useEffect(() => {
+    if (!currentThumbnail) return
+
+    const resolveMediaUrl = async () => {
+      // Skip if already resolved
+      if (resolvedMediaInfo[currentThumbnail.url]) return
+
+      try {
+        const mediaInfo = await analyzeMediaUrlAsync(currentThumbnail.url)
+
+        if (mediaInfo.directImageUrl || mediaInfo.thumbnailUrl) {
+          setResolvedMediaInfo(prev => ({
+            ...prev,
+            [currentThumbnail.url]: mediaInfo
+          }))
+        }
+      } catch (error) {
+        console.warn('Failed to resolve media URL:', currentThumbnail.url, error)
+      }
+    }
+
+    resolveMediaUrl()
+  }, [currentThumbnail, resolvedMediaInfo])
+
   const handlePrevious = () => {
     if (allEntityMedia.length > 1) {
       const newIndex = currentIndex > 0 ? currentIndex - 1 : allEntityMedia.length - 1
@@ -247,27 +372,153 @@ export default function MediaThumbnail({
   }
 
   const renderMediaContent = (media: MediaItem) => {
+    const resolvedInfo = resolvedMediaInfo[media.url]
+    const mediaInfo = resolvedInfo || analyzeMediaUrl(media.url)
+
     if (media.type === 'image') {
+      // Handle direct images (including resolved DeviantArt images)
+      if (mediaInfo.isDirectImage) {
+        const imageUrl = mediaInfo.directImageUrl || media.url
+        return (
+          <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <ImageWithRetry
+              src={imageUrl}
+              alt={media.description || mediaInfo.title || `${entityName} image`}
+              fill
+              style={{
+                objectFit: 'cover',
+                objectPosition: 'center'
+              }}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </Box>
+        )
+      }
+
+      // Handle YouTube thumbnails
+      if (mediaInfo.platform === 'youtube' && mediaInfo.thumbnailUrl) {
+        return (
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <ImageWithRetry
+              src={mediaInfo.thumbnailUrl}
+              alt={media.description || `${entityName} video thumbnail`}
+              fill
+              style={{
+                objectFit: 'cover',
+                objectPosition: 'center'
+              }}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+            <Box
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}E6`,
+                color: 'white',
+                padding: rem(8),
+                borderRadius: rem(4),
+                fontSize: rem(24)
+              }}
+            >
+              ▶️
+            </Box>
+          </div>
+        )
+      }
+
+      // Handle non-direct image URLs (DeviantArt, Twitter, etc.) that couldn't be resolved
+      if (mediaInfo.platform && mediaInfo.platform !== 'direct') {
+        const placeholder = getPlaceholderInfo(mediaInfo.platform)
+        const displayTitle = mediaInfo.title || media.description
+        const displayAuthor = mediaInfo.author
+
+        return (
+          <Box
+            component="a"
+            href={media.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: theme.colors.gray[1],
+              color: theme.colors.gray[7],
+              borderRadius: rem(8),
+              gap: rem(8),
+              textDecoration: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              border: `2px solid ${placeholder.color}20`,
+              '&:hover': {
+                backgroundColor: theme.colors.gray[2],
+                transform: 'scale(1.02)'
+              }
+            }}
+          >
+            <Text size={rem(32)} style={{ lineHeight: 1 }}>
+              {placeholder.icon}
+            </Text>
+            <Text size="sm" fw={600} ta="center" style={{ color: placeholder.color }}>
+              {placeholder.label}
+            </Text>
+            {displayTitle && (
+              <Text size="xs" ta="center" style={{ color: theme.colors.gray[7], maxWidth: '80%' }}>
+                {displayTitle.length > 50
+                  ? `${displayTitle.substring(0, 50)}...`
+                  : displayTitle}
+              </Text>
+            )}
+            {displayAuthor && (
+              <Text size="xs" ta="center" style={{ color: theme.colors.gray[6], maxWidth: '80%' }}>
+                by {displayAuthor}
+              </Text>
+            )}
+          </Box>
+        )
+      }
+
+      // Fallback for unknown image types
       return (
-        <Image
-          src={media.url}
-          alt={media.description || `${entityName} image`}
-          fill
-          style={{
-            objectFit: 'cover',
-            objectPosition: 'center'
-          }}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          onError={() => {
-            console.error('Image failed to load:', media.url)
-            // Don't show error immediately, let the fallback handle it
-            // setError('Failed to load image')
-          }}
-        />
+        <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <ImageWithRetry
+            src={media.url}
+            alt={media.description || `${entityName} image`}
+            fill
+            style={{
+              objectFit: 'cover',
+              objectPosition: 'center'
+            }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </Box>
       )
     }
 
     if (media.type === 'video') {
+      // Handle YouTube videos
+      if (mediaInfo.platform === 'youtube' && mediaInfo.embedUrl) {
+        return (
+          <iframe
+            src={mediaInfo.embedUrl}
+            title={media.description || `${entityName} video`}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              borderRadius: rem(8)
+            }}
+            allowFullScreen
+          />
+        )
+      }
+
+      // Handle other videos
       return (
         <video
           src={media.url}
@@ -370,7 +621,7 @@ export default function MediaThumbnail({
           justifyContent: 'center'
         }}
       >
-        <Loader color="red" />
+        <Loader style={{ color: getEntityThemeColor(theme, 'gamble') }} />
       </Box>
     )
   }
@@ -378,7 +629,7 @@ export default function MediaThumbnail({
   if (error) {
     return (
       <Alert
-        color="red"
+        style={{ color: getEntityThemeColor(theme, 'gamble') }}
         variant="light"
         radius="md"
         icon={<AlertTriangle size={16} />}
@@ -427,7 +678,7 @@ export default function MediaThumbnail({
             position: 'absolute',
             bottom: numericMaxHeight && numericMaxHeight <= 32 ? rem(2) : rem(8),
             left: numericMaxWidth && numericMaxWidth <= 32 ? rem(2) : rem(8),
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}E6`,
             color: 'white',
             paddingInline: numericMaxWidth && numericMaxWidth <= 32 ? rem(2) : rem(8),
             paddingBlock: numericMaxHeight && numericMaxHeight <= 32 ? rem(1) : rem(4),
@@ -468,7 +719,7 @@ export default function MediaThumbnail({
               left: rem(8),
               top: '50%',
               transform: 'translateY(-50%)',
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
               color: '#ffffff',
               zIndex: 30
             }}
@@ -486,7 +737,7 @@ export default function MediaThumbnail({
               right: rem(8),
               top: '50%',
               transform: 'translateY(-50%)',
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
               color: '#ffffff',
               zIndex: 30
             }}
@@ -499,7 +750,7 @@ export default function MediaThumbnail({
               position: 'absolute',
               bottom: rem(8),
               right: rem(8),
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
               color: '#ffffff',
               paddingInline: rem(8),
               paddingBlock: rem(4),

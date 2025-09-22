@@ -21,6 +21,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { Search, BookOpen, Edit, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -448,7 +449,7 @@ export default function ArcsPageContent({
             </Text>
 
             {total > 0 && (
-              <Badge size="md" variant="light" color="pink" radius="xl" mt="xs">
+              <Badge size="md" variant="light" style={{ color: getEntityThemeColor(theme, 'arc') }} radius="xl" mt="xs">
                 {total} arc{total !== 1 ? 's' : ''} available
               </Badge>
             )}
@@ -487,13 +488,12 @@ export default function ArcsPageContent({
 
         {characterFilter && (
           <Group justify="center">
-            <Badge
-              size="lg"
+            <Badge size="lg"
               variant="filled"
-              color="pink"
+              style={{ backgroundColor: getEntityThemeColor(theme, 'arc') }}
               radius="xl"
               rightSection={
-                <ActionIcon size="xs" color="pink" variant="transparent" onClick={() => {
+                <ActionIcon size="xs" style={{ color: getEntityThemeColor(theme, 'arc') }} variant="transparent" onClick={() => {
                   setCharacterFilter(null)
                   setCurrentPage(1)
                   updateUrl(1, searchQuery, null)
@@ -512,7 +512,7 @@ export default function ArcsPageContent({
       {/* Error State */}
       {error && (
         <Alert
-          color="red"
+          style={{ color: getEntityThemeColor(theme, 'gamble') }}
           radius="md"
           mb="xl"
           icon={<X size={16} />}
@@ -543,7 +543,7 @@ export default function ArcsPageContent({
                   : 'Check back later for new story arcs'}
               </Text>
               {hasSearchQuery && (
-                <Button variant="outline" color="pink" onClick={handleClearSearch}>
+                <Button variant="outline" style={{ color: getEntityThemeColor(theme, 'arc') }} onClick={handleClearSearch}>
                   Clear search
                 </Button>
               )}
@@ -584,7 +584,7 @@ export default function ArcsPageContent({
                           cursor: 'pointer',
                           textDecoration: 'none',
                           backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                           width: '100%',
                           height: '100%'
                         }}
@@ -603,15 +603,14 @@ export default function ArcsPageContent({
                         {formatChapterRange(arc) && (
                           <Badge
                             variant="filled"
-                            color="pink"
                             radius="sm"
                             size="sm"
                             style={{
+                              color: getEntityThemeColor(theme, 'arc'),
                               position: 'absolute',
                               top: rem(8),
                               left: rem(8),
-                              backgroundColor: 'rgba(220, 0, 78, 0.95)',
-                              color: 'white',
+                              backgroundColor: accentArc,
                               fontSize: rem(10),
                               fontWeight: 700,
                               zIndex: 10,
@@ -688,9 +687,8 @@ export default function ArcsPageContent({
                             ta="center"
                             style={{
                               lineHeight: 1.2,
-                              textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.2)',
                               fontSize: rem(13),
-                              background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                              background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
                               backdropFilter: 'blur(4px)',
                               borderRadius: rem(6),
                               padding: `${rem(4)} ${rem(8)}`,
@@ -712,7 +710,7 @@ export default function ArcsPageContent({
                     total={totalPages}
                     value={currentPage}
                     onChange={handlePageChange}
-                    color="pink"
+                    style={{ color: getEntityThemeColor(theme, 'arc') }}
                     size="lg"
                     radius="xl"
                     withEdges
@@ -944,7 +942,7 @@ export default function ArcsPageContent({
                 <Group justify="center" gap="xs">
                   <Badge
                     variant="light"
-                    color="pink"
+                    style={{ color: getEntityThemeColor(theme, 'arc') }}
                     size="sm"
                     fw={600}
                   >
@@ -953,7 +951,7 @@ export default function ArcsPageContent({
                   {formatChapterRange(hoveredArc) && (
                     <Badge
                       variant="filled"
-                      color="pink"
+                      style={{ color: getEntityThemeColor(theme, 'arc') }}
                       size="sm"
                       fw={600}
                     >

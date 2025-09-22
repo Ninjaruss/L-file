@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
+import { MediaUrlResolverService } from './services/media-url-resolver.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import {
@@ -46,6 +47,7 @@ import {
 export class MediaController {
   constructor(
     private readonly mediaService: MediaService,
+    private readonly mediaUrlResolver: MediaUrlResolverService,
     private readonly b2Service: BackblazeB2Service,
   ) {}
 
@@ -203,6 +205,48 @@ export class MediaController {
   @ApiResponse({ status: 404, description: 'Media not found or not approved' })
   findOnePublic(@Param('id') id: string) {
     return this.mediaService.findOnePublic(+id);
+  }
+
+  @Get('url-resolver')
+  @ApiOperation({
+    summary: 'Resolve media URL to get direct image URLs',
+    description: 'Resolves platform URLs (DeviantArt, etc.) to direct image URLs and metadata',
+  })
+  @ApiQuery({
+    name: 'url',
+    description: 'The media URL to resolve',
+    example: 'https://www.deviantart.com/kronensegler123/art/Baku-Madarame-Render-11-1087009612',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'URL resolved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        originalUrl: { type: 'string' },
+        directImageUrl: { type: 'string' },
+        thumbnailUrl: { type: 'string' },
+        title: { type: 'string' },
+        author: { type: 'string' },
+        width: { type: 'number' },
+        height: { type: 'number' },
+        platform: { type: 'string' },
+        metadata: { type: 'object' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid URL provided' })
+  async resolveUrl(@Query('url') url: string) {
+    if (!url) {
+      throw new BadRequestException('URL parameter is required');
+    }
+
+    try {
+      const resolved = await this.mediaUrlResolver.resolveMediaUrlCached(url);
+      return resolved;
+    } catch (error) {
+      throw new BadRequestException(`Failed to resolve URL: ${error.message}`);
+    }
   }
 
   // AUTHENTICATED ENDPOINTS - Require login

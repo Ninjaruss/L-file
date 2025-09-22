@@ -19,6 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -229,13 +230,13 @@ export default function GuidesPageContent({
 
         {authorFilter && authorName && (
           <Group justify="center" gap="sm">
-            <Badge size="md" color="red" variant="filled">
+            <Badge size="md" style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="filled">
               Author: {authorName}
             </Badge>
             <Button
               variant="subtle"
               size="xs"
-              color="red"
+              style={{ color: getEntityThemeColor(theme, 'gamble') }}
               leftSection={<X size={14} />}
               onClick={clearAuthorFilter}
             >
@@ -245,7 +246,7 @@ export default function GuidesPageContent({
         )}
 
         {error && (
-          <Alert color="red" variant="light" radius="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" radius="md">
             {error}
           </Alert>
         )}
@@ -308,7 +309,7 @@ export default function GuidesPageContent({
                                 <Users size={14} />
                                 <Group gap={4} wrap="wrap">
                                   {guide.characters.slice(0, 2).map((character) => (
-                                    <Badge key={character.id} size="sm" color="red" variant="light">
+                                    <Badge key={character.id} size="sm" style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light">
                                       {character.name}
                                     </Badge>
                                   ))}
@@ -324,7 +325,7 @@ export default function GuidesPageContent({
                             {guide.arc && (
                               <Group gap={6} align="center">
                                 <BookOpen size={14} />
-                                <Badge size="sm" color="purple" variant="light">
+                                <Badge size="sm" style={{ color: getEntityThemeColor(theme, 'media') }} variant="light">
                                   {guide.arc.name}
                                 </Badge>
                               </Group>
@@ -335,7 +336,7 @@ export default function GuidesPageContent({
                                 <Dice6 size={14} />
                                 <Group gap={4} wrap="wrap">
                                   {guide.gambles.slice(0, 2).map((gamble) => (
-                                    <Badge key={gamble.id} size="sm" color="red" variant="light">
+                                    <Badge key={gamble.id} size="sm" style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light">
                                       {gamble.name}
                                     </Badge>
                                   ))}
@@ -372,7 +373,7 @@ export default function GuidesPageContent({
                           <Button
                             size="xs"
                             variant={guide.userHasLiked ? 'filled' : 'outline'}
-                            color="red"
+                            style={{ color: getEntityThemeColor(theme, 'gamble') }}
                             leftSection={<ThumbsUp size={14} />}
                             loading={liking === guide.id}
                             onClick={() => handleLikeToggle(guide.id)}
@@ -389,7 +390,7 @@ export default function GuidesPageContent({
 
             {totalPages > 1 && (
               <Group justify="center">
-                <Pagination total={totalPages} value={currentPage} onChange={handlePageChange} color="red" radius="md" />
+                <Pagination total={totalPages} value={currentPage} onChange={handlePageChange} style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md" />
               </Group>
             )}
           </Stack>

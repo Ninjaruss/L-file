@@ -64,7 +64,23 @@ export class MediaUrlConstraint implements ValidatorConstraintInterface {
 
           // Validate specific platform formats
           if (parsedUrl.hostname.endsWith('deviantart.com')) {
-            return parsedUrl.pathname.length > 1; // Must have some content
+            // DeviantArt art page format: /username/art/title-id
+            const pathParts = parsedUrl.pathname
+              .split('/')
+              .filter((part) => part.length > 0);
+            if (pathParts.length >= 3 && pathParts[1] === 'art') {
+              // Valid format: username/art/artwork-title-id
+              return true;
+            }
+            // DeviantArt gallery format: /username/gallery
+            if (pathParts.length >= 2 && pathParts[1] === 'gallery') {
+              return true;
+            }
+            // DeviantArt profile format: /username
+            if (pathParts.length >= 1) {
+              return true;
+            }
+            return false;
           }
           if (parsedUrl.hostname.includes('pixiv')) {
             return parsedUrl.pathname.includes('/artworks/'); // Must be an artwork URL
@@ -117,7 +133,7 @@ export class MediaUrlConstraint implements ValidatorConstraintInterface {
 
         case 'image':
           if (parsedUrl.hostname.endsWith('deviantart.com')) {
-            return 'Invalid DeviantArt URL format';
+            return 'Invalid DeviantArt URL format. Must be an art page, gallery, or profile URL';
           }
           if (parsedUrl.hostname.includes('pixiv')) {
             return 'Invalid Pixiv URL format. Must be an artwork URL';

@@ -15,6 +15,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Settings, Eye, EyeOff } from 'lucide-react'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
 
@@ -36,7 +37,7 @@ const SpoilerSettings: React.FC = () => {
           </Title>
         </Group>
 
-        <Alert color="blue" radius="md">
+        <Alert style={{ color: getEntityThemeColor(theme, 'character') }} radius="md">
           Configure how spoilers are handled throughout the site. You can always reveal individual spoilers by clicking on them.
         </Alert>
 
@@ -62,7 +63,7 @@ const SpoilerSettings: React.FC = () => {
                 { value: 539, label: 'End' }
               ]}
               labelAlwaysOn
-              color="red"
+              style={{ color: getEntityThemeColor(theme, 'gamble') }}
             />
           </Box>
         </Stack>
@@ -89,11 +90,11 @@ const SpoilerSettings: React.FC = () => {
             Current Status:
           </Text>
           <Group gap="xs" wrap="wrap">
-            <Badge variant="outline" color="red">
+            <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }}>
               Reading up to Chapter {settings.chapterTolerance}
             </Badge>
             {settings.showAllSpoilers && (
-              <Badge color="yellow" variant="filled">
+              <Badge style={{ color: semanticColors.warning }} variant="filled">
                 All spoilers visible
               </Badge>
             )}

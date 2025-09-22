@@ -17,6 +17,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft, Users, Shield, Crown } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
@@ -54,9 +55,9 @@ export default function OrganizationPageClient({
   initialGambles: _initialGambles
 }: OrganizationPageClientProps) {
   const theme = useMantineTheme()
-  const accentRed = theme.other?.usogui?.red ?? theme.colors.red[5]
-  const accentPurple = theme.other?.usogui?.purple ?? theme.colors.purple[5]
-  const dimmedColor = 'rgba(255, 255, 255, 0.65)'
+  const accentRed = getEntityThemeColor(theme, 'organization')
+  const accentPurple = getEntityThemeColor(theme, 'organization')
+  const dimmedColor = textColors.secondary
   const headingGradient = `linear-gradient(135deg, ${theme.white} 0%, ${accentPurple} 100%)`
 
   usePageView('organization', initialOrganization.id.toString(), true)
@@ -68,7 +69,7 @@ export default function OrganizationPageClient({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Button component={Link} href="/organizations" variant="light" color="red" leftSection={<ArrowLeft size={16} />} mb="md">
+        <Button component={Link} href="/organizations" variant="light" c={getEntityThemeColor(theme, 'gamble')} leftSection={<ArrowLeft size={16} />} mb="md">
           Back to Organizations
         </Button>
 
@@ -144,7 +145,7 @@ export default function OrganizationPageClient({
                       href={`/characters?organization=${encodeURIComponent(initialOrganization.name)}`}
                       variant="outline"
                       size="sm"
-                      color="red"
+                      c={getEntityThemeColor(theme, 'gamble')}
                       radius="xl"
                     >
                       View All Characters
@@ -196,7 +197,7 @@ export default function OrganizationPageClient({
                                       <Badge
                                         key={index}
                                         variant="outline"
-                                        color="purple"
+                                        c={getEntityThemeColor(theme, 'media')}
                                         size="sm"
                                         radius="xl"
                                       >
@@ -206,9 +207,9 @@ export default function OrganizationPageClient({
                                     {member.alternateNames.length > 2 && (
                                       <Badge
                                         variant="outline"
-                                        color="purple"
                                         size="sm"
                                         radius="xl"
+                                        c={getEntityThemeColor(theme, 'media')}
                                         style={{ opacity: 0.75 }}
                                       >
                                         +{member.alternateNames.length - 2} more

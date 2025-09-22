@@ -14,6 +14,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { BookOpen, Calendar, ArrowUpDown, CheckCircle2, Dice1, Eye, Users, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
@@ -416,20 +417,20 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
             <Calendar size={20} />
             <Text fw={600}>Arc Timeline</Text>
           </Group>
-          <Button component={Link} href={`/events?arc=${arcName}`} size="xs" variant="outline" color="red">
+          <Button component={Link} href={`/events?arc=${arcName}`} size="xs" variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }}>
             View All Events
           </Button>
         </Group>
 
         <Group gap="xs" align="center" wrap="wrap">
-          <Badge color="purple" variant="filled" leftSection={<BookOpen size={14} />} radius="sm">
+          <Badge style={{ color: getEntityThemeColor(theme, 'media') }} variant="filled" leftSection={<BookOpen size={14} />} radius="sm">
             Arc Range: Chapters {startChapter}-{endChapter}
           </Badge>
-          <Badge color="red" variant="outline" leftSection={<Calendar size={14} />} radius="sm">
+          <Badge style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="outline" leftSection={<Calendar size={14} />} radius="sm">
             {filteredEvents.length} Event{filteredEvents.length === 1 ? '' : 's'}
           </Badge>
           {(selectedEventTypes.size > 0 || selectedCharacters.size > 0) && (
-            <Badge color="blue" variant="outline" radius="sm">
+            <Badge style={{ color: getEntityThemeColor(theme, 'character') }} variant="outline" radius="sm">
               {filteredEvents.length} Filtered
             </Badge>
           )}
@@ -570,7 +571,7 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
                       <Badge
                         key={section.sectionType}
                         variant="outline"
-                        color="red"
+                        style={{ color: getEntityThemeColor(theme, 'gamble') }}
                         radius="sm"
                         onClick={() => scrollToSection(section.sectionType)}
                         style={{ cursor: 'pointer' }}
@@ -591,7 +592,7 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
                     <Badge
                       key={chapter}
                       variant="outline"
-                      color="purple"
+                      style={{ color: getEntityThemeColor(theme, 'media') }}
                       radius="sm"
                       onClick={() => scrollToChapter(chapter)}
                       style={{ cursor: 'pointer' }}
@@ -622,7 +623,7 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
               <Stack gap="sm">
                 <Text fw={600}>{globalModal.event.title}</Text>
                 <Group gap={6}>
-                  <Badge variant="outline" color="red" radius="sm">
+                  <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm">
                     Chapter {globalModal.event.chapterNumber}
                   </Badge>
                   {globalModal.event.type && (
@@ -685,7 +686,7 @@ const ArcTimelineSection = React.memo(function ArcTimelineSection({
             <Text fw={600} size="sm" c="red.5">
               {section.sectionName}
             </Text>
-            <Badge variant="outline" color="red" radius="sm">
+            <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm">
               {section.events.length} events
             </Badge>
           </Group>
@@ -752,7 +753,7 @@ function TimelineSpoilerWrapper({ event, children }: { event: TimelineEvent; chi
   }
 
   return (
-    <Alert color="yellow" radius="md" title="Spoiler Warning" icon={<AlertTriangle size={18} />}>
+    <Alert style={{ color: semanticColors.warning }} radius="md" title="Spoiler Warning" icon={<AlertTriangle size={18} />}>
       Reveals content beyond your current progress (Ch. {userProgress}).
     </Alert>
   )
@@ -810,7 +811,7 @@ function EventContent({
               {event.title}
             </Text>
           </Group>
-          <Badge variant="outline" color="red" radius="sm">
+          <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm">
             Ch. {event.chapterNumber}
           </Badge>
         </Group>
@@ -828,7 +829,7 @@ function EventContent({
             </Badge>
           )}
           {!isPreview && event.characters && event.characters.length > 0 && (
-            <Badge variant="outline" color="purple" leftSection={<Users size={12} />} radius="sm" size="sm">
+            <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'media') }} leftSection={<Users size={12} />} radius="sm" size="sm">
               {event.characters.length} character{event.characters.length === 1 ? '' : 's'}
             </Badge>
           )}
@@ -848,7 +849,7 @@ function EventContent({
               </Badge>
             ))}
             {event.characters.length > 3 && (
-              <Badge variant="outline" color="purple" radius="sm" size="xs">
+              <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'media') }} radius="sm" size="xs">
                 +{event.characters.length - 3} more
               </Badge>
             )}

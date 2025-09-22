@@ -22,6 +22,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { CalendarSearch, Eye, Calendar, Search, BookOpen, Dice6, ChevronDown, AlertCircle, X } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
@@ -396,7 +397,7 @@ export default function EventsPageContent({
 
   if (error && !loading) {
     return (
-      <Alert color="red" radius="md" icon={<AlertCircle size={16} />}>
+      <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md" icon={<AlertCircle size={16} />}>
         <Text size="sm">{error}</Text>
       </Alert>
     )
@@ -441,7 +442,7 @@ export default function EventsPageContent({
             </Text>
 
             {totalEvents > 0 && (
-              <Badge size="md" variant="light" color="orange" radius="xl" mt="xs">
+              <Badge size="md" variant="light" style={{ color: getEntityThemeColor(theme, 'event') }} radius="xl" mt="xs">
                 {totalEvents} event{totalEvents !== 1 ? 's' : ''} available
               </Badge>
             )}
@@ -522,7 +523,7 @@ export default function EventsPageContent({
               {(hasSearchQuery || selectedType || selectedStatus) && (
                 <Button
                   variant="outline"
-                  color="orange"
+                  style={{ color: getEntityThemeColor(theme, 'event') }}
                   onClick={() => {
                     handleClearSearch()
                     setSelectedType('')
@@ -556,7 +557,7 @@ export default function EventsPageContent({
                       <Accordion.Item
                         value={`arc-${arc.id}`}
                         style={{
-                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                           borderRadius: theme.radius.lg
                         }}
                       >
@@ -570,7 +571,7 @@ export default function EventsPageContent({
                         >
                           <Group gap="sm" align="center">
                             <Text size="lg" fw={600} c={accentEvent}>{arc.name}</Text>
-                            <Badge color="orange" variant="light" radius="xl">
+                            <Badge style={{ color: getEntityThemeColor(theme, 'event') }} variant="light" radius="xl">
                               {events.length} event{events.length !== 1 ? 's' : ''}
                             </Badge>
                           </Group>
@@ -596,7 +597,7 @@ export default function EventsPageContent({
                       <Accordion.Item
                         value="no-arc"
                         style={{
-                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                           borderRadius: theme.radius.lg
                         }}
                       >
@@ -610,7 +611,7 @@ export default function EventsPageContent({
                         >
                           <Group gap="sm" align="center">
                             <Text size="lg" fw={600} c="dimmed">Other Events</Text>
-                            <Badge color="violet" variant="light" radius="xl">
+                            <Badge style={{ color: getEntityThemeColor(theme, 'media') }} variant="light" radius="xl">
                               {groupedEvents.noArc.length} event{groupedEvents.noArc.length !== 1 ? 's' : ''}
                             </Badge>
                           </Group>
@@ -680,7 +681,7 @@ export default function EventsPageContent({
                     Ch. {hoveredEvent.chapterNumber}
                   </Badge>
                   {hoveredEvent.arc && (
-                    <Badge variant="outline" color="blue" size="sm">
+                    <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'character') }} size="sm">
                       {hoveredEvent.arc.name}
                     </Badge>
                   )}

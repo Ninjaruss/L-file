@@ -27,6 +27,7 @@ import MediaGallery from '../../../components/MediaGallery'
 import MediaThumbnail from '../../../components/MediaThumbnail'
 import { GambleStructuredData } from '../../../components/StructuredData'
 import { api } from '../../../lib/api'
+import { getEntityThemeColor, semanticColors } from '../../../lib/mantine-theme'
 
 interface Gamble {
   id: number
@@ -56,6 +57,8 @@ interface GamblePageClientProps {
 
 export default function GamblePageClient({ initialGamble }: GamblePageClientProps) {
   const theme = useMantineTheme()
+  const gambleColor = getEntityThemeColor(theme, 'gamble')
+  const characterColor = getEntityThemeColor(theme, 'character')
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
   const [arcs, setArcs] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
@@ -113,7 +116,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
           component={Link}
           href="/gambles"
           variant="subtle"
-          color="gray"
+          c={semanticColors.neutral}
           leftSection={<ArrowLeft size={18} />}
           mb="lg"
         >
@@ -137,21 +140,21 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
             <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
               <Stack gap="md">
                 <Group gap="sm" align="center">
-                  <Crown size={32} color={theme.other?.usogui?.gamble ?? theme.colors.red?.[6]} />
+                  <Crown size={32} color={gambleColor} />
                   <Title order={1}>{initialGamble.name}</Title>
                 </Group>
 
                 <Group gap="sm" wrap="wrap">
-                  <Badge color="red" radius="lg" variant="filled">
+                  <Badge style={{ backgroundColor: gambleColor }} radius="lg" variant="filled">
                     {chapterInfo}
                   </Badge>
                   {initialGamble.participants && initialGamble.participants.length > 0 && (
-                    <Badge color="violet" radius="lg" variant="filled" leftSection={<Users size={14} />}>
+                    <Badge style={{ backgroundColor: characterColor }} radius="lg" variant="filled" leftSection={<Users size={14} />}>
                       {initialGamble.participants.length} Participant{initialGamble.participants.length !== 1 ? 's' : ''}
                     </Badge>
                   )}
                   {initialGamble.winCondition && (
-                    <Badge color="teal" radius="lg" variant="light" leftSection={<Trophy size={14} />}>
+                    <Badge c={getEntityThemeColor(theme, 'quote')} radius="lg" variant="light" leftSection={<Trophy size={14} />}>
                       Win Condition Included
                     </Badge>
                   )}
@@ -177,7 +180,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                   <Card withBorder radius="md" shadow="sm" mb="lg">
                     <Stack gap="md" p="lg">
                       <Group gap="sm">
-                        <Crown size={20} color={theme.other?.usogui?.gamble ?? theme.colors.red?.[6]} />
+                        <Crown size={20} color={gambleColor} />
                         <Title order={3}>Gamble Overview</Title>
                       </Group>
 
@@ -234,7 +237,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                                 {participant.alternateNames && participant.alternateNames.length > 0 && (
                                   <Group gap="xs" wrap="wrap">
                                     {participant.alternateNames.slice(0, 2).map((name) => (
-                                      <Badge key={name} variant="outline" color="gray" radius="sm">
+                                      <Badge key={name} variant="outline" c={semanticColors.neutral} radius="sm">
                                         {name}
                                       </Badge>
                                     ))}
@@ -263,7 +266,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
             <Tabs.Panel value="timeline" pt="md">
               {timelineLoading ? (
                 <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: '2rem' }}>
-                  <Loader color="red" />
+                  <Loader c={getEntityThemeColor(theme, 'gamble')} />
                 </Box>
               ) : (
                 <GambleTimeline

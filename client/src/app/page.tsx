@@ -12,7 +12,7 @@ import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
 import Script from 'next/script'
 import { FAQ } from '@/components/FAQ'
-import { textColors, headerColors } from '../lib/mantine-theme'
+import { textColors, headerColors, getEntityThemeColor, semanticColors } from '../lib/mantine-theme'
 
 export default function HomePage() {
   const theme = useMantineTheme()
@@ -297,7 +297,7 @@ export default function HomePage() {
               </Box>
 
               {landingError ? (
-                <Alert color="blue">
+                <Alert style={{ color: getEntityThemeColor(theme, 'character') }}>
                   Unable to load trending content at this time.
                 </Alert>
               ) : landingLoading ? (

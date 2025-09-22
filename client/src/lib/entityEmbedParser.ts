@@ -166,7 +166,7 @@ export function getEntityUrl(type: EntityEmbedData['type'], id: number): string 
 /**
  * Get theme color for entity type
  */
-export function getEntityThemeColor(type: EntityEmbedData['type']): string {
+export function getEntityThemeColor(theme, type: EntityEmbedData['type']): string {
   const colors = {
     character: 'usogui.character',
     arc: 'usogui.arc',

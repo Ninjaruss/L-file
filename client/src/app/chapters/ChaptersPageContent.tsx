@@ -19,6 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { AlertCircle, Search, BookOpen, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -310,7 +311,7 @@ export default function ChaptersPageContent({
             </Text>
 
             {allChapters.length > 0 && (
-              <Badge size="md" variant="light" color="green" radius="xl" mt="xs">
+              <Badge size="md" variant="light" style={{ color: getEntityThemeColor(theme, 'guide') }} radius="xl" mt="xs">
                 {searchQuery ? `${total} of ${allChapters.length}` : `${allChapters.length}`} chapter{(searchQuery ? total : allChapters.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
@@ -360,7 +361,7 @@ export default function ChaptersPageContent({
       {/* Error State */}
       {error && (
         <Alert
-          color="red"
+          style={{ color: getEntityThemeColor(theme, 'gamble') }}
           radius="md"
           mb="xl"
           icon={<AlertCircle size={16} />}
@@ -397,7 +398,7 @@ export default function ChaptersPageContent({
                   : 'Check back later for new chapters'}
               </Text>
               {hasSearchQuery && (
-                <Button variant="outline" color="green" onClick={handleClearSearch}>
+                <Button variant="outline" style={{ color: getEntityThemeColor(theme, 'guide') }} onClick={handleClearSearch}>
                   Clear search
                 </Button>
               )}
@@ -437,7 +438,7 @@ export default function ChaptersPageContent({
                         minHeight: rem(88),
                         justifyContent: 'center',
                         backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`
+                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
@@ -450,7 +451,7 @@ export default function ChaptersPageContent({
                         handleChapterMouseLeave()
                       }}
                     >
-                      <Badge variant="filled" color="green" radius="sm" size="xs" style={{ fontWeight: 800, padding: `${rem(4)} ${rem(6)}`, fontSize: rem(11) }}>
+                      <Badge variant="filled" radius="sm" size="xs" style={{ color: getEntityThemeColor(theme, 'guide'), fontWeight: 800, padding: `${rem(4)} ${rem(6)}`, fontSize: rem(11) }}>
                         {chapter.number}
                       </Badge>
 
@@ -465,7 +466,7 @@ export default function ChaptersPageContent({
                       </Text>
 
                       {chapter.volume && (
-                        <Badge variant="filled" color="violet" radius="sm" size="xs" style={{ fontSize: rem(10), padding: `${rem(2)} ${rem(6)}` }}>
+                        <Badge variant="filled" radius="sm" size="xs" style={{ color: getEntityThemeColor(theme, 'media'), fontSize: rem(10), padding: `${rem(2)} ${rem(6)}` }}>
                           Vol. {chapter.volume.number}
                         </Badge>
                       )}
@@ -496,7 +497,7 @@ export default function ChaptersPageContent({
                     total={totalPages}
                     value={currentPage}
                     onChange={handlePageChange}
-                    color="green"
+                    style={{ color: getEntityThemeColor(theme, 'guide') }}
                     size="lg"
                     radius="xl"
                     withEdges
@@ -557,7 +558,7 @@ export default function ChaptersPageContent({
                 <Group justify="center" gap="xs">
                   <Badge
                     variant="light"
-                    color="green"
+                    style={{ color: getEntityThemeColor(theme, 'guide') }}
                     size="sm"
                     fw={600}
                   >
@@ -566,7 +567,7 @@ export default function ChaptersPageContent({
                   {hoveredChapter.volume && (
                     <Badge
                       variant="filled"
-                      color="violet"
+                      style={{ color: getEntityThemeColor(theme, 'media') }}
                       size="sm"
                       fw={600}
                     >

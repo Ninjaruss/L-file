@@ -20,6 +20,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
 import { ArrowLeft, FileText, Quote, Dices, Calendar, BookOpen, Camera } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -145,8 +146,8 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     fetchUserData()
   }, [user.id, user.userStats, user.favoriteQuote, user.favoriteGamble])
 
-  const accentRed = theme.other?.usogui?.red ?? theme.colors.red[5]
-  const accentPurple = theme.other?.usogui?.purple ?? theme.colors.purple[5]
+  const accentRed = getEntityThemeColor(theme, 'character')
+  const accentPurple = getEntityThemeColor(theme, 'gamble')
 
   const stats = [
     {
@@ -164,7 +165,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     {
       label: 'Likes Received',
       value: userStats ? userStats.likesReceived : dataLoading ? '…' : '0',
-      icon: <BookOpen size={22} color={theme.colors.blue[5]} />,
+      icon: <BookOpen size={22} color={getEntityThemeColor(theme, 'guide')} />,
       highlight: 'rgba(25, 118, 210, 0.08)'
     },
     {
@@ -176,7 +177,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             year: 'numeric'
           })
         : 'Unknown',
-      icon: <Calendar size={22} color={theme.colors.green[5]} />,
+      icon: <Calendar size={22} color={getEntityThemeColor(theme, 'event')} />,
       highlight: 'rgba(56, 142, 60, 0.08)'
     }
   ]
@@ -190,7 +191,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
           component={Link}
           href="/users"
           variant="light"
-          color="red"
+          style={{ color: getEntityThemeColor(theme, 'gamble') }}
           leftSection={<ArrowLeft size={16} />}
           mb="md"
         >
@@ -262,7 +263,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
 
                 <Card withBorder radius="md" padding="lg" shadow="sm">
                   <Group align="flex-start" gap="md">
-                    <BookOpen size={24} color={theme.colors.green[5]} />
+                    <BookOpen size={24} color={getEntityThemeColor(theme, 'guide')} />
                     <Stack gap={4} style={{ flex: 1 }}>
                       <Text size="sm" c="dimmed" fw={500}>
                         Reading Progress
@@ -270,7 +271,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                       <Text fw={600}>
                         Chapter {user.userProgress} of 539 ({readingProgress}%)
                       </Text>
-                      <Progress value={readingProgress} color="red" radius="md" size="sm" />
+                      <Progress value={readingProgress} style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md" size="sm" />
                     </Stack>
                   </Group>
                 </Card>
@@ -286,18 +287,18 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                           <Card withBorder radius="md" padding="md" shadow="xs">
                             <Stack gap="sm">
                               <Group gap={6}>
-                                <Quote size={18} color={theme.colors.teal[5]} />
+                                <Quote size={18} color={getEntityThemeColor(theme, 'quote')} />
                                 <Text fw={600}>Favorite Quote</Text>
                               </Group>
                               <Text fs="italic" size="sm" style={{ lineHeight: 1.5 }}>
                                 "{favoriteQuote.text}"
                               </Text>
                               <Group gap={8} wrap="wrap">
-                                <Badge variant="outline" color="teal">
+                                <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'quote') }}>
                                   {favoriteQuote.character?.name || 'Unknown'}
                                 </Badge>
                                 {favoriteQuote.chapterNumber && (
-                                  <Badge variant="outline" color="red">
+                                  <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }}>
                                     Ch. {favoriteQuote.chapterNumber}
                                   </Badge>
                                 )}
@@ -309,7 +310,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                           <Card withBorder radius="md" padding="md" shadow="xs">
                             <Stack gap="sm">
                               <Group gap={6}>
-                                <Dices size={18} color={theme.colors.red[6]} />
+                                <Dices size={18} color={getEntityThemeColor(theme, 'gamble')} />
                                 <Text fw={600}>Favorite Gamble</Text>
                               </Group>
                               <Badge radius="lg" size="md" variant="filled" color="gamble" style={{ fontWeight: 700 }}>
@@ -336,7 +337,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                   component={Link}
                   href={`/guides?author=${user.id}&authorName=${encodeURIComponent(user.username)}`}
                   variant="outline"
-                  color="red"
+                  style={{ color: getEntityThemeColor(theme, 'gamble') }}
                   size="sm"
                 >
                   View All

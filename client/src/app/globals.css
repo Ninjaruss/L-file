@@ -205,3 +205,15 @@ body {
   outline: 2px solid var(--usogui-red-alpha-40);
   outline-offset: 2px;
 }
+
+/* Character page tabs styling - using theme accent color */
+.character-tabs .mantine-Tabs-tab[data-active="true"],
+.character-tabs .mantine-Tabs-tab[data-active],
+.character-tabs .mantine-Tabs-tab[aria-selected="true"],
+.character-tabs [data-active="true"],
+.character-tabs [data-active],
+.character-tabs [aria-selected="true"] {
+  background-color: var(--color-character) !important;
+  color: var(--usogui-white) !important;
+  border-color: var(--color-character) !important;
+}

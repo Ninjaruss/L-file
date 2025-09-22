@@ -20,6 +20,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { notifications } from '@mantine/notifications'
 import { Quote, Search, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -27,7 +28,6 @@ import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
-import { textColors } from '../../lib/mantine-theme'
 
 interface QuoteData {
   id: number
@@ -306,7 +306,7 @@ export default function QuotesPageContent({
             </Text>
 
             {total > 0 && (
-              <Badge size="md" variant={badgeVariant as any} color="violet" radius="xl" mt="xs">
+              <Badge size="md" variant={badgeVariant as any} style={{ color: getEntityThemeColor(theme, 'media') }} radius="xl" mt="xs">
                 {total} quote{total !== 1 ? 's' : ''} collected
               </Badge>
             )}
@@ -348,10 +348,9 @@ export default function QuotesPageContent({
             <Badge
               size="lg"
               variant={badgeVariant as any}
-              color="violet"
               radius="xl"
               rightSection={
-                <ActionIcon size="xs" color="violet" variant="transparent" onClick={clearCharacterFilter}>
+                <ActionIcon size="xs" style={{ color: getEntityThemeColor(theme, 'media') }} variant="transparent" onClick={clearCharacterFilter}>
                   <X size={12} />
                 </ActionIcon>
               }
@@ -364,7 +363,7 @@ export default function QuotesPageContent({
 
       {/* Error Alert */}
       {error && (
-        <Alert color="red" variant="light" mb="xl">
+        <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" mb="xl">
           {error}
         </Alert>
       )}
@@ -372,7 +371,7 @@ export default function QuotesPageContent({
       {/* Loading State */}
       {loading ? (
         <Box style={{ display: 'flex', justifyContent: 'center', padding: rem(48) }}>
-          <Loader size="lg" color="violet" />
+          <Loader size="lg" style={{ color: getEntityThemeColor(theme, 'media') }} />
         </Box>
       ) : (
         <Stack gap="xl">
@@ -414,7 +413,7 @@ export default function QuotesPageContent({
                       {/* Header */}
                       <Group justify="space-between" align="flex-start">
                         <Group gap="xs" wrap="wrap">
-                          <Badge color="violet" variant={badgeVariant as any} size="sm">
+                          <Badge style={{ color: getEntityThemeColor(theme, 'media') }} variant={badgeVariant as any} size="sm">
                             Quote
                           </Badge>
                           {quote.chapter && (
@@ -506,7 +505,7 @@ export default function QuotesPageContent({
                 total={totalPages}
                 value={currentPage}
                 onChange={handlePageChange}
-                color="violet"
+                style={{ color: getEntityThemeColor(theme, 'media') }}
                 radius="md"
                 size="lg"
               />
@@ -582,7 +581,7 @@ export default function QuotesPageContent({
                 {/* Chapter and Volume Info */}
                 {(hoveredQuote.volume || hoveredQuote.chapter) && (
                   <Group justify="center" gap="xs">
-                    <Badge variant="filled" color="violet" size="sm">
+                    <Badge variant="filled" style={{ color: getEntityThemeColor(theme, 'media') }} size="sm">
                       {hoveredQuote.volume && `Vol. ${hoveredQuote.volume}`}
                       {hoveredQuote.volume && hoveredQuote.chapter && ' • '}
                       {hoveredQuote.chapter && `Ch. ${hoveredQuote.chapter}`}
@@ -597,12 +596,12 @@ export default function QuotesPageContent({
                       {hoveredQuote.tags.length} tag{hoveredQuote.tags.length !== 1 ? 's' : ''}
                     </Badge>
                     {hoveredQuote.tags.slice(0, 2).map((tag: string, index: number) => (
-                      <Badge key={index} variant="light" color="blue" size="xs">
+                      <Badge key={index} variant="light" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs">
                         {tag}
                       </Badge>
                     ))}
                     {hoveredQuote.tags.length > 2 && (
-                      <Badge variant="light" color="blue" size="xs">
+                      <Badge variant="light" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs">
                         +{hoveredQuote.tags.length - 2}
                       </Badge>
                     )}

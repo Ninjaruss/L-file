@@ -18,6 +18,7 @@ import {
   useMantineTheme,
   rgba
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import {
   Code,
   Copy,
@@ -32,7 +33,7 @@ import {
   Volume2,
   Quote
 } from 'lucide-react'
-import { getEntityAccent, EntityAccentKey } from '../lib/mantine-theme'
+import { getEntityAccent, EntityAccentKey, getEntityThemeColor, semanticColors } from '../lib/mantine-theme'
 
 interface EntityEmbedHelperProps {
   onInsertEmbed?: (embedCode: string) => void
@@ -249,7 +250,7 @@ const EntityEmbedHelper: React.FC<EntityEmbedHelperProps> = ({ onInsertEmbed }) 
         }
       >
         <Stack gap="xl">
-          <Alert color="blue" variant="light" radius="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
             Entity embeds create interactive cards linking to characters, arcs, gambles, and more. They make
             guides richer and help readers discover related content quickly.
           </Alert>
@@ -339,7 +340,7 @@ const EntityEmbedHelper: React.FC<EntityEmbedHelperProps> = ({ onInsertEmbed }) 
           </Stack>
 
           <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setOpened(false)} variant="light" color="red" radius="md">
+            <Button onClick={() => setOpened(false)} variant="light" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md">
               Close
             </Button>
           </Box>

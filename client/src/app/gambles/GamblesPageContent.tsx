@@ -19,6 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { Dices, Search, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -327,7 +328,7 @@ export default function GamblesPageContent({
             </Text>
 
             {total > 0 && (
-              <Badge size="md" variant="light" color="red" radius="xl" mt="xs">
+              <Badge size="md" variant="light" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="xl" mt="xs">
                 {total} gamble{total !== 1 ? 's' : ''} available
               </Badge>
             )}
@@ -366,13 +367,12 @@ export default function GamblesPageContent({
 
         {characterFilter && (
           <Group justify="center">
-            <Badge
-              size="lg"
+            <Badge size="lg"
               variant="filled"
-              color="red"
+              style={{ backgroundColor: getEntityThemeColor(theme, 'gamble') }}
               radius="xl"
               rightSection={
-                <ActionIcon size="xs" color="red" variant="transparent" onClick={clearCharacterFilter}>
+                <ActionIcon size="xs" style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="transparent" onClick={clearCharacterFilter}>
                   <X size={12} />
                 </ActionIcon>
               }
@@ -386,7 +386,7 @@ export default function GamblesPageContent({
       {/* Error State */}
       {error && (
         <Alert
-          color="red"
+          style={{ color: getEntityThemeColor(theme, 'gamble') }}
           radius="md"
           mb="xl"
           icon={<X size={16} />}
@@ -417,7 +417,7 @@ export default function GamblesPageContent({
                   : 'Check back later for new gambles'}
               </Text>
               {hasSearchQuery && (
-                <Button variant="outline" color="red" onClick={handleClearSearch}>
+                <Button variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} onClick={handleClearSearch}>
                   Clear search
                 </Button>
               )}
@@ -458,7 +458,7 @@ export default function GamblesPageContent({
                         cursor: 'pointer',
                         textDecoration: 'none',
                         backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                         width: '100%',
                         height: '100%'
                       }}
@@ -477,15 +477,14 @@ export default function GamblesPageContent({
                       {gamble.chapterId && (
                         <Badge
                           variant="filled"
-                          color="red"
                           radius="sm"
                           size="sm"
                           style={{
+                            color: getEntityThemeColor(theme, 'gamble'),
                             position: 'absolute',
                             top: rem(8),
                             left: rem(8),
-                            backgroundColor: 'rgba(211, 47, 47, 0.95)',
-                            color: 'white',
+                            backgroundColor: accentGamble,
                             fontSize: rem(10),
                             fontWeight: 700,
                             zIndex: 10,
@@ -535,9 +534,8 @@ export default function GamblesPageContent({
                           ta="center"
                           style={{
                             lineHeight: 1.2,
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.2)',
                             fontSize: rem(13),
-                            background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
                             backdropFilter: 'blur(4px)',
                             borderRadius: rem(6),
                             padding: `${rem(4)} ${rem(8)}`,
@@ -559,7 +557,7 @@ export default function GamblesPageContent({
                     total={totalPages}
                     value={currentPage}
                     onChange={handlePageChange}
-                    color="red"
+                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
                     size="lg"
                     radius="xl"
                     withEdges
@@ -634,7 +632,7 @@ export default function GamblesPageContent({
                 <Group justify="center" gap="xs">
                   <Badge
                     variant="filled"
-                    color="red"
+                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
                     size="sm"
                     fw={600}
                   >
@@ -643,7 +641,7 @@ export default function GamblesPageContent({
                   {hoveredGamble.participants && hoveredGamble.participants.length > 0 && (
                     <Badge
                       variant="light"
-                      color="orange"
+                      style={{ color: getEntityThemeColor(theme, 'event') }}
                       size="sm"
                       fw={500}
                     >
@@ -659,7 +657,7 @@ export default function GamblesPageContent({
                       <Badge
                         key={participant.id}
                         variant="outline"
-                        color="blue"
+                        style={{ color: getEntityThemeColor(theme, 'character') }}
                         size="xs"
                         fw={500}
                       >
@@ -669,7 +667,7 @@ export default function GamblesPageContent({
                     {hoveredGamble.participants.length > 3 && (
                       <Badge
                         variant="outline"
-                        color="blue"
+                        style={{ color: getEntityThemeColor(theme, 'character') }}
                         size="xs"
                         fw={500}
                       >

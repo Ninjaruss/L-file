@@ -12,7 +12,8 @@ import {
   Stack,
   Text,
   TextInput
-} from '@mantine/core';
+} from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme';
 import { UserBadge, BadgeType } from '../types';
 import { api } from '../lib/api';
 import { API_BASE_URL } from '../lib/api';
@@ -365,7 +366,7 @@ export default function ProfilePictureSelector({
           </Box>
         ))}
 
-        <Alert variant="light" color="blue" icon="☕">
+        <Alert variant="light" style={{ color: getEntityThemeColor(theme, 'character') }} icon="☕">
           <Stack gap="sm">
             <Text fw={500} size="md">
               Want to unlock more options?
@@ -380,7 +381,7 @@ export default function ProfilePictureSelector({
               rel="noopener noreferrer"
               size="sm"
               variant="filled"
-              color="blue"
+              style={{ color: getEntityThemeColor(theme, 'character') }}
             >
               ☕ Support on Ko-fi
             </Button>

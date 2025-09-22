@@ -70,8 +70,18 @@ export class UrlNormalizerService {
     try {
       const parsedUrl = new URL(url);
       if (parsedUrl.hostname.endsWith('deviantart.com')) {
-        // DeviantArt URLs are already pretty standardized
-        return url;
+        // Ensure we're using www subdomain for consistency
+        const normalizedUrl = url.replace(
+          /^https?:\/\/(www\.)?([^.]+\.)?deviantart\.com/,
+          'https://www.deviantart.com',
+        );
+
+        // Remove any query parameters and fragments for cleaner URLs
+        const cleanUrl = new URL(normalizedUrl);
+        cleanUrl.search = '';
+        cleanUrl.hash = '';
+
+        return cleanUrl.toString();
       }
       return url;
     } catch {

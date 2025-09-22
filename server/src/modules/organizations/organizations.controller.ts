@@ -35,7 +35,8 @@ export class OrganizationsController {
   @Get()
   @ApiOperation({
     summary: 'Get all organizations',
-    description: 'Retrieve all organizations with optional filtering and sorting',
+    description:
+      'Retrieve all organizations with optional filtering and sorting',
   })
   @ApiQuery({
     name: 'name',

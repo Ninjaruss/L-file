@@ -20,6 +20,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { Upload, Link as LinkIcon, Image, Video, Music } from 'lucide-react'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
@@ -317,7 +318,7 @@ export default function SubmitMediaPageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert color="yellow" variant="light" radius="md">
+        <Alert style={{ color: semanticColors.warning }} variant="light" radius="md">
           <Text c="#ffffff">Please log in to submit media.</Text>
         </Alert>
       </Container>
@@ -343,13 +344,13 @@ export default function SubmitMediaPageContent() {
           </Stack>
 
           {error && (
-            <Alert color="red" variant="light" radius="md">
+            <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" radius="md">
               <Text size="sm" c="red">{error}</Text>
             </Alert>
           )}
 
           {success && (
-            <Alert color="green" variant="light" radius="md">
+            <Alert style={{ color: getEntityThemeColor(theme, 'guide') }} variant="light" radius="md">
               <Text size="sm" c="green">{success}</Text>
             </Alert>
           )}
@@ -509,7 +510,7 @@ export default function SubmitMediaPageContent() {
 
                 {activeTab === 'upload' && isPrivilegedUser && (
                   <Stack gap="lg">
-                    <Alert color="blue" variant="light" radius="md">
+                    <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
                       <Text size="sm" c="dimmed">
                         <strong>Direct Upload (Moderators/Admins)</strong>
                         <br />• Files are automatically approved
@@ -535,7 +536,7 @@ export default function SubmitMediaPageContent() {
             </Stack>
           </Card>
 
-          <Alert color="blue" variant="light" radius="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
             <Text size="sm" c="dimmed">
               <strong>Submission Guidelines:</strong>
               <br />• Only submit media you have permission to share

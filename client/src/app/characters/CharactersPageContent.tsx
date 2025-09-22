@@ -22,6 +22,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { AlertCircle, Camera, User, Search, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -405,7 +406,7 @@ export default function CharactersPageContent({
             </Text>
 
             {allCharacters.length > 0 && (
-              <Badge size="md" variant="light" color="blue" radius="xl" mt="xs">
+              <Badge size="md" variant="light" c={accentCharacter} radius="xl" mt="xs">
                 {searchQuery ? `${total} of ${allCharacters.length}` : `${allCharacters.length}`} character{(searchQuery ? total : allCharacters.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
@@ -477,7 +478,7 @@ export default function CharactersPageContent({
                   : 'Check back later for new characters'}
               </Text>
               {hasSearchQuery && (
-                <Button variant="outline" color="blue" onClick={handleClearSearch}>
+                <Button variant="outline" c={accentCharacter} onClick={handleClearSearch}>
                   Clear search
                 </Button>
               )}
@@ -518,7 +519,7 @@ export default function CharactersPageContent({
                         cursor: 'pointer',
                         textDecoration: 'none',
                         backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                         width: '100%',
                         height: '100%'
                       }}
@@ -537,15 +538,14 @@ export default function CharactersPageContent({
                       {character.firstAppearanceChapter && (
                         <Badge
                           variant="filled"
-                          color="blue"
                           radius="sm"
                           size="sm"
+                          c="white"
                           style={{
                             position: 'absolute',
                             top: rem(8),
                             left: rem(8),
-                            backgroundColor: 'rgba(25, 118, 210, 0.95)',
-                            color: 'white',
+                            backgroundColor: accentCharacter,
                             fontSize: rem(10),
                             fontWeight: 700,
                             zIndex: 10,
@@ -622,9 +622,8 @@ export default function CharactersPageContent({
                           ta="center"
                           style={{
                             lineHeight: 1.2,
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.2)',
                             fontSize: rem(13),
-                            background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
                             backdropFilter: 'blur(4px)',
                             borderRadius: rem(6),
                             padding: `${rem(4)} ${rem(8)}`,
@@ -710,7 +709,7 @@ export default function CharactersPageContent({
                   onClick={handleUploadImage}
                   disabled={!selectedFile || uploading}
                   loading={uploading}
-                  color="blue"
+                  c={accentCharacter}
                   flex={1}
                 >
                   Upload
@@ -796,7 +795,7 @@ export default function CharactersPageContent({
                       <Badge
                         key={index}
                         variant="outline"
-                        color="violet"
+                        c={getEntityThemeColor(theme, 'media')}
                         size="xs"
                         fw={500}
                       >
@@ -811,7 +810,8 @@ export default function CharactersPageContent({
                   <Group justify="center" gap="xs">
                     <Badge
                       variant="filled"
-                      color="blue"
+                      c="white"
+                      style={{ backgroundColor: accentCharacter }}
                       size="sm"
                       fw={600}
                     >
@@ -827,7 +827,7 @@ export default function CharactersPageContent({
                       <Badge
                         key={org.id}
                         variant="light"
-                        color="orange"
+                        c={getEntityThemeColor(theme, 'event')}
                         size="xs"
                         fw={500}
                       >
@@ -837,7 +837,7 @@ export default function CharactersPageContent({
                     {hoveredCharacter.organizations.length > 2 && (
                       <Badge
                         variant="light"
-                        color="orange"
+                        c={getEntityThemeColor(theme, 'event')}
                         size="xs"
                         fw={500}
                       >

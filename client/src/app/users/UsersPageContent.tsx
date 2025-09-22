@@ -19,6 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { Search, Users, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
@@ -107,7 +108,7 @@ export default function UsersPageContent() {
   if (error) {
     return (
       <Container size="lg" py="xl">
-        <Alert color="red" variant="light">
+        <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light">
           {error}
         </Alert>
       </Container>
@@ -208,7 +209,7 @@ export default function UsersPageContent() {
                                  Ch. {user.userProgress ?? 0}
                               </Text>
                             </Group>
-                            <Progress value={progressPercentage} size="sm" radius="md" color="red" />
+                            <Progress value={progressPercentage} size="sm" radius="md" style={{ color: getEntityThemeColor(theme, 'gamble') }} />
                             <Text size="xs" c="dimmed" ta="center">
                               {progressPercentage}% complete
                             </Text>
@@ -219,7 +220,7 @@ export default function UsersPageContent() {
                               style={{
                                 marginTop: 'auto',
                                 paddingTop: theme.spacing.sm,
-                                borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+                                borderTop: `1px solid rgba(255,255,255,0.12)`,
                                 width: '100%',
                                 display: 'flex',
                                 justifyContent: 'center'
@@ -227,7 +228,7 @@ export default function UsersPageContent() {
                             >
                               <Badge
                                 variant="outline"
-                                color="purple"
+                                style={{ color: getEntityThemeColor(theme, 'media') }}
                                 leftSection={<BookOpen size={14} />}
                               >
                                 {user.guidesCount} guide{user.guidesCount !== 1 ? 's' : ''}
@@ -248,7 +249,7 @@ export default function UsersPageContent() {
 
             {totalPages > 1 && (
               <Box style={{ display: 'flex', justifyContent: 'center', marginTop: theme.spacing.xl }}>
-                <Pagination total={totalPages} value={page} onChange={handlePageChange} size="lg" color="red" />
+                <Pagination total={totalPages} value={page} onChange={handlePageChange} size="lg" style={{ color: getEntityThemeColor(theme, 'gamble') }} />
               </Box>
             )}
 

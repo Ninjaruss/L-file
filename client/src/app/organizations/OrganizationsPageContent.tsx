@@ -21,6 +21,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import { AlertCircle, Search, Shield, Users, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -341,7 +342,7 @@ export default function OrganizationsPageContent({
       {/* Error State */}
       {error && (
         <Alert
-          color="red"
+          style={{ color: getEntityThemeColor(theme, 'gamble') }}
           radius="md"
           mb="xl"
           icon={<AlertCircle size={16} />}
@@ -413,7 +414,7 @@ export default function OrganizationsPageContent({
                         cursor: 'pointer',
                         textDecoration: 'none',
                         backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[2]}`,
+                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
                         width: '100%',
                         height: '100%'
                       }}
@@ -439,8 +440,7 @@ export default function OrganizationsPageContent({
                             position: 'absolute',
                             top: rem(8),
                             left: rem(8),
-                            backgroundColor: 'rgba(156, 54, 181, 0.95)',
-                            color: 'white',
+                            backgroundColor: accentOrganization,
                             fontSize: rem(10),
                             fontWeight: 700,
                             zIndex: 10,
@@ -490,9 +490,8 @@ export default function OrganizationsPageContent({
                           ta="center"
                           style={{
                             lineHeight: 1.2,
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.2)',
                             fontSize: rem(13),
-                            background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
                             backdropFilter: 'blur(4px)',
                             borderRadius: rem(6),
                             padding: `${rem(4)} ${rem(8)}`,

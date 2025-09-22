@@ -17,18 +17,17 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { User, Crown, Calendar, BookOpen, AlertTriangle } from 'lucide-react'
+import { getEntityThemeColor, textColors, headerColors } from '../../../lib/mantine-theme'
+import { User, Crown, Calendar, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
-import CharacterTimeline from '../../../components/CharacterTimeline'
-import { useProgress } from '../../../providers/ProgressProvider'
-import { useSpoilerSettings } from '../../../hooks/useSpoilerSettings'
+import CharacterTimeline, { TimelineEvent } from '../../../components/CharacterTimeline'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
-import { textColors, headerColors, mantineTextColors } from '../../../lib/mantine-theme'
-import type { Arc, Event, Gamble, Guide, Quote } from '../../../types'
+import type { Arc, Gamble, Guide, Quote } from '../../../types'
+import MediaThumbnail from '../../../components/MediaThumbnail'
 
 interface Character {
   id: number
@@ -53,7 +52,7 @@ interface Character {
 interface CharacterPageClientProps {
   character: Character
   gambles: Gamble[]
-  events: Event[]
+  events: TimelineEvent[]
   guides: Guide[]
   quotes: Quote[]
   arcs: Arc[]
@@ -82,18 +81,194 @@ export default function CharacterPageClient({
   }
 
   // Use consistent theme colors for better readability
-  const accentWarning = textColors.warning
-  const accentSecondary = textColors.media
-  const accentSuccess = textColors.success
+  const entityColors = {
+    character: getEntityThemeColor(theme, 'character'),
+    arc: getEntityThemeColor(theme, 'arc'),
+    gamble: getEntityThemeColor(theme, 'gamble'),
+    guide: getEntityThemeColor(theme, 'guide'),
+    quote: getEntityThemeColor(theme, 'quote'),
+    media: getEntityThemeColor(theme, 'media')
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card withBorder radius="md" className="gambling-card" shadow="md">
-        <Tabs value={activeTab} onChange={(value) => value && setActiveTab(value)} keepMounted={false}>
+    <Stack gap="md">
+      {/* Enhanced Character Header */}
+      <Card
+        withBorder
+        radius="lg"
+        shadow="lg"
+        p={0}
+        style={{
+          background: `linear-gradient(135deg, ${theme.colors.dark?.[6] ?? theme.colors.gray?.[1]} 0%, ${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]} 100%)`,
+          border: `1px solid ${entityColors.character}`,
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Subtle Pattern Overlay */}
+        <Box
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `
+              radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
+              radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
+            `,
+            backgroundSize: '40px 40px, 80px 80px',
+            backgroundPosition: '0 0, 20px 20px',
+            pointerEvents: 'none'
+          }}
+        />
+
+        {/* Content */}
+        <Box p="lg" style={{ position: 'relative', zIndex: 1 }}>
+          <Group gap="lg" align="stretch" wrap="nowrap">
+            <Box style={{ flexShrink: 0 }}>
+              <Box
+                style={{
+                  borderRadius: theme.radius.md,
+                  overflow: 'hidden',
+                  border: `2px solid ${entityColors.character}`,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+                }}
+              >
+                <MediaThumbnail
+                  entityType="character"
+                  entityId={character.id}
+                  entityName={character.name}
+                  allowCycling={false}
+                  maxWidth="200px"
+                  maxHeight="280px"
+                />
+              </Box>
+            </Box>
+
+            <Stack gap="md" style={{ flex: 1, minWidth: 0, height: '100%' }} justify="space-between">
+              <Stack gap="sm">
+                <Title
+                  order={1}
+                  size="2.5rem"
+                  fw={700}
+                  c={theme.white}
+                  style={{
+                    lineHeight: 1.1
+                  }}
+                >
+                  {character.name}
+                </Title>
+                {character.alternateNames && character.alternateNames.length > 0 && (
+                  <Group gap="xs" wrap="wrap">
+                    {character.alternateNames.map((name, index) => (
+                      <Badge
+                        key={index}
+                        variant="light"
+                        size="md"
+                        radius="md"
+                        style={{
+                          background: `${theme.colors.dark?.[5] ?? theme.colors.gray?.[2]}40`,
+                          border: `1px solid ${theme.colors.dark?.[5] ?? theme.colors.gray?.[2]}60`
+                        }}
+                        c={textColors.secondary}
+                      >
+                        {name}
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
+              </Stack>
+
+              <Stack gap="md" style={{ flex: 1, justifyContent: 'center' }}>
+                <Group gap="md" wrap="wrap" align="center">
+                  {character.firstAppearanceChapter && (
+                    <Badge
+                      variant="filled"
+                      size="lg"
+                      radius="md"
+                      style={{
+                        background: `linear-gradient(135deg, ${entityColors.character} 0%, ${entityColors.character}dd 100%)`,
+                        border: `1px solid ${entityColors.character}`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        fontSize: '0.9rem',
+                        color: 'white'
+                      }}
+                    >
+                      First appears in Chapter {character.firstAppearanceChapter}
+                    </Badge>
+                  )}
+                </Group>
+
+                {character.organizations && character.organizations.length > 0 && (
+                  <Group gap="sm" wrap="wrap">
+                    {character.organizations.map((org) => (
+                      <Badge
+                        key={org.id}
+                        variant="light"
+                        size="lg"
+                        radius="md"
+                        style={{
+                          background: `${entityColors.character}20`,
+                          border: `1px solid ${entityColors.character}`,
+                          color: textColors.character,
+                          fontSize: '0.85rem',
+                          padding: '8px 16px'
+                        }}
+                      >
+                        {org.name}
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
+
+                {/* Content Stats */}
+                <Group gap="md" wrap="wrap" mt="sm">
+                  <Badge size="md" variant="light" c={textColors.arc} style={{ fontSize: '0.8rem' }}>
+                    {arcs.length} Story Arcs
+                  </Badge>
+                  <Badge size="md" variant="light" c={textColors.gamble} style={{ fontSize: '0.8rem' }}>
+                    {gambles.length} Gambles
+                  </Badge>
+                  <Badge size="md" variant="light" c={textColors.character} style={{ fontSize: '0.8rem' }}>
+                    {events.length} Events
+                  </Badge>
+                  <Badge size="md" variant="light" c={textColors.quote} style={{ fontSize: '0.8rem' }}>
+                    {quotes.length} Quotes
+                  </Badge>
+                  <Badge size="md" variant="light" c={textColors.guide} style={{ fontSize: '0.8rem' }}>
+                    {guides.length} Guides
+                  </Badge>
+                </Group>
+              </Stack>
+            </Stack>
+          </Group>
+        </Box>
+      </Card>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card withBorder radius="md" className="gambling-card" shadow="md">
+        <Tabs
+          value={activeTab}
+          onChange={(value) => value && setActiveTab(value)}
+          keepMounted={false}
+          variant="pills"
+          className="character-tabs"
+          styles={{
+            tab: {
+              color: textColors.secondary,
+              backgroundColor: 'transparent',
+              '&:hover': {
+                backgroundColor: `${getEntityThemeColor(theme, 'character')}20`,
+                color: textColors.primary
+              }
+            }
+          }}
+        >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<User size={16} />}>Overview</Tabs.Tab>
             <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={events.length === 0}>
@@ -103,186 +278,232 @@ export default function CharacterPageClient({
           </Tabs.List>
 
           <Tabs.Panel value="overview" pt="md">
-            <Grid gutter="xl">
-              <Grid.Col span={{ base: 12, lg: 8 }}>
-                <Card withBorder radius="md" shadow="sm" style={{ marginBottom: rem(24) }}>
-                  <Stack gap="md" p="lg">
-                    <Group gap="sm" align="center">
-                      <User size={24} color={theme.colors.red?.[5]} />
-                      <Title order={3} style={{ color: headerColors.h3 }}>About</Title>
-                    </Group>
-                    {character.description ? (
-                      <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
+            <Stack gap="lg">
+              {/* Character Description Section */}
+              <Card withBorder radius="md" shadow="sm">
+                <Stack gap="md" p="lg">
+                  <Group gap="sm" align="center">
+                    <User size={24} color={entityColors.character} />
+                    <Title order={3} c={headerColors.h3}>About {character.name}</Title>
+                  </Group>
+                  {character.description ? (
+                    <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
+                      <Box style={{ lineHeight: 1.6 }}>
                         <EnhancedSpoilerMarkdown content={character.description} enableEntityEmbeds compactEntityCards={false} />
-                      </TimelineSpoilerWrapper>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        No description available for this character yet.
-                      </Text>
-                    )}
-                  </Stack>
-                </Card>
-
-                <Grid gutter="lg">
-                  {quotes.length > 0 && (
-                    <Grid.Col span={{ base: 12, lg: 6 }}>
-                      <Card withBorder radius="md" shadow="sm">
-                        <Stack gap="sm" p="lg">
-                          <Group justify="space-between" align="center">
-                            <Group gap="sm">
-                              <BookOpen size={20} color={accentWarning} />
-                              <Title order={4} style={{ color: textColors.quote }}>
-                                Memorable Quotes
-                              </Title>
-                            </Group>
-                            <Button
-                              component={Link}
-                              href={`/quotes?characterId=${character.id}`}
-                              variant="outline"
-                              color="yellow"
-                              size="xs"
-                              radius="xl"
-                            >
-                              View All
-                            </Button>
-                          </Group>
-
-                          <ScrollArea h={300} offsetScrollbars>
-                            <Stack gap="md">
-                              {quotes.slice(0, 3).map((quote) => (
-                                <Paper key={quote.id} withBorder radius="md" p="md" shadow="xs">
-                                  <TimelineSpoilerWrapper chapterNumber={quote.chapter?.number ?? undefined}>
-                                    <Stack gap={4}>
-                                      <Text size="sm" style={{ fontStyle: 'italic' }}>
-                                        “{quote.text}”
-                                      </Text>
-                                      <Badge color="yellow" variant="light" radius="sm" maw={120}>
-                                        Ch. {quote.chapter?.number ?? '?'}
-                                      </Badge>
-                                    </Stack>
-                                  </TimelineSpoilerWrapper>
-                                </Paper>
-                              ))}
-                            </Stack>
-                          </ScrollArea>
-                        </Stack>
-                      </Card>
-                    </Grid.Col>
+                      </Box>
+                    </TimelineSpoilerWrapper>
+                  ) : (
+                    <Text size="sm" c="dimmed" style={{ fontStyle: 'italic', textAlign: 'center', padding: '2rem' }}>
+                      No description available for this character yet. Check back later for updates!
+                    </Text>
                   )}
+                </Stack>
+              </Card>
 
-                  {gambles.length > 0 && (
-                    <Grid.Col span={{ base: 12, lg: quotes.length > 0 ? 6 : 12 }}>
-                      <Card withBorder radius="md" shadow="sm">
-                        <Stack gap="sm" p="lg">
-                          <Group justify="space-between" align="center">
-                            <Group gap="sm">
-                              <Crown size={20} color={accentSecondary} />
-                              <Title order={4} style={{ color: textColors.gamble }}>
-                                Gambles
-                              </Title>
-                            </Group>
-                            <Button
-                              component={Link}
-                              href={`/gambles?character=${character.name}`}
-                              variant="outline"
-                              color="violet"
-                              size="xs"
-                              radius="xl"
-                            >
-                              View All
-                            </Button>
-                          </Group>
-
-                          <ScrollArea h={300} offsetScrollbars>
-                            <Stack gap="md">
-                              {gambles.slice(0, 4).map((gamble) => (
-                                <Paper key={gamble.id} withBorder radius="md" p="md" shadow="xs">
-                                  <GambleSpoilerWrapper gamble={gamble}>
-                                    <Stack gap={6}>
-                                      <Text
-                                        component={Link}
-                                        href={`/gambles/${gamble.id}`}
-                                        fw={600}
-                                        size="sm"
-                                        style={{ color: textColors.gamble, textDecoration: 'none' }}
-                                      >
-                                        {gamble.name}
-                                      </Text>
-                                      <Group gap="xs" align="center">
-                                        <Calendar size={14} color={theme.colors.gray?.[5]} />
-                                        <Badge radius="sm" variant="light" color="violet">
-                                          Ch. {gamble.chapterId ?? 'Unknown'}
-                                        </Badge>
-                                      </Group>
-                                    </Stack>
-                                  </GambleSpoilerWrapper>
-                                </Paper>
-                              ))}
-                            </Stack>
-                          </ScrollArea>
-                        </Stack>
-                      </Card>
-                    </Grid.Col>
-                  )}
-                </Grid>
-              </Grid.Col>
-
-              <Grid.Col span={{ base: 12, lg: 4 }}>
-                {guides.length > 0 && (
-                  <Card withBorder radius="md" shadow="sm" style={{ position: 'sticky', top: rem(24) }}>
-                    <Stack gap="sm" p="lg">
-                      <Group justify="space-between" align="center">
-                        <Group gap="sm">
-                          <BookOpen size={20} color={accentSuccess} />
-                          <Title order={4} style={{ color: textColors.guide }}>
-                            Guides
-                          </Title>
-                        </Group>
-                        <Button
-                          component={Link}
-                          href={`/guides?character=${character.name}`}
-                          variant="outline"
-                          color="green"
-                          size="xs"
-                          radius="xl"
-                        >
-                          View All
-                        </Button>
+              {/* Related Story Arcs */}
+              {arcs.length > 0 && (
+                <Card withBorder radius="md" shadow="sm">
+                  <Stack gap="md" p="md">
+                    <Group justify="space-between" align="center">
+                      <Group gap="sm">
+                        <BookOpen size={20} color={entityColors.arc} />
+                        <Title order={4} c={textColors.arc}>Related Story Arcs</Title>
                       </Group>
-
-                      <Stack gap="md">
-                        {guides.slice(0, 3).map((guide) => (
-                          <Paper key={guide.id} withBorder radius="md" p="md" shadow="xs">
-                            <Stack gap={4}>
+                      <Button
+                        component={Link}
+                        href={`/arcs?character=${character.name}`}
+                        variant="outline"
+                        c={entityColors.arc}
+                        size="xs"
+                        radius="xl"
+                      >
+                        View All ({arcs.length})
+                      </Button>
+                    </Group>
+                    <Stack gap="sm">
+                      {arcs.slice(0, 4).map((arc) => (
+                        <Paper key={arc.id} withBorder radius="md" p="sm" shadow="xs">
+                          <Group justify="space-between" align="flex-start">
+                            <Box style={{ flex: 1 }}>
                               <Text
                                 component={Link}
-                                href={`/guides/${guide.id}`}
+                                href={`/arcs/${arc.id}`}
                                 fw={600}
                                 size="sm"
-                                style={{ color: textColors.guide, textDecoration: 'none' }}
+                                c={textColors.arc}
+                                style={{ textDecoration: 'none' }}
                               >
-                                {guide.title}
+                                {arc.name}
                               </Text>
-                              <Group gap="xs" align="center">
-                                <User size={14} color={theme.colors.gray?.[5]} />
-                                <Text size="xs" c="dimmed">
-                                  By {guide.author?.username ?? 'Unknown'}
+                              {arc.description && (
+                                <Text size="xs" c="dimmed" lineClamp={2} mt={4}>
+                                  {arc.description}
                                 </Text>
-                              </Group>
-                            </Stack>
-                          </Paper>
-                        ))}
-                      </Stack>
+                              )}
+                            </Box>
+                            <Badge c={entityColors.arc} variant="outline" size="xs">
+                              Arc {arc.order ?? "N/A"}
+                            </Badge>
+                          </Group>
+                        </Paper>
+                      ))}
                     </Stack>
-                  </Card>
-                )}
-              </Grid.Col>
-            </Grid>
+                  </Stack>
+                </Card>
+              )}
+
+              {/* Related Gambles */}
+              {gambles.length > 0 && (
+                <Card withBorder radius="md" shadow="sm">
+                  <Stack gap="md" p="md">
+                    <Group justify="space-between" align="center">
+                      <Group gap="sm">
+                        <Crown size={20} color={entityColors.gamble} />
+                        <Title order={4} c={textColors.gamble}>Related Gambles</Title>
+                      </Group>
+                      <Button
+                        component={Link}
+                        href={`/gambles?character=${character.name}`}
+                        variant="outline"
+                        c={entityColors.gamble}
+                        size="xs"
+                        radius="xl"
+                      >
+                        View All ({gambles.length})
+                      </Button>
+                    </Group>
+                    <Stack gap="sm">
+                      {gambles.slice(0, 4).map((gamble) => (
+                        <Paper key={gamble.id} withBorder radius="md" p="sm" shadow="xs">
+                          <TimelineSpoilerWrapper chapterNumber={gamble.chapterId ?? undefined}>
+                            <Group justify="space-between" align="flex-start">
+                              <Box style={{ flex: 1 }}>
+                                <Text
+                                  component={Link}
+                                  href={`/gambles/${gamble.id}`}
+                                  fw={600}
+                                  size="sm"
+                                  c={textColors.gamble}
+                                  style={{ textDecoration: 'none' }}
+                                >
+                                  {gamble.name}
+                                </Text>
+                                {gamble.description && (
+                                  <Text size="xs" c="dimmed" lineClamp={2} mt={4}>
+                                    {gamble.description}
+                                  </Text>
+                                )}
+                              </Box>
+                              {gamble.chapterId && (
+                                <Badge c={entityColors.gamble} variant="outline" size="xs">
+                                  Ch. {gamble.chapterId}
+                                </Badge>
+                              )}
+                            </Group>
+                          </TimelineSpoilerWrapper>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Card>
+              )}
+
+              {/* Memorable Quotes */}
+              {quotes.length > 0 && (
+                <Card withBorder radius="md" shadow="sm">
+                  <Stack gap="md" p="md">
+                    <Group justify="space-between" align="center">
+                      <Group gap="sm">
+                        <BookOpen size={20} color={entityColors.quote} />
+                        <Title order={4} c={textColors.quote}>Memorable Quotes</Title>
+                      </Group>
+                      <Button
+                        component={Link}
+                        href={`/quotes?characterId=${character.id}`}
+                        variant="outline"
+                        c={entityColors.quote}
+                        size="xs"
+                        radius="xl"
+                      >
+                        View All ({quotes.length})
+                      </Button>
+                    </Group>
+
+                    <Stack gap="sm">
+                      {quotes.slice(0, 3).map((quote) => (
+                        <Paper key={quote.id} withBorder radius="md" p="md" shadow="xs">
+                          <TimelineSpoilerWrapper chapterNumber={quote.chapter?.number ?? undefined}>
+                            <Stack gap="sm">
+                              <Text size="sm" style={{ fontStyle: 'italic', lineHeight: 1.5 }}>
+                                &ldquo;{quote.text}&rdquo;
+                              </Text>
+                              <Badge c={entityColors.quote} variant="light" radius="sm" size="xs" style={{ alignSelf: 'flex-start' }}>
+                                Chapter {quote.chapter?.number ?? '?'}
+                              </Badge>
+                            </Stack>
+                          </TimelineSpoilerWrapper>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Card>
+              )}
+
+              {/* Community Guides */}
+              {guides.length > 0 && (
+                <Card withBorder radius="md" shadow="sm">
+                  <Stack gap="md" p="md">
+                    <Group justify="space-between" align="center">
+                      <Group gap="sm">
+                        <BookOpen size={20} color={entityColors.guide} />
+                        <Title order={4} c={textColors.guide}>Community Guides</Title>
+                      </Group>
+                      <Button
+                        component={Link}
+                        href={`/guides?character=${character.name}`}
+                        variant="outline"
+                        c={entityColors.guide}
+                        size="xs"
+                        radius="xl"
+                      >
+                        View All ({guides.length})
+                      </Button>
+                    </Group>
+
+                    <Stack gap="sm">
+                      {guides.slice(0, 4).map((guide) => (
+                        <Paper key={guide.id} withBorder radius="md" p="sm" shadow="xs">
+                          <Stack gap={6}>
+                            <Text
+                              component={Link}
+                              href={`/guides/${guide.id}`}
+                              fw={600}
+                              size="sm"
+                              c={textColors.guide}
+                              style={{ textDecoration: 'none' }}
+                              lineClamp={2}
+                            >
+                              {guide.title}
+                            </Text>
+                            <Group gap="xs" align="center">
+                              <User size={12} color={textColors.tertiary} />
+                              <Text size="xs" c="dimmed">
+                                By {guide.author?.username ?? 'Unknown'}
+                              </Text>
+                            </Group>
+                          </Stack>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Card>
+              )}
+            </Stack>
           </Tabs.Panel>
 
           <Tabs.Panel value="timeline" pt="md">
             <CharacterTimeline
-              events={events as any}
+              events={events}
               arcs={arcs}
               characterName={character.name}
               firstAppearanceChapter={character.firstAppearanceChapter ?? 0}
@@ -302,62 +523,6 @@ export default function CharacterPageClient({
         </Tabs>
       </Card>
     </motion.div>
-  )
-}
-
-function GambleSpoilerWrapper({ gamble, children }: { gamble: Gamble; children: React.ReactNode }) {
-  const [isRevealed, setIsRevealed] = useState(false)
-  const { userProgress } = useProgress()
-  const { settings } = useSpoilerSettings()
-  const theme = useMantineTheme()
-
-  const chapterNumber = gamble.chapterId ?? undefined
-
-  const effectiveProgress = settings.chapterTolerance > 0 ? settings.chapterTolerance : userProgress
-  const shouldHideSpoiler = (() => {
-    if (settings.showAllSpoilers) {
-      return false
-    }
-    if (chapterNumber) {
-      return chapterNumber > effectiveProgress
-    }
-    return effectiveProgress <= 5
-  })()
-
-  if (!shouldHideSpoiler || isRevealed) {
-    return <>{children}</>
-  }
-
-  return (
-    <Box pos="relative">
-      <Box style={{ opacity: 0.3, filter: 'blur(2px)', pointerEvents: 'none' }}>{children}</Box>
-      <Box
-        onClick={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          setIsRevealed(true)
-        }}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(225, 29, 72, 0.85)',
-          borderRadius: theme.radius.md,
-          cursor: 'pointer'
-        }}
-      >
-        <Stack gap={4} align="center">
-          <Group gap={6} align="center" c="white" fw={700}>
-            <AlertTriangle size={14} />
-            Chapter {chapterNumber ?? 'Unknown'} Spoiler
-          </Group>
-          <Text size="xs" c="rgba(255,255,255,0.8)">
-            Click to reveal
-          </Text>
-        </Stack>
-      </Box>
-    </Box>
+    </Stack>
   )
 }

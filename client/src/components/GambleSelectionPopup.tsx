@@ -17,6 +17,7 @@ import {
   TextInput,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Search, Dices, ChevronDown, ChevronRight } from 'lucide-react'
 // GambleChip removed — render simple Badge chips inline
 
@@ -172,7 +173,7 @@ export default function GambleSelectionPopup({
           
           {loading ? (
             <Box style={{ display: 'flex', justifyContent: 'center', paddingBlock: '1.5rem' }}>
-              <Loader color="red" />
+              <Loader style={{ color: getEntityThemeColor(theme, 'gamble') }} />
             </Box>
           ) : filteredGambles.length === 0 ? (
             <Text size="sm" c="dimmed" style={{ textAlign: 'center', paddingBlock: '1.5rem' }}>
@@ -276,14 +277,14 @@ export default function GambleSelectionPopup({
       </Stack>
 
       <Group justify="space-between" mt="auto">
-        <Button onClick={handleClearSelection} variant="outline" color="yellow">
+        <Button onClick={handleClearSelection} variant="outline" style={{ color: semanticColors.warning }}>
           Clear Selection
         </Button>
         <Group gap="sm">
           <Button onClick={handleCancel} variant="subtle" color="gray">
             Cancel
           </Button>
-          <Button onClick={handleConfirm} color="red" disabled={loading}>
+          <Button onClick={handleConfirm} style={{ color: getEntityThemeColor(theme, 'gamble') }} disabled={loading}>
             Confirm Selection
           </Button>
         </Group>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   List,
   Datagrid,
@@ -58,25 +58,33 @@ const TruncatedUrlField = () => {
   // Function to truncate URL intelligently
   const truncateUrl = (url: string, maxLength: number = 30) => {
     if (url.length <= maxLength) return url
-    
-    // Try to keep the domain and show ... in the middle
-    const urlObj = new URL(url)
-    const domain = urlObj.hostname
-    const path = urlObj.pathname + urlObj.search
-    
-    if (domain.length + 10 >= maxLength) {
-      // If domain is too long, just truncate from the end
-      return url.substring(0, maxLength - 3) + '...'
+
+    try {
+      // Try to parse as absolute URL first
+      const urlObj = new URL(url)
+      const domain = urlObj.hostname
+      const path = urlObj.pathname + urlObj.search
+
+      if (domain.length + 10 >= maxLength) {
+        // If domain is too long, just truncate from the end
+        return url.substring(0, maxLength - 3) + '...'
+      }
+
+      // Show domain + truncated path
+      const availableForPath = maxLength - domain.length - 6 // 6 for "https://" and "..."
+      if (path.length > availableForPath) {
+        const truncatedPath = path.substring(0, availableForPath) + '...'
+        return `${domain}${truncatedPath}`
+      }
+
+      return url
+    } catch (error) {
+      // If URL parsing fails (relative URLs, invalid URLs), just truncate from the end
+      if (url.length > maxLength) {
+        return url.substring(0, maxLength - 3) + '...'
+      }
+      return url
     }
-    
-    // Show domain + truncated path
-    const availableForPath = maxLength - domain.length - 6 // 6 for "https://" and "..."
-    if (path.length > availableForPath) {
-      const truncatedPath = path.substring(0, availableForPath) + '...'
-      return `${domain}${truncatedPath}`
-    }
-    
-    return url
   }
 
   const displayUrl = truncateUrl(record.url)
@@ -189,10 +197,29 @@ const MediaPurposeField = ({ source }: { source: string }) => {
 
 const MediaPreviewField = ({ source }: { source: string }) => {
   const record = useRecordContext()
+  const [imageError, setImageError] = useState(false)
+
   if (!record?.url) return null
 
   switch (record.type) {
     case 'image':
+      if (imageError) {
+        return (
+          <Box sx={{
+            width: '80px',
+            height: '60px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0f0f0f',
+            borderRadius: '4px',
+            border: '2px solid #e11d48'
+          }}>
+            <ImageIcon size={24} color="#e11d48" />
+          </Box>
+        )
+      }
+
       return (
         <Box sx={{ width: '80px', height: '60px', position: 'relative', display: 'flex', justifyContent: 'center' }}>
           <Image
@@ -205,6 +232,8 @@ const MediaPreviewField = ({ source }: { source: string }) => {
               borderRadius: '4px',
               border: '2px solid #e11d48'
             }}
+            onError={() => setImageError(true)}
+            unoptimized={record.url.startsWith('http') && !record.url.includes('localhost')}
           />
         </Box>
       )
@@ -508,15 +537,38 @@ const MediaFilterToolbar = () => {
     { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
   ]
 
+  const typeFilters = [
+    { id: 'general', name: 'General', color: '#2196f3', icon: '🎨' },
+    { id: 'volumes', name: 'Volumes', color: '#9c27b0', icon: '📚' }
+  ]
+
   const handleStatusFilter = (status: string) => {
-    const newFilters = status === 'all' 
+    const newFilters = status === 'all'
       ? { ...filterValues }
       : { ...filterValues, status }
-    
+
     if (status === 'all') {
       delete newFilters.status
     }
-    
+
+    setFilters(newFilters, filterValues)
+  }
+
+  const handleTypeFilter = (type: string) => {
+    const newFilters = { ...filterValues }
+
+    // Remove existing owner type filters
+    delete newFilters.ownerType
+    delete newFilters.excludeChaptersVolumes
+
+    if (type === 'general') {
+      // Mark that we want to exclude chapters and volumes
+      newFilters.excludeChaptersVolumes = 'true'
+    } else if (type === 'volumes') {
+      // Show only volume media
+      newFilters.ownerType = 'volume'
+    }
+
     setFilters(newFilters, filterValues)
   }
 
@@ -580,8 +632,13 @@ const MediaFilterToolbar = () => {
   }
 
   const currentStatus = filterValues?.status || 'all'
-  const hasEntityFilters = selectedEntities.characters.length > 0 || 
-                          selectedEntities.arcs.length > 0 || 
+  const currentMediaType = (() => {
+    if (filterValues?.ownerType === 'volume') return 'volumes'
+    if (filterValues?.excludeChaptersVolumes === 'true') return 'general'
+    return 'general' // Default to general
+  })()
+  const hasEntityFilters = selectedEntities.characters.length > 0 ||
+                          selectedEntities.arcs.length > 0 ||
                           selectedEntities.events.length > 0 ||
                           selectedEntities.gambles.length > 0 ||
                           selectedEntities.organizations.length > 0
@@ -655,6 +712,44 @@ const MediaFilterToolbar = () => {
                 '&:hover': {
                   backgroundColor: currentStatus === filter.id 
                     ? filter.color 
+                    : `${filter.color}20`,
+                  borderColor: filter.color
+                }
+              }}
+            >
+              {filter.icon} {filter.name}
+            </MuiButton>
+          ))}
+        </ButtonGroup>
+      </Box>
+
+      {/* Media Type Filters */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" sx={{
+          color: '#2196f3',
+          fontWeight: 'bold',
+          mb: 1,
+          fontSize: '0.9rem'
+        }}>
+          📱 Filter by Media Type
+        </Typography>
+        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+          {typeFilters.map((filter) => (
+            <MuiButton
+              key={filter.id}
+              onClick={() => handleTypeFilter(filter.id)}
+              variant={currentMediaType === filter.id ? 'contained' : 'outlined'}
+              size="small"
+              sx={{
+                borderColor: filter.color,
+                color: currentMediaType === filter.id ? '#fff' : filter.color,
+                backgroundColor: currentMediaType === filter.id ? filter.color : 'transparent',
+                fontSize: '0.75rem',
+                minWidth: '80px',
+                height: '32px',
+                '&:hover': {
+                  backgroundColor: currentMediaType === filter.id
+                    ? filter.color
                     : `${filter.color}20`,
                   borderColor: filter.color
                 }
@@ -746,7 +841,7 @@ const MediaFilterToolbar = () => {
               {selectedEntities.events.map((event) => (
                 <Chip
                   key={`event-${event.id}`}
-                  label={`⚡ ${event.name}`}
+                  label={`⚡ ${event.title}`}
                   size="small"
                   onDelete={() => {
                     setSelectedEntities(prev => ({
@@ -1284,28 +1379,37 @@ const EntityNameDisplay = () => {
   )
 }
 
-export const MediaList = () => (
-  <List 
-    perPage={25}
-    sx={{
-      '& .RaList-content': {
-        '& > *:not(:last-child)': {
-          marginBottom: 0 // Remove spacing between filter toolbar and table
-        }
-      }
-    }}
-  >
-    <MediaFilterToolbar />
-    <Datagrid 
+// Custom Datagrid that applies client-side filtering
+const FilteredDatagrid = () => {
+  const { filterValues, data, isLoading } = useListContext()
+
+  const filteredData = useMemo(() => {
+    if (!data) return []
+
+    // Apply client-side filtering for excludeChaptersVolumes
+    if (filterValues?.excludeChaptersVolumes === 'true') {
+      return data.filter((item: any) =>
+        item.ownerType !== 'chapter' && item.ownerType !== 'volume'
+      )
+    }
+
+    return data
+  }, [data, filterValues?.excludeChaptersVolumes])
+
+  if (isLoading) return null
+
+  return (
+    <Datagrid
+      data={filteredData}
       rowClick="show"
       sx={{
         marginTop: 0,
-        borderRadius: '0 0 8px 8px', // Only round bottom corners to connect with toolbar
+        borderRadius: '0 0 8px 8px',
         border: '1px solid rgba(225, 29, 72, 0.2)',
-        borderTop: 'none', // Remove top border to connect with toolbar
+        borderTop: 'none',
         overflow: 'hidden',
         '& .RaDatagrid-table': {
-          borderRadius: 0, // Remove any internal border radius
+          borderRadius: 0,
         },
         '& .RaDatagrid-headerCell': {
           fontWeight: 'bold',
@@ -1313,7 +1417,7 @@ export const MediaList = () => (
           backgroundColor: 'rgba(10, 10, 10, 0.95)',
           color: '#ffffff',
           borderBottom: '2px solid #e11d48',
-          borderTop: 'none' // Remove top border from header
+          borderTop: 'none'
         },
         '& .RaDatagrid-rowCell': {
           padding: '14px 10px',
@@ -1321,7 +1425,6 @@ export const MediaList = () => (
           color: '#ffffff',
           borderBottom: '1px solid rgba(225, 29, 72, 0.2)'
         },
-        // Group rows by entity type with alternating backgrounds
         '& .RaDatagrid-tbody tr:nth-of-type(even)': {
           backgroundColor: 'rgba(225, 29, 72, 0.05)'
         },
@@ -1331,28 +1434,17 @@ export const MediaList = () => (
       }}
     >
       <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
-      
-      {/* Entity Information - Priority Section */}
       <EntityInfoField />
-      
-      {/* Media Preview */}
       <MediaPreviewField source="url" />
-      
-      {/* Media Details - Truncated URL */}
       <TruncatedUrlField />
-
-      {/* Type & Purpose Combined */}
       <MediaTypeField />
-
-      {/* Status - Prominent Display */}
       <Box sx={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
         <MediaStatusField source="status" />
       </Box>
-      
-      <TextField 
-        source="description" 
+      <TextField
+        source="description"
         sortable
-        sx={{ 
+        sx={{
           maxWidth: '200px',
           '& span': {
             display: '-webkit-box',
@@ -1363,10 +1455,8 @@ export const MediaList = () => (
             color: 'text.secondary',
             lineHeight: 1.2
           }
-        }} 
+        }}
       />
-
-      {/* Submission Details - User & Date */}
       <FunctionField
         label="Submitted By"
         sortBy="user"
@@ -1398,15 +1488,11 @@ export const MediaList = () => (
           </Box>
         )}
       />
-
-      {/* Chapter Info (if applicable) */}
       <ChapterInfoField />
-      
-      {/* Actions */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          gap: 1, 
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
           minWidth: '160px',
           justifyContent: 'center',
           '& .MuiButton-root': {
@@ -1422,6 +1508,23 @@ export const MediaList = () => (
         <RejectButton />
       </Box>
     </Datagrid>
+  )
+}
+
+export const MediaList = () => (
+  <List
+    perPage={25}
+    filter={{ excludeChaptersVolumes: 'true' }}
+    sx={{
+      '& .RaList-content': {
+        '& > *:not(:last-child)': {
+          marginBottom: 0
+        }
+      }
+    }}
+  >
+    <MediaFilterToolbar />
+    <FilteredDatagrid />
   </List>
 )
 
@@ -1709,15 +1812,43 @@ export const MediaDraftManager = () => (
 
 export const MediaShow = () => {
   const record = useRecordContext()
-  
+  const [imageError, setImageError] = useState(false)
+
   const renderMediaContent = () => {
     if (!record?.url) return null
-    
+
     switch (record.type) {
       case 'image':
+        if (imageError) {
+          return (
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 6,
+              backgroundColor: '#0f0f0f',
+              borderRadius: 2,
+              border: '2px dashed rgba(225, 29, 72, 0.3)',
+              minHeight: '300px'
+            }}>
+              <ImageIcon size={64} color="#e11d48" style={{ marginBottom: 16 }} />
+              <Typography variant="h6" sx={{ color: '#e11d48', mb: 1 }}>
+                Image Failed to Load
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                The image could not be displayed. This may be due to:<br/>
+                • Invalid or broken URL<br/>
+                • Domain not configured in image settings<br/>
+                • Network connectivity issues
+              </Typography>
+            </Box>
+          )
+        }
+
         return (
-          <Box sx={{ 
-            display: 'flex', 
+          <Box sx={{
+            display: 'flex',
             justifyContent: 'center',
             p: 3,
             backgroundColor: '#0f0f0f',
@@ -1737,6 +1868,8 @@ export const MediaShow = () => {
                 border: '1px solid rgba(225, 29, 72, 0.2)'
               }}
               sizes="(max-width: 768px) 100vw, 800px"
+              onError={() => setImageError(true)}
+              unoptimized={record.url.startsWith('http') && !record.url.includes('localhost')}
             />
           </Box>
         )

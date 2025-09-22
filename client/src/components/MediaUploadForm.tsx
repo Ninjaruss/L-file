@@ -15,6 +15,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
+import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Upload, Image, Video, FileText, X } from 'lucide-react'
 
 interface MediaUploadFormProps {
@@ -170,7 +171,7 @@ export default function MediaUploadForm({
   return (
     <Box>
       {error && (
-        <Alert color="red" radius="md" mb="md">
+        <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md" mb="md">
           <Text size="sm">{error}</Text>
         </Alert>
       )}
@@ -209,7 +210,7 @@ export default function MediaUploadForm({
             {selectedFile ? (
               <Stack gap="xs" align="center">
                 <Group gap="xs" align="center">
-                  <Badge radius="lg" color="red" size="lg">
+                  <Badge radius="lg" style={{ color: getEntityThemeColor(theme, 'gamble') }} size="lg">
                     <Group gap={6} align="center">
                       {getFileIcon(formData.type)}
                       <span>{selectedFile.name} ({formatFileSize(selectedFile.size)})</span>

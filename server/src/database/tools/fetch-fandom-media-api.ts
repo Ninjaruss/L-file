@@ -20,20 +20,29 @@ async function apiGet(params: Record<string, string>) {
   const url = new URL(API_BASE);
   params.format = 'json';
   for (const [k, v] of Object.entries(params)) url.searchParams.append(k, v);
-  const res = await fetch(url.toString(), { headers: { 'User-Agent': 'usogui-fansite-seeder/1.0' } });
-  if (!res.ok) throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+  const res = await fetch(url.toString(), {
+    headers: { 'User-Agent': 'usogui-fansite-seeder/1.0' },
+  });
+  if (!res.ok)
+    throw new Error(`API request failed: ${res.status} ${res.statusText}`);
   return res.json();
 }
 
 async function findCoverForTitle(title: string): Promise<string | null> {
   // Try pageimages first
   try {
-    const q = await apiGet({ action: 'query', titles: title, prop: 'pageimages', pithumbsize: '1000' });
+    const q = await apiGet({
+      action: 'query',
+      titles: title,
+      prop: 'pageimages',
+      pithumbsize: '1000',
+    });
     if (q && q.query && q.query.pages) {
       const pages = q.query.pages;
       for (const pid of Object.keys(pages)) {
         const page = pages[pid];
-        if (page && page.thumbnail && page.thumbnail.source) return page.thumbnail.source;
+        if (page && page.thumbnail && page.thumbnail.source)
+          return page.thumbnail.source;
       }
     }
   } catch (err) {
@@ -42,7 +51,12 @@ async function findCoverForTitle(title: string): Promise<string | null> {
 
   // Try listing images on the page and retrieving imageinfo URLs
   try {
-    const q2 = await apiGet({ action: 'query', titles: title, prop: 'images', imlimit: '50' });
+    const q2 = await apiGet({
+      action: 'query',
+      titles: title,
+      prop: 'images',
+      imlimit: '50',
+    });
     if (q2 && q2.query && q2.query.pages) {
       const pages = q2.query.pages;
       for (const pid of Object.keys(pages)) {
@@ -51,11 +65,21 @@ async function findCoverForTitle(title: string): Promise<string | null> {
           for (const img of page.images as Array<any>) {
             const imageTitle = img.title; // e.g., File:Cover.jpg
             try {
-              const info = await apiGet({ action: 'query', titles: imageTitle, prop: 'imageinfo', iiprop: 'url' });
+              const info = await apiGet({
+                action: 'query',
+                titles: imageTitle,
+                prop: 'imageinfo',
+                iiprop: 'url',
+              });
               if (info && info.query && info.query.pages) {
                 for (const ipid of Object.keys(info.query.pages)) {
                   const ipage = info.query.pages[ipid];
-                  if (ipage && ipage.imageinfo && ipage.imageinfo[0] && ipage.imageinfo[0].url) {
+                  if (
+                    ipage &&
+                    ipage.imageinfo &&
+                    ipage.imageinfo[0] &&
+                    ipage.imageinfo[0].url
+                  ) {
                     return ipage.imageinfo[0].url;
                   }
                 }
@@ -85,7 +109,9 @@ async function run() {
     process.exit(1);
   }
 
-  console.log(`Loaded ${volumes.length} volumes; checking for missing coverUrl...`);
+  console.log(
+    `Loaded ${volumes.length} volumes; checking for missing coverUrl...`,
+  );
 
   for (const v of volumes) {
     if (v.coverUrl) continue; // already present
@@ -102,15 +128,28 @@ async function run() {
     let foundUrl: string | null = null;
     for (const q of queries) {
       try {
-        const search = await apiGet({ action: 'query', list: 'search', srsearch: q, srlimit: '5' });
+        const search = await apiGet({
+          action: 'query',
+          list: 'search',
+          srsearch: q,
+          srlimit: '5',
+        });
         await sleep(200); // be gentle
-        if (search && search.query && search.query.search && search.query.search.length > 0) {
+        if (
+          search &&
+          search.query &&
+          search.query.search &&
+          search.query.search.length > 0
+        ) {
           // prefer result that contains the word 'Volume' or has 'volume' in title
           const first = search.query.search[0];
           const title = first.title as string;
           // try to get cover from this title
           const candidate = await findCoverForTitle(title);
-          if (candidate) { foundUrl = candidate; break; }
+          if (candidate) {
+            foundUrl = candidate;
+            break;
+          }
         }
       } catch (err) {
         // ignore and continue
