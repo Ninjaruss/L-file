@@ -4,6 +4,7 @@ import React from 'react'
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Container,
@@ -19,7 +20,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
-import { getEntityThemeColor, semanticColors } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, backgroundStyles } from '../../../lib/mantine-theme'
 
 interface Volume {
   id: number
@@ -76,6 +77,7 @@ export default function ChapterPageClient({
   usePageView('chapter', initialChapter.id.toString(), true)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
@@ -238,5 +240,6 @@ export default function ChapterPageClient({
         </Grid>
       </motion.div>
     </Container>
+    </Box>
   )
 }

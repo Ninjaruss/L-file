@@ -20,7 +20,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getCardStyles } from '../../lib/mantine-theme'
 import { notifications } from '@mantine/notifications'
 import { Quote, Search, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -268,6 +268,7 @@ export default function QuotesPageContent({
   }, [])
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
@@ -299,7 +300,7 @@ export default function QuotesPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentQuote}>
               Memorable Quotes
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               {characterName
                 ? `Iconic wisdom and memorable dialogue from ${characterName}`
                 : 'Discover profound insights and memorable dialogue from the world of Usogui'}
@@ -472,7 +473,7 @@ export default function QuotesPageContent({
 
                       {/* Footer - Remove "Full Quote" text */}
                       {quote.volume && (
-                        <Text size="xs" c="dimmed" ta="center">
+                        <Text size="xs" style={{ color: theme.colors.gray[6] }} ta="center">
                           {quote.volume && `Vol. ${quote.volume}`}
                           {quote.volume && quote.chapter && ' • '}
                           {quote.chapter && `Ch. ${quote.chapter}`}
@@ -489,10 +490,10 @@ export default function QuotesPageContent({
           {quotes.length === 0 && !loading && (
             <Stack align="center" gap="md" py="xl">
               <Quote size={64} color={iconColor} />
-              <Title order={4} c="dimmed">
+              <Title order={4} style={{ color: theme.colors.gray[6] }}>
                 No quotes found
               </Title>
-              <Text size="sm" c="dimmed" ta="center">
+              <Text size="sm" style={{ color: theme.colors.gray[6] }} ta="center">
                 {searchQuery ? 'Try adjusting your search terms.' : 'Be the first to submit a memorable quote!'}
               </Text>
             </Stack>
@@ -560,7 +561,7 @@ export default function QuotesPageContent({
                 {/* Context - Emphasized */}
                 {hoveredQuote.context && (
                   <Box>
-                    <Text size="xs" fw={600} c="dimmed" mb={4} ta="center">
+                    <Text size="xs" fw={600} style={{ color: theme.colors.gray[6] }} mb={4} ta="center">
                       Context
                     </Text>
                     <Text 
@@ -615,7 +616,7 @@ export default function QuotesPageContent({
 
                 {/* Show message if no context */}
                 {!hoveredQuote.context && (
-                  <Text size="sm" c="dimmed" ta="center" fs="italic">
+                  <Text size="sm" style={{ color: theme.colors.gray[6] }} ta="center" fs="italic">
                     No additional context available
                   </Text>
                 )}
@@ -625,5 +626,6 @@ export default function QuotesPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

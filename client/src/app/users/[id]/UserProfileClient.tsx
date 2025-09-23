@@ -20,7 +20,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles } from '../../../lib/mantine-theme'
 import { ArrowLeft, FileText, Quote, Dices, Calendar, BookOpen, Camera } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -177,6 +177,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
   const readingProgress = Math.min(Math.round((user.userProgress / 539) * 100), 100)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
@@ -509,5 +510,6 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
         )}
       </motion.div>
     </Container>
+    </Box>
   )
 }

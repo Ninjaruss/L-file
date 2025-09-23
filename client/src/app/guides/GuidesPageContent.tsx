@@ -19,7 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getCardStyles } from '../../lib/mantine-theme'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -196,6 +196,7 @@ export default function GuidesPageContent({
   const accentRed = theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48'
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Stack gap="xl">
         <Stack gap="xs" align="center" mb={sectionSpacing}>
@@ -435,5 +436,6 @@ export default function GuidesPageContent({
         )}
       </Stack>
     </motion.div>
+    </Box>
   )
 }

@@ -17,7 +17,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles } from '../../../lib/mantine-theme'
 import { ArrowLeft, Users, Shield, Crown } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
@@ -63,6 +63,7 @@ export default function OrganizationPageClient({
   usePageView('organization', initialOrganization.id.toString(), true)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -333,5 +334,6 @@ export default function OrganizationPageClient({
         </Grid>
       </motion.div>
     </Container>
+    </Box>
   )
 }

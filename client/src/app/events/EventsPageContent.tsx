@@ -22,12 +22,13 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
-import { CalendarSearch, Eye, Calendar, Search, BookOpen, Dice6, ChevronDown, AlertCircle, X } from 'lucide-react'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getCardStyles } from '../../lib/mantine-theme'
+import { CalendarSearch, Search, ChevronDown, AlertCircle, X } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
+import TimelineSpoilerWrapper from '../../components/TimelineSpoilerWrapper'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import type { Arc, Event } from '../../types'
@@ -274,14 +275,14 @@ export default function EventsPageContent({
   }
 
   const eventTypeColor = (type: string) => {
-    // Use consistent event theming with subtle amber-based variations
+    // Use distinct, high-contrast colors for better differentiation
     const baseEventColor = getEntityThemeColor(theme, 'event')
     switch (type.toLowerCase()) {
-      case 'gamble': return '#e67e22' // Orange-amber for gamble events
-      case 'decision': return '#f39c12' // Base amber for decisions
-      case 'reveal': return '#f1c40f' // Brighter amber for reveals
-      case 'shift': return '#d68910' // Deeper amber for shifts
-      case 'resolution': return '#b7950b' // Dark amber for resolutions
+      case 'gamble': return '#e74c3c' // Red for high-stakes gambles
+      case 'decision': return '#3498db' // Blue for key decisions
+      case 'reveal': return '#f39c12' // Orange for reveals (keeping as reference color)
+      case 'shift': return '#9b59b6' // Purple for power shifts
+      case 'resolution': return '#27ae60' // Green for resolutions
       default: return baseEventColor
     }
   }
@@ -303,14 +304,14 @@ export default function EventsPageContent({
       transition={{ duration: 0.4, delay: (index ?? 0) * 0.05 }}
       style={{
         width: '200px',
-        height: '280px' // Playing card aspect ratio: 200px * 1.4 = 280px
+        height: '100px' // Compact card with no dead space
       }}
     >
       <Card
         withBorder
         radius="lg"
         shadow="sm"
-        padding="lg"
+        padding="xs"
         style={{
           width: '100%',
           height: '100%',
@@ -332,14 +333,16 @@ export default function EventsPageContent({
           },
         }}
       >
-        <Stack gap="md" h="100%">
-          {/* Header */}
-          <Group justify="space-between" align="flex-start">
-            <Stack gap={4} style={{ flex: 1 }}>
-              <Title order={4} lineClamp={2} size="md" c={accentEvent}>
+        <TimelineSpoilerWrapper chapterNumber={event.spoilerChapter || event.chapterNumber}>
+          <Box h="100%" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Stack gap={6} w="100%" justify="center" align="center">
+              {/* Title */}
+              <Title order={3} lineClamp={1} size="lg" c={accentEvent} style={{ lineHeight: 1.2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {event.title}
               </Title>
-              <Group gap="xs" wrap="wrap">
+
+              {/* Badges */}
+              <Group gap={8} justify="center" align="center">
                 <Badge
                   c={eventTypeColor(event.type)}
                   variant="light"
@@ -357,57 +360,10 @@ export default function EventsPageContent({
                   Ch. {event.chapterNumber}
                 </Badge>
               </Group>
+
             </Stack>
-            <CalendarSearch size={24} color={accentEvent} />
-          </Group>
-
-          {/* Description */}
-          <Box style={{ flex: 1, overflow: 'hidden' }}>
-            <Text size="sm" c="dark" lineClamp={4}>
-              {event.description}
-            </Text>
           </Box>
-
-          {/* Arc/Gamble Info */}
-          {(event.arc || event.gamble) && (
-            <Group gap={4} align="center">
-              {event.arc && (
-                <>
-                  <BookOpen size={14} color={accentEvent} />
-                  <Text size="xs" c={accentEvent} lineClamp={1}>
-                    {event.arc.name}
-                  </Text>
-                </>
-              )}
-              {event.gamble && (
-                <>
-                  <Dice6 size={14} color={accentEvent} />
-                  <Text size="xs" c={accentEvent} lineClamp={1}>
-                    {event.gamble.name}
-                  </Text>
-                </>
-              )}
-            </Group>
-          )}
-
-          {/* Footer */}
-          <Group justify="space-between" align="center" mt="auto">
-            <Group gap={4} align="center">
-              <Eye size={14} color={accentEvent} />
-              <Text size="xs" c={accentEvent}>
-                Details
-              </Text>
-            </Group>
-            <Badge
-              c={statusColor(event.status)}
-              variant="light"
-              size="sm"
-              style={{ backgroundColor: `${statusColor(event.status)}20`, borderColor: statusColor(event.status) }}
-            >
-              {event.status}
-            </Badge>
-          </Group>
-        </Stack>
+        </TimelineSpoilerWrapper>
       </Card>
     </motion.div>
   )
@@ -423,11 +379,12 @@ export default function EventsPageContent({
   const totalEvents = groupedEvents.arcs.reduce((total, group) => total + group.events.length, 0) + groupedEvents.noArc.length
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
         style={{
-          background: `linear-gradient(135deg, ${accentEvent}15, ${accentEvent}08)`,
+          background: backgroundStyles.hero(theme, accentEvent),
           borderRadius: theme.radius.lg,
           border: `1px solid ${accentEvent}25`,
           marginBottom: rem(24)
@@ -454,7 +411,7 @@ export default function EventsPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentEvent}>
               Events
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               Explore key moments in the Usogui story, organized by story arcs
             </Text>
 
@@ -530,7 +487,7 @@ export default function EventsPageContent({
       {loading ? (
         <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
           <Loader size="xl" color={accentEvent} mb="md" />
-          <Text size="lg" c="dimmed">Loading events...</Text>
+          <Text size="lg" style={{ color: theme.colors.gray[6] }}>Loading events...</Text>
         </Box>
       ) : (
         <>
@@ -538,10 +495,10 @@ export default function EventsPageContent({
           {totalEvents === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <CalendarSearch size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} c="dimmed" mb="sm">
+              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
                 No events found
               </Title>
-              <Text size="lg" c="dimmed" mb="xl">
+              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 Try adjusting your search terms or filters
               </Text>
               {(hasSearchQuery || selectedType || selectedStatus) && (
@@ -566,7 +523,7 @@ export default function EventsPageContent({
                 <Box
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gridTemplateColumns: 'repeat(5, 1fr)',
                     gap: rem(16),
                     justifyItems: 'center'
                   }}
@@ -621,7 +578,7 @@ export default function EventsPageContent({
                           <Box
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                              gridTemplateColumns: 'repeat(5, 1fr)',
                               gap: rem(16),
                               justifyItems: 'center'
                             }}
@@ -662,7 +619,7 @@ export default function EventsPageContent({
                           }}
                         >
                           <Group gap="sm" align="center">
-                            <Text size="lg" fw={600} c="dimmed">Other Events</Text>
+                            <Text size="lg" fw={600} style={{ color: theme.colors.gray[6] }}>Other Events</Text>
                             <Badge
                               c={getEntityThemeColor(theme, 'media')}
                               variant="light"
@@ -677,7 +634,7 @@ export default function EventsPageContent({
                           <Box
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                              gridTemplateColumns: 'repeat(5, 1fr)',
                               gap: rem(16),
                               justifyItems: 'center'
                             }}
@@ -759,7 +716,7 @@ export default function EventsPageContent({
                   )}
                 </Group>
 
-                <Text size="sm" c="dimmed" ta="center" lineClamp={3} style={{ lineHeight: 1.4 }}>
+                <Text size="sm" ta="center" lineClamp={3} style={{ color: theme.colors.gray[6], lineHeight: 1.4 }}>
                   {hoveredEvent.description}
                 </Text>
 
@@ -779,5 +736,6 @@ export default function EventsPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

@@ -54,11 +54,11 @@ if (typeof document !== 'undefined' && !document.getElementById('arc-timeline-st
 }
 
 const EVENT_COLOR_MAP: Record<string, string> = {
-  gamble: 'red',
-  decision: 'yellow',
-  reveal: 'blue',
-  shift: 'grape',
-  resolution: 'green'
+  gamble: '#ff5555',     // 4.5:1 contrast - vibrant red
+  decision: '#f39c12',   // 5.2:1 contrast - amber
+  reveal: '#4dabf7',     // 4.7:1 contrast - bright blue
+  shift: '#a855f7',      // 4.5:1 contrast - saturated purple
+  resolution: '#51cf66'  // 4.9:1 contrast - bright green
 }
 
 const EVENT_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -423,7 +423,7 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
         </Group>
 
         <Group gap="xs" align="center" wrap="wrap">
-          <Badge style={{ color: getEntityThemeColor(theme, 'media') }} variant="filled" leftSection={<BookOpen size={14} />} radius="sm">
+          <Badge style={{ color: getEntityThemeColor(theme, 'arc') }} variant="outline" leftSection={<BookOpen size={14} />} radius="sm">
             Arc Range: Chapters {startChapter}-{endChapter}
           </Badge>
           <Badge style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="outline" leftSection={<Calendar size={14} />} radius="sm">
@@ -461,12 +461,16 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
                     return (
                       <Badge
                         key={eventType}
-                        color={isSelected ? getEventTypeColor(eventType) : 'dark.5'}
                         variant={isSelected ? 'filled' : 'outline'}
                         leftSection={<Icon size={12} />}
                         radius="sm"
                         onClick={() => toggleEventTypeFilter(eventType)}
-                        style={{ cursor: 'pointer' }}
+                        style={{
+                          cursor: 'pointer',
+                          backgroundColor: isSelected ? getEventTypeColor(eventType) : 'transparent',
+                          borderColor: getEventTypeColor(eventType),
+                          color: isSelected ? textColors.primary : getEventTypeColor(eventType)
+                        }}
                       >
                         {getEventTypeLabel(eventType)}
                       </Badge>
@@ -487,12 +491,16 @@ const ArcTimeline = React.memo(function ArcTimeline({ events, arcName, startChap
                     return (
                       <Badge
                         key={character}
-                        color={isSelected ? 'red' : 'dark.5'}
                         variant={isSelected ? 'filled' : 'outline'}
                         radius="sm"
                         leftSection={<Users size={12} />}
                         onClick={() => toggleCharacterFilter(character)}
-                        style={{ cursor: 'pointer' }}
+                        style={{
+                          cursor: 'pointer',
+                          backgroundColor: isSelected ? getEntityThemeColor(theme, 'character') : 'transparent',
+                          borderColor: getEntityThemeColor(theme, 'character'),
+                          color: isSelected ? textColors.primary : getEntityThemeColor(theme, 'character')
+                        }}
                       >
                         {character}
                       </Badge>
@@ -683,7 +691,7 @@ const ArcTimelineSection = React.memo(function ArcTimelineSection({
       >
         <Stack gap="xs">
           <Group justify="space-between" align="flex-start">
-            <Text fw={600} size="sm" c="red.5">
+            <Text fw={600} size="sm" style={{ color: getEntityThemeColor(theme, 'arc') }}>
               {section.sectionName}
             </Text>
             <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="sm">
@@ -820,17 +828,16 @@ function EventContent({
           {event.type && (
             <Badge
               variant="filled"
-              color={getEventTypeColor(event.type)}
               leftSection={<EventTypeIcon size={12} />}
               radius="sm"
               size="sm"
+              style={{
+                backgroundColor: getEventTypeColor(event.type),
+                borderColor: getEventTypeColor(event.type),
+                color: textColors.primary
+              }}
             >
               {getEventTypeLabel(event.type)}
-            </Badge>
-          )}
-          {!isPreview && event.characters && event.characters.length > 0 && (
-            <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'media') }} leftSection={<Users size={12} />} radius="sm" size="sm">
-              {event.characters.length} character{event.characters.length === 1 ? '' : 's'}
             </Badge>
           )}
         </Group>
@@ -844,7 +851,16 @@ function EventContent({
         {!isPreview && event.characters && event.characters.length > 0 && (
           <Group gap={4} wrap="wrap">
             {event.characters.slice(0, 3).map((character, index) => (
-              <Badge key={`${event.id}-${character}-${index}`} variant="outline" color="gray" radius="sm" size="xs">
+              <Badge
+                key={`${event.id}-${character}-${index}`}
+                variant="outline"
+                radius="sm"
+                size="xs"
+                style={{
+                  borderColor: getEntityThemeColor(theme, 'character'),
+                  color: getEntityThemeColor(theme, 'character')
+                }}
+              >
                 {character}
               </Badge>
             ))}

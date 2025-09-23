@@ -19,7 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles } from '../../lib/mantine-theme'
 import { Search, Users, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
@@ -116,6 +116,7 @@ export default function UsersPageContent() {
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -264,5 +265,6 @@ export default function UsersPageContent() {
         )}
       </motion.div>
     </Container>
+    </Box>
   )
 }

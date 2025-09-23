@@ -42,7 +42,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
-import { getEntityThemeColor } from '../../lib/mantine-theme'
+import { getEntityThemeColor, backgroundStyles, getHeroStyles } from '../../lib/mantine-theme'
 import MediaGallery from '../../components/MediaGallery'
 import { useProgress } from '../../providers/ProgressProvider'
 
@@ -312,6 +312,7 @@ export default function MediaPageContent({
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Stack gap="xl">
       {/* Header */}
       <Stack gap="md">
@@ -320,13 +321,13 @@ export default function MediaPageContent({
             <Title order={1} size="h1" style={{ color: getEntityThemeColor(theme, 'media') }}>
               Media Gallery
             </Title>
-            <Text c="dimmed">
+            <Text style={{ color: theme.colors.gray[6] }}>
               Browse community-submitted fanart, videos, and other media related to Usogui
             </Text>
           </Stack>
 
           <Group gap="xs">
-            <Text size="sm" c="dimmed">
+            <Text size="sm" style={{ color: theme.colors.gray[6] }}>
               {total} {total === 1 ? 'item' : 'items'}
             </Text>
           </Group>
@@ -528,7 +529,7 @@ export default function MediaPageContent({
                   <Group justify="space-between" align="center" gap={2}>
                     <Group gap={2} align="center">
                       <User size={8} />
-                      <Text size="xs" c="dimmed" style={{ fontSize: '8px' }} truncate>
+                      <Text size="xs" style={{ color: theme.colors.gray[6], fontSize: '8px' }} truncate>
                         {item.submittedBy.username}
                       </Text>
                     </Group>
@@ -553,7 +554,7 @@ export default function MediaPageContent({
             <ImageIcon size={48} style={{ color: getEntityThemeColor(theme, 'media'), opacity: 0.5 }} />
             <Stack gap="xs" align="center">
               <Text fw={500}>No media found</Text>
-              <Text size="sm" c="dimmed">
+              <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                 Try adjusting your filters or search terms
               </Text>
             </Stack>
@@ -761,7 +762,7 @@ export default function MediaPageContent({
                       <Group gap="md" align="center">
                         <Group gap="xs" align="center">
                           <User size={14} />
-                          <Text size="sm" c="dimmed">
+                          <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                             Submitted by {selectedMedia.submittedBy.username}
                           </Text>
                         </Group>
@@ -769,7 +770,7 @@ export default function MediaPageContent({
                         {selectedMedia.createdAt && (
                           <Group gap="xs" align="center">
                             <Calendar size={14} />
-                            <Text size="sm" c="dimmed">
+                            <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                               {new Date(selectedMedia.createdAt).toLocaleDateString()}
                             </Text>
                           </Group>
@@ -778,7 +779,7 @@ export default function MediaPageContent({
 
                       {(selectedMedia.character || selectedMedia.arc || selectedMedia.event || selectedMedia.gamble || selectedMedia.organization) && (
                         <Group gap="xs" align="center">
-                          <Text size="sm" c="dimmed">Related to:</Text>
+                          <Text size="sm" style={{ color: theme.colors.gray[6] }}>Related to:</Text>
                           <Anchor
                             href={getEntityUrl(selectedMedia)}
                             size="sm"
@@ -809,5 +810,6 @@ export default function MediaPageContent({
         )}
       </Modal>
     </Stack>
+    </Box>
   )
 }

@@ -38,7 +38,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
-import { getEntityThemeColor, getEntityAccent } from '../../lib/mantine-theme'
+import { getEntityThemeColor, getEntityAccent, backgroundStyles } from '../../lib/mantine-theme'
 import { useProgress } from '../../providers/ProgressProvider'
 
 interface SearchResult {
@@ -182,6 +182,7 @@ export default function SearchPageContent({
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Stack gap="xl">
       {/* Header */}
       <Stack gap="md">
@@ -189,7 +190,7 @@ export default function SearchPageContent({
           Search Results
         </Title>
         {initialQuery && (
-          <Text c="dimmed">
+          <Text style={{ color: theme.colors.gray[6] }}>
             Showing results for <Text span fw={500}>"{initialQuery}"</Text>
           </Text>
         )}
@@ -225,7 +226,7 @@ export default function SearchPageContent({
       {/* Results Summary */}
       {!loading && query && (
         <Group justify="space-between" align="center">
-          <Text size="sm" c="dimmed">
+          <Text size="sm" style={{ color: theme.colors.gray[6] }}>
             {total} {total === 1 ? 'result' : 'results'} found
           </Text>
           {selectedType !== 'all' && (
@@ -276,7 +277,7 @@ export default function SearchPageContent({
                       </Badge>
                     )}
                   </Group>
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" style={{ color: theme.colors.gray[6] }}>
                     Score: {Math.round(result.score * 100)}%
                   </Text>
                 </Group>
@@ -294,7 +295,7 @@ export default function SearchPageContent({
                 </Box>
 
                 {result.description && (
-                  <Text size="sm" c="dimmed" lineClamp={2}>
+                  <Text size="sm" style={{ color: theme.colors.gray[6] }} lineClamp={2}>
                     {formatResultDescription(result.description)}
                   </Text>
                 )}
@@ -326,7 +327,7 @@ export default function SearchPageContent({
             <Search size={48} style={{ color: theme.colors.gray[5] }} />
             <Stack gap="xs" align="center">
               <Text fw={500}>No results found</Text>
-              <Text size="sm" c="dimmed">
+              <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                 Try different keywords or check your spelling
               </Text>
             </Stack>
@@ -359,7 +360,7 @@ export default function SearchPageContent({
             <Search size={48} style={{ color: theme.colors.gray[5] }} />
             <Stack gap="xs" align="center">
               <Text fw={500}>Enter a search term</Text>
-              <Text size="sm" c="dimmed">
+              <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                 Search for characters, arcs, events, gambles, guides, and more
               </Text>
             </Stack>
@@ -379,5 +380,6 @@ export default function SearchPageContent({
         </Group>
       )}
     </Stack>
+    </Box>
   )
 }

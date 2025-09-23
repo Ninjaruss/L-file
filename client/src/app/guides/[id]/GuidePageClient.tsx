@@ -15,7 +15,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors, setTabAccentColors } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, setTabAccentColors, backgroundStyles } from '../../../lib/mantine-theme'
 import { ArrowLeft, FileText, Calendar, Heart, Edit, Save, X, Users, BookOpen, Dice6 } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../../lib/api'
@@ -180,6 +180,7 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Group justify="space-between" align="flex-start" mb="lg">
@@ -416,5 +417,6 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
         </Card>
       </motion.div>
     </Container>
+    </Box>
   )
 }

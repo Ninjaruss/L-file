@@ -16,7 +16,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, backgroundStyles } from '../../../lib/mantine-theme'
 import { ArrowLeft, Book, Hash, Clock, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -55,6 +55,7 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
   usePageView('volume', initialVolume.id.toString(), true)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -289,5 +290,6 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
         </Grid>
       </motion.div>
     </Container>
+    </Box>
   )
 }

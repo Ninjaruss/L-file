@@ -3,6 +3,7 @@
 import React from 'react'
 import {
   Badge,
+  Box,
   Button,
   Card,
   Container,
@@ -13,7 +14,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles } from '../../../lib/mantine-theme'
 import { ArrowLeft, CalendarSearch, Calendar, BookOpen, Dice6, Tag } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
@@ -32,6 +33,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
   usePageView('event', initialEvent.id.toString(), true)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Button
@@ -241,5 +243,6 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
         </Grid>
       </motion.div>
     </Container>
+    </Box>
   )
 }

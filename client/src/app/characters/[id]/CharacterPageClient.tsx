@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  Container,
   Group,
   Paper,
   Stack,
@@ -21,7 +22,9 @@ import {
   getAlphaColor,
   spacing,
   fontSize,
-  setTabAccentColors
+  setTabAccentColors,
+  backgroundStyles,
+  getCardStyles
 } from '../../../lib/mantine-theme'
 import { User, Crown, Calendar, BookOpen, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -102,11 +105,11 @@ export default function CharacterPageClient({
 
   return (
     <Box style={{
-      backgroundColor: theme.colors.dark[8],
+      backgroundColor: backgroundStyles.page(theme),
       minHeight: '100vh',
-      color: textColors.primary,
-      padding: theme.spacing.md
+      color: textColors.primary
     }}>
+    <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
     <Stack gap={theme.spacing.md}>
       {/* Enhanced Character Header */}
       <Card
@@ -115,11 +118,10 @@ export default function CharacterPageClient({
         shadow="lg"
         p={0}
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
+          ...getCardStyles(theme, entityColors.character),
           border: `2px solid ${entityColors.character}`,
           position: 'relative',
-          overflow: 'hidden',
-          backdropFilter: theme.other?.effects?.backdropBlur || 'blur(10px)'
+          overflow: 'hidden'
         }}
       >
         {/* Subtle Pattern Overlay */}
@@ -301,10 +303,7 @@ export default function CharacterPageClient({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={{
-          background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-          border: `1px solid ${theme.colors.dark[4]}`
-        }}>
+        <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
         <Tabs
           value={activeTab}
           onChange={(value) => value && setActiveTab(value)}
@@ -339,10 +338,7 @@ export default function CharacterPageClient({
           <Tabs.Panel value="overview" pt={theme.spacing.md}>
             <Stack gap={theme.spacing.lg}>
               {/* Character Description Section */}
-              <Card withBorder radius="lg" shadow="lg" style={{
-                background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
-              }}>
+              <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.character)}>
                 <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                   <Group gap={theme.spacing.sm} align="center">
                     <User size={24} color={entityColors.character} />
@@ -364,11 +360,7 @@ export default function CharacterPageClient({
 
               {/* Related Story Arcs */}
               {arcs.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={{
-                  background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                  border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`,
-                  transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease-in-out`
-                }}>
+                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.arc)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group justify="space-between" align="center">
                       <Group gap={theme.spacing.sm}>
@@ -432,11 +424,7 @@ export default function CharacterPageClient({
 
               {/* Related Gambles */}
               {gambles.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={{
-                  background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                  border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`,
-                  transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease-in-out`
-                }}>
+                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.gamble)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group justify="space-between" align="center">
                       <Group gap={theme.spacing.sm}>
@@ -499,11 +487,7 @@ export default function CharacterPageClient({
 
               {/* Memorable Quotes */}
               {quotes.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={{
-                  background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                  border: `1px solid ${getAlphaColor(entityColors.quote, 0.4)}`,
-                  transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease-in-out`
-                }}>
+                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.quote)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group justify="space-between" align="center">
                       <Group gap={theme.spacing.sm}>
@@ -551,11 +535,7 @@ export default function CharacterPageClient({
 
               {/* Community Guides */}
               {guides.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={{
-                  background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                  border: `1px solid ${getAlphaColor(entityColors.guide, 0.4)}`,
-                  transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease-in-out`
-                }}>
+                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.guide)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group justify="space-between" align="center">
                       <Group gap={theme.spacing.sm}>
@@ -624,10 +604,7 @@ export default function CharacterPageClient({
           <Tabs.Panel value="media" pt={theme.spacing.md}>
             <Stack gap="md">
               {/* Gallery Media Section */}
-              <Card withBorder radius="lg" shadow="lg" style={{
-                background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                border: `1px solid ${getAlphaColor(entityColors.media, 0.4)}`
-              }}>
+              <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.media)}>
                 <Stack gap="md" p="md">
                   <Group justify="space-between" align="center">
                     <Group gap="sm">
@@ -658,10 +635,7 @@ export default function CharacterPageClient({
               </Card>
 
               {/* Official Media Section */}
-              <Card withBorder radius="lg" shadow="lg" style={{
-                background: `linear-gradient(135deg, ${theme.colors.dark[6]} 0%, ${theme.colors.dark[7]} 100%)`,
-                border: `1px solid ${getAlphaColor(entityColors.media, 0.4)}`
-              }}>
+              <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.media)}>
                 <Stack gap="md" p="md">
                   <Group gap="sm">
                     <Crown size={20} color={entityColors.media} />
@@ -684,6 +658,7 @@ export default function CharacterPageClient({
       </Card>
     </motion.div>
     </Stack>
+    </Container>
     </Box>
   )
 }

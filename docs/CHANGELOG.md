@@ -7,6 +7,11 @@
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Donation linking to badges; badge system with perks
 
+## 2025-09-22
+- Updated events admin page to be similar to guides/media admin pages
+- Adjusted colors/themeing to be centralized to mantine theme
+- Added hover effects to tabs using global css (does not work with mantine navbar)
+
 ## 2025-09-20
 ### Changes
 - Added filter only volumes for media

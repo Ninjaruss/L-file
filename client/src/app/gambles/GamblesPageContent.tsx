@@ -19,7 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { Dices, Search, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -290,15 +290,11 @@ export default function GamblesPageContent({
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
-        style={{
-          background: `linear-gradient(135deg, ${accentGamble}15, ${accentGamble}08)`,
-          borderRadius: theme.radius.lg,
-          border: `1px solid ${accentGamble}25`,
-          marginBottom: rem(24)
-        }}
+        style={getHeroStyles(theme, accentGamble)}
         p="md"
       >
         <Stack align="center" gap="xs">
@@ -321,7 +317,7 @@ export default function GamblesPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentGamble}>
               Gambles
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               {characterFilter
                 ? `High-stakes games featuring ${characterFilter}`
                 : 'Discover the psychological battles and high-stakes games of Usogui'}
@@ -410,7 +406,7 @@ export default function GamblesPageContent({
       {loading ? (
         <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
           <Loader size="xl" color={accentGamble} mb="md" />
-          <Text size="lg" c="dimmed">Loading gambles...</Text>
+          <Text size="lg" style={{ color: theme.colors.gray[6] }}>Loading gambles...</Text>
         </Box>
       ) : (
         <>
@@ -418,10 +414,10 @@ export default function GamblesPageContent({
           {gambles.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <Dices size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} c="dimmed" mb="sm">
+              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
                 {hasSearchQuery ? 'No gambles found' : 'No gambles available'}
               </Title>
-              <Text size="lg" c="dimmed" mb="xl">
+              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 {hasSearchQuery
                   ? 'Try adjusting your search terms or filters'
                   : 'Check back later for new gambles'}
@@ -460,18 +456,7 @@ export default function GamblesPageContent({
                       withBorder={false}
                       radius="lg"
                       shadow="sm"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer',
-                        textDecoration: 'none',
-                        backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
-                        width: '100%',
-                        height: '100%'
-                      }}
+                      style={getPlayingCardStyles(theme, accentGamble)}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
@@ -489,8 +474,8 @@ export default function GamblesPageContent({
                           variant="filled"
                           radius="sm"
                           size="sm"
+                          c="white"
                           style={{
-                            color: getEntityThemeColor(theme, 'gamble'),
                             position: 'absolute',
                             top: rem(8),
                             left: rem(8),
@@ -627,7 +612,7 @@ export default function GamblesPageContent({
                 {hoveredGamble.description && (
                   <Text
                     size="sm"
-                    c="dimmed"
+                    style={{ color: theme.colors.gray[6] }}
                     ta="center"
                     lineClamp={3}
                     style={{
@@ -643,7 +628,8 @@ export default function GamblesPageContent({
                 <Group justify="center" gap="xs">
                   <Badge
                     variant="filled"
-                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
+                    c="white"
+                    style={{ backgroundColor: accentGamble }}
                     size="sm"
                     fw={600}
                   >
@@ -691,12 +677,12 @@ export default function GamblesPageContent({
                 {/* Win Condition */}
                 {hoveredGamble.winCondition && (
                   <Box>
-                    <Text size="xs" fw={600} c="dimmed" mb={2} ta="center">
+                    <Text size="xs" fw={600} style={{ color: theme.colors.gray[6] }} mb={2} ta="center">
                       Win Condition:
                     </Text>
                     <Text
                       size="xs"
-                      c="dimmed"
+                      style={{ color: theme.colors.gray[6] }}
                       lineClamp={2}
                       ta="center"
                       style={{ lineHeight: 1.4 }}
@@ -711,5 +697,6 @@ export default function GamblesPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

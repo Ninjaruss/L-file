@@ -21,7 +21,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { Search, BookOpen, Edit, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -411,15 +411,11 @@ export default function ArcsPageContent({
   const hasSearchQuery = Boolean(searchQuery || characterFilter)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
-        style={{
-          background: `linear-gradient(135deg, ${accentArc}15, ${accentArc}08)`,
-          borderRadius: theme.radius.lg,
-          border: `1px solid ${accentArc}25`,
-          marginBottom: rem(24)
-        }}
+        style={getHeroStyles(theme, accentArc)}
         p="md"
       >
         <Stack align="center" gap="xs">
@@ -442,7 +438,7 @@ export default function ArcsPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentArc}>
               Story Arcs
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               {characterFilter
                 ? `Discover the epic arcs featuring ${characterFilter}`
                 : 'Explore the major storylines and narrative arcs that define the world of Usogui'}
@@ -536,7 +532,7 @@ export default function ArcsPageContent({
       {loading ? (
         <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
           <Loader size="xl" color={accentArc} mb="md" />
-          <Text size="lg" c="dimmed">Loading arcs...</Text>
+          <Text size="lg" style={{ color: theme.colors.gray[6] }}>Loading arcs...</Text>
         </Box>
       ) : (
         <>
@@ -544,10 +540,10 @@ export default function ArcsPageContent({
           {filteredArcs.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <BookOpen size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} c="dimmed" mb="sm">
+              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
                 {hasSearchQuery ? 'No arcs found' : 'No arcs available'}
               </Title>
-              <Text size="lg" c="dimmed" mb="xl">
+              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 {hasSearchQuery
                   ? 'Try adjusting your search terms or filters'
                   : 'Check back later for new story arcs'}
@@ -586,18 +582,7 @@ export default function ArcsPageContent({
                         withBorder={false}
                         radius="lg"
                         shadow="sm"
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden',
-                          transition: 'all 0.2s ease',
-                          cursor: 'pointer',
-                          textDecoration: 'none',
-                          backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                          border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
-                          width: '100%',
-                          height: '100%'
-                        }}
+                        style={getPlayingCardStyles(theme, accentArc)}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-4px)'
                           e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
@@ -773,7 +758,7 @@ export default function ArcsPageContent({
                 <Text size="lg" fw={600} c={accentArc}>
                   {selectedFile.name}
                 </Text>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                   {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                 </Text>
               </Stack>
@@ -782,7 +767,7 @@ export default function ArcsPageContent({
                 <Text size="lg" fw={600} c={dragActive ? theme.colors.green?.[5] : accentArc}>
                   {dragActive ? 'Drop image here' : 'Select or Drop Image File'}
                 </Text>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                   Supported: JPEG, PNG, WebP, GIF • Max size: 10MB
                 </Text>
               </Stack>
@@ -792,7 +777,7 @@ export default function ArcsPageContent({
           {/* Image Preview */}
           {previewUrl && (
             <Box ta="center">
-              <Text size="sm" c="dimmed" mb="md" fw={500}>
+              <Text size="sm" style={{ color: theme.colors.gray[6] }} mb="md" fw={500}>
                 New Image Preview
               </Text>
               <Box
@@ -849,7 +834,7 @@ export default function ArcsPageContent({
 
           {selectedArc?.imageFileName && (
             <Box ta="center">
-              <Text size="sm" c="dimmed" mb="md" fw={500}>
+              <Text size="sm" style={{ color: theme.colors.gray[6] }} mb="md" fw={500}>
                 Current Image
               </Text>
               <MediaThumbnail
@@ -928,7 +913,7 @@ export default function ArcsPageContent({
               radius="lg"
               p="md"
               style={{
-                backgroundColor: theme.colors.dark?.[7] ?? theme.white,
+                backgroundColor: backgroundStyles.modal,
                 border: `2px solid ${accentArc}`,
                 backdropFilter: 'blur(10px)',
                 width: rem(300),
@@ -974,10 +959,10 @@ export default function ArcsPageContent({
                 {hoveredArc.description && (
                   <Text
                     size="sm"
-                    c="dimmed"
                     ta="center"
                     lineClamp={3}
                     style={{
+                      color: theme.colors.gray[6],
                       lineHeight: 1.4,
                       maxHeight: rem(60)
                     }}
@@ -989,7 +974,7 @@ export default function ArcsPageContent({
                 {/* Start Chapter */}
                 {hoveredArc.startChapter && (
                   <Group justify="center" gap="xs">
-                    <Text size="xs" c="dimmed">
+                    <Text size="xs" style={{ color: theme.colors.gray[6] }}>
                       Starts:
                     </Text>
                     <Text size="xs" fw={500} c={accentArc}>
@@ -1003,5 +988,6 @@ export default function ArcsPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

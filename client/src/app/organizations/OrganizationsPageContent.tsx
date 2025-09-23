@@ -21,7 +21,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { AlertCircle, Search, Shield, Users, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -265,6 +265,7 @@ export default function OrganizationsPageContent({
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
@@ -296,7 +297,7 @@ export default function OrganizationsPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentOrganization}>
               Organizations
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               Explore the various groups and organizations in the Usogui universe
             </Text>
 
@@ -363,7 +364,7 @@ export default function OrganizationsPageContent({
       {loading ? (
         <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
           <Loader size="xl" color={accentOrganization} mb="md" />
-          <Text size="lg" c="dimmed">Loading organizations...</Text>
+          <Text size="lg" style={{ color: theme.colors.gray[6] }}>Loading organizations...</Text>
         </Box>
       ) : (
         <>
@@ -371,10 +372,10 @@ export default function OrganizationsPageContent({
           {paginatedOrganizations.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <Shield size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} c="dimmed" mb="sm">
+              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
                 {hasSearchQuery ? 'No organizations found' : 'No organizations available'}
               </Title>
-              <Text size="lg" c="dimmed" mb="xl">
+              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 {hasSearchQuery
                   ? 'Try adjusting your search terms or filters'
                   : 'Check back later for new organizations'}
@@ -523,7 +524,7 @@ export default function OrganizationsPageContent({
               }}>
                 {/* Always show pagination info when we have organizations */}
                 {allOrganizations.length > 0 && (
-                  <Text size="sm" c="dimmed">
+                  <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                     Showing {paginatedOrganizations.length} of {total} organizations
                     {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
                   </Text>
@@ -612,7 +613,7 @@ export default function OrganizationsPageContent({
                 {hoveredOrganization.description && (
                   <Text
                     size="sm"
-                    c="dimmed"
+                    style={{ color: theme.colors.gray[6] }}
                     ta="center"
                     lineClamp={3}
                     style={{
@@ -629,5 +630,6 @@ export default function OrganizationsPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

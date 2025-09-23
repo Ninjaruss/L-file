@@ -19,7 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getPlayingCardStyles, getCardStyles } from '../../lib/mantine-theme'
 import { AlertCircle, Search, BookOpen, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -275,15 +275,11 @@ export default function ChaptersPageContent({
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
-        style={{
-          background: `linear-gradient(135deg, ${accentChapter}15, ${accentChapter}08)`,
-          borderRadius: theme.radius.lg,
-          border: `1px solid ${accentChapter}25`,
-          marginBottom: rem(24)
-        }}
+        style={getHeroStyles(theme, accentChapter)}
         p="md"
       >
         <Stack align="center" gap="xs">
@@ -306,7 +302,7 @@ export default function ChaptersPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentChapter}>
               Chapters
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               Explore the story chapter by chapter through the Usogui universe
             </Text>
 
@@ -377,7 +373,7 @@ export default function ChaptersPageContent({
         >
           {error}
           {error.includes('Rate limit') && (
-            <Text size="sm" mt="xs" c="dimmed">
+            <Text size="sm" mt="xs" style={{ color: theme.colors.gray[6] }}>
               The server is receiving too many requests. Please wait a moment before trying again.
             </Text>
           )}
@@ -388,7 +384,7 @@ export default function ChaptersPageContent({
       {loading ? (
         <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
           <Loader size="xl" color={accentChapter} mb="md" />
-          <Text size="lg" c="dimmed">Loading chapters...</Text>
+          <Text size="lg" style={{ color: theme.colors.gray[6] }}>Loading chapters...</Text>
         </Box>
       ) : (
         <>
@@ -396,10 +392,10 @@ export default function ChaptersPageContent({
           {paginatedChapters.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <BookOpen size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} c="dimmed" mb="sm">
+              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
                 {hasSearchQuery ? 'No chapters found' : 'No chapters available'}
               </Title>
-              <Text size="lg" c="dimmed" mb="xl">
+              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 {hasSearchQuery
                   ? 'Try adjusting your search terms or filters'
                   : 'Check back later for new chapters'}
@@ -435,17 +431,14 @@ export default function ChaptersPageContent({
                       radius="sm"
                       shadow="xs"
                       style={{
+                        ...getCardStyles(theme, accentChapter),
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         gap: rem(6),
                         padding: `${rem(6)} ${rem(6)}`,
-                        cursor: 'pointer',
-                        textDecoration: 'none',
                         minHeight: rem(88),
-                        justifyContent: 'center',
-                        backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`
+                        justifyContent: 'center'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
@@ -513,7 +506,7 @@ export default function ChaptersPageContent({
               }}>
                 {/* Always show pagination info when we have chapters */}
                 {allChapters.length > 0 && (
-                  <Text size="sm" c="dimmed">
+                  <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                     Showing {paginatedChapters.length} of {total} chapters
                     {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
                   </Text>
@@ -610,10 +603,10 @@ export default function ChaptersPageContent({
                 {(hoveredChapter.description || hoveredChapter.summary) && (
                   <Text
                     size="sm"
-                    c="dimmed"
                     ta="center"
                     lineClamp={3}
                     style={{
+                      color: theme.colors.gray[6],
                       lineHeight: 1.4,
                       maxHeight: rem(60)
                     }}
@@ -627,5 +620,6 @@ export default function ChaptersPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

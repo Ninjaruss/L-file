@@ -358,42 +358,39 @@ export const mantineTheme: MantineThemeOverride = {
           color: '#ffffff'
         },
         tab: {
-          // Base styles with higher specificity
-          '&&': {
-            color: 'rgba(255, 255, 255, 0.7)',
-            borderRadius: rem(6),
-            transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
-            padding: `${rem(12)} ${rem(20)}`,
-            backgroundColor: 'transparent',
-            border: '2px solid transparent',
-            position: 'relative',
-          },
-          
-          // Hover state with && for higher specificity
-          '&&:hover': {
+          color: 'rgba(255, 255, 255, 0.7)',
+          borderRadius: rem(6),
+          transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+          padding: `${rem(12)} ${rem(20)}`,
+          backgroundColor: 'transparent',
+          border: '2px solid transparent',
+          position: 'relative',
+
+          // Hover state
+          '&:hover': {
             backgroundColor: 'var(--tab-hover-bg, rgba(225, 29, 72, 0.08))',
             color: 'rgba(255, 255, 255, 0.95)',
             borderColor: 'var(--tab-hover-outline, rgba(225, 29, 72, 0.4))',
             transform: 'translateY(-1px)',
           },
-          
+
           // Focus state
-          '&&:focus': {
+          '&:focus': {
             backgroundColor: 'transparent',
             borderColor: 'var(--tab-focus-outline, rgba(225, 29, 72, 0.6))',
             outline: 'none'
           },
-          
+
           // Active state for Mantine v8
-          '&&[data-active]': {
+          '&[data-active="true"]': {
             color: '#ffffff',
             backgroundColor: 'var(--tab-active-bg, rgba(225, 29, 72, 0.12))',
             borderColor: 'var(--tab-active-outline, rgba(225, 29, 72, 0.8))',
             fontWeight: 600,
           },
-          
+
           // Active hover state
-          '&&[data-active]:hover': {
+          '&[data-active="true"]:hover': {
             backgroundColor: 'var(--tab-active-hover-bg, rgba(225, 29, 72, 0.15))',
             borderColor: 'var(--tab-active-outline, rgba(225, 29, 72, 0.8))',
             transform: 'translateY(-1px)'
@@ -454,7 +451,7 @@ export const mantineTheme: MantineThemeOverride = {
         root: {
           color: '#ffffff',
           // Improve dimmed text contrast for accessibility
-          '&[data-dimmed]': {
+          '&[dataDimmed]': {
             color: 'rgba(255, 255, 255, 0.75)', // 4.6:1 contrast ratio
           }
         }
@@ -766,3 +763,87 @@ export const mantineTextColors = {
   error: 'red.6',           // Error red
   info: 'blue.6'            // Info blue
 } as const
+
+// Consistent background utilities for all pages and components
+export const backgroundStyles = {
+  // Main page background - dark grey for large containers
+  page: (theme: MantineTheme) => theme.colors.dark?.[8] ?? '#1e1f22',
+
+  // Large container backgrounds - dark grey (headers, main content areas)
+  container: (theme: MantineTheme) => theme.colors.dark?.[7] ?? '#2b2d31',
+
+  // Card/section backgrounds - black for cards and sections
+  card: '#0a0a0a',
+
+  // Hero section backgrounds - entity-specific with subtle gradients over dark grey
+  hero: (theme: MantineTheme, entityColor: string) =>
+    `linear-gradient(135deg, ${entityColor}15, ${entityColor}08), ${theme.colors.dark?.[7] ?? '#2b2d31'}`,
+
+  // Hover modal/overlay backgrounds - black
+  modal: '#0a0a0a',
+
+  // Search input and form backgrounds
+  input: 'rgba(255, 255, 255, 0.06)',
+
+  // Loading and empty state backgrounds - dark grey
+  neutral: (theme: MantineTheme) => theme.colors.dark?.[8] ?? '#1e1f22'
+} as const
+
+// Consistent border styles
+export const borderStyles = {
+  // Standard card borders
+  card: (theme: MantineTheme) => `1px solid ${theme.colors.dark?.[4] ?? '#4e5058'}`,
+
+  // Entity-specific borders for hero sections and accents
+  entityBorder: (entityColor: string) => `1px solid ${entityColor}25`,
+
+  // Hover/focus state borders
+  hover: (entityColor: string) => `2px solid ${entityColor}`,
+
+  // Input borders
+  input: '1px solid rgba(255, 255, 255, 0.15)',
+  inputFocus: (entityColor: string) => `1px solid ${entityColor}`
+} as const
+
+// Card styles generator for consistent appearance
+export const getCardStyles = (theme: MantineTheme, entityColor?: string) => ({
+  background: backgroundStyles.card,
+  border: entityColor
+    ? `1px solid ${getAlphaColor(entityColor, 0.4)}`
+    : borderStyles.card(theme),
+  borderRadius: theme.radius.lg,
+  transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
+  backdropFilter: theme.other?.effects?.backdropBlur || 'blur(10px)',
+  '&:hover': {
+    transform: theme.other?.effects?.cardHoverTransform || 'translateY(-2px)',
+    boxShadow: theme.shadows.lg
+  }
+})
+
+// Hero section styles generator
+export const getHeroStyles = (theme: MantineTheme, entityColor: string) => ({
+  background: backgroundStyles.hero(theme, entityColor),
+  borderRadius: theme.radius.lg,
+  border: borderStyles.entityBorder(entityColor),
+  marginBottom: spacing.lg
+})
+
+// Playing card styles for consistent grid items
+export const getPlayingCardStyles = (theme: MantineTheme, entityColor: string) => ({
+  display: 'flex',
+  flexDirection: 'column' as const,
+  overflow: 'hidden',
+  transition: 'all 0.2s ease',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  backgroundColor: backgroundStyles.card,
+  border: borderStyles.card(theme),
+  width: '100%',
+  height: '100%',
+  borderRadius: theme.radius.lg,
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+    borderColor: entityColor
+  }
+})

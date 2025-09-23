@@ -19,7 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { AlertCircle, Search, Book, Hash, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -276,15 +276,11 @@ export default function VolumesPageContent({
   }
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Hero Section */}
       <Box
-        style={{
-          background: `linear-gradient(135deg, ${accentVolume}15, ${accentVolume}08)`,
-          borderRadius: theme.radius.lg,
-          border: `1px solid ${accentVolume}25`,
-          marginBottom: rem(24)
-        }}
+        style={getHeroStyles(theme, accentVolume)}
         p="md"
       >
         <Stack align="center" gap="xs">
@@ -307,7 +303,7 @@ export default function VolumesPageContent({
             <Title order={1} size="1.5rem" fw={700} ta="center" c={accentVolume}>
               Volumes
             </Title>
-            <Text size="md" c="dimmed" ta="center" maw={400}>
+            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
               Explore the complete collection of Usogui manga volumes
             </Text>
 
@@ -378,7 +374,7 @@ export default function VolumesPageContent({
         >
           {error}
           {error.includes('Rate limit') && (
-            <Text size="sm" mt="xs" c="dimmed">
+            <Text size="sm" mt="xs" style={{ color: theme.colors.gray[6] }}>
               The server is receiving too many requests. Please wait a moment before trying again.
             </Text>
           )}
@@ -389,7 +385,7 @@ export default function VolumesPageContent({
       {loading ? (
         <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: rem(80) }}>
           <Loader size="xl" color={accentVolume} mb="md" />
-          <Text size="lg" c="dimmed">Loading volumes...</Text>
+          <Text size="lg" style={{ color: theme.colors.gray[6] }}>Loading volumes...</Text>
         </Box>
       ) : (
         <>
@@ -397,10 +393,10 @@ export default function VolumesPageContent({
           {paginatedVolumes.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <Book size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} c="dimmed" mb="sm">
+              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
                 {hasSearchQuery ? 'No volumes found' : 'No volumes available'}
               </Title>
-              <Text size="lg" c="dimmed" mb="xl">
+              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 {hasSearchQuery
                   ? 'Try adjusting your search terms or filters'
                   : 'Check back later for new volumes'}
@@ -439,18 +435,7 @@ export default function VolumesPageContent({
                       withBorder={false}
                       radius="lg"
                       shadow="sm"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer',
-                        textDecoration: 'none',
-                        backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                        border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`,
-                        width: '100%',
-                        height: '100%'
-                      }}
+                      style={getPlayingCardStyles(theme, accentVolume)}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
@@ -550,7 +535,7 @@ export default function VolumesPageContent({
               }}>
                 {/* Always show pagination info when we have volumes */}
                 {allVolumes.length > 0 && (
-                  <Text size="sm" c="dimmed">
+                  <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                     Showing {paginatedVolumes.length} of {total} volumes
                     {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
                   </Text>
@@ -637,7 +622,7 @@ export default function VolumesPageContent({
                 {hoveredVolume.description && (
                   <Text
                     size="sm"
-                    c="dimmed"
+                    style={{ color: theme.colors.gray[6] }}
                     ta="center"
                     lineClamp={3}
                     style={{
@@ -651,7 +636,7 @@ export default function VolumesPageContent({
 
                 {/* Chapter Count */}
                 <Group justify="center">
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" style={{ color: theme.colors.gray[6] }}>
                     {hoveredVolume.endChapter - hoveredVolume.startChapter + 1} chapters
                   </Text>
                 </Group>
@@ -661,5 +646,6 @@ export default function VolumesPageContent({
         )}
       </AnimatePresence>
     </motion.div>
+    </Box>
   )
 }

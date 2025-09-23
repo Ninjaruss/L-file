@@ -15,7 +15,7 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles } from '../../lib/mantine-theme'
 import { Heart, Mail, Coffee, Github, Twitter } from 'lucide-react'
 
 const supportItems = [
@@ -99,6 +99,7 @@ export function AboutPageContent() {
   const mutedTextColor = hexToRgba(mutedHex, 0.9)
 
   return (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <Stack gap="xl">
         <Box ta="center">
@@ -255,5 +256,6 @@ export function AboutPageContent() {
         </Grid>
       </Stack>
     </Container>
+    </Box>
   )
 }
