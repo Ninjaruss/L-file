@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import '../styles/tabs.css'
 import { ClientProviders } from '../providers/ClientProviders'
 import { LayoutWrapper } from '../components/LayoutWrapper'
 import { ColorSchemeScript } from '@mantine/core'

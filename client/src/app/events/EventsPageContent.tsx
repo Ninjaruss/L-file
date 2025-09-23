@@ -28,7 +28,8 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
-import TimelineSpoilerWrapper from '../../components/TimelineSpoilerWrapper'
+import { useProgress } from '../../providers/ProgressProvider'
+import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import type { Arc, Event } from '../../types'
@@ -61,6 +62,104 @@ interface EventsPageContentProps {
   initialError: string
 }
 
+function EventSpoilerWrapper({
+  event,
+  children
+}: {
+  event: Event
+  children: React.ReactNode
+}) {
+  const [isRevealed, setIsRevealed] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const { userProgress } = useProgress()
+  const { settings } = useSpoilerSettings()
+  const theme = useMantineTheme()
+
+  const chapterNumber = event.spoilerChapter || event.chapterNumber
+
+  const effectiveProgress = settings.chapterTolerance > 0
+    ? settings.chapterTolerance
+    : userProgress
+
+  const shouldHideSpoiler = () => {
+    if (settings.showAllSpoilers) {
+      return false
+    }
+
+    if (chapterNumber) {
+      return chapterNumber > effectiveProgress
+    }
+
+    return false
+  }
+
+  const clientSideShouldHide = shouldHideSpoiler()
+
+  // Always render the content, but with spoiler protection overlay if needed
+  if (!clientSideShouldHide || isRevealed) {
+    return <>{children}</>
+  }
+
+  const handleReveal = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsRevealed(true)
+  }
+
+  const accentColor = theme.other?.usogui?.event ?? theme.colors.orange?.[6] ?? '#ea580c'
+  const overlayBase = `${accentColor}15`
+  const overlayHover = `${accentColor}25`
+
+  return (
+    <Box style={{ position: 'relative', height: '100%' }}>
+      {/* Render the actual content underneath */}
+      <Box style={{ opacity: 0.3, filter: 'blur(2px)', pointerEvents: 'none', height: '100%' }}>
+        {children}
+      </Box>
+
+      {/* Spoiler overlay */}
+      <Box
+        onClick={handleReveal}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isHovered ? overlayHover : overlayBase,
+          borderRadius: theme.radius.lg,
+          cursor: 'pointer',
+          border: `1px solid ${accentColor}`,
+          zIndex: 100,
+          transition: `background-color 200ms cubic-bezier(0.4, 0, 0.2, 1)`
+        }}
+      >
+        <Box style={{ textAlign: 'center', width: '100%' }}>
+          <Text
+            size="xs"
+            fw={600}
+            c={accentColor}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: rem(4)
+            }}
+          >
+            <AlertCircle size={14} />
+            {chapterNumber ? `Chapter ${chapterNumber} Spoiler` : 'Spoiler'}
+          </Text>
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
 export default function EventsPageContent({
   initialGroupedEvents,
   initialSearch,
@@ -72,6 +171,10 @@ export default function EventsPageContent({
   const accentEvent = theme.other?.usogui?.event ?? theme.colors.orange?.[6] ?? '#ea580c'
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // Spoiler settings for modal behavior
+  const { userProgress } = useProgress()
+  const { settings } = useSpoilerSettings()
 
   const [groupedEvents, setGroupedEvents] = useState(initialGroupedEvents)
   const [loading, setLoading] = useState(false)
@@ -88,6 +191,21 @@ export default function EventsPageContent({
   const hoveredElementRef = useRef<HTMLElement | null>(null)
 
   const hasSearchQuery = searchTerm.trim().length > 0
+
+  // Function to check if an event's spoiler should be hidden (same logic as EventSpoilerWrapper)
+  const shouldHideEventSpoiler = (event: Event) => {
+    if (settings.showAllSpoilers) {
+      return false
+    }
+    const chapterNumber = event.spoilerChapter || event.chapterNumber
+    if (chapterNumber) {
+      const effectiveProgress = settings.chapterTolerance > 0
+        ? settings.chapterTolerance
+        : userProgress
+      return chapterNumber > effectiveProgress
+    }
+    return false
+  }
 
   const updateUrl = useCallback(
     (search: string, type: string, status: string) => {
@@ -237,6 +355,11 @@ export default function EventsPageContent({
 
   // Hover modal handlers
   const handleEventMouseEnter = (event: Event, mouseEvent: React.MouseEvent) => {
+    // Don't show modal if spoiler should be hidden
+    if (shouldHideEventSpoiler(event)) {
+      return
+    }
+
     const element = mouseEvent.currentTarget as HTMLElement
     hoveredElementRef.current = element
 
@@ -333,37 +456,35 @@ export default function EventsPageContent({
           },
         }}
       >
-        <TimelineSpoilerWrapper chapterNumber={event.spoilerChapter || event.chapterNumber}>
-          <Box h="100%" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Stack gap={6} w="100%" justify="center" align="center">
-              {/* Title */}
-              <Title order={3} lineClamp={1} size="lg" c={accentEvent} style={{ lineHeight: 1.2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {event.title}
-              </Title>
+        <EventSpoilerWrapper event={event}>
+          <Stack gap={6} h="100%" justify="center" align="center">
+            {/* Title */}
+            <Title order={3} lineClamp={1} size="lg" c={accentEvent} style={{ lineHeight: 1.2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {event.title}
+            </Title>
 
-              {/* Badges */}
-              <Group gap={8} justify="center" align="center">
-                <Badge
-                  c={eventTypeColor(event.type)}
-                  variant="light"
-                  size="sm"
-                  style={{ backgroundColor: `${eventTypeColor(event.type)}20`, borderColor: eventTypeColor(event.type) }}
-                >
-                  {event.type}
-                </Badge>
-                <Badge
-                  c={getEntityThemeColor(theme, 'organization')}
-                  variant="light"
-                  size="sm"
-                  style={{ backgroundColor: `${getEntityThemeColor(theme, 'organization')}20`, borderColor: getEntityThemeColor(theme, 'organization') }}
-                >
-                  Ch. {event.chapterNumber}
-                </Badge>
-              </Group>
+            {/* Badges */}
+            <Group gap={8} justify="center" align="center">
+              <Badge
+                c={eventTypeColor(event.type)}
+                variant="light"
+                size="sm"
+                style={{ backgroundColor: `${eventTypeColor(event.type)}20`, borderColor: eventTypeColor(event.type) }}
+              >
+                {event.type}
+              </Badge>
+              <Badge
+                c={getEntityThemeColor(theme, 'organization')}
+                variant="light"
+                size="sm"
+                style={{ backgroundColor: `${getEntityThemeColor(theme, 'organization')}20`, borderColor: getEntityThemeColor(theme, 'organization') }}
+              >
+                Ch. {event.chapterNumber}
+              </Badge>
+            </Group>
 
-            </Stack>
-          </Box>
-        </TimelineSpoilerWrapper>
+          </Stack>
+        </EventSpoilerWrapper>
       </Card>
     </motion.div>
   )
@@ -432,7 +553,7 @@ export default function EventsPageContent({
       </Box>
 
       {/* Search and Filters */}
-      <Box mb="xl">
+      <Box mb="xl" px="md">
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
@@ -521,6 +642,7 @@ export default function EventsPageContent({
               {hasSearchQuery ? (
                 // Search results - flat list
                 <Box
+                  px="md"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(5, 1fr)',
@@ -574,8 +696,9 @@ export default function EventsPageContent({
                             </Badge>
                           </Group>
                         </Accordion.Control>
-                        <Accordion.Panel pt={0} pb="md">
+                        <Accordion.Panel pt="md" pb="md">
                           <Box
+                            px="md"
                             style={{
                               display: 'grid',
                               gridTemplateColumns: 'repeat(5, 1fr)',
@@ -630,8 +753,9 @@ export default function EventsPageContent({
                             </Badge>
                           </Group>
                         </Accordion.Control>
-                        <Accordion.Panel pt={0} pb="md">
+                        <Accordion.Panel pt="md" pb="md">
                           <Box
+                            px="md"
                             style={{
                               display: 'grid',
                               gridTemplateColumns: 'repeat(5, 1fr)',

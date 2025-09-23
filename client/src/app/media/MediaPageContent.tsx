@@ -313,7 +313,7 @@ export default function MediaPageContent({
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-    <Stack gap="xl">
+    <Stack gap="xl" px="md">
       {/* Header */}
       <Stack gap="md">
         <Group justify="space-between" align="flex-end">

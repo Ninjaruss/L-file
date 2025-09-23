@@ -183,7 +183,7 @@ export default function SearchPageContent({
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-    <Stack gap="xl">
+    <Stack gap="xl" px="md">
       {/* Header */}
       <Stack gap="md">
         <Title order={1} size="h1" style={{ color: getEntityThemeColor(theme, 'guide') }}>

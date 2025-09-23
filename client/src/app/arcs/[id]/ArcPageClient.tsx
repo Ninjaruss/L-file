@@ -268,22 +268,6 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
           keepMounted={false}
           variant="pills"
           className="arc-tabs"
-          styles={{
-            tab: {
-              color: textColors.secondary,
-              backgroundColor: 'transparent',
-              borderRadius: theme.radius.lg,
-              fontWeight: 500,
-              fontSize: fontSize.sm,
-              padding: `${spacing.sm} ${spacing.lg}`,
-              transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
-              '&:hover': {
-                backgroundColor: getAlphaColor(getEntityThemeColor(theme, 'arc'), 0.25),
-                color: textColors.primary,
-                transform: theme.other?.effects?.cardHoverTransform || 'translateY(-1px)'
-              }
-            }
-          }}
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>

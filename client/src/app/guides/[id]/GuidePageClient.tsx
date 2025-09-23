@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
 import {
   Badge,
+  Box,
   Button,
   Card,
   Container,
@@ -15,7 +16,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors, setTabAccentColors, backgroundStyles } from '../../../lib/mantine-theme'
+import { getEntityThemeColor, semanticColors, textColors, backgroundStyles } from '../../../lib/mantine-theme'
 import { ArrowLeft, FileText, Calendar, Heart, Edit, Save, X, Users, BookOpen, Dice6 } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../../lib/api'
@@ -88,10 +89,7 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<string>('content')
 
-  // Set tab accent colors for guide entity
-  useEffect(() => {
-    setTabAccentColors('guide')
-  }, [])
+  // Tab styling handled by Mantine theme
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   usePageView('guide', guide.id.toString(), true)
@@ -201,21 +199,14 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
         </Group>
 
         <Card withBorder radius="md" className="gambling-card" shadow="md" mb="xl">
-          <Stack gap="md" p="lg">
-            <Group gap="sm" align="flex-start">
-              <Link href={`/users/${guide.author.id}`}>
-                <AuthorProfileImage
-                  author={guide.author}
-                  size={64}
-                />
-              </Link>
-              <Stack gap={4}>
-                <Title order={1}>{guide.title}</Title>
-                <Group gap="sm" align="center">
-                  <AuthorProfileImage author={guide.author} size={28} showFallback />
-                  <Text size="sm" c="dimmed" component={Link} href={`/users/${guide.author.id}`} style={{ textDecoration: 'none' }}>
-                    By {guide.author.username}
-                  </Text>
+          <Stack gap="xl" p="xl">
+            <Stack gap="sm">
+              <Title order={1} mb="xs">{guide.title}</Title>
+              <Group gap="lg" align="center" mb="sm">
+                <AuthorProfileImage author={guide.author} size={40} showFallback />
+                <Text size="lg" c="dimmed" component={Link} href={`/users/${guide.author.id}`} style={{ textDecoration: 'none', fontWeight: 500 }}>
+                  By {guide.author.username}
+                </Text>
                   {guide.author.customRole && (
                     <Badge
                       c={getEntityThemeColor(theme, 'media')}
@@ -243,7 +234,8 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
                     size="small"
                   />
                 </Group>
-                <Group gap="xs" align="center">
+
+                <Group gap="md" align="center" mt="md">
                   <Badge
                     c={getEntityThemeColor(theme, 'gamble')}
                     radius="sm"
@@ -270,13 +262,15 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
                     {guide.likeCount} like{guide.likeCount !== 1 ? 's' : ''}
                   </Badge>
                 </Group>
+
                 {guide.description && (
-                  <Text size="sm" c="dimmed">
+                  <Text size="sm" c="dimmed" mt="lg" mb="md">
                     {guide.description}
                   </Text>
                 )}
+
                 {/* Related chips: arc, gambles, characters (moved into header) - placed above tags */}
-                <Group style={{ flexWrap: 'wrap', gap: 8 }}>
+                <Group style={{ flexWrap: 'wrap', gap: 12 }} mt="lg">
                   {guide.arc && (
                     <Link href={`/arcs/${guide.arc.id}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
                       <Badge
@@ -334,7 +328,6 @@ export default function GuidePageClient({ initialGuide }: GuidePageClientProps) 
                   ))}
                 </Group>
               </Stack>
-            </Group>
           </Stack>
         </Card>
 

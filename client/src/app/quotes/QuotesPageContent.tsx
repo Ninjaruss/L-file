@@ -316,7 +316,7 @@ export default function QuotesPageContent({
       </Box>
 
       {/* Search and Filters */}
-      <Box mb="xl">
+      <Box mb="xl" px="md">
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
@@ -364,9 +364,11 @@ export default function QuotesPageContent({
 
       {/* Error Alert */}
       {error && (
-        <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" mb="xl">
-          {error}
-        </Alert>
+        <Box px="md">
+          <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" mb="xl">
+            {error}
+          </Alert>
+        </Box>
       )}
 
       {/* Loading State */}
@@ -375,9 +377,10 @@ export default function QuotesPageContent({
           <Loader size="lg" style={{ color: getEntityThemeColor(theme, 'media') }} />
         </Box>
       ) : (
-        <Stack gap="xl">
-          {/* Quotes Grid */}
-          <Grid gutter="md">
+        <Box px="md">
+          <Stack gap="xl">
+            {/* Quotes Grid */}
+            <Grid gutter="md">
             {quotes.map((quote, index) => (
               // base: 1 column, sm: 2 columns, md: 4 columns, lg: 6 columns
               <Grid.Col span={{ base: 12, sm: 6, md: 3, lg: 2 }} key={quote.id}>
@@ -512,7 +515,8 @@ export default function QuotesPageContent({
               />
             </Group>
           )}
-        </Stack>
+          </Stack>
+        </Box>
       )}
 
       {/* Hover Modal */}

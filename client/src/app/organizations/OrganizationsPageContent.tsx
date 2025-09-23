@@ -318,7 +318,7 @@ export default function OrganizationsPageContent({
       </Box>
 
       {/* Search and Filters */}
-      <Box mb="xl">
+      <Box mb="xl" px="md">
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
@@ -390,6 +390,7 @@ export default function OrganizationsPageContent({
             <>
               {/* Results Grid */}
               <Box
+                px="md"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

@@ -206,7 +206,39 @@ body {
   outline-offset: 2px;
 }
 
-/* Character page tabs styling - using theme accent color */
+/* Entity-specific tabs styling - using theme accent colors */
+/* Base tab styles for all entity types */
+.character-tabs .mantine-Tabs-tab,
+.gamble-tabs .mantine-Tabs-tab,
+.arc-tabs .mantine-Tabs-tab {
+  color: rgba(255, 255, 255, 0.7) !important;
+  background-color: transparent !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 12px 20px !important;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Hover states */
+.character-tabs .mantine-Tabs-tab:hover {
+  background-color: rgba(25, 118, 210, 0.25) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  transform: translateY(-1px) !important;
+}
+
+.gamble-tabs .mantine-Tabs-tab:hover {
+  background-color: rgba(211, 47, 47, 0.25) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  transform: translateY(-1px) !important;
+}
+
+.arc-tabs .mantine-Tabs-tab:hover {
+  background-color: rgba(220, 0, 78, 0.25) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Active states */
 .character-tabs .mantine-Tabs-tab[data-active="true"],
 .character-tabs .mantine-Tabs-tab[data-active],
 .character-tabs .mantine-Tabs-tab[aria-selected="true"],
@@ -216,4 +248,26 @@ body {
   background-color: var(--color-character) !important;
   color: var(--usogui-white) !important;
   border-color: var(--color-character) !important;
+}
+
+.gamble-tabs .mantine-Tabs-tab[data-active="true"],
+.gamble-tabs .mantine-Tabs-tab[data-active],
+.gamble-tabs .mantine-Tabs-tab[aria-selected="true"],
+.gamble-tabs [data-active="true"],
+.gamble-tabs [data-active],
+.gamble-tabs [aria-selected="true"] {
+  background-color: var(--color-gamble) !important;
+  color: var(--usogui-white) !important;
+  border-color: var(--color-gamble) !important;
+}
+
+.arc-tabs .mantine-Tabs-tab[data-active="true"],
+.arc-tabs .mantine-Tabs-tab[data-active],
+.arc-tabs .mantine-Tabs-tab[aria-selected="true"],
+.arc-tabs [data-active="true"],
+.arc-tabs [data-active],
+.arc-tabs [aria-selected="true"] {
+  background-color: var(--color-arc) !important;
+  color: var(--usogui-white) !important;
+  border-color: var(--color-arc) !important;
 }

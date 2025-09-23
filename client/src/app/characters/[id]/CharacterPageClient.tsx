@@ -310,22 +310,6 @@ export default function CharacterPageClient({
           keepMounted={false}
           variant="pills"
           className="character-tabs"
-          styles={{
-            tab: {
-              color: textColors.secondary,
-              backgroundColor: 'transparent',
-              borderRadius: theme.radius.lg,
-              fontWeight: 500,
-              fontSize: fontSize.sm,
-              padding: `${spacing.sm} ${spacing.lg}`,
-              transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
-              '&:hover': {
-                backgroundColor: getAlphaColor(getEntityThemeColor(theme, 'character'), 0.25),
-                color: textColors.primary,
-                transform: theme.other?.effects?.cardHoverTransform || 'translateY(-1px)'
-              }
-            }
-          }}
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<User size={16} />}>Overview</Tabs.Tab>

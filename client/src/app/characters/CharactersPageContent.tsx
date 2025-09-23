@@ -411,7 +411,7 @@ export default function CharactersPageContent({
       </Box>
 
       {/* Search and Filters */}
-      <Box mb="xl">
+      <Box mb="xl" px="md">
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
@@ -442,15 +442,17 @@ export default function CharactersPageContent({
 
       {/* Error State */}
       {error && (
-        <Alert
-          color="red"
-          radius="md"
-          mb="xl"
-          icon={<AlertCircle size={16} />}
-          title="Error loading characters"
-        >
-          {error}
-        </Alert>
+        <Box px="md">
+          <Alert
+            color="red"
+            radius="md"
+            mb="xl"
+            icon={<AlertCircle size={16} />}
+            title="Error loading characters"
+          >
+            {error}
+          </Alert>
+        </Box>
       )}
 
       {/* Loading State */}
@@ -483,6 +485,7 @@ export default function CharactersPageContent({
             <>
               {/* Results Grid */}
               <Box
+                px="md"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -624,13 +627,15 @@ export default function CharactersPageContent({
               </Box>
 
               {/* Pagination Info & Controls */}
-              <Box style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                marginTop: rem(48),
-                gap: rem(12)
-              }}>
+              <Box
+                px="md"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  marginTop: rem(48),
+                  gap: rem(12)
+                }}>
                 {/* Always show pagination info when we have characters */}
                 {allCharacters.length > 0 && (
                   <Text size="sm" style={{ color: theme.colors.gray[6] }}>

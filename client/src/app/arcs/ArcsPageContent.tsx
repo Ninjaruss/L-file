@@ -464,7 +464,7 @@ export default function ArcsPageContent({
       </Box>
 
       {/* Search and Filters */}
-      <Box mb="xl">
+      <Box mb="xl" px="md">
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
@@ -517,15 +517,17 @@ export default function ArcsPageContent({
 
       {/* Error State */}
       {error && (
-        <Alert
-          style={{ color: getEntityThemeColor(theme, 'gamble') }}
-          radius="md"
-          mb="xl"
-          icon={<X size={16} />}
-          title="Error loading arcs"
-        >
-          {error}
-        </Alert>
+        <Box px="md">
+          <Alert
+            style={{ color: getEntityThemeColor(theme, 'gamble') }}
+            radius="md"
+            mb="xl"
+            icon={<X size={16} />}
+            title="Error loading arcs"
+          >
+            {error}
+          </Alert>
+        </Box>
       )}
 
       {/* Loading State */}
@@ -558,6 +560,7 @@ export default function ArcsPageContent({
             <>
               {/* Results Grid */}
               <Box
+                px="md"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -700,7 +703,7 @@ export default function ArcsPageContent({
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <Box style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
+                <Box px="md" style={{ display: 'flex', justifyContent: 'center', marginTop: rem(48) }}>
                   <Pagination
                     total={totalPages}
                     value={currentPage}

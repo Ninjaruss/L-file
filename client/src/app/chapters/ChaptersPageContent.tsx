@@ -323,7 +323,7 @@ export default function ChaptersPageContent({
       </Box>
 
       {/* Search and Filters */}
-      <Box mb="xl">
+      <Box mb="xl" px="md">
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
@@ -410,6 +410,7 @@ export default function ChaptersPageContent({
             <>
               {/* Dense Results Grid - aim to fit ~10 small cards per row on wide screens */}
               <Box
+                px="md"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))',
