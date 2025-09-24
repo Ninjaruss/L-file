@@ -382,7 +382,7 @@ export const mantineTheme: MantineThemeOverride = {
           },
 
           // Active state for Mantine v8
-          '&[data-active="true"]': {
+          '&[dataActive="true"]': {
             color: '#ffffff',
             backgroundColor: 'var(--tab-active-bg, rgba(225, 29, 72, 0.12))',
             borderColor: 'var(--tab-active-outline, rgba(225, 29, 72, 0.8))',
@@ -390,7 +390,7 @@ export const mantineTheme: MantineThemeOverride = {
           },
 
           // Active hover state
-          '&[data-active="true"]:hover': {
+          '&[dataActive="true"]:hover': {
             backgroundColor: 'var(--tab-active-hover-bg, rgba(225, 29, 72, 0.15))',
             borderColor: 'var(--tab-active-outline, rgba(225, 29, 72, 0.8))',
             transform: 'translateY(-1px)'

@@ -29,6 +29,7 @@ export const Footer: React.FC = () => {
             <Text
               size="lg"
               style={{
+                fontFamily: '"OPTI Goudy Text", serif',
                 fontWeight: 'bold',
                 color: '#e11d48'
               }}

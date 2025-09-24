@@ -10,6 +10,7 @@
 ## 2025-09-23
 ### Changes
 - Adjustments to look of list pages and detail pages
+- Cleaned up landing page to have only essential elements
 
 ## 2025-09-22
 ### Changes

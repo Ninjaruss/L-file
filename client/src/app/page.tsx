@@ -1,54 +1,23 @@
 'use client'
 
-import { Box, Container, Title, Text, Grid, Card, Button, Skeleton, Alert, Badge, Group } from '@mantine/core'
+import { Box, Container, Title, Text, Button, Badge, Group } from '@mantine/core'
 import { useMantineTheme } from '@mantine/core'
-import { Users, BookOpen, Dices, CalendarSearch, TrendingUp, Book, Shield, FileText, Quote, ChevronRight, Sparkles, MessageCircle, ExternalLink, Image } from 'lucide-react'
+import { Users, BookOpen, Dices, CalendarSearch, Book, Shield, FileText, Quote, ChevronRight, Sparkles, MessageCircle, ExternalLink, Image } from 'lucide-react'
 import Link from 'next/link'
-import { SearchBar } from '../components/SearchBar'
-import { TrendingSection } from '../components/TrendingSection'
+import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { VolumeCoverSection } from '../components/VolumeCoverSection'
 import { FavoritesSection } from '../components/FavoritesSection'
+import { LazySection } from '../components/LazySection'
 import { useLandingData } from '../hooks/useLandingData'
 import { motion } from 'motion/react'
 import Script from 'next/script'
 import { FAQ } from '@/components/FAQ'
-import { textColors, headerColors, getEntityThemeColor, semanticColors } from '../lib/mantine-theme'
+import { textColors } from '../lib/mantine-theme'
 
 export default function HomePage() {
   const theme = useMantineTheme()
   const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
 
-  // Primary features - most important content
-  const primaryFeatures = [
-    {
-      icon: <Users className="w-8 h-8" style={{ color: textColors.character }} />,
-      title: 'Characters',
-      description: 'Explore detailed profiles of all Usogui characters',
-      href: '/characters',
-      color: textColors.character
-    },
-    {
-      icon: <BookOpen className="w-8 h-8" style={{ color: textColors.arc }} />,
-      title: 'Story Arcs',
-      description: 'Dive into the major arcs and storylines',
-      href: '/arcs',
-      color: textColors.arc
-    },
-    {
-      icon: <Dices className="w-8 h-8" style={{ color: textColors.gamble }} />,
-      title: 'Gambles',
-      description: 'Details on every gambling game and competition',
-      href: '/gambles',
-      color: textColors.gamble
-    },
-    {
-      icon: <FileText className="w-8 h-8" style={{ color: textColors.guide }} />,
-      title: 'Guides',
-      description: 'In-depth analysis and insights from the community',
-      href: '/guides',
-      color: textColors.guide
-    }
-  ]
 
 
   // Structured data for SEO
@@ -92,14 +61,22 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <Container size="lg" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
+      <Container
+        size="lg"
+        style={{
+          paddingTop: 'clamp(1rem, 3vw, 1.5rem)',
+          paddingBottom: '2rem',
+          paddingLeft: 'clamp(1rem, 4vw, 2rem)',
+          paddingRight: 'clamp(1rem, 4vw, 2rem)'
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
         {/* Hero Section */}
-        <Box style={{ textAlign: 'center', marginBottom: '4rem' }}>
+        <Box style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <Title
             order={1}
             style={{
@@ -117,223 +94,30 @@ export default function HomePage() {
             The ultimate database for the gambling manga masterpiece - Usogui (Lie Eater)
           </Text>
 
-          <Box style={{ maxWidth: 600, margin: '0 auto 3rem auto' }}>
-            <SearchBar />
+          <Box style={{ maxWidth: 600, margin: '0 auto 2.5rem auto' }}>
+            <EnhancedSearchBar trendingData={landingData?.trending} />
           </Box>
 
-          {/* Quick Stats Bar */}
-          {landingData?.stats && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Group justify="center" gap="md" style={{ flexWrap: 'wrap', marginBottom: '1rem' }}>
-                {landingData.stats.totalCharacters && (
-                  <Badge
-                    leftSection={<Users className="w-4 h-4" style={{ color: textColors.character }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.character, color: textColors.character }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalCharacters.toLocaleString()} Characters
-                  </Badge>
-                )}
-                {landingData.stats.totalArcs && (
-                  <Badge
-                    leftSection={<BookOpen className="w-4 h-4" style={{ color: textColors.arc }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.arc, color: textColors.arc }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalArcs.toLocaleString()} Arcs
-                  </Badge>
-                )}
-                {landingData.stats.totalEvents && (
-                  <Badge
-                    leftSection={<CalendarSearch className="w-4 h-4" style={{ color: textColors.event }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.event, color: textColors.event }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalEvents.toLocaleString()} Events
-                  </Badge>
-                )}
-                {landingData.stats.totalGuides && (
-                  <Badge
-                    leftSection={<FileText className="w-4 h-4" style={{ color: textColors.guide }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.guide, color: textColors.guide }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalGuides.toLocaleString()} Guides
-                  </Badge>
-                )}
-                {landingData.stats.totalGambles && (
-                  <Badge
-                    leftSection={<Dices className="w-4 h-4" style={{ color: textColors.gamble }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.gamble, color: textColors.gamble }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalGambles.toLocaleString()} Gambles
-                  </Badge>
-                )}
-                {landingData.stats.totalMedia && (
-                  <Badge
-                    leftSection={<Image className="w-4 h-4" style={{ color: textColors.media }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.media, color: textColors.media }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalMedia.toLocaleString()} Media
-                  </Badge>
-                )}
-                {landingData.stats.totalUsers && (
-                  <Badge
-                    leftSection={<Shield className="w-4 h-4" style={{ color: textColors.info }} />}
-                    variant="outline"
-                    style={{ borderColor: textColors.info, color: textColors.info }}
-                    size="lg"
-                  >
-                    {landingData.stats.totalUsers.toLocaleString()} Users
-                  </Badge>
-                )}
-              </Group>
-            </motion.div>
-          )}
         </Box>
 
         {/* Featured Volume Covers Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-        >
+        <LazySection minHeight={450} delay={100}>
           <VolumeCoverSection />
-        </motion.div>
+        </LazySection>
 
-        {/* Primary Features Section */}
-        <Box style={{ marginBottom: '4rem' }}>
-          <Box style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <Group justify="center" gap="xs" style={{ marginBottom: '1rem' }}>
-              <Sparkles className="w-6 h-6" color={theme.colors?.red?.[5] || '#e11d48'} />
-              <Title order={2} style={{ fontWeight: 'bold', color: headerColors.h2 }}>
-                Start Exploring
-              </Title>
-            </Group>
-            <Text size="lg" c="dimmed">
-              Dive into the world of Usogui with our comprehensive content
-            </Text>
-          </Box>
-
-          <Grid>
-            {primaryFeatures.map((feature, index) => (
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }} key={feature.title}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                >
-                  <Card
-                    className="gambling-card h-full"
-                    style={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      padding: '1.5rem'
-                    }}
-                    component={Link}
-                    href={feature.href}
-                  >
-                    <Box style={{ flexGrow: 1, textAlign: 'center' }}>
-                      <Box style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                        {feature.icon}
-                      </Box>
-                      <Title order={3} style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: headerColors.h3 }}>
-                        {feature.title}
-                      </Title>
-                      <Text size="sm" c="dimmed" style={{ marginBottom: '1.5rem' }}>
-                        {feature.description}
-                      </Text>
-                      <Group justify="center" gap="xs">
-                        <Text size="sm" style={{ fontWeight: 'bold', color: feature.color }}>
-                          Explore
-                        </Text>
-                        <ChevronRight className="w-4 h-4" style={{ color: feature.color }} />
-                      </Group>
-                    </Box>
-                  </Card>
-                </motion.div>
-              </Grid.Col>
-            ))}
-          </Grid>
-        </Box>
 
         {/* Community Favorites Section */}
-        <FavoritesSection />
+        <LazySection minHeight={400} delay={200}>
+          <FavoritesSection />
+        </LazySection>
 
-        {/* Featured Trending Content */}
-        {landingData && (
-          <Box style={{ marginBottom: '4rem' }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-            >
-              <Box style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                <Group justify="center" gap="xs" style={{ marginBottom: '1rem' }}>
-                  <TrendingUp className="w-6 h-6" color={theme.colors?.red?.[5] || '#e11d48'} />
-                  <Title order={2} style={{ fontWeight: 'bold', color: headerColors.h2 }}>
-                    What&apos;s Popular
-                  </Title>
-                </Group>
-                <Text size="lg" c="dimmed">
-                  Discover the most viewed content this week
-                </Text>
-              </Box>
 
-              {landingError ? (
-                <Alert style={{ color: getEntityThemeColor(theme, 'character') }}>
-                  Unable to load trending content at this time.
-                </Alert>
-              ) : landingLoading ? (
-                <Grid>
-                  {[1, 2, 3].map((i) => (
-                    <Grid.Col span={{ base: 12, md: 4 }} key={i}>
-                      <Card>
-                        <Box style={{ padding: '1rem' }}>
-                          <Skeleton height={24} style={{ width: '80%' }} />
-                          <Skeleton height={40} style={{ width: '100%', marginTop: '0.5rem' }} />
-                          <Skeleton height={20} style={{ width: '60%', marginTop: '0.5rem' }} />
-                        </Box>
-                      </Card>
-                    </Grid.Col>
-                  ))}
-                </Grid>
-              ) : (
-                <Box>
-                  {landingData.trending.guides.length > 0 && (
-                    <TrendingSection
-                      title="Trending Guides"
-                      items={landingData.trending.guides}
-                      type="guides"
-                      maxItems={3}
-                    />
-                  )}
-                </Box>
-              )}
-            </motion.div>
-          </Box>
-        )}
-
-        <FAQ />
+        <LazySection minHeight={300} delay={400}>
+          <FAQ />
+        </LazySection>
 
         {/* Discord CTA Section */}
-        <Box style={{ marginBottom: '3rem' }} />
+        <Box style={{ marginBottom: '2rem' }} />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -342,7 +126,7 @@ export default function HomePage() {
           <Box
             style={{
               textAlign: 'center',
-              padding: '3rem',
+              padding: 'clamp(1.5rem, 4vw, 2.5rem)',
               background: `linear-gradient(135deg, #5865F2 0%, #4752C4 50%, #3C45A5 100%)`,
               borderRadius: '1rem',
               border: `2px solid rgba(255, 255, 255, 0.1)`,
@@ -361,41 +145,120 @@ export default function HomePage() {
               Connect with fellow Usogui fans, discuss theories, share insights, and stay updated on the latest content
             </Text>
 
-            <Grid justify="center" style={{ marginBottom: '2rem' }}>
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Box style={{ textAlign: 'center' }}>
-                  <Users className="w-6 h-6" style={{ opacity: 0.9, margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <Text size="sm" style={{ fontWeight: 'bold' }} c="#ffffff">
-                    Active Community
-                  </Text>
-                  <Text size="xs" style={{ opacity: 0.8 }} c="#ffffff">
-                    Chat with passionate fans
-                  </Text>
-                </Box>
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Box style={{ textAlign: 'center' }}>
-                  <Sparkles className="w-6 h-6" style={{ opacity: 0.9, margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <Text size="sm" style={{ fontWeight: 'bold' }} c="#ffffff">
-                    Latest Updates
-                  </Text>
-                  <Text size="xs" style={{ opacity: 0.8 }} c="#ffffff">
-                    Be first to know about new content
-                  </Text>
-                </Box>
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Box style={{ textAlign: 'center' }}>
-                  <BookOpen className="w-6 h-6" style={{ opacity: 0.9, margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <Text size="sm" style={{ fontWeight: 'bold' }} c="#ffffff">
-                    Theory Discussions
-                  </Text>
-                  <Text size="xs" style={{ opacity: 0.8 }} c="#ffffff">
-                    Dive deep into Usogui lore
-                  </Text>
-                </Box>
-              </Grid.Col>
-            </Grid>
+            {/* Database Stats */}
+            {landingData?.stats && (
+              <Box style={{ marginBottom: '2rem' }}>
+                <Text size="lg" fw={600} style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#ffffff' }}>
+                  Discover Rich Content & Community Insights
+                </Text>
+                <Group justify="center" gap="lg" style={{ flexWrap: 'wrap' }}>
+                  {landingData.stats.totalGuides && (
+                    <Badge
+                      size="xl"
+                      variant="filled"
+                      style={{
+                        backgroundColor: 'rgba(255, 217, 61, 0.2)',
+                        border: '2px solid #FFD93D',
+                        borderRadius: '12px',
+                        padding: '12px 20px',
+                        minWidth: '140px',
+                        height: 'auto'
+                      }}
+                    >
+                      <Box style={{ textAlign: 'center' }}>
+                        <Text size="xl" fw={700} style={{ color: '#FFD93D', marginBottom: '0.25rem', display: 'block' }}>
+                          {landingData.stats.totalGuides.toLocaleString()}
+                        </Text>
+                        <Group justify="center" gap="xs" style={{ marginTop: '0.25rem' }}>
+                          <FileText size={16} style={{ color: '#FFD93D' }} />
+                          <Text size="sm" fw={600} style={{ color: '#FFD93D' }}>
+                            Guides
+                          </Text>
+                        </Group>
+                      </Box>
+                    </Badge>
+                  )}
+                  {landingData.stats.totalEvents && (
+                    <Badge
+                      size="xl"
+                      variant="filled"
+                      style={{
+                        backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                        border: '2px solid #FF6B6B',
+                        borderRadius: '12px',
+                        padding: '12px 20px',
+                        minWidth: '140px',
+                        height: 'auto'
+                      }}
+                    >
+                      <Box style={{ textAlign: 'center' }}>
+                        <Text size="xl" fw={700} style={{ color: '#FF6B6B', marginBottom: '0.25rem', display: 'block' }}>
+                          {landingData.stats.totalEvents.toLocaleString()}
+                        </Text>
+                        <Group justify="center" gap="xs" style={{ marginTop: '0.25rem' }}>
+                          <CalendarSearch size={16} style={{ color: '#FF6B6B' }} />
+                          <Text size="sm" fw={600} style={{ color: '#FF6B6B' }}>
+                            Events
+                          </Text>
+                        </Group>
+                      </Box>
+                    </Badge>
+                  )}
+                  {landingData.stats.totalMedia && (
+                    <Badge
+                      size="xl"
+                      variant="filled"
+                      style={{
+                        backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                        border: '2px solid #4ECDC4',
+                        borderRadius: '12px',
+                        padding: '12px 20px',
+                        minWidth: '140px',
+                        height: 'auto'
+                      }}
+                    >
+                      <Box style={{ textAlign: 'center' }}>
+                        <Text size="xl" fw={700} style={{ color: '#4ECDC4', marginBottom: '0.25rem', display: 'block' }}>
+                          {landingData.stats.totalMedia.toLocaleString()}
+                        </Text>
+                        <Group justify="center" gap="xs" style={{ marginTop: '0.25rem' }}>
+                          <Image size={16} style={{ color: '#4ECDC4' }} />
+                          <Text size="sm" fw={600} style={{ color: '#4ECDC4' }}>
+                            Media
+                          </Text>
+                        </Group>
+                      </Box>
+                    </Badge>
+                  )}
+                  {landingData.stats.totalUsers && (
+                    <Badge
+                      size="xl"
+                      variant="filled"
+                      style={{
+                        backgroundColor: 'rgba(168, 230, 207, 0.2)',
+                        border: '2px solid #A8E6CF',
+                        borderRadius: '12px',
+                        padding: '12px 20px',
+                        minWidth: '140px',
+                        height: 'auto'
+                      }}
+                    >
+                      <Box style={{ textAlign: 'center' }}>
+                        <Text size="xl" fw={700} style={{ color: '#A8E6CF', marginBottom: '0.25rem', display: 'block' }}>
+                          {landingData.stats.totalUsers.toLocaleString()}
+                        </Text>
+                        <Group justify="center" gap="xs" style={{ marginTop: '0.25rem' }}>
+                          <Shield size={16} style={{ color: '#A8E6CF' }} />
+                          <Text size="sm" fw={600} style={{ color: '#A8E6CF' }}>
+                            Members
+                          </Text>
+                        </Group>
+                      </Box>
+                    </Badge>
+                  )}
+                </Group>
+              </Box>
+            )}
 
             <Button
               component="a"

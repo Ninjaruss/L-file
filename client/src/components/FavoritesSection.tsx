@@ -100,6 +100,92 @@ export function FavoritesSection() {
         </Box>
 
         <Grid gutter="xl">
+          {favoriteCharacterMedia.length > 0 && (
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card
+                style={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  backgroundColor: softSurface,
+                  border: `1px solid ${borderColor}`
+                }}
+              >
+                <Box style={{ flexGrow: 1 }}>
+                  <Group gap="xs" style={{ marginBottom: '0.75rem' }}>
+                    <User className="w-5 h-5" color={theme.other?.usogui?.character || theme.colors.blue?.[6] || accent} />
+                    <Text fw={700}>Popular Profile Pics</Text>
+                  </Group>
+                  <Stack gap="md">
+                    {favoriteCharacterMedia.map((item, index) => (
+                      <motion.div
+                        key={item.media.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      >
+                        <Card
+                          withBorder
+                          padding="md"
+                          style={{
+                            backgroundColor: withAlpha(surface, 0.86, surface),
+                            border: `1px solid ${borderColor}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                          }}
+                          component={Link}
+                          href={`/characters/${item.media.character.id}`}
+                        >
+                          <Stack align="center" gap="sm">
+                            <Avatar
+                              src={item.media.url}
+                              alt={item.media.character.name}
+                              size={80}
+                              radius="xl"
+                              style={{
+                                border: `2px solid ${theme.other?.usogui?.character || theme.colors.blue?.[6] || accent}`,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                              }}
+                            />
+                            <Box style={{ textAlign: 'center' }}>
+                              <Text fw={700} size="md" style={{ marginBottom: '0.25rem' }}>
+                                {item.media.character.name}
+                              </Text>
+                              {item.media.description && (
+                                <Text
+                                  size="xs"
+                                  style={{
+                                    color: subtleText,
+                                    marginBottom: '0.5rem',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical'
+                                  }}
+                                >
+                                  {item.media.description}
+                                </Text>
+                              )}
+                              <Group justify="center" gap="xs">
+                                <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble') }}>
+                                  Ch. {item.media.chapterNumber || 'N/A'}
+                                </Badge>
+                                <Text size="xs" style={{ color: subtleText }}>
+                                  {item.userCount} user{item.userCount !== 1 ? 's' : ''}
+                                </Text>
+                              </Group>
+                            </Box>
+                          </Stack>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </Stack>
+                </Box>
+              </Card>
+            </Grid.Col>
+          )}
+
           {favoriteQuotes.length > 0 && (
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card
@@ -145,7 +231,7 @@ export function FavoritesSection() {
                               WebkitBoxOrient: 'vertical'
                             }}
                           >
-                            “{item.quote.text}”
+                            "{item.quote.text}"
                           </Text>
                           <Group justify="space-between" align="center">
                             <Link href={`/characters/${item.quote.character.id}`} style={{ textDecoration: 'none' }}>
@@ -217,68 +303,6 @@ export function FavoritesSection() {
                             <Link href={`/gambles/${item.gamble.id}`} style={{ textDecoration: 'none' }}>
                               <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
                                 View Details
-                              </Badge>
-                            </Link>
-                            {renderCounter(item.userCount)}
-                          </Group>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </Stack>
-                </Box>
-              </Card>
-            </Grid.Col>
-          )}
-
-          {favoriteCharacterMedia.length > 0 && (
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Card
-                style={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: softSurface,
-                  border: `1px solid ${borderColor}`
-                }}
-              >
-                <Box style={{ flexGrow: 1 }}>
-                  <Group gap="xs" style={{ marginBottom: '0.75rem' }}>
-                    <User className="w-5 h-5" color={theme.other?.usogui?.character || theme.colors.blue?.[6] || accent} />
-                    <Text fw={700}>Popular Profile Pics</Text>
-                  </Group>
-                  <Stack gap="sm">
-                    {favoriteCharacterMedia.map((item, index) => (
-                      <motion.div
-                        key={item.media.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                      >
-                        <Card
-                          withBorder
-                          padding="sm"
-                          style={{
-                            backgroundColor: withAlpha(surface, 0.86, surface),
-                            border: `1px solid ${borderColor}`
-                          }}
-                        >
-                          <Group align="center" gap="sm" style={{ marginBottom: '0.5rem' }}>
-                            <Avatar src={item.media.url} alt={item.media.character.name} size={40} radius="xl" />
-                            <Box>
-                              <Text fw={600} size="sm">
-                                {item.media.character.name}
-                              </Text>
-                              {item.media.description && (
-                                <Text size="xs" style={{ color: subtleText }}>
-                                  {item.media.description}
-                                </Text>
-                              )}
-                            </Box>
-                          </Group>
-                          <Group justify="space-between" align="center">
-                            <Link href={`/characters/${item.media.character.id}`} style={{ textDecoration: 'none' }}>
-                              <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
-                                Ch. {item.media.chapterNumber || 'N/A'}
                               </Badge>
                             </Link>
                             {renderCounter(item.userCount)}

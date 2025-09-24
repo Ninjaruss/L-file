@@ -11,7 +11,8 @@ import {
   Skeleton,
   Stack,
   Text,
-  TextInput
+  TextInput,
+  useMantineTheme
 } from '@mantine/core'
 import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme';
 import { UserBadge, BadgeType } from '../types';
@@ -41,6 +42,7 @@ export default function ProfilePictureSelector({
   currentProfileType,
   onSelect
 }: ProfilePictureSelectorProps) {
+  const theme = useMantineTheme();
   const [userBadges, setUserBadges] = useState<UserBadge[]>([]);
   const [characterMedia, setCharacterMedia] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,122 +232,91 @@ export default function ProfilePictureSelector({
                 }
               }}
             >
-              <Group justify="space-between" align="flex-start">
-                <Stack gap="xs" style={{ flex: 1 }}>
-                  <Group gap="sm">
-                    <Text fw={500} size="md">
-                      {option.label}
-                    </Text>
-                    {option.requiredBadge && (
-                      <Badge
-                        variant="light"
-                        color={hasActiveBadge(option.requiredBadge) ? 'green' : 'gray'}
-                        size="sm"
-                      >
-                        {option.requiredBadge === BadgeType.SUPPORTER && '💎 Supporter'}
-                        {option.requiredBadge === BadgeType.ACTIVE_SUPPORTER && '⭐ Active'}
-                        {option.requiredBadge === BadgeType.SPONSOR && '👑 Sponsor'}
-                      </Badge>
-                    )}
-                  </Group>
-                  <Text size="sm" c="dimmed">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500} size="sm">
+                    {option.label}
+                  </Text>
+                  <Text size="xs" c="dimmed">
                     {option.description}
                   </Text>
-                  {option.disabled && option.disabledReason && (
-                    <Text size="sm" c="red">
+                  {option.requiredBadge && option.disabled && (
+                    <Text size="xs" c="red" mt={4}>
                       {option.disabledReason}
                     </Text>
                   )}
-                </Stack>
-
-                <Group gap="sm">
-                  {currentProfileType === option.type && (
-                    <Text c="blue" fw={500}>
-                      ✓
-                    </Text>
-                  )}
-                  {(option.type === 'character_media' || option.type === 'premium_character_media') && (
-                    <Text c="dimmed" size="sm">
-                      {selectedOption === option.type ? '▼' : '▶'}
-                    </Text>
-                  )}
-                </Group>
+                </Box>
+                {option.requiredBadge && !option.disabled && (
+                  <Badge size="xs" variant="light" color="yellow">
+                    Premium
+                  </Badge>
+                )}
               </Group>
             </Box>
 
-            {/* Character Media Selection */}
-            {selectedOption === option.type && option.type === 'character_media' && (
-              <Box mt="sm" p="md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '6px' }}>
+            {/* Character media selection */}
+            {(selectedOption === option.type && option.type === 'character_media') && (
+              <Box mt="md" p="md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: '6px' }}>
                 <Stack gap="md">
-                  <TextInput
-                    placeholder="Filter by character name..."
-                    value={characterFilter}
-                    onChange={(e) => setCharacterFilter(e.target.value)}
-                    size="sm"
-                  />
-                  
+                  <Group justify="space-between">
+                    <Text fw={500} size="sm">
+                      Choose a Character Image
+                    </Text>
+                    <TextInput
+                      placeholder="Search characters..."
+                      value={characterFilter}
+                      onChange={(e) => setCharacterFilter(e.target.value)}
+                      size="xs"
+                      style={{ flex: 1, maxWidth: 200 }}
+                    />
+                  </Group>
+
                   {mediaLoading ? (
                     <Stack gap="sm">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <Skeleton key={i} height={60} />
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} height={80} />
                       ))}
                     </Stack>
                   ) : (
-                    <Stack gap="md" style={{ maxHeight: '400px', overflow: 'auto' }}>
+                    <Stack gap="md">
                       {Object.keys(filteredGroupedMedia).length > 0 ? (
-                        Object.entries(filteredGroupedMedia)
-                          .sort(([a], [b]) => a.localeCompare(b))
-                          .map(([characterName, mediaItems]) => (
+                        Object.entries(filteredGroupedMedia).map(([characterName, medias]) => (
                           <Box key={characterName}>
-                            <Text fw={600} size="sm" mb="xs" c="blue">
+                            <Text size="sm" fw={500} c="dimmed" mb="xs">
                               {characterName}
                             </Text>
                             <Stack gap="xs">
-                              {mediaItems.map((media) => (
+                              {medias.map((media: any) => (
                                 <Box
                                   key={media.id}
-                                  p="sm"
-                                  ml="md"
+                                  p="xs"
                                   style={{
-                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
                                     borderRadius: '4px',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    backgroundColor: 'transparent'
-                                  }}
-                                  onMouseEnter={(e: any) => {
-                                    e.currentTarget.style.borderColor = '#e11d48'
-                                    e.currentTarget.style.backgroundColor = 'rgba(225, 29, 72, 0.05)'
-                                  }}
-                                  onMouseLeave={(e: any) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
-                                    e.currentTarget.style.backgroundColor = 'transparent'
+                                    transition: 'all 0.2s ease'
                                   }}
                                   onClick={() => handleMediaSelect(media.id, option.type)}
                                 >
-                                  <Group gap="md">
-                                    {media.url && (
-                                      <Box
-                                        style={{
-                                          width: '40px',
-                                          height: '40px',
-                                          borderRadius: '4px',
-                                          backgroundImage: `url(${media.url})`,
-                                          backgroundSize: 'cover',
-                                          backgroundPosition: 'center',
-                                          backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                                        }}
-                                      />
-                                    )}
-                                    <Stack gap="xs" style={{ flex: 1 }}>
-                                      <Text fw={500} size="sm">
-                                        {media.title || media.description || 'Untitled Media'}
+                                  <Group gap="sm">
+                                    <Box
+                                      style={{
+                                        width: 40,
+                                        height: 40,
+                                        backgroundImage: `url(${media.url})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        borderRadius: '4px',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                                      }}
+                                    />
+                                    <Stack gap={0}>
+                                      <Text size="xs" fw={500}>
+                                        {media.title || 'Untitled'}
                                       </Text>
-                                      {media.description && media.title && (
-                                        <Text size="xs" c="dimmed" lineClamp={1}>
-                                          {media.description}
-                                        </Text>
-                                      )}
+                                      <Text size="xs" c="dimmed">
+                                        {media.description || 'No description'}
+                                      </Text>
                                     </Stack>
                                   </Group>
                                 </Box>
