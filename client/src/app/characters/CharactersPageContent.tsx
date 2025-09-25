@@ -584,8 +584,8 @@ export default function CharactersPageContent({
                           entityId={character.id}
                           entityName={character.name}
                           allowCycling={false}
-                          maxWidth="100%"
-                          maxHeight="100%"
+                          maxWidth={200}
+                          maxHeight={230}
                         />
                       </Box>
 

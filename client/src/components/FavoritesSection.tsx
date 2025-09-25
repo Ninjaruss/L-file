@@ -198,10 +198,12 @@ export function FavoritesSection() {
                 }}
               >
                 <Box style={{ flexGrow: 1 }}>
-                  <Group gap="xs" style={{ marginBottom: '0.75rem' }}>
-                    <Quote className="w-5 h-5" color={theme.other?.usogui?.quote || theme.colors.green?.[5] || '#4ade80'} />
-                    <Text fw={700}>Top Quotes</Text>
-                  </Group>
+                  <Box style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                    <Group justify="center" gap="xs" style={{ marginBottom: '0.5rem' }}>
+                      <Quote className="w-6 h-6" color={theme.other?.usogui?.quote || theme.colors.green?.[5] || '#4ade80'} />
+                      <Text fw={700} size="xl">Top Quotes</Text>
+                    </Group>
+                  </Box>
                   <Stack gap="sm">
                     {favoriteQuotes.map((item, index) => (
                       <motion.div
@@ -219,7 +221,7 @@ export function FavoritesSection() {
                           }}
                         >
                           <Text
-                            size="sm"
+                            size="md"
                             style={{
                               fontStyle: 'italic',
                               marginBottom: '0.5rem',
@@ -228,14 +230,17 @@ export function FavoritesSection() {
                               textOverflow: 'ellipsis',
                               display: '-webkit-box',
                               WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical'
+                              WebkitBoxOrient: 'vertical',
+                              textAlign: 'center',
+                              fontSize: '1rem',
+                              lineHeight: '1.4'
                             }}
                           >
                             "{item.quote.text}"
                           </Text>
-                          <Group justify="space-between" align="center">
+                          <Group justify="center" align="center" gap="md">
                             <Link href={`/characters/${item.quote.character.id}`} style={{ textDecoration: 'none' }}>
-                              <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
+                              <Badge variant="light" size="md" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
                                 {item.quote.character.name}
                               </Badge>
                             </Link>
@@ -262,10 +267,12 @@ export function FavoritesSection() {
                 }}
               >
                 <Box style={{ flexGrow: 1 }}>
-                  <Group gap="xs" style={{ marginBottom: '0.75rem' }}>
-                    <Dices className="w-5 h-5" color={theme.other?.usogui?.gamble || accent} />
-                    <Text fw={700}>Top Gambles</Text>
-                  </Group>
+                  <Box style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                    <Group justify="center" gap="xs" style={{ marginBottom: '0.5rem' }}>
+                      <Dices className="w-6 h-6" color={theme.other?.usogui?.gamble || accent} />
+                      <Text fw={700} size="xl">Top Gambles</Text>
+                    </Group>
+                  </Box>
                   <Stack gap="sm">
                     {favoriteGambles.map((item, index) => (
                       <motion.div
@@ -282,26 +289,28 @@ export function FavoritesSection() {
                             border: `1px solid ${borderColor}`
                           }}
                         >
-                          <Text fw={700} size="sm" style={{ marginBottom: '0.35rem' }}>
+                          <Text fw={700} size="md" style={{ marginBottom: '0.5rem', textAlign: 'center', fontSize: '1.1rem' }}>
                             {item.gamble.name}
                           </Text>
                           <Text
-                            size="sm"
+                            size="md"
                             style={{
                               color: subtleText,
-                              marginBottom: '0.5rem',
+                              marginBottom: '0.75rem',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical'
+                              WebkitBoxOrient: 'vertical',
+                              textAlign: 'center',
+                              lineHeight: '1.4'
                             }}
                           >
                             {item.gamble.rules}
                           </Text>
-                          <Group justify="space-between" align="center">
+                          <Group justify="center" align="center" gap="md">
                             <Link href={`/gambles/${item.gamble.id}`} style={{ textDecoration: 'none' }}>
-                              <Badge variant="light" size="sm" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
+                              <Badge variant="light" size="md" style={{ color: getEntityThemeColor(theme, 'gamble'), cursor: 'pointer' }}>
                                 View Details
                               </Badge>
                             </Link>

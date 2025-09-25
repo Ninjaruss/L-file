@@ -504,8 +504,8 @@ export default function GamblesPageContent({
                           entityId={gamble.id}
                           entityName={gamble.name}
                           allowCycling={false}
-                          maxWidth="100%"
-                          maxHeight="100%"
+                          maxWidth={200}
+                          maxHeight={240}
                           disableExternalLinks={true}
                         />
                       </Box>

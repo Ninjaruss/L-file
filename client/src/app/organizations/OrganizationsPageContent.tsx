@@ -472,8 +472,8 @@ export default function OrganizationsPageContent({
                           entityType="organization"
                           entityId={organization.id}
                           entityName={organization.name}
-                          maxWidth="100%"
-                          maxHeight="100%"
+                          maxWidth={200}
+                          maxHeight={240}
                           allowCycling={false}
                         />
                       </Box>

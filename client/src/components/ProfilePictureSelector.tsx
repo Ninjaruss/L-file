@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Group,
+  Grid,
   Skeleton,
   Stack,
   Text,
@@ -18,6 +19,154 @@ import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-
 import { UserBadge, BadgeType } from '../types';
 import { api } from '../lib/api';
 import { API_BASE_URL } from '../lib/api';
+import TimelineSpoilerWrapper from './TimelineSpoilerWrapper';
+
+// Component to handle multiple media items per character
+interface CharacterMediaCardProps {
+  characterName: string;
+  medias: any[];
+  onMediaSelect: (mediaId: number) => void;
+}
+
+function CharacterMediaCard({ characterName, medias, onMediaSelect }: CharacterMediaCardProps) {
+  const theme = useMantineTheme();
+
+  return (
+    <Card
+      p="md"
+      style={{
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '12px',
+        transition: 'all 0.2s ease',
+        height: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)'
+      }}
+    >
+      <Stack gap="md" align="center">
+        {/* Character name header */}
+        <Text size="lg" fw={700} ta="center" style={{ lineHeight: 1.2 }}>
+          {characterName}
+        </Text>
+
+        {/* Media images grid */}
+        <Box style={{ width: '100%' }}>
+          <Grid gutter="sm">
+            {medias.map((media: any) => (
+              <Grid.Col key={media.id} span={medias.length === 1 ? 12 : 6}>
+                <MediaImageCard
+                  media={media}
+                  onSelect={() => onMediaSelect(media.id)}
+                />
+              </Grid.Col>
+            ))}
+          </Grid>
+        </Box>
+      </Stack>
+    </Card>
+  );
+}
+
+// Individual media image component with spoiler detection
+interface MediaImageCardProps {
+  media: any;
+  onSelect: () => void;
+}
+
+function MediaImageCard({ media, onSelect }: MediaImageCardProps) {
+  const theme = useMantineTheme();
+  const chapterNumber = media.chapterNumber;
+  const characterFirstAppearance = media.character?.firstAppearanceChapter;
+
+  // Use the more specific chapter number if available, fallback to character first appearance
+  const spoilerChapter = chapterNumber || characterFirstAppearance;
+
+  return (
+    <Card
+      p="sm"
+      onClick={onSelect}
+      style={{
+        cursor: 'pointer',
+        borderRadius: '12px',
+        transition: 'all 0.2s ease',
+        position: 'relative',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        height: '100%'
+      }}
+      sx={{
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          borderColor: 'rgba(255, 255, 255, 0.3)',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)'
+        }
+      }}
+    >
+      <Stack gap="sm" align="center">
+        <Box style={{ position: 'relative' }}>
+          <TimelineSpoilerWrapper chapterNumber={spoilerChapter}>
+            <Box
+              style={{
+                width: 100,
+                height: 100,
+                backgroundImage: `url(${media.url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+            />
+          </TimelineSpoilerWrapper>
+          {chapterNumber && (
+            <Badge
+              size="sm"
+              variant="filled"
+              style={{
+                position: 'absolute',
+                top: -8,
+                right: -8,
+                backgroundColor: getEntityThemeColor(theme, 'arc'),
+                color: '#ffffff',
+                fontSize: '0.7rem',
+                fontWeight: 700
+              }}
+            >
+              Ch.{chapterNumber}
+            </Badge>
+          )}
+        </Box>
+
+        <Stack gap={2} align="center" style={{ textAlign: 'center', width: '100%' }}>
+          {media.description && (
+            <Text
+              size="xs"
+              ta="center"
+              style={{
+                lineHeight: 1.3,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical'
+              }}
+            >
+              {media.description}
+            </Text>
+          )}
+          {!media.description && chapterNumber && (
+            <Text size="xs" c="dimmed" ta="center">
+              Chapter {chapterNumber}
+            </Text>
+          )}
+          {!media.description && !chapterNumber && characterFirstAppearance && (
+            <Text size="xs" c="dimmed" ta="center">
+              Ch.{characterFirstAppearance}
+            </Text>
+          )}
+        </Stack>
+      </Stack>
+    </Card>
+  );
+}
 
 interface ProfilePictureOption {
   type: string;
@@ -176,8 +325,8 @@ export default function ProfilePictureSelector({
       })
     : characterMedia;
 
-  // Group filtered media by character
-  const filteredGroupedMedia = filteredCharacterMedia.reduce((groups: { [key: string]: any[] }, media) => {
+  // Group filtered media by character and sort by character name
+  const groupedFilteredMedia = filteredCharacterMedia.reduce((groups: { [key: string]: any[] }, media) => {
     const characterName = media.character?.name || 'Unknown Character';
     if (!groups[characterName]) {
       groups[characterName] = [];
@@ -185,6 +334,10 @@ export default function ProfilePictureSelector({
     groups[characterName].push(media);
     return groups;
   }, {});
+
+  // Convert to array and sort by character name
+  const sortedCharacterGroups = Object.entries(groupedFilteredMedia)
+    .sort(([nameA], [nameB]) => nameA.localeCompare(nameB));
 
   if (loading) {
     return (
@@ -278,58 +431,25 @@ export default function ProfilePictureSelector({
                       ))}
                     </Stack>
                   ) : (
-                    <Stack gap="md">
-                      {Object.keys(filteredGroupedMedia).length > 0 ? (
-                        Object.entries(filteredGroupedMedia).map(([characterName, medias]) => (
-                          <Box key={characterName}>
-                            <Text size="sm" fw={500} c="dimmed" mb="xs">
-                              {characterName}
-                            </Text>
-                            <Stack gap="xs">
-                              {medias.map((media: any) => (
-                                <Box
-                                  key={media.id}
-                                  p="xs"
-                                  style={{
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                  onClick={() => handleMediaSelect(media.id, option.type)}
-                                >
-                                  <Group gap="sm">
-                                    <Box
-                                      style={{
-                                        width: 40,
-                                        height: 40,
-                                        backgroundImage: `url(${media.url})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                        borderRadius: '4px',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)'
-                                      }}
-                                    />
-                                    <Stack gap={0}>
-                                      <Text size="xs" fw={500}>
-                                        {media.title || 'Untitled'}
-                                      </Text>
-                                      <Text size="xs" c="dimmed">
-                                        {media.description || 'No description'}
-                                      </Text>
-                                    </Stack>
-                                  </Group>
-                                </Box>
-                              ))}
-                            </Stack>
-                          </Box>
-                        ))
+                    <Box>
+                      {sortedCharacterGroups.length > 0 ? (
+                        <Grid>
+                          {sortedCharacterGroups.map(([characterName, medias]) => (
+                            <Grid.Col key={characterName} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+                              <CharacterMediaCard
+                                characterName={characterName}
+                                medias={medias}
+                                onMediaSelect={(mediaId) => handleMediaSelect(mediaId, option.type)}
+                              />
+                            </Grid.Col>
+                          ))}
+                        </Grid>
                       ) : (
                         <Text size="sm" c="dimmed" ta="center">
                           {characterFilter ? 'No character media found matching your search' : 'No character media available'}
                         </Text>
                       )}
-                    </Stack>
+                    </Box>
                   )}
                 </Stack>
               </Box>

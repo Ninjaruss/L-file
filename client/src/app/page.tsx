@@ -5,7 +5,8 @@ import { useMantineTheme } from '@mantine/core'
 import { Users, BookOpen, Dices, CalendarSearch, Book, Shield, FileText, Quote, ChevronRight, Sparkles, MessageCircle, ExternalLink, Image } from 'lucide-react'
 import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
-import { VolumeCoverSection } from '../components/VolumeCoverSection'
+import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
+import { getActiveConfiguration } from '../lib/showcase-config'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { LazySection } from '../components/LazySection'
 import { useLandingData } from '../hooks/useLandingData'
@@ -17,6 +18,7 @@ import { textColors } from '../lib/mantine-theme'
 export default function HomePage() {
   const theme = useMantineTheme()
   const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
+  const showcaseConfig = getActiveConfiguration()
 
 
 
@@ -102,7 +104,11 @@ export default function HomePage() {
 
         {/* Featured Volume Covers Section */}
         <LazySection minHeight={450} delay={100}>
-          <VolumeCoverSection />
+          <DynamicVolumeShowcase
+            volumes={showcaseConfig.volumes}
+            layout={showcaseConfig.layout}
+            animations={showcaseConfig.animations}
+          />
         </LazySection>
 
 

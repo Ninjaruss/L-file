@@ -481,8 +481,8 @@ export default function VolumesPageContent({
                             entityType="volume"
                             entityId={volume.id}
                             entityName={`Volume ${volume.number}`}
-                            maxWidth="100%"
-                            maxHeight="100%"
+                            maxWidth={200}
+                            maxHeight={240}
                             allowCycling={false}
                             inline={false}
                           />

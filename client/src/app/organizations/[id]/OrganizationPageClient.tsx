@@ -352,8 +352,8 @@ export default function OrganizationPageClient({
                                   entityId={member.id}
                                   entityName={member.name}
                                   allowCycling={false}
-                                  maxWidth="100%"
-                                  maxHeight="100%"
+                                  maxWidth={120}
+                                  maxHeight={160}
                                   className="character-thumbnail"
                                 />
                               </Box>

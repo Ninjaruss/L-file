@@ -658,8 +658,8 @@ export default function ArcsPageContent({
                             entityType="arc"
                             entityId={arc.id}
                             entityName={arc.name}
-                            maxWidth="100%"
-                            maxHeight="100%"
+                            maxWidth={200}
+                            maxHeight={240}
                             allowCycling={false}
                           />
                         </Box>

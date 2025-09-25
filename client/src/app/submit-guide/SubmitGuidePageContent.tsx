@@ -214,8 +214,15 @@ export default function SubmitGuidePageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert style={{ color: semanticColors.warning }} variant="light">
-          Please log in to submit a guide.
+        <Alert
+          variant="light"
+          style={{
+            backgroundColor: 'rgba(245, 124, 0, 0.1)',
+            borderColor: 'rgba(245, 124, 0, 0.3)',
+            color: '#ffb74d'
+          }}
+        >
+          <Text c="#ffb74d">Please log in to submit a guide.</Text>
         </Alert>
       </Container>
     )
@@ -239,26 +246,43 @@ export default function SubmitGuidePageContent() {
         </Stack>
 
         {error && (
-          <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" mb="md">
-            {error}
+          <Alert
+            variant="light"
+            mb="md"
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              color: '#fca5a5'
+            }}
+          >
+            <Text size="sm" c="#f87171">{error}</Text>
           </Alert>
         )}
 
         {success && (
-          <Alert style={{ color: getEntityThemeColor(theme, 'guide') }} variant="light" mb="md">
-            {success}
+          <Alert
+            variant="light"
+            mb="md"
+            style={{
+              backgroundColor: 'rgba(81, 207, 102, 0.1)',
+              borderColor: 'rgba(81, 207, 102, 0.3)',
+              color: '#86efac'
+            }}
+          >
+            <Text size="sm" c="#51cf66">{success}</Text>
           </Alert>
         )}
 
         <Card
-          className="gambling-card"
+          className="guide-card"
           shadow="lg"
           radius="md"
           withBorder
           style={{
             backgroundColor: theme.colors.dark?.[7] ?? '#070707',
             color: theme.colors.gray?.[0] ?? '#fff',
-            borderColor: `${guideAccent}33`
+            borderColor: `${guideAccent}40`,
+            boxShadow: `0 4px 12px rgba(81, 207, 102, 0.1)`
           }}
         >
           <form onSubmit={handleSubmit}>
@@ -280,7 +304,15 @@ export default function SubmitGuidePageContent() {
                     input: {
                       backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                       color: theme.colors.gray?.[0] ?? '#fff',
-                      borderColor: 'rgba(255,255,255,0.06)'
+                      borderColor: 'rgba(255,255,255,0.06)',
+                      '&:focus': {
+                        borderColor: guideAccent,
+                        boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
+                      }
+                    },
+                    label: {
+                      color: guideAccent,
+                      fontWeight: 600
                     }
                   }}
                 />
@@ -303,7 +335,15 @@ export default function SubmitGuidePageContent() {
                     input: {
                       backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                       color: theme.colors.gray?.[0] ?? '#fff',
-                      borderColor: 'rgba(255,255,255,0.06)'
+                      borderColor: 'rgba(255,255,255,0.06)',
+                      '&:focus': {
+                        borderColor: guideAccent,
+                        boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
+                      }
+                    },
+                    label: {
+                      color: guideAccent,
+                      fontWeight: 600
                     }
                   }}
                 />
@@ -331,8 +371,22 @@ export default function SubmitGuidePageContent() {
                     styles={{
                       tab: {
                         padding: rem(12),
-                        fontSize: rem(14)
-                      }
+                        fontSize: rem(14),
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        borderRadius: rem(6),
+                        transition: 'all 150ms ease',
+                        '&:hover': {
+                          backgroundColor: 'rgba(81, 207, 102, 0.08)',
+                          color: 'rgba(255, 255, 255, 0.95)',
+                          borderColor: 'rgba(81, 207, 102, 0.4)'
+                        },
+                        '&[dataActive="true"]': {
+                          color: '#ffffff',
+                          backgroundColor: 'rgba(81, 207, 102, 0.12)',
+                          borderColor: 'rgba(81, 207, 102, 0.8)',
+                          fontWeight: 600
+                        }
+                      },
                     }}
                   >
                     <Tabs.List>
@@ -430,10 +484,37 @@ export default function SubmitGuidePageContent() {
                           input: {
                             backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                             color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
+                            borderColor: 'rgba(255,255,255,0.06)',
+                            '&:focus': {
+                              borderColor: guideAccent,
+                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
+                            }
                           },
                           dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707'
+                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                            borderColor: guideAccent,
+                            border: `1px solid ${guideAccent}`
+                          },
+                          option: {
+                            color: '#ffffff',
+                            backgroundColor: 'transparent',
+                            '&:hover': {
+                              backgroundColor: guideAccent,
+                              color: '#000000'
+                            },
+                            '&[dataSelected="true"]': {
+                              backgroundColor: `${guideAccent}dd`,
+                              color: '#000000'
+                            }
+                          },
+                          pill: {
+                            backgroundColor: 'rgba(81, 207, 102, 0.2)',
+                            color: guideAccent,
+                            border: `1px solid ${guideAccent}50`
+                          },
+                          label: {
+                            color: guideAccent,
+                            fontWeight: 600
                           }
                         }}
                       />
@@ -454,10 +535,32 @@ export default function SubmitGuidePageContent() {
                           input: {
                             backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                             color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
+                            borderColor: 'rgba(255,255,255,0.06)',
+                            '&:focus': {
+                              borderColor: guideAccent,
+                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
+                            }
                           },
                           dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707'
+                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                            borderColor: guideAccent,
+                            border: `1px solid ${guideAccent}`
+                          },
+                          option: {
+                            color: '#ffffff',
+                            backgroundColor: 'transparent',
+                            '&:hover': {
+                              backgroundColor: guideAccent,
+                              color: '#000000'
+                            },
+                            '&[dataSelected="true"]': {
+                              backgroundColor: `${guideAccent}dd`,
+                              color: '#000000'
+                            }
+                          },
+                          label: {
+                            color: guideAccent,
+                            fontWeight: 600
                           }
                         }}
                       />
@@ -478,10 +581,37 @@ export default function SubmitGuidePageContent() {
                           input: {
                             backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                             color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
+                            borderColor: 'rgba(255,255,255,0.06)',
+                            '&:focus': {
+                              borderColor: guideAccent,
+                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
+                            }
                           },
                           dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707'
+                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                            borderColor: guideAccent,
+                            border: `1px solid ${guideAccent}`
+                          },
+                          option: {
+                            color: '#ffffff',
+                            backgroundColor: 'transparent',
+                            '&:hover': {
+                              backgroundColor: guideAccent,
+                              color: '#000000'
+                            },
+                            '&[dataSelected="true"]': {
+                              backgroundColor: `${guideAccent}dd`,
+                              color: '#000000'
+                            }
+                          },
+                          pill: {
+                            backgroundColor: 'rgba(81, 207, 102, 0.2)',
+                            color: guideAccent,
+                            border: `1px solid ${guideAccent}50`
+                          },
+                          label: {
+                            color: guideAccent,
+                            fontWeight: 600
                           }
                         }}
                       />
@@ -497,7 +627,13 @@ export default function SubmitGuidePageContent() {
                     <Badge
                       key={tag}
                       variant="outline"
-                      style={{ color: getEntityThemeColor(theme, 'gamble') }}
+                      styles={{
+                        root: {
+                          borderColor: guideAccent,
+                          color: guideAccent,
+                          backgroundColor: 'rgba(81, 207, 102, 0.1)'
+                        }
+                      }}
                       rightSection={<CloseButton size="sm" onClick={() => removeTag(tag)} />}
                     >
                       {tag}
@@ -518,10 +654,33 @@ export default function SubmitGuidePageContent() {
                     onChange={(event) => setNewTag(event.currentTarget.value)}
                     onKeyDown={handleKeyPress}
                     style={{ flex: 1 }}
+                    styles={{
+                      input: {
+                        backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                        color: theme.colors.gray?.[0] ?? '#fff',
+                        borderColor: 'rgba(255,255,255,0.06)',
+                        '&:focus': {
+                          borderColor: guideAccent,
+                          boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
+                        }
+                      },
+                      label: {
+                        color: guideAccent,
+                        fontWeight: 600
+                      }
+                    }}
                   />
                   <Button
                     variant="outline"
-                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
+                    styles={{
+                      root: {
+                        borderColor: guideAccent,
+                        color: guideAccent,
+                        '&:hover': {
+                          backgroundColor: 'rgba(81, 207, 102, 0.1)'
+                        }
+                      }
+                    }}
                     leftSection={<Plus size={16} />}
                     onClick={addTag}
                     disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
@@ -538,11 +697,23 @@ export default function SubmitGuidePageContent() {
               <Button
                 type="submit"
                 size="lg"
-                style={{ color: getEntityThemeColor(theme, 'gamble') }}
                 fullWidth
                 loading={loading}
                 leftSection={loading ? undefined : <Send size={18} />}
                 disabled={!isFormValid}
+                styles={{
+                  root: {
+                    backgroundColor: guideAccent,
+                    color: '#ffffff',
+                    '&:hover': {
+                      backgroundColor: theme.other?.usogui?.guide ? `${theme.other.usogui.guide}dd` : '#45c55a'
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'rgba(81, 207, 102, 0.3)',
+                      color: 'rgba(255, 255, 255, 0.5)'
+                    }
+                  }
+                }}
               >
                 {loading ? 'Submitting...' : 'Submit Guide'}
               </Button>
@@ -550,13 +721,21 @@ export default function SubmitGuidePageContent() {
           </form>
         </Card>
 
-        <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" mt="xl">
-          <Text size="sm">
-            <strong>Guide Writing Tips:</strong>
+        <Alert
+          variant="light"
+          mt="xl"
+          style={{
+            backgroundColor: 'rgba(77, 171, 247, 0.08)',
+            borderColor: 'rgba(77, 171, 247, 0.25)',
+            color: '#93c5fd'
+          }}
+        >
+          <Text size="sm" c="#bfdbfe">
+            <strong style={{ color: '#4dabf7' }}>Guide Writing Tips:</strong>
             <br />• Be thorough and informative
             <br />• Use clear headings and structure
-            <br />• Use entity embeds to reference characters, arcs, gambles, etc. (e.g., <code>{'{{character:1}}'}</code>)
-            <br />• Add custom text to embeds for context (e.g., <code>{'{{character:1:the protagonist}}'}</code>)
+            <br />• Use entity embeds to reference characters, arcs, gambles, etc. (e.g., <code style={{ backgroundColor: 'rgba(77, 171, 247, 0.1)', padding: '2px 4px', borderRadius: '4px' }}>{'{{character:1}}'}</code>)
+            <br />• Add custom text to embeds for context (e.g., <code style={{ backgroundColor: 'rgba(77, 171, 247, 0.1)', padding: '2px 4px', borderRadius: '4px' }}>{'{{character:1:the protagonist}}'}</code>)
             <br />• Avoid major spoilers unless clearly marked
             <br />• Cite sources when referencing specific chapters
             <br />• Use the Preview tab to see how your entity embeds will look

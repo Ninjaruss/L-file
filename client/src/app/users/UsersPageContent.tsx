@@ -157,7 +157,7 @@ export default function UsersPageContent() {
                 const progressPercentage = Math.round(((user.userProgress ?? 0) / 539) * 100)
                 
                 return (
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={user.id}>
+                  <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 2.4, lg: 2.4 }} key={user.id}>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}

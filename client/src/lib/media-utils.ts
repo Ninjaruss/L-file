@@ -39,6 +39,15 @@ export function analyzeMediaUrl(url: string): MediaInfo {
 
   const lowerUrl = url.toLowerCase()
 
+  // Check for DeviantArt CDN URLs with JWT tokens (which expire and cause issues)
+  if (lowerUrl.includes('images-wixmp-') && lowerUrl.includes('token=')) {
+    return {
+      isDirectImage: false,
+      isEmbeddable: false,
+      platform: 'deviantart'
+    }
+  }
+
   // Check for direct image URLs
   if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i)) {
     return {

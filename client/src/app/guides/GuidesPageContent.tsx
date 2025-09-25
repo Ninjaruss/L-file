@@ -464,8 +464,8 @@ export default function GuidesPageContent({
                 px="md"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: rem(16),
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: rem(20),
                   justifyItems: 'center'
                 }}
               >
@@ -476,8 +476,8 @@ export default function GuidesPageContent({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                     style={{
-                      width: '200px',
-                      height: '280px' // Playing card aspect ratio: 200px * 1.4 = 280px
+                      width: '280px',
+                      minHeight: '320px' // Increased height for better spacing
                     }}
                   >
                     <Card
@@ -502,18 +502,19 @@ export default function GuidesPageContent({
                       <Badge
                         variant="filled"
                         radius="sm"
-                        size="sm"
+                        size="md"
                         c="white"
                         style={{
                           position: 'absolute',
-                          top: rem(8),
-                          left: rem(8),
+                          top: rem(12),
+                          left: rem(12),
                           backgroundColor: accentGuide,
-                          fontSize: rem(10),
+                          fontSize: rem(12),
                           fontWeight: 700,
                           zIndex: 10,
                           backdropFilter: 'blur(4px)',
-                          maxWidth: 'calc(100% - 16px)'
+                          maxWidth: 'calc(100% - 24px)',
+                          height: rem(24)
                         }}
                       >
                         by {guide.author.username}
@@ -525,101 +526,114 @@ export default function GuidesPageContent({
                           position: 'relative',
                           flex: 1,
                           minHeight: 0,
-                          padding: rem(8),
-                          paddingTop: rem(36), // Account for author badge
+                          padding: rem(16),
+                          paddingTop: rem(48), // Account for author badge
                           justifyContent: 'space-between',
                           height: '100%'
                         }}
-                        gap={rem(6)}
+                        gap={rem(12)}
                       >
                         {/* Title */}
                         <Title
                           order={3}
                           size="lg"
-                          lineClamp={4}
+                          lineClamp={3}
                           c={accentGuide}
                           style={{
-                            fontSize: rem(18),
+                            fontSize: rem(24),
                             fontWeight: 700,
-                            lineHeight: 1.2,
-                            textAlign: 'center'
+                            lineHeight: 1.3,
+                            textAlign: 'center',
+                            marginBottom: rem(8)
                           }}
                         >
                           {guide.title}
                         </Title>
 
-                        {/* Tags */}
-                        <Group gap={3} justify="center" wrap="wrap" mt="auto">
-                          {guide.tags?.slice(0, 2).map((tag) => (
-                            <Badge
-                              key={tag.id}
-                              size="xs"
-                              c={getEntityThemeColor(theme, 'organization')}
-                              variant="outline"
-                              style={{
-                                borderColor: getEntityThemeColor(theme, 'organization'),
-                                fontSize: rem(8),
-                                height: rem(16)
-                              }}
-                            >
-                              #{tag.name}
-                            </Badge>
-                          ))}
-                          {guide.tags && guide.tags.length > 2 && (
-                            <Badge
-                              size="xs"
-                              c={getEntityThemeColor(theme, 'organization')}
-                              variant="outline"
-                              style={{
-                                borderColor: getEntityThemeColor(theme, 'organization'),
-                                fontSize: rem(8),
-                                height: rem(16)
-                              }}
-                            >
-                              +{guide.tags.length - 2}
-                            </Badge>
-                          )}
-                        </Group>
+                        {/* Tags Section - Much more prominent */}
+                        <Box style={{ minHeight: rem(60) }}>
+                          <Group gap={6} justify="center" wrap="wrap">
+                            {guide.tags?.slice(0, 3).map((tag) => (
+                              <Badge
+                                key={tag.id}
+                                size="sm"
+                                c={getEntityThemeColor(theme, 'organization')}
+                                variant="light"
+                                style={{
+                                  backgroundColor: `${getEntityThemeColor(theme, 'organization')}15`,
+                                  borderColor: getEntityThemeColor(theme, 'organization'),
+                                  border: `1px solid ${getEntityThemeColor(theme, 'organization')}40`,
+                                  fontSize: rem(11),
+                                  height: rem(24),
+                                  paddingInline: rem(8)
+                                }}
+                              >
+                                #{tag.name}
+                              </Badge>
+                            ))}
+                            {guide.tags && guide.tags.length > 3 && (
+                              <Badge
+                                size="sm"
+                                c={getEntityThemeColor(theme, 'organization')}
+                                variant="light"
+                                style={{
+                                  backgroundColor: `${getEntityThemeColor(theme, 'organization')}15`,
+                                  borderColor: getEntityThemeColor(theme, 'organization'),
+                                  border: `1px solid ${getEntityThemeColor(theme, 'organization')}40`,
+                                  fontSize: rem(11),
+                                  height: rem(24),
+                                  paddingInline: rem(8)
+                                }}
+                              >
+                                +{guide.tags.length - 3}
+                              </Badge>
+                            )}
+                          </Group>
+                        </Box>
 
-                        {/* Stats and Like Button */}
-                        <Group
-                          justify="space-between"
-                          align="center"
+                        {/* Stats Section - Much more prominent */}
+                        <Box
                           style={{
-                            marginTop: rem(4)
+                            borderTop: `1px solid ${theme.colors.gray[2]}`,
+                            paddingTop: rem(12),
+                            marginTop: 'auto'
                           }}
                         >
-                          <Group gap={6} align="center">
-                            <Group gap={2} align="center">
-                              <Heart size={10} color={guide.userHasLiked ? theme.other?.usogui?.red ?? theme.colors.red?.[6] : theme.colors.gray[5]} />
-                              <Text size="xs" c="dimmed" style={{ fontSize: rem(9) }}>{guide.likeCount}</Text>
+                          <Group justify="space-between" align="center">
+                            <Group gap={12} align="center">
+                              <Group gap={4} align="center">
+                                <Heart size={16} color={guide.userHasLiked ? theme.other?.usogui?.red ?? theme.colors.red?.[6] : theme.colors.gray[5]} />
+                                <Text size="sm" c="dimmed" fw={600} style={{ fontSize: rem(13) }}>{guide.likeCount}</Text>
+                              </Group>
+                              <Group gap={4} align="center">
+                                <Eye size={16} color={theme.colors.gray[5]} />
+                                <Text size="sm" c="dimmed" fw={600} style={{ fontSize: rem(13) }}>{guide.viewCount}</Text>
+                              </Group>
                             </Group>
-                            <Group gap={2} align="center">
-                              <Eye size={10} color={theme.colors.gray[5]} />
-                              <Text size="xs" c="dimmed" style={{ fontSize: rem(9) }}>{guide.viewCount}</Text>
-                            </Group>
-                          </Group>
 
-                          <Button
-                            size="xs"
-                            variant={guide.userHasLiked ? 'filled' : 'outline'}
-                            style={{
-                              color: accentGuide,
-                              height: rem(18),
-                              fontSize: rem(8),
-                              padding: `0 ${rem(6)}`
-                            }}
-                            leftSection={<ThumbsUp size={8} />}
-                            loading={liking === guide.id}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleLikeToggle(guide.id)
-                            }}
-                          >
-                            {guide.userHasLiked ? 'Liked' : 'Like'}
-                          </Button>
-                        </Group>
+                            {/* Like Button - Much more prominent */}
+                            <Button
+                              size="sm"
+                              variant={guide.userHasLiked ? 'filled' : 'outline'}
+                              color={accentGuide}
+                              style={{
+                                height: rem(32),
+                                fontSize: rem(12),
+                                fontWeight: 600,
+                                minWidth: rem(70)
+                              }}
+                              leftSection={<ThumbsUp size={14} />}
+                              loading={liking === guide.id}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleLikeToggle(guide.id)
+                              }}
+                            >
+                              {guide.userHasLiked ? 'Liked' : 'Like'}
+                            </Button>
+                          </Group>
+                        </Box>
                       </Stack>
                     </Card>
                   </motion.div>
@@ -795,20 +809,10 @@ export default function GuidesPageContent({
                   </Stack>
                 )}
 
-                {/* Stats */}
-                <Group justify="center" gap="lg">
-                  <Group gap={4} align="center">
-                    <Heart size={14} color={hoveredGuide.userHasLiked ? theme.other?.usogui?.red : theme.colors.gray[5]} />
-                    <Text size="sm">{hoveredGuide.likeCount}</Text>
-                  </Group>
-                  <Group gap={4} align="center">
-                    <Eye size={14} color={theme.colors.gray[5]} />
-                    <Text size="sm">{hoveredGuide.viewCount}</Text>
-                  </Group>
-                  <Group gap={4} align="center">
-                    <Calendar size={14} color={theme.colors.gray[5]} />
-                    <Text size="sm">{new Date(hoveredGuide.createdAt).toLocaleDateString()}</Text>
-                  </Group>
+                {/* Creation Date */}
+                <Group justify="center" gap={4} align="center">
+                  <Calendar size={14} color={theme.colors.gray[5]} />
+                  <Text size="sm">{new Date(hoveredGuide.createdAt).toLocaleDateString()}</Text>
                 </Group>
               </Stack>
             </Paper>

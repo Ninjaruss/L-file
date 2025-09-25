@@ -323,8 +323,16 @@ export default function SubmitMediaPageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert style={{ color: semanticColors.warning }} variant="light" radius="md">
-          <Text c="#ffffff">Please log in to submit media.</Text>
+        <Alert
+          variant="light"
+          radius="md"
+          style={{
+            backgroundColor: 'rgba(245, 124, 0, 0.1)',
+            borderColor: 'rgba(245, 124, 0, 0.3)',
+            color: '#ffb74d'
+          }}
+        >
+          <Text c="#ffb74d">Please log in to submit media.</Text>
         </Alert>
       </Container>
     )
@@ -339,8 +347,8 @@ export default function SubmitMediaPageContent() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Stack gap="xl">
           <Stack align="center" gap="sm" ta="center">
-            <ThemeIcon size={64} radius="xl" variant="light" color="red.5">
-              <Upload size={32} color={theme.colors.red?.[3] ?? '#fda4af'} />
+            <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+              <Upload size={32} color="#a855f7" />
             </ThemeIcon>
             <Title order={1}>Submit Media</Title>
             <Text size="lg" c="dimmed">
@@ -349,14 +357,30 @@ export default function SubmitMediaPageContent() {
           </Stack>
 
           {error && (
-            <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} variant="light" radius="md">
-              <Text size="sm" c="red">{error}</Text>
+            <Alert
+              variant="light"
+              radius="md"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                color: '#fca5a5'
+              }}
+            >
+              <Text size="sm" c="#f87171">{error}</Text>
             </Alert>
           )}
 
           {success && (
-            <Alert style={{ color: getEntityThemeColor(theme, 'guide') }} variant="light" radius="md">
-              <Text size="sm" c="green">{success}</Text>
+            <Alert
+              variant="light"
+              radius="md"
+              style={{
+                backgroundColor: 'rgba(81, 207, 102, 0.1)',
+                borderColor: 'rgba(81, 207, 102, 0.3)',
+                color: '#86efac'
+              }}
+            >
+              <Text size="sm" c="#51cf66">{success}</Text>
             </Alert>
           )}
 
@@ -364,16 +388,38 @@ export default function SubmitMediaPageContent() {
             withBorder
             radius="md"
             shadow="md"
-            className="gambling-card"
+            className="media-card"
             style={{
               backgroundColor: theme.colors.dark?.[7] ?? '#070707',
               color: theme.colors.gray?.[0] ?? '#fff',
-              borderColor: 'rgba(255,255,255,0.06)'
+              borderColor: 'rgba(168, 85, 247, 0.4)',
+              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)'
             }}
           >
             <Stack gap="xl">
               {isPrivilegedUser && (
-                <Tabs value={activeTab} onChange={(value) => setActiveTab((value as 'url' | 'upload') ?? 'url')}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(value) => setActiveTab((value as 'url' | 'upload') ?? 'url')}
+                  styles={{
+                    tab: {
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      borderRadius: '6px',
+                      transition: 'all 150ms ease',
+                      '&:hover': {
+                        backgroundColor: 'rgba(168, 85, 247, 0.08)',
+                        color: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(168, 85, 247, 0.4)'
+                      },
+                      '&[dataActive="true"]': {
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                        borderColor: 'rgba(168, 85, 247, 0.8)',
+                        fontWeight: 600
+                      }
+                    },
+                  }}
+                >
                   <Tabs.List>
                     <Tabs.Tab value="url">Submit URL</Tabs.Tab>
                     <Tabs.Tab value="upload">Upload File</Tabs.Tab>
@@ -403,7 +449,15 @@ export default function SubmitMediaPageContent() {
                           input: {
                             backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                             color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
+                            borderColor: 'rgba(255,255,255,0.06)',
+                            '&:focus': {
+                              borderColor: '#a855f7',
+                              boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                            }
+                          },
+                          label: {
+                            color: '#a855f7',
+                            fontWeight: 600
                           }
                         }}
                       />
@@ -434,10 +488,32 @@ export default function SubmitMediaPageContent() {
                             input: {
                               backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                               color: theme.colors.gray?.[0] ?? '#fff',
-                              borderColor: 'rgba(255,255,255,0.06)'
+                              borderColor: 'rgba(255,255,255,0.06)',
+                              '&:focus': {
+                                borderColor: '#a855f7',
+                                boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                              }
                             },
                             dropdown: {
-                              backgroundColor: theme.colors.dark?.[7] ?? '#070707'
+                              backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                              borderColor: '#a855f7',
+                              border: '1px solid #a855f7'
+                            },
+                            option: {
+                              color: '#ffffff',
+                              backgroundColor: 'transparent',
+                              '&:hover': {
+                                backgroundColor: '#a855f7',
+                                color: '#000000'
+                              },
+                              '&[dataSelected="true"]': {
+                                backgroundColor: '#9333ea',
+                                color: '#ffffff'
+                              }
+                            },
+                            label: {
+                              color: '#a855f7',
+                              fontWeight: 600
                             }
                           }}
                         />
@@ -456,10 +532,32 @@ export default function SubmitMediaPageContent() {
                             input: {
                               backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                               color: theme.colors.gray?.[0] ?? '#fff',
-                              borderColor: 'rgba(255,255,255,0.06)'
+                              borderColor: 'rgba(255,255,255,0.06)',
+                              '&:focus': {
+                                borderColor: '#a855f7',
+                                boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                              }
                             },
                             dropdown: {
-                              backgroundColor: theme.colors.dark?.[7] ?? '#070707'
+                              backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                              borderColor: '#a855f7',
+                              border: '1px solid #a855f7'
+                            },
+                            option: {
+                              color: '#ffffff',
+                              backgroundColor: 'transparent',
+                              '&:hover': {
+                                backgroundColor: '#a855f7',
+                                color: '#000000'
+                              },
+                              '&[dataSelected="true"]': {
+                                backgroundColor: '#9333ea',
+                                color: '#ffffff'
+                              }
+                            },
+                            label: {
+                              color: '#a855f7',
+                              fontWeight: 600
                             }
                           }}
                         />
@@ -477,7 +575,15 @@ export default function SubmitMediaPageContent() {
                           input: {
                             backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                             color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
+                            borderColor: 'rgba(255,255,255,0.06)',
+                            '&:focus': {
+                              borderColor: '#a855f7',
+                              boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                            }
+                          },
+                          label: {
+                            color: '#a855f7',
+                            fontWeight: 600
                           }
                         }}
                       />
@@ -494,7 +600,15 @@ export default function SubmitMediaPageContent() {
                           input: {
                             backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
                             color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
+                            borderColor: 'rgba(255,255,255,0.06)',
+                            '&:focus': {
+                              borderColor: '#a855f7',
+                              boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                            }
+                          },
+                          label: {
+                            color: '#a855f7',
+                            fontWeight: 600
                           }
                         }}
                       />
@@ -506,6 +620,19 @@ export default function SubmitMediaPageContent() {
                         loading={loading}
                         disabled={loading || !isFormValid}
                         leftSection={!loading ? <Upload size={18} /> : undefined}
+                        styles={{
+                          root: {
+                            backgroundColor: '#a855f7',
+                            color: '#ffffff',
+                            '&:hover': {
+                              backgroundColor: '#9333ea'
+                            },
+                            '&:disabled': {
+                              backgroundColor: 'rgba(168, 85, 247, 0.3)',
+                              color: 'rgba(255, 255, 255, 0.5)'
+                            }
+                          }
+                        }}
                       >
                         {loading ? 'Submitting...' : 'Submit Media'}
                       </Button>
@@ -515,9 +642,17 @@ export default function SubmitMediaPageContent() {
 
                 {activeTab === 'upload' && isPrivilegedUser && (
                   <Stack gap="lg">
-                    <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
-                      <Text size="sm" c="dimmed">
-                        <strong>Direct Upload (Moderators/Admins)</strong>
+                    <Alert
+                      variant="light"
+                      radius="md"
+                      style={{
+                        backgroundColor: 'rgba(77, 171, 247, 0.08)',
+                        borderColor: 'rgba(77, 171, 247, 0.25)',
+                        color: '#93c5fd'
+                      }}
+                    >
+                      <Text size="sm" c="#bfdbfe">
+                        <strong style={{ color: '#4dabf7' }}>Direct Upload (Moderators/Admins)</strong>
                         <br />• Files are automatically approved
                         <br />• Uploaded to Backblaze B2 storage
                         <br />• Supports JPEG, PNG, WebP, GIF (max 10MB)
@@ -541,9 +676,17 @@ export default function SubmitMediaPageContent() {
             </Stack>
           </Card>
 
-          <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
-            <Text size="sm" c="dimmed">
-              <strong>Submission Guidelines:</strong>
+          <Alert
+            variant="light"
+            radius="md"
+            style={{
+              backgroundColor: 'rgba(77, 171, 247, 0.08)',
+              borderColor: 'rgba(77, 171, 247, 0.25)',
+              color: '#93c5fd'
+            }}
+          >
+            <Text size="sm" c="#bfdbfe">
+              <strong style={{ color: '#4dabf7' }}>Submission Guidelines:</strong>
               <br />• Only submit media you have permission to share
               <br />• Always credit the original artist when possible
               <br />• Media will be reviewed by moderators before appearing on the site

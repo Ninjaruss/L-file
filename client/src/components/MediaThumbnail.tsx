@@ -77,7 +77,16 @@ function ImageWithRetry({
 
   const handleError = () => {
     console.error('Image failed to load:', src)
-    
+
+    // For DeviantArt CDN URLs with expired tokens, don't retry
+    if (src.includes('images-wixmp-') && src.includes('token=')) {
+      console.warn('DeviantArt CDN image failed (likely expired token):', src)
+      setLoading(false)
+      setError(true)
+      onError?.()
+      return
+    }
+
     if (retryCount < 2) {
       // Retry with progressive delay
       setTimeout(() => {
@@ -178,13 +187,20 @@ export default function MediaThumbnail({
 
   const containerStyles = useMemo(
     () => ({
-      width: maxWidth,
-      height: maxHeight,
+      width: '100%',
+      height: '100%',
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
       display: inline ? 'inline-block' : 'block',
       position: 'relative' as const,
       overflow: 'hidden',
       borderRadius: rem(8),
-      backgroundColor: theme.colors.gray?.[0] ?? '#f8f9fa'
+      backgroundColor: theme.colors.gray?.[0] ?? '#f8f9fa',
+      isolation: 'isolate',
+      contain: 'layout size style',
+      boxSizing: 'border-box' as const,
+      margin: 0,
+      padding: 0
     }),
     [inline, maxHeight, maxWidth, theme]
   )
@@ -193,7 +209,11 @@ export default function MediaThumbnail({
     () => ({
       position: 'relative' as const,
       width: '100%',
-      height: '100%'
+      height: '100%',
+      overflow: 'hidden',
+      boxSizing: 'border-box' as const,
+      margin: 0,
+      padding: 0
     }),
     []
   )
@@ -209,7 +229,7 @@ export default function MediaThumbnail({
       setCurrentThumbnail(thumbnail)
       setRetryCount(0) // Reset retry count on success
     } catch (thumbnailError: any) {
-      console.error(`Error fetching ${entityType} thumbnail (attempt ${retryAttempt + 1}):`, thumbnailError)
+      console.error(`Error fetching ${entityType} thumbnail (attempt ${retryAttempt + 1}) for ID ${entityId}:`, thumbnailError)
 
       // Implement retry logic with progressive backoff
       if (retryAttempt < MAX_RETRIES && thumbnailError?.status !== 404) {
@@ -309,7 +329,7 @@ export default function MediaThumbnail({
     } catch (loadError: any) {
       if (signal.aborted) return
 
-      console.error(`Error fetching ${entityType} media:`, loadError)
+      console.error(`Error fetching ${entityType} media for ID ${entityId}:`, loadError)
       // Only try fallback thumbnail if not a rate limit error
       if (loadError?.status !== 429) {
         await fetchCurrentThumbnail()
@@ -382,32 +402,58 @@ export default function MediaThumbnail({
       if (mediaInfo.isDirectImage) {
         const imageUrl = mediaInfo.directImageUrl || media.url
         return (
-          <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden',
+            display: 'block',
+            contain: 'layout size style',
+            margin: 0,
+            padding: 0,
+            boxSizing: 'border-box'
+          }}>
             <ImageWithRetry
               src={imageUrl}
               alt={media.description || mediaInfo.title || `${entityName} image`}
               fill
               style={{
                 objectFit: 'cover',
-                objectPosition: 'center'
+                objectPosition: 'center center',
+                margin: 0,
+                padding: 0,
+                border: 'none',
+                outline: 'none'
               }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-          </Box>
+          </div>
         )
       }
 
       // Handle YouTube thumbnails
       if (mediaInfo.platform === 'youtube' && mediaInfo.thumbnailUrl) {
         return (
-          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
             <ImageWithRetry
               src={mediaInfo.thumbnailUrl}
               alt={media.description || `${entityName} video thumbnail`}
               fill
               style={{
                 objectFit: 'cover',
-                objectPosition: 'center'
+                objectPosition: 'center center',
+                margin: 0,
+                padding: 0,
+                border: 'none',
+                outline: 'none'
               }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
@@ -436,6 +482,10 @@ export default function MediaThumbnail({
         const displayTitle = mediaInfo.title || media.description
         const displayAuthor = mediaInfo.author
 
+        // For DeviantArt CDN URLs with expired tokens, show a more specific message
+        const isExpiredDeviantArt = mediaInfo.platform === 'deviantart' &&
+          (media.url.includes('images-wixmp-') && media.url.includes('token='))
+
         const content = (
           <>
             <Text size={rem(32)} style={{ lineHeight: 1 }}>
@@ -444,27 +494,35 @@ export default function MediaThumbnail({
             <Text size="sm" fw={600} ta="center" style={{ color: placeholder.color }}>
               {placeholder.label}
             </Text>
-            {displayTitle && (
-              <Text size="xs" ta="center" style={{ color: theme.colors.gray[7], maxWidth: '80%' }}>
-                {displayTitle.length > 50
-                  ? `${displayTitle.substring(0, 50)}...`
-                  : displayTitle}
+            {isExpiredDeviantArt ? (
+              <Text size="xs" ta="center" style={{ color: theme.colors.gray[6], maxWidth: '90%' }}>
+                Image temporarily unavailable
               </Text>
-            )}
-            {displayAuthor && (
-              <Text size="xs" ta="center" style={{ color: theme.colors.gray[6], maxWidth: '80%' }}>
-                by {displayAuthor}
-              </Text>
+            ) : (
+              <>
+                {displayTitle && (
+                  <Text size="xs" ta="center" style={{ color: theme.colors.gray[7], maxWidth: '80%' }}>
+                    {displayTitle.length > 50
+                      ? `${displayTitle.substring(0, 50)}...`
+                      : displayTitle}
+                  </Text>
+                )}
+                {displayAuthor && (
+                  <Text size="xs" ta="center" style={{ color: theme.colors.gray[6], maxWidth: '80%' }}>
+                    by {displayAuthor}
+                  </Text>
+                )}
+              </>
             )}
           </>
         )
 
         return (
           <Box
-            component={disableExternalLinks ? 'div' : 'a'}
-            href={disableExternalLinks ? undefined : media.url}
-            target={disableExternalLinks ? undefined : '_blank'}
-            rel={disableExternalLinks ? undefined : 'noopener noreferrer'}
+            component={disableExternalLinks || isExpiredDeviantArt ? 'div' : 'a'}
+            href={disableExternalLinks || isExpiredDeviantArt ? undefined : media.url}
+            target={disableExternalLinks || isExpiredDeviantArt ? undefined : '_blank'}
+            rel={disableExternalLinks || isExpiredDeviantArt ? undefined : 'noopener noreferrer'}
             style={{
               width: '100%',
               height: '100%',
@@ -477,10 +535,10 @@ export default function MediaThumbnail({
               borderRadius: rem(8),
               gap: rem(8),
               textDecoration: 'none',
-              cursor: disableExternalLinks ? 'default' : 'pointer',
+              cursor: (disableExternalLinks || isExpiredDeviantArt) ? 'default' : 'pointer',
               transition: 'all 0.2s ease',
               border: `2px solid ${placeholder.color}20`,
-              '&:hover': disableExternalLinks ? {} : {
+              '&:hover': (disableExternalLinks || isExpiredDeviantArt) ? {} : {
                 backgroundColor: theme.colors.gray[2],
                 transform: 'scale(1.02)'
               }
@@ -493,14 +551,26 @@ export default function MediaThumbnail({
 
       // Fallback for unknown image types
       return (
-        <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Box style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
           <ImageWithRetry
             src={media.url}
             alt={media.description || `${entityName} image`}
             fill
             style={{
               objectFit: 'cover',
-              objectPosition: 'center'
+              objectPosition: 'center center',
+              margin: 0,
+              padding: 0,
+              border: 'none',
+              outline: 'none'
             }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
@@ -577,8 +647,10 @@ export default function MediaThumbnail({
         <Box
           component={containerComponent}
           style={{
-            width: maxWidth,
-            height: maxHeight,
+            width: '100%',
+            height: '100%',
+            maxWidth: maxWidth,
+            maxHeight: maxHeight,
             display: inline ? 'inline-flex' : 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -596,8 +668,10 @@ export default function MediaThumbnail({
       <Box
         component={containerComponent}
         style={{
-          width: maxWidth,
-          height: maxHeight,
+          width: '100%',
+          height: '100%',
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
           display: inline ? 'inline-flex' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -606,7 +680,7 @@ export default function MediaThumbnail({
           border: `2px dashed ${theme.colors.gray[4]}`
         }}
       >
-        <Box component={containerComponent} style={{ textAlign: 'center' }}>
+        <Box style={{ textAlign: 'center' }}>
           <ImageIcon size={48} color={theme.colors.gray[5]} />
           <Text size="sm" c="dimmed" mt={rem(4)}>
             No thumbnail available
@@ -622,8 +696,10 @@ export default function MediaThumbnail({
         component={containerComponent}
         className={className}
         style={{
-          width: maxWidth,
-          height: maxHeight,
+          width: '100%',
+          height: '100%',
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
           display: inline ? 'inline-flex' : 'flex',
           alignItems: 'center',
           justifyContent: 'center'
@@ -637,11 +713,19 @@ export default function MediaThumbnail({
   if (error) {
     return (
       <Alert
-        style={{ color: getEntityThemeColor(theme, 'gamble') }}
         variant="light"
         radius="md"
         icon={<AlertTriangle size={16} />}
-        style={{ width: maxWidth, maxWidth: typeof maxWidth === 'number' ? undefined : '100%' }}
+        style={{
+          color: getEntityThemeColor(theme, 'gamble'),
+          width: '100%',
+          height: '100%',
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
       >
         {error}
       </Alert>
