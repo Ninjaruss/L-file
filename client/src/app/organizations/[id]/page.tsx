@@ -1,9 +1,6 @@
 import React from 'react'
-import { Alert, Button, Container, Stack } from '@mantine/core'
-import { colors } from '../../../lib/mantine-theme'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { api } from '../../../lib/api'
 import OrganizationPageClient from './OrganizationPageClient'
 
@@ -112,18 +109,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
   const data = await getOrganizationData(id)
 
   if (!data?.organization) {
-    return (
-      <Container size="lg" py="xl">
-        <Stack gap="md">
-          <Alert style={{ color: colors.gamble[5] }} variant="light">
-            Organization not found
-          </Alert>
-          <Button component={Link} href="/organizations" leftSection={<ArrowLeft size={16} />}>
-            Back to Organizations
-          </Button>
-        </Stack>
-      </Container>
-    )
+    notFound()
   }
 
   const { organization, members, events, gambles } = data

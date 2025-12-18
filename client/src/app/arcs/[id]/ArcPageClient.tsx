@@ -157,6 +157,8 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
             <Box style={{ flexShrink: 0 }}>
               <Box
                 style={{
+                  width: '200px',
+                  height: '280px',
                   borderRadius: theme.radius.md,
                   overflow: 'hidden',
                   border: `3px solid ${arcColor}`,

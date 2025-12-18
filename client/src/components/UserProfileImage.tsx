@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { Avatar, useMantineTheme } from '@mantine/core'
+import { Avatar, Box, Tooltip, Text, Stack, useMantineTheme } from '@mantine/core'
 import { User } from 'lucide-react'
+import { getEntityThemeColor } from '../lib/mantine-theme'
 
 interface UserProfileImageProps {
   user: {
@@ -24,6 +25,12 @@ interface UserProfileImageProps {
       description?: string
       ownerType?: string
       ownerId?: number
+      chapterNumber?: number
+      character?: {
+        id: number
+        name: string
+        firstAppearanceChapter?: number
+      }
     } | null
     discordId?: string | null
     discordAvatar?: string | null
@@ -31,13 +38,15 @@ interface UserProfileImageProps {
   size?: number
   showFallback?: boolean
   className?: string
+  showHoverInfo?: boolean
 }
 
 export default function UserProfileImage({
   user,
   size = 60,
   showFallback = true,
-  className
+  className,
+  showHoverInfo = false
 }: UserProfileImageProps) {
   const theme = useMantineTheme()
   const [error, setError] = useState(false)
@@ -52,6 +61,9 @@ export default function UserProfileImage({
       fontWeight: 700
     }
   } as const
+
+  const chapterNumber = user.selectedCharacterMedia?.chapterNumber || user.selectedCharacterMedia?.character?.firstAppearanceChapter
+  const characterName = user.selectedCharacterMedia?.character?.name
 
   const getDiscordUrl = () => {
     if (!user.discordAvatar || !user.discordId) return null
@@ -81,7 +93,8 @@ export default function UserProfileImage({
 
   if (user.profilePictureType === 'character_media' && user.selectedCharacterMedia && !error) {
     const imageUrl = user.selectedCharacterMedia.url
-    return (
+
+    const avatarElement = (
       <Avatar
         src={imageUrl}
         alt={`${user.username}'s profile image`}
@@ -94,6 +107,37 @@ export default function UserProfileImage({
         {showFallback && fallbackLetter}
       </Avatar>
     )
+
+    // Show hover tooltip with character and chapter info if requested
+    if (showHoverInfo && (characterName || chapterNumber)) {
+      return (
+        <Tooltip
+          label={
+            <Stack gap={4}>
+              {characterName && (
+                <Text size="sm" fw={600}>
+                  {characterName}
+                </Text>
+              )}
+              {chapterNumber && (
+                <Text size="xs" c="dimmed">
+                  Chapter {chapterNumber}
+                </Text>
+              )}
+            </Stack>
+          }
+          position="bottom"
+          withArrow
+          transitionProps={{ duration: 200 }}
+        >
+          <Box style={{ display: 'inline-block', cursor: 'help' }}>
+            {avatarElement}
+          </Box>
+        </Tooltip>
+      )
+    }
+
+    return avatarElement
   }
 
   if (!user.profilePictureType && !error) {

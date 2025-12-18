@@ -1,11 +1,9 @@
 import React from 'react'
-import { Alert, Button, Container, Stack } from '@mantine/core'
-import { colors } from '../../../lib/mantine-theme'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { api } from '../../../lib/api'
 import EventPageClient from './EventPageClient'
+import { EventStructuredData } from '../../../components/StructuredData'
 import type { Event } from '../../../types'
 
 interface PageProps {
@@ -61,27 +59,15 @@ export default async function EventDetailPage({ params }: PageProps) {
   const event = await getEventData(id)
 
   if (!event) {
-    return (
-      <Container size="lg" py="xl">
-        <Stack gap="md">
-          <Alert style={{ color: colors.gamble[5] }} radius="md">
-            Event not found
-          </Alert>
-          <Button
-            component={Link}
-            href="/events"
-            variant="subtle"
-            color="gray"
-            leftSection={<ArrowLeft size={18} />}
-          >
-            Back to Events
-          </Button>
-        </Stack>
-      </Container>
-    )
+    notFound()
   }
 
-  return <EventPageClient initialEvent={event} />
+  return (
+    <>
+      <EventStructuredData event={event} />
+      <EventPageClient initialEvent={event} />
+    </>
+  )
 }
 
 export const dynamic = 'force-dynamic'

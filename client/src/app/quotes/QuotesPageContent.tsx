@@ -20,6 +20,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getCardStyles } from '../../lib/mantine-theme'
 import { notifications } from '@mantine/notifications'
 import { Quote, Search, X } from 'lucide-react'
@@ -77,8 +78,12 @@ export default function QuotesPageContent({
   const [quotes, setQuotes] = useState<QuoteData[]>(initialQuotes)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
+  const [searchInput, setSearchInput] = useState(initialSearch)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [currentPage, setCurrentPage] = useState(initialPage)
+
+  // Debounce search input to prevent rate limiting
+  const [debouncedSearch] = useDebouncedValue(searchInput, 300)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [total, setTotal] = useState(initialTotal)
   const [characterName, setCharacterName] = useState<string | null>(initialCharacterName)
@@ -132,6 +137,24 @@ export default function QuotesPageContent({
       notifications.show({ message, color: 'red' })
     }
   }, [pageData, pageLoading, pageError])
+
+  // Update search query when debounced value changes
+  useEffect(() => {
+    if (debouncedSearch.trim() !== searchQuery) {
+      setSearchQuery(debouncedSearch.trim())
+      setCurrentPage(1)
+      // Update URL
+      const params = new URLSearchParams(searchParams.toString())
+      if (debouncedSearch.trim()) {
+        params.set('search', debouncedSearch.trim())
+      } else {
+        params.delete('search')
+      }
+      params.set('page', '1')
+      const queryString = params.toString()
+      router.push(queryString ? `/quotes?${queryString}` : '/quotes')
+    }
+  }, [debouncedSearch, searchQuery, searchParams, router])
 
   // Function to update modal position based on hovered element (following arcs pattern)
   const updateModalPosition = useCallback((quote?: QuoteData) => {
@@ -202,21 +225,29 @@ export default function QuotesPageContent({
 
   // Search and page handlers
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value)
-    setCurrentPage(1)
-    
-    // Update URL
-    const params = new URLSearchParams(searchParams.toString())
-    if (event.target.value) {
-      params.set('search', event.target.value)
-    } else {
-      params.delete('search')
+    // Only update input - debounce effect handles search query and URL
+    setSearchInput(event.target.value)
+  }
+
+  // Handle Enter key - bypass debounce for immediate search
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const value = searchInput.trim()
+      if (value !== searchQuery) {
+        setSearchQuery(value)
+        setCurrentPage(1)
+        // Update URL
+        const params = new URLSearchParams(searchParams.toString())
+        if (value) {
+          params.set('search', value)
+        } else {
+          params.delete('search')
+        }
+        params.set('page', '1')
+        const queryString = params.toString()
+        router.push(queryString ? `/quotes?${queryString}` : '/quotes')
+      }
     }
-    params.set('page', '1')
-    const queryString = params.toString()
-    router.push(queryString ? `/quotes?${queryString}` : '/quotes')
-    // trigger refresh via usePaged
-    refresh(true)
   }
 
   const handlePageChange = (page: number) => {
@@ -245,9 +276,10 @@ export default function QuotesPageContent({
   }
 
   const clearSearch = () => {
+    setSearchInput('')
     setSearchQuery('')
     setCurrentPage(1)
-    
+
     const params = new URLSearchParams(searchParams.toString())
     params.delete('search')
     params.set('page', '1')
@@ -321,8 +353,9 @@ export default function QuotesPageContent({
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
               placeholder="Search quotes, speakers, or context..."
-              value={searchQuery}
+              value={searchInput}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               leftSection={<Search size={20} />}
               size="lg"
               radius="xl"

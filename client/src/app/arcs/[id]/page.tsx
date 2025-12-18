@@ -1,9 +1,6 @@
 import React from 'react'
-import { Alert, Button, Container, Stack } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../../lib/mantine-theme'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { api } from '../../../lib/api'
 import ArcPageClient from './ArcPageClient'
 
@@ -114,18 +111,7 @@ export default async function ArcDetailPage({ params }: PageProps) {
   const data = await getArcData(id)
 
   if (!data?.arc) {
-    return (
-      <Container size="lg" py="xl">
-        <Stack gap="md">
-          <Alert color="red" radius="md">
-            Arc not found
-          </Alert>
-          <Button component={Link} href="/arcs" variant="subtle" color="gray" leftSection={<ArrowLeft size={18} />}>
-            Back to Arcs
-          </Button>
-        </Stack>
-      </Container>
-    )
+    notFound()
   }
 
   const { arc, events, gambles } = data

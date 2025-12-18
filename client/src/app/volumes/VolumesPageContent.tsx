@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -10,7 +10,6 @@ import {
   Card,
   Loader,
   Pagination,
-  Paper,
   Stack,
   Text,
   TextInput,
@@ -23,10 +22,12 @@ import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getH
 import { AlertCircle, Search, Book, Hash, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { api } from '../../lib/api'
 import MediaThumbnail from '../../components/MediaThumbnail'
 import ErrorBoundary from '../../components/ErrorBoundary'
+import { useHoverModal } from '../../hooks/useHoverModal'
+import { HoverModal } from '../../components/HoverModal'
 
 interface Volume {
   id: number
@@ -47,7 +48,7 @@ interface VolumesPageContentProps {
   initialError: string
 }
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 12
 
 export default function VolumesPageContent({
   initialVolumes,
@@ -71,11 +72,15 @@ export default function VolumesPageContent({
   // Client-side pagination
   const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
-  // Hover modal state
-  const [hoveredVolume, setHoveredVolume] = useState<Volume | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Hover modal
+  const {
+    hoveredItem: hoveredVolume,
+    hoverPosition,
+    handleMouseEnter: handleVolumeMouseEnter,
+    handleMouseLeave: handleVolumeMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave
+  } = useHoverModal<Volume>()
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
@@ -142,71 +147,6 @@ export default function VolumesPageContent({
     setSearchQuery(urlSearch)
   }, [searchParams])
 
-
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((volume?: Volume) => {
-    const currentVolume = volume || hoveredVolume
-    if (hoveredElementRef.current && currentVolume) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredVolume])
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredVolume && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredVolume, updateModalPosition])
-
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const newSearch = event.target.value
     setSearchQuery(newSearch)
@@ -234,46 +174,6 @@ export default function VolumesPageContent({
     setCurrentPage(page) // Update local state immediately
     // No API calls needed - everything is client-side now!
   }, [])
-
-  // Hover modal handlers
-  const handleVolumeMouseEnter = (volume: Volume, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredVolume(volume)
-      updateModalPosition(volume) // Pass volume directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleVolumeMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredVolume(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredVolume(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
-  }
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
@@ -562,89 +462,66 @@ export default function VolumesPageContent({
       )}
 
       {/* Hover Modal */}
-      <AnimatePresence>
-        {hoveredVolume && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
-              style={{
-                backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                border: `2px solid ${accentVolume}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
-              }}
+      <HoverModal
+        isOpen={!!hoveredVolume}
+        position={hoverPosition}
+        accentColor={accentVolume}
+        onMouseEnter={handleModalMouseEnter}
+        onMouseLeave={handleModalMouseLeave}
+      >
+        {hoveredVolume && (
+          <>
+            {/* Volume Title */}
+            <Title
+              order={4}
+              size="md"
+              fw={700}
+              c={accentVolume}
+              ta="center"
+              lineClamp={2}
             >
-              <Stack gap="sm">
-                {/* Volume Title */}
-                <Title
-                  order={4}
-                  size="md"
-                  fw={700}
-                  c={accentVolume}
-                  ta="center"
-                  lineClamp={2}
-                >
-                  {hoveredVolume.title || `Volume ${hoveredVolume.number}`}
-                </Title>
+              {hoveredVolume.title || `Volume ${hoveredVolume.number}`}
+            </Title>
 
-                {/* Volume Info */}
-                <Group justify="center" gap="xs">
-                  <Badge
-                    variant="filled"
-                    c="white"
-                    size="sm"
-                    fw={600}
-                    leftSection={<Hash size={12} />}
-                    style={{ backgroundColor: getEntityThemeColor(theme, 'media') }}
-                  >
-                    Ch. {hoveredVolume.startChapter}-{hoveredVolume.endChapter}
-                  </Badge>
-                </Group>
+            {/* Volume Info */}
+            <Group justify="center" gap="xs">
+              <Badge
+                variant="filled"
+                c="white"
+                size="sm"
+                fw={600}
+                leftSection={<Hash size={12} />}
+                style={{ backgroundColor: getEntityThemeColor(theme, 'media') }}
+              >
+                Ch. {hoveredVolume.startChapter}-{hoveredVolume.endChapter}
+              </Badge>
+            </Group>
 
-                {/* Description */}
-                {hoveredVolume.description && (
-                  <Text
-                    size="sm"
-                    ta="center"
-                    lineClamp={3}
-                    style={{
-                      color: theme.colors.gray[6],
-                      lineHeight: 1.4,
-                      maxHeight: rem(60)
-                    }}
-                  >
-                    {hoveredVolume.description}
-                  </Text>
-                )}
+            {/* Description */}
+            {hoveredVolume.description && (
+              <Text
+                size="sm"
+                ta="center"
+                lineClamp={3}
+                style={{
+                  color: theme.colors.gray[6],
+                  lineHeight: 1.4,
+                  maxHeight: rem(60)
+                }}
+              >
+                {hoveredVolume.description}
+              </Text>
+            )}
 
-                {/* Chapter Count */}
-                <Group justify="center">
-                  <Text size="xs" style={{ color: theme.colors.gray[6] }}>
-                    {hoveredVolume.endChapter - hoveredVolume.startChapter + 1} chapters
-                  </Text>
-                </Group>
-              </Stack>
-            </Paper>
-          </motion.div>
+            {/* Chapter Count */}
+            <Group justify="center">
+              <Text size="xs" style={{ color: theme.colors.gray[6] }}>
+                {hoveredVolume.endChapter - hoveredVolume.startChapter + 1} chapters
+              </Text>
+            </Group>
+          </>
         )}
-      </AnimatePresence>
+      </HoverModal>
     </motion.div>
     </Box>
   )

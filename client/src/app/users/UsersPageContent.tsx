@@ -31,6 +31,7 @@ import {
 } from '../../lib/mantine-theme'
 import { Search, Users as UsersIcon, BookOpen, ArrowUpDown, TrendingUp, Calendar, X } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
@@ -61,21 +62,28 @@ interface PublicUser {
   userProgress?: number
 }
 
-const RESULTS_PER_PAGE = 20
+const RESULTS_PER_PAGE = 12
 const TOTAL_CHAPTERS = 539
 
 type SortOption = 'username' | 'newest' | 'progress' | 'guides'
 
 export default function UsersPageContent() {
   const theme = useMantineTheme()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const accentCommunity = theme.other?.usogui?.organization ?? theme.colors.purple?.[6] ?? '#7c3aed'
 
+  // Initialize from URL params
+  const initialSearch = searchParams.get('search') || ''
+  const initialPage = parseInt(searchParams.get('page') || '1', 10)
+  const initialSort = (searchParams.get('sort') as SortOption) || 'newest'
+
   const [users, setUsers] = useState<PublicUser[]>([])
-  const [searchInput, setSearchInput] = useState('')
-  const [debouncedSearch] = useDebouncedValue(searchInput, 250)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<SortOption>('newest')
-  const [page, setPage] = useState(1)
+  const [searchInput, setSearchInput] = useState(initialSearch)
+  const [debouncedSearch] = useDebouncedValue(searchInput, 300)
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [sortBy, setSortBy] = useState<SortOption>(initialSort)
+  const [page, setPage] = useState(initialPage)
   const [totalPages, setTotalPages] = useState(0)
   const [total, setTotal] = useState(0)
 
@@ -105,6 +113,17 @@ export default function UsersPageContent() {
     }
   )
 
+  // Update URL when search, sort, or page changes
+  const updateURL = useCallback((newSearch: string, newPage: number, newSort: SortOption) => {
+    const params = new URLSearchParams()
+    if (newSearch) params.set('search', newSearch)
+    if (newPage > 1) params.set('page', newPage.toString())
+    if (newSort !== 'newest') params.set('sort', newSort)
+
+    const url = params.toString() ? `/users?${params.toString()}` : '/users'
+    router.push(url, { scroll: false })
+  }, [router])
+
   useEffect(() => {
     if (pageData) {
       setUsers(pageData.data || [])
@@ -121,7 +140,8 @@ export default function UsersPageContent() {
 
     setSearchQuery(normalized)
     setPage(1)
-  }, [debouncedSearch, searchQuery])
+    updateURL(normalized, 1, sortBy)
+  }, [debouncedSearch, searchQuery, sortBy, updateURL])
 
   const sortedUsers = useMemo(() => {
     const usersCopy = [...users]
@@ -144,17 +164,37 @@ export default function UsersPageContent() {
     setSearchInput(event.target.value)
   }
 
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const value = searchInput.trim()
+      if (value !== searchQuery) {
+        setSearchQuery(value)
+        setPage(1)
+        updateURL(value, 1, sortBy)
+      }
+    }
+  }
+
   const handleClearSearch = useCallback(() => {
     setSearchInput('')
     setSearchQuery('')
     setPage(1)
-  }, [])
+    updateURL('', 1, sortBy)
+  }, [sortBy, updateURL])
 
   const handlePageChange = (value: number) => {
     setPage(value)
+    updateURL(searchQuery, value, sortBy)
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }
+
+  const handleSortChange = (value: string | null) => {
+    const newSort = (value as SortOption) || 'newest'
+    setSortBy(newSort)
+    setPage(1)
+    updateURL(searchQuery, 1, newSort)
   }
 
   const errorMessage = pageError
@@ -228,7 +268,7 @@ export default function UsersPageContent() {
             </Box>
 
             <Stack align="center" gap={4} maw={520} ta="center">
-              <Title order={1} size="1.5rem" fw={700} c="#ffffff">
+              <Title order={1} size="1.5rem" fw={700} c={accentCommunity}>
                 Community Hub
               </Title>
               <Text size="sm" c="dimmed">
@@ -247,7 +287,7 @@ export default function UsersPageContent() {
           </Stack>
         </Box>
 
-        <Container size="xl" px="md" mb="md">
+        <Container size="lg" px="md" mb="md">
           <Paper
             withBorder
             radius="md"
@@ -266,6 +306,7 @@ export default function UsersPageContent() {
                     placeholder="Search by username..."
                     value={searchInput}
                     onChange={handleSearch}
+                    onKeyDown={handleSearchKeyDown}
                     leftSection={<Search size={16} />}
                     rightSection={
                       searchInput && (
@@ -297,7 +338,7 @@ export default function UsersPageContent() {
                   radius="md"
                   placeholder="Sort by..."
                   value={sortBy}
-                  onChange={(value) => setSortBy(value as SortOption)}
+                  onChange={handleSortChange}
                   leftSection={<ArrowUpDown size={16} />}
                   data={[
                     { value: 'newest', label: 'Newest Members' },
@@ -367,7 +408,7 @@ export default function UsersPageContent() {
         </Container>
 
         {errorMessage && (
-          <Container size="xl" px="md" pb="xl">
+          <Container size="lg" px="md" pb="xl">
             <Alert
               color={accentCommunity}
               variant="light"
@@ -380,7 +421,7 @@ export default function UsersPageContent() {
         )}
 
         {!errorMessage && (
-          <Container size="xl" px="md" pb="xl">
+          <Container size="lg" px="md" pb="xl">
             {isLoading ? (
               <Group justify="center" py="xl">
                 <Loader size="lg" color={accentCommunity} />

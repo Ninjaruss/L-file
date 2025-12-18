@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 import { api } from '../../../lib/api'
 import GuidePageClient from './GuidePageClient'
+import { GuideStructuredData } from '../../../components/StructuredData'
 import { GuideStatus } from '../../../types'
 
 interface PageProps {
@@ -87,11 +88,16 @@ export default async function GuidePage({ params }: PageProps) {
     
     // For approved guides, render normally
     if (guide.status === GuideStatus.APPROVED) {
-      return <GuidePageClient initialGuide={guide} />
+      return (
+        <>
+          <GuideStructuredData guide={guide} />
+          <GuidePageClient initialGuide={guide} />
+        </>
+      )
     }
-    
+
     // For non-approved guides, let the client component handle authentication
-    // and determine if the user can see this guide
+    // and determine if the user can see this guide (no structured data for non-public guides)
     return <GuidePageClient initialGuide={guide} />
     
   } catch (error: any) {

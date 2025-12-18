@@ -4,8 +4,20 @@
 - Add image upload for gambles, events, organizations, volumes (need to setup Backblaze + CDN)
 - Add proper README at the root of the project; add AGPL v3 license to allow people to copy but force them to open source as well
 - Donation linking to badges; badge system with perks
-- Fix searching for users page
-- Clean up ui for users and media pages
+
+## 2025-12-17
+- Fixed the entity display image for the list and detail pages of characters, arcs, organizations, gambles, and events
+- Added check for user authenticated for guides list page
+
+## 2025-12-12
+- Fixed sorting characters by first chapter appearance; remove newest filter from characters, arcs, gambles; add a better specific filter?
+- Guides list page also shows author user profile picture
+- Search bar result shows chapter number of chapter next to the chapter title
+
+## 2025-12-11
+- Url sync to allow saving pages with search filters
+- Standardized hover modal component to reusable component
+- Shared back button component for all public detail pages
 
 ## 2025-12-10
 ### Changes
@@ -13,6 +25,9 @@
 - Resolved "property id should not exist" issue with admin dashboard (it was not trimming the additional fields received from react admin)
 - Adjusting search for users page
 - Updates to admin dashboard show/edit look
+- Standardize pagination to 12 items per page
+Added sorting to characters, arcs, and gambles list pages
+- Consistent 404 handling for all list pages
 
 ## 2025-10-01
 ### Changes

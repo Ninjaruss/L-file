@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -10,8 +10,8 @@ import {
   Card,
   Group,
   Loader,
-  Paper,
   Pagination,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -19,15 +19,21 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
-import { Dices, Search, X } from 'lucide-react'
+import { Dices, Search, X, ArrowUpDown, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import MediaThumbnail from '../../components/MediaThumbnail'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
+import { useHoverModal } from '../../hooks/useHoverModal'
+import { HoverModal } from '../../components/HoverModal'
+import { useProgress } from '../../providers/ProgressProvider'
+import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
+import { shouldHideSpoiler } from '../../lib/spoiler-utils'
 
 type Participant = {
   id: number
@@ -58,6 +64,13 @@ interface GamblesPageContentProps {
   initialError: string
 }
 
+type SortOption = 'name' | 'chapter'
+
+const sortOptions = [
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'chapter', label: 'Chapter' }
+]
+
 export default function GamblesPageContent({
   initialGambles,
   initialTotalPages,
@@ -70,26 +83,36 @@ export default function GamblesPageContent({
   const theme = useMantineTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { userProgress } = useProgress()
+  const { settings: spoilerSettings } = useSpoilerSettings()
 
   const [gambles, setGambles] = useState<Gamble[]>(initialGambles)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
+  const [searchInput, setSearchInput] = useState(initialSearch)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
+  // Debounce search input to prevent rate limiting
+  const [debouncedSearch] = useDebouncedValue(searchInput, 300)
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [total, setTotal] = useState(initialTotal)
   const [characterFilter, setCharacterFilter] = useState<string | null>(initialCharacterFilter || null)
+  const [sortBy, setSortBy] = useState<SortOption>((searchParams.get('sort') as SortOption) || 'name')
 
-  // Hover modal state
-  const [hoveredGamble, setHoveredGamble] = useState<Gamble | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Hover modal
+  const {
+    hoveredItem: hoveredGamble,
+    hoverPosition,
+    handleMouseEnter: handleGambleMouseEnter,
+    handleMouseLeave: handleGambleMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave
+  } = useHoverModal<Gamble>()
 
   const accentGamble = theme.other?.usogui?.gamble ?? theme.colors.red?.[5] ?? '#d32f2f'
-  const hasSearchQuery = searchQuery.trim().length > 0
+  const hasSearchQuery = searchInput.trim().length > 0 || characterFilter !== null
 
-  const updateURL = (newSearch: string, newPage: number, newCharacter?: string) => {
+  const updateURL = (newSearch: string, newPage: number, newCharacter?: string, newSort?: SortOption) => {
     const params = new URLSearchParams(searchParams.toString())
     if (newSearch) params.set('search', newSearch)
     else params.delete('search')
@@ -100,16 +123,33 @@ export default function GamblesPageContent({
     if (newCharacter) params.set('character', newCharacter)
     else params.delete('character')
 
+    if (newSort && newSort !== 'name') params.set('sort', newSort)
+    else params.delete('sort')
+
     router.push(`/gambles${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   const fetcher = useCallback(async (page = 1) => {
+    // Helper to sort gambles client-side
+    const sortGambles = (gambles: Gamble[]) => {
+      return [...gambles].sort((a, b) => {
+        switch (sortBy) {
+          case 'name':
+            return (a.name || '').localeCompare(b.name || '')
+          case 'chapter':
+            return (a.chapterId || 999) - (b.chapterId || 999)
+          default:
+            return 0
+        }
+      })
+    }
+
     if (characterFilter) {
       const charactersResponse = await api.getCharacters({ name: characterFilter, limit: 1 })
       if (charactersResponse.data.length > 0) {
         const characterId = charactersResponse.data[0].id
         const characterGamblesResponse = await api.getCharacterGambles(characterId, { limit: 1000 })
-        const allGambles = characterGamblesResponse.data || []
+        const allGambles = sortGambles(characterGamblesResponse.data || [])
         const startIndex = (page - 1) * 12
         const endIndex = startIndex + 12
         return { data: allGambles.slice(startIndex, endIndex), total: allGambles.length, page, perPage: 12, totalPages: Math.max(1, Math.ceil(allGambles.length / 12)) }
@@ -119,15 +159,23 @@ export default function GamblesPageContent({
 
     const params: any = { page, limit: 12 }
     if (searchQuery) params.gambleName = searchQuery
+    // Map sort option to API params
+    if (sortBy === 'name') {
+      params.sortBy = 'name'
+      params.sortOrder = 'ASC'
+    } else if (sortBy === 'chapter') {
+      params.sortBy = 'chapterId'
+      params.sortOrder = 'ASC'
+    }
     const resAny = await api.getGambles(params)
     return { data: resAny.data || [], total: resAny.total || 0, page: resAny.page || page, perPage: 12, totalPages: resAny.totalPages || Math.max(1, Math.ceil((resAny.total || 0) / 12)) }
-  }, [characterFilter, searchQuery])
+  }, [characterFilter, searchQuery, sortBy])
 
   const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh } = usePaged<Gamble>(
     'gambles',
     currentPage,
     fetcher,
-    { gambleName: searchQuery, character: characterFilter },
+    { gambleName: searchQuery, character: characterFilter, sort: sortBy },
     { ttlMs: pagedCacheConfig.lists.gambles.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.gambles.maxEntries }
   )
 
@@ -140,103 +188,74 @@ export default function GamblesPageContent({
     setLoading(!!pageLoading)
   }, [pageData, pageLoading])
 
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((gamble?: Gamble) => {
-    const currentGamble = gamble || hoveredGamble
-    if (hoveredElementRef.current && currentGamble) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredGamble])
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredGamble && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredGamble, updateModalPosition])
-
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.currentTarget.value
-    setSearchQuery(newSearch)
+    // Only update input - debounce effect handles search query and URL
+    setSearchInput(event.currentTarget.value)
   }, [])
 
-  // Debounce search query changes
+  // Handle Enter key - bypass debounce for immediate search
+  const handleSearchKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const value = searchInput.trim()
+      if (value !== searchQuery) {
+        setSearchQuery(value)
+        setCurrentPage(1)
+        const params = new URLSearchParams()
+        if (value) params.set('search', value)
+        if (characterFilter) params.set('character', characterFilter)
+        if (sortBy !== 'name') params.set('sort', sortBy)
+        params.set('page', '1')
+        router.push(`/gambles?${params.toString()}`)
+      }
+    }
+  }, [searchInput, searchQuery, characterFilter, sortBy, router])
+
+  // Update search query when debounced value changes
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    if (debouncedSearch.trim() !== searchQuery) {
+      setSearchQuery(debouncedSearch.trim())
+      setCurrentPage(1)
       const params = new URLSearchParams()
-      if (searchQuery) params.set('search', searchQuery)
-      params.set('page', '1') // Reset to first page on new search
-
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+      if (characterFilter) params.set('character', characterFilter)
+      if (sortBy !== 'name') params.set('sort', sortBy)
+      params.set('page', '1')
       router.push(`/gambles?${params.toString()}`)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, router])
+    }
+  }, [debouncedSearch, searchQuery, characterFilter, sortBy, router])
 
   const handleClearSearch = useCallback(() => {
+    setSearchInput('')
     setSearchQuery('')
     setCharacterFilter(null)
 
     const params = new URLSearchParams()
+    if (sortBy !== 'name') params.set('sort', sortBy)
     params.set('page', '1')
 
     router.push(`/gambles?${params.toString()}`)
-  }, [router])
+  }, [router, sortBy])
 
   const handlePageChange = useCallback((page: number) => {
     const params = new URLSearchParams()
     if (searchQuery) params.set('search', searchQuery)
     if (characterFilter) params.set('character', characterFilter)
+    if (sortBy !== 'name') params.set('sort', sortBy)
     params.set('page', page.toString())
+
+    router.push(`/gambles?${params.toString()}`)
+  }, [router, searchQuery, characterFilter, sortBy])
+
+  const handleSortChange = useCallback((value: string | null) => {
+    const newSort = (value as SortOption) || 'name'
+    setSortBy(newSort)
+    setCurrentPage(1)
+
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (characterFilter) params.set('character', characterFilter)
+    if (newSort !== 'name') params.set('sort', newSort)
+    params.set('page', '1')
 
     router.push(`/gambles?${params.toString()}`)
   }, [router, searchQuery, characterFilter])
@@ -247,46 +266,6 @@ export default function GamblesPageContent({
     updateURL(searchQuery, 1)
     // Use usePaged refresh to reload page data after clearing the character filter
     refresh(true)
-  }
-
-  // Hover modal handlers
-  const handleGambleMouseEnter = (gamble: Gamble, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredGamble(gamble)
-      updateModalPosition(gamble) // Pass gamble directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleGambleMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredGamble(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredGamble(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
   }
 
   return (
@@ -344,12 +323,13 @@ export default function GamblesPageContent({
 
       {/* Search and Filters */}
       <Box mb="xl" px="md">
-        <Group justify="center" mb="md">
-          <Box style={{ maxWidth: rem(600), width: '100%' }}>
+        <Group justify="center" mb="md" gap="md">
+          <Box style={{ maxWidth: rem(450), width: '100%' }}>
             <TextInput
               placeholder="Search gambles by name or description..."
-              value={searchQuery}
+              value={searchInput}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               leftSection={<Search size={20} />}
               size="lg"
               radius="xl"
@@ -369,6 +349,20 @@ export default function GamblesPageContent({
               }}
             />
           </Box>
+          <Select
+            data={sortOptions}
+            value={sortBy}
+            onChange={handleSortChange}
+            leftSection={<ArrowUpDown size={16} />}
+            w={180}
+            size="lg"
+            radius="xl"
+            styles={{
+              input: {
+                fontSize: rem(14)
+              }
+            }}
+          />
         </Group>
 
         {characterFilter && (
@@ -391,15 +385,17 @@ export default function GamblesPageContent({
 
       {/* Error State */}
       {error && (
-        <Alert
-          style={{ color: getEntityThemeColor(theme, 'gamble') }}
-          radius="md"
-          mb="xl"
-          icon={<X size={16} />}
-          title="Error loading gambles"
-        >
-          {error}
-        </Alert>
+        <Box px="md">
+          <Alert
+            color="red"
+            radius="md"
+            mb="xl"
+            icon={<AlertCircle size={16} />}
+            title="Error loading gambles"
+          >
+            {error}
+          </Alert>
+        </Box>
       )}
 
       {/* Loading State */}
@@ -461,7 +457,15 @@ export default function GamblesPageContent({
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
-                        handleGambleMouseEnter(gamble, e)
+                        // Only show hover modal if content is not spoilered
+                        const isSpoilered = shouldHideSpoiler(
+                          gamble.chapterId,
+                          userProgress,
+                          spoilerSettings
+                        )
+                        if (!isSpoilered) {
+                          handleGambleMouseEnter(gamble, e)
+                        }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)'
@@ -507,6 +511,7 @@ export default function GamblesPageContent({
                           maxWidth={200}
                           maxHeight={240}
                           disableExternalLinks={true}
+                          spoilerChapter={gamble.chapterId}
                         />
                       </Box>
 
@@ -554,7 +559,7 @@ export default function GamblesPageContent({
                     total={totalPages}
                     value={currentPage}
                     onChange={handlePageChange}
-                    style={{ color: getEntityThemeColor(theme, 'gamble') }}
+                    color="gamble"
                     size="lg"
                     radius="xl"
                     withEdges
@@ -567,138 +572,115 @@ export default function GamblesPageContent({
       )}
 
       {/* Hover Modal */}
-      <AnimatePresence>
-        {hoveredGamble && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
-              style={{
-                backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                border: `2px solid ${accentGamble}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
-              }}
+      <HoverModal
+        isOpen={!!hoveredGamble}
+        position={hoverPosition}
+        accentColor={accentGamble}
+        onMouseEnter={handleModalMouseEnter}
+        onMouseLeave={handleModalMouseLeave}
+      >
+        {hoveredGamble && (
+          <>
+            {/* Gamble Name */}
+            <Title
+              order={4}
+              size="md"
+              fw={700}
+              c={accentGamble}
+              ta="center"
+              lineClamp={2}
             >
-              <Stack gap="sm">
-                {/* Gamble Name */}
-                <Title
-                  order={4}
-                  size="md"
-                  fw={700}
-                  c={accentGamble}
-                  ta="center"
-                  lineClamp={2}
+              {hoveredGamble.name}
+            </Title>
+
+            {/* Description */}
+            {hoveredGamble.description && (
+              <Text
+                size="sm"
+                ta="center"
+                lineClamp={3}
+                style={{
+                  color: theme.colors.gray[6],
+                  lineHeight: 1.4,
+                  maxHeight: rem(60)
+                }}
+              >
+                {hoveredGamble.description}
+              </Text>
+            )}
+
+            {/* Chapter and Participants */}
+            <Group justify="center" gap="xs">
+              <Badge
+                variant="filled"
+                c="white"
+                style={{ backgroundColor: accentGamble }}
+                size="sm"
+                fw={600}
+              >
+                Ch. {hoveredGamble.chapterId}
+              </Badge>
+              {hoveredGamble.participants && hoveredGamble.participants.length > 0 && (
+                <Badge
+                  variant="light"
+                  style={{ color: getEntityThemeColor(theme, 'event') }}
+                  size="sm"
+                  fw={500}
                 >
-                  {hoveredGamble.name}
-                </Title>
+                  {hoveredGamble.participants.length} participant{hoveredGamble.participants.length !== 1 ? 's' : ''}
+                </Badge>
+              )}
+            </Group>
 
-                {/* Description */}
-                {hoveredGamble.description && (
-                  <Text
-                    size="sm"
-                    ta="center"
-                    lineClamp={3}
-                    style={{
-                      color: theme.colors.gray[6],
-                      lineHeight: 1.4,
-                      maxHeight: rem(60)
-                    }}
-                  >
-                    {hoveredGamble.description}
-                  </Text>
-                )}
-
-                {/* Chapter and Participants */}
-                <Group justify="center" gap="xs">
+            {/* Participants */}
+            {hoveredGamble.participants && hoveredGamble.participants.length > 0 && (
+              <Group justify="center" gap="xs" wrap="wrap">
+                {hoveredGamble.participants.slice(0, 3).map((participant) => (
                   <Badge
-                    variant="filled"
-                    c="white"
-                    style={{ backgroundColor: accentGamble }}
-                    size="sm"
-                    fw={600}
+                    key={participant.id}
+                    variant="outline"
+                    style={{ color: getEntityThemeColor(theme, 'character') }}
+                    size="xs"
+                    fw={500}
                   >
-                    Ch. {hoveredGamble.chapterId}
+                    {participant.name}
                   </Badge>
-                  {hoveredGamble.participants && hoveredGamble.participants.length > 0 && (
-                    <Badge
-                      variant="light"
-                      style={{ color: getEntityThemeColor(theme, 'event') }}
-                      size="sm"
-                      fw={500}
-                    >
-                      {hoveredGamble.participants.length} participant{hoveredGamble.participants.length !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </Group>
-
-                {/* Participants */}
-                {hoveredGamble.participants && hoveredGamble.participants.length > 0 && (
-                  <Group justify="center" gap="xs" wrap="wrap">
-                    {hoveredGamble.participants.slice(0, 3).map((participant) => (
-                      <Badge
-                        key={participant.id}
-                        variant="outline"
-                        style={{ color: getEntityThemeColor(theme, 'character') }}
-                        size="xs"
-                        fw={500}
-                      >
-                        {participant.name}
-                      </Badge>
-                    ))}
-                    {hoveredGamble.participants.length > 3 && (
-                      <Badge
-                        variant="outline"
-                        style={{ color: getEntityThemeColor(theme, 'character') }}
-                        size="xs"
-                        fw={500}
-                      >
-                        +{hoveredGamble.participants.length - 3}
-                      </Badge>
-                    )}
-                  </Group>
+                ))}
+                {hoveredGamble.participants.length > 3 && (
+                  <Badge
+                    variant="outline"
+                    style={{ color: getEntityThemeColor(theme, 'character') }}
+                    size="xs"
+                    fw={500}
+                  >
+                    +{hoveredGamble.participants.length - 3}
+                  </Badge>
                 )}
+              </Group>
+            )}
 
-                {/* Win Condition */}
-                {hoveredGamble.winCondition && (
-                  <Box>
-                    <Text size="xs" fw={600} style={{ color: theme.colors.gray[6] }} mb={2} ta="center">
-                      Win Condition:
-                    </Text>
-                    <Text
-                      size="xs"
-                      lineClamp={2}
-                      ta="center"
-                      style={{
-                        color: theme.colors.gray[6],
-                        lineHeight: 1.4
-                      }}
-                    >
-                      {hoveredGamble.winCondition}
-                    </Text>
-                  </Box>
-                )}
-              </Stack>
-            </Paper>
-          </motion.div>
+            {/* Win Condition */}
+            {hoveredGamble.winCondition && (
+              <Box>
+                <Text size="xs" fw={600} style={{ color: theme.colors.gray[6] }} mb={2} ta="center">
+                  Win Condition:
+                </Text>
+                <Text
+                  size="xs"
+                  lineClamp={2}
+                  ta="center"
+                  style={{
+                    color: theme.colors.gray[6],
+                    lineHeight: 1.4
+                  }}
+                >
+                  {hoveredGamble.winCondition}
+                </Text>
+              </Box>
+            )}
+          </>
         )}
-      </AnimatePresence>
+      </HoverModal>
     </motion.div>
     </Box>
   )

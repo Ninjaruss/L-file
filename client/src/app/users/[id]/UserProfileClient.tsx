@@ -110,7 +110,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
         const guidesResponse = await api.getGuides({
           limit: 100,
           status: 'approved',
-          authorId: user.id.toString()
+          authorId: user.id
         })
 
         const userGuides = guidesResponse.data ?? []
@@ -218,7 +218,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             {/* Profile Header Section */}
             <Group align="flex-start" gap="xl" wrap="nowrap">
               <Box style={{ flexShrink: 0 }}>
-                <UserProfileImage user={user} size={140} showFallback className="user-profile-avatar-large" />
+                <UserProfileImage user={user} size={140} showFallback showHoverInfo className="user-profile-avatar-large" />
               </Box>
 
               <Stack gap="lg" style={{ flex: 1, minWidth: 0 }}>

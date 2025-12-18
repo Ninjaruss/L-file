@@ -294,6 +294,8 @@ class ApiClient {
     name?: string
     arc?: string
     includeOrganizations?: boolean
+    sort?: string
+    order?: string
   }) {
     const searchParams = new URLSearchParams()
     if (params) {
@@ -500,6 +502,10 @@ class ApiClient {
     return this.get<any>(`/events/${id}`)
   }
 
+  async getEventsByChapter(chapterNumber: number) {
+    return this.get<any[]>(`/events/by-chapter/${chapterNumber}`)
+  }
+
   async search(options: {
     query: string
     type?: string
@@ -537,12 +543,11 @@ class ApiClient {
     }>(`/search?${params.toString()}`)
   }
 
-  async getGuides(params?: { page?: number; limit?: number; title?: string; authorId?: string; status?: string; tag?: string }) {
+  async getGuides(params?: { page?: number; limit?: number; search?: string; authorId?: number; status?: string; tag?: string }) {
     const searchParams = new URLSearchParams()
     if (params) {
-      // Map title to search parameter to match backend API
-      if (params.title) {
-        searchParams.append('search', params.title)
+      if (params.search) {
+        searchParams.append('search', params.search)
       }
       if (params.page) {
         searchParams.append('page', params.page.toString())
@@ -551,7 +556,7 @@ class ApiClient {
         searchParams.append('limit', params.limit.toString())
       }
       if (params.authorId) {
-        searchParams.append('authorId', params.authorId)
+        searchParams.append('authorId', params.authorId.toString())
       }
       if (params.status) {
         searchParams.append('status', params.status)
@@ -858,6 +863,10 @@ class ApiClient {
     return this.get<any>(`/quotes/${id}`)
   }
 
+  async getQuotesByChapter(chapterNumber: number) {
+    return this.get<any[]>(`/quotes/chapter/${chapterNumber}`)
+  }
+
   async createQuote(data: any) {
     return this.post<any>('/quotes', data)
   }
@@ -1026,7 +1035,6 @@ class ApiClient {
     ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume'
     ownerId?: number
     purpose?: 'gallery' | 'entity_display'
-    search?: string
     description?: string
   }) {
     const searchParams = new URLSearchParams()
@@ -1140,7 +1148,7 @@ class ApiClient {
 
 
   async getThumbnailForUserProgress(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume' | 'chapter' | 'guide' | 'quote' | 'media',
     ownerId: number,
     userProgress: number
   ) {
@@ -1148,7 +1156,7 @@ class ApiClient {
   }
 
   async getEntityDisplayMediaForCycling(
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume',
+    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume' | 'chapter' | 'guide' | 'quote' | 'media',
     ownerId: number,
     userProgress?: number
   ): Promise<{ data: any[] }> {

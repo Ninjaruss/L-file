@@ -15,7 +15,6 @@ import {
   Title,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { Upload, Image, Video, FileText, X } from 'lucide-react'
 
 interface MediaUploadFormProps {
@@ -171,8 +170,17 @@ export default function MediaUploadForm({
   return (
     <Box>
       {error && (
-        <Alert style={{ color: getEntityThemeColor(theme, 'gamble') }} radius="md" mb="md">
-          <Text size="sm">{error}</Text>
+        <Alert
+          variant="light"
+          radius="md"
+          mb="md"
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+            color: '#fca5a5'
+          }}
+        >
+          <Text size="sm" c="#f87171">{error}</Text>
         </Alert>
       )}
 
@@ -183,11 +191,11 @@ export default function MediaUploadForm({
 
             <Box
               style={{
-                border: `2px dashed ${theme.colors.red?.[6] ?? '#e11d48'}`,
+                border: `2px dashed ${dragActive ? '#a855f7' : 'rgba(168, 85, 247, 0.5)'}`,
                 borderRadius: theme.radius.lg,
                 padding: '2.5rem 1.5rem',
                 textAlign: 'center',
-                backgroundColor: dragActive ? 'rgba(225, 29, 72, 0.08)' : 'rgba(10, 10, 10, 0.6)',
+                backgroundColor: dragActive ? 'rgba(168, 85, 247, 0.08)' : 'rgba(10, 10, 10, 0.6)',
                 cursor: 'pointer',
                 transition: 'all 150ms ease'
               }}
@@ -210,7 +218,17 @@ export default function MediaUploadForm({
             {selectedFile ? (
               <Stack gap="xs" align="center">
                 <Group gap="xs" align="center">
-                  <Badge radius="lg" style={{ color: getEntityThemeColor(theme, 'gamble') }} size="lg">
+                  <Badge
+                    radius="lg"
+                    size="lg"
+                    styles={{
+                      root: {
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        color: '#a855f7',
+                        border: '1px solid rgba(168, 85, 247, 0.3)'
+                      }
+                    }}
+                  >
                     <Group gap={6} align="center">
                       {getFileIcon(formData.type)}
                       <span>{selectedFile.name} ({formatFileSize(selectedFile.size)})</span>
@@ -258,6 +276,38 @@ export default function MediaUploadForm({
               { value: 'video', label: 'Video (Coming Soon)', disabled: true },
               { value: 'audio', label: 'Audio (Coming Soon)', disabled: true }
             ]}
+            styles={{
+              input: {
+                backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                color: theme.colors.gray?.[0] ?? '#fff',
+                borderColor: 'rgba(255,255,255,0.06)',
+                '&:focus': {
+                  borderColor: '#a855f7',
+                  boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                }
+              },
+              dropdown: {
+                backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                borderColor: '#a855f7',
+                border: '1px solid #a855f7'
+              },
+              option: {
+                color: '#ffffff',
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: '#a855f7',
+                  color: '#000000'
+                },
+                '&[dataSelected="true"]': {
+                  backgroundColor: '#9333ea',
+                  color: '#ffffff'
+                }
+              },
+              label: {
+                color: '#a855f7',
+                fontWeight: 600
+              }
+            }}
           />
 
           <Textarea
@@ -266,14 +316,31 @@ export default function MediaUploadForm({
             value={formData.description}
             onChange={(event) => handleInputChange('description', event.currentTarget.value)}
             placeholder="Describe this media, credit the artist if known, or provide context..."
+            styles={{
+              input: {
+                backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                color: theme.colors.gray?.[0] ?? '#fff',
+                borderColor: 'rgba(255,255,255,0.06)',
+                '&:focus': {
+                  borderColor: '#a855f7',
+                  boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                }
+              },
+              label: {
+                color: '#a855f7',
+                fontWeight: 600
+              }
+            }}
           />
 
           <Select
-            label="Related Entity (Optional)"
-            placeholder="Select entity type"
+            label="Related Entity"
+            placeholder="Select entity type..."
             value={formData.ownerType}
             disabled={dataLoading}
             clearable
+            searchable
+            withAsterisk
             onChange={(value) => {
               handleInputChange('ownerType', (value as typeof formData.ownerType) || '')
               handleInputChange('ownerId', null)
@@ -283,9 +350,41 @@ export default function MediaUploadForm({
               { value: 'arc', label: 'Arc' },
               { value: 'event', label: 'Event' },
               { value: 'gamble', label: 'Gamble' },
-              { value: 'organization', label: 'Organization' },
-              { value: 'user', label: 'User' }
+              { value: 'organization', label: 'Organization' }
             ]}
+            nothingFoundMessage="No matches"
+            styles={{
+              input: {
+                backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                color: theme.colors.gray?.[0] ?? '#fff',
+                borderColor: 'rgba(255,255,255,0.06)',
+                '&:focus': {
+                  borderColor: '#a855f7',
+                  boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                }
+              },
+              dropdown: {
+                backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                borderColor: '#a855f7',
+                border: '1px solid #a855f7'
+              },
+              option: {
+                color: '#ffffff',
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: '#a855f7',
+                  color: '#000000'
+                },
+                '&[dataSelected="true"]': {
+                  backgroundColor: '#9333ea',
+                  color: '#ffffff'
+                }
+              },
+              label: {
+                color: '#a855f7',
+                fontWeight: 600
+              }
+            }}
           />
 
           {formData.ownerType && (
@@ -296,6 +395,41 @@ export default function MediaUploadForm({
               value={formData.ownerId ? String(formData.ownerId) : null}
               onChange={(value) => handleInputChange('ownerId', value ? parseInt(value, 10) : null)}
               data={ownerSelectData()}
+              searchable
+              withAsterisk
+              nothingFoundMessage={dataLoading ? 'Loading...' : 'No matches found'}
+              styles={{
+                input: {
+                  backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                  color: theme.colors.gray?.[0] ?? '#fff',
+                  borderColor: 'rgba(255,255,255,0.06)',
+                  '&:focus': {
+                    borderColor: '#a855f7',
+                    boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                  }
+                },
+                dropdown: {
+                  backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                  borderColor: '#a855f7',
+                  border: '1px solid #a855f7'
+                },
+                option: {
+                  color: '#ffffff',
+                  backgroundColor: 'transparent',
+                  '&:hover': {
+                    backgroundColor: '#a855f7',
+                    color: '#000000'
+                  },
+                  '&[dataSelected="true"]': {
+                    backgroundColor: '#9333ea',
+                    color: '#ffffff'
+                  }
+                },
+                label: {
+                  color: '#a855f7',
+                  fontWeight: 600
+                }
+              }}
             />
           )}
 
@@ -306,6 +440,23 @@ export default function MediaUploadForm({
               onChange={(value) => handleInputChange('chapterNumber', typeof value === 'number' ? value : null)}
               placeholder="e.g. 45"
               min={1}
+              description="Associate with a specific chapter if relevant"
+              hideControls
+              styles={{
+                input: {
+                  backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                  color: theme.colors.gray?.[0] ?? '#fff',
+                  borderColor: 'rgba(255,255,255,0.06)',
+                  '&:focus': {
+                    borderColor: '#a855f7',
+                    boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                  }
+                },
+                label: {
+                  color: '#a855f7',
+                  fontWeight: 600
+                }
+              }}
             />
           )}
 
@@ -313,9 +464,22 @@ export default function MediaUploadForm({
             type="submit"
             size="lg"
             fullWidth
-            disabled={!selectedFile || loading}
-            leftSection={<Upload size={18} />}
+            disabled={!selectedFile || loading || !formData.ownerType || !formData.ownerId}
+            leftSection={!loading ? <Upload size={18} /> : undefined}
             loading={loading}
+            styles={{
+              root: {
+                backgroundColor: '#a855f7',
+                color: '#ffffff',
+                '&:hover': {
+                  backgroundColor: '#9333ea'
+                },
+                '&:disabled': {
+                  backgroundColor: 'rgba(168, 85, 247, 0.3)',
+                  color: 'rgba(255, 255, 255, 0.5)'
+                }
+              }
+            }}
           >
             {loading ? 'Uploading...' : 'Upload Media'}
           </Button>

@@ -32,6 +32,14 @@ interface SearchResult {
   metadata?: any
 }
 
+// Helper function to get display title with chapter number for chapter results
+const getDisplayTitle = (result: SearchResult): string => {
+  if (result.type === 'chapter' && result.metadata?.chapterNumber) {
+    return `Ch. ${result.metadata.chapterNumber} - ${result.title}`
+  }
+  return result.title
+}
+
 interface TrendingData {
   characters?: Array<{
     id: number
@@ -486,7 +494,7 @@ export const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({ trendingDa
                               <Box style={{ flex: 1, minWidth: 0 }}>
                                 <Group gap="xs" align="center" style={{ marginBottom: '0.25rem' }}>
                                   <Text fw={600} size="sm" style={{ color: '#ffffff' }}>
-                                    {result.title}
+                                    {getDisplayTitle(result)}
                                   </Text>
                                   <Badge
                                     size="xs"

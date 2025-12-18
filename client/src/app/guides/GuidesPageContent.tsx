@@ -19,6 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -96,7 +97,10 @@ export default function GuidesPageContent({
   const [guides, setGuides] = useState<Guide[]>(initialGuides)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
+  const [searchInput, setSearchInput] = useState(initialSearch)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
+  // Debounce search input to prevent rate limiting
+  const [debouncedSearch] = useDebouncedValue(searchInput, 300)
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [total, setTotal] = useState(initialTotal)
@@ -113,14 +117,14 @@ export default function GuidesPageContent({
 
   const fetcher = useCallback(async (page: number) => {
     const params: any = { page, limit: 12, status: 'approved' }
-    if (searchQuery) params.title = searchQuery
-    if (authorFilter) params.authorId = authorFilter
+    if (searchQuery) params.search = searchQuery
+    if (authorFilter) params.authorId = parseInt(authorFilter)
     if (tagFilter) params.tag = tagFilter
     const resAny = await api.getGuides(params)
     return { data: resAny.data || [], total: resAny.total || 0, page: resAny.page || page, perPage: 12, totalPages: resAny.totalPages || Math.max(1, Math.ceil((resAny.total || 0) / 12)) }
   }, [searchQuery, authorFilter, tagFilter])
 
-  const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh, invalidate } = usePaged<Guide>('guides', currentPage, fetcher, { title: searchQuery, authorId: authorFilter, tag: tagFilter }, { ttlMs: pagedCacheConfig.lists.guides.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.guides.maxEntries })
+  const { data: pageData, loading: pageLoading, error: pageError, prefetch, refresh, invalidate } = usePaged<Guide>('guides', currentPage, fetcher, { search: searchQuery, authorId: authorFilter, tag: tagFilter }, { ttlMs: pagedCacheConfig.lists.guides.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.guides.maxEntries })
 
   useEffect(() => {
     if (pageData) {
@@ -130,6 +134,17 @@ export default function GuidesPageContent({
     }
     setLoading(!!pageLoading)
   }, [pageData, pageLoading])
+
+  // Refetch guides when user becomes available to get userHasLiked status
+  useEffect(() => {
+    if (!user) return
+
+    // Check if any guides are missing userHasLiked status
+    const needsRefresh = guides.some(guide => typeof guide.userHasLiked !== 'boolean')
+    if (needsRefresh) {
+      refresh()
+    }
+  }, [user?.id, guides, refresh])
 
   const updateUrl = useCallback((page: number, search: string, authorId?: string, authorNameParam?: string, tag?: string) => {
     const params = new URLSearchParams()
@@ -144,21 +159,30 @@ export default function GuidesPageContent({
   }, [router])
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.target.value
-    setSearchQuery(newSearch)
-    setCurrentPage(1)
+    // Only update input - debounce effect handles search query and URL
+    setSearchInput(event.target.value)
   }, [])
 
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      updateUrl(currentPage, searchQuery, authorFilter || undefined, authorName || undefined, tagFilter || undefined)
-      // trigger usePaged refresh (stale-while-revalidate)
-      refresh(false).catch(() => {})
-    }, 300)
+  // Handle Enter key - bypass debounce for immediate search
+  const handleSearchKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const value = searchInput.trim()
+      if (value !== searchQuery) {
+        setSearchQuery(value)
+        setCurrentPage(1)
+        updateUrl(1, value, authorFilter || undefined, authorName || undefined, tagFilter || undefined)
+      }
+    }
+  }, [searchInput, searchQuery, authorFilter, authorName, tagFilter, updateUrl])
 
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, tagFilter])
+  // Update search query when debounced value changes
+  useEffect(() => {
+    if (debouncedSearch.trim() !== searchQuery) {
+      setSearchQuery(debouncedSearch.trim())
+      setCurrentPage(1)
+      updateUrl(1, debouncedSearch.trim(), authorFilter || undefined, authorName || undefined, tagFilter || undefined)
+    }
+  }, [debouncedSearch, searchQuery, authorFilter, authorName, tagFilter, updateUrl])
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
@@ -167,6 +191,7 @@ export default function GuidesPageContent({
   }, [searchQuery, authorFilter, authorName, tagFilter, updateUrl, prefetch])
 
   const handleClearSearch = useCallback(() => {
+    setSearchInput('')
     setSearchQuery('')
     setCurrentPage(1)
     setAuthorFilter(null)
@@ -213,6 +238,8 @@ export default function GuidesPageContent({
             : guide
         )
       )
+      // Invalidate cache to ensure fresh data on next load
+      invalidate()
     } catch (toggleError: unknown) {
       console.error('Error toggling like:', toggleError)
     } finally {
@@ -325,7 +352,7 @@ export default function GuidesPageContent({
   }
 
   const accentGuide = theme.other?.usogui?.guide ?? theme.colors.green?.[5] ?? '#4ade80'
-  const hasSearchQuery = searchQuery.trim().length > 0
+  const hasSearchQuery = searchInput.trim().length > 0
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
@@ -385,9 +412,10 @@ export default function GuidesPageContent({
         <Group justify="center" mb="md">
           <Box style={{ maxWidth: rem(600), width: '100%' }}>
             <TextInput
-              placeholder="Search guides..."
-              value={searchQuery}
+              placeholder="Search guides by title or description..."
+              value={searchInput}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               leftSection={<Search size={20} />}
               size="lg"
               radius="xl"
@@ -543,26 +571,39 @@ export default function GuidesPageContent({
                       }}
                     >
                       {/* Author Badge at Top Left */}
-                      <Badge
-                        variant="filled"
-                        radius="sm"
-                        size="md"
-                        c="white"
+                      <Group
+                        gap={8}
+                        wrap="nowrap"
                         style={{
                           position: 'absolute',
                           top: rem(12),
                           left: rem(12),
                           backgroundColor: accentGuide,
-                          fontSize: rem(12),
-                          fontWeight: 700,
+                          borderRadius: rem(16),
+                          padding: `${rem(4)} ${rem(10)} ${rem(4)} ${rem(4)}`,
                           zIndex: 10,
                           backdropFilter: 'blur(4px)',
                           maxWidth: 'calc(100% - 24px)',
-                          height: rem(24)
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                         }}
                       >
-                        by {guide.author.username}
-                      </Badge>
+                        <AuthorProfileImage author={guide.author} size={24} showFallback />
+                        <Text
+                          size="xs"
+                          fw={600}
+                          c="white"
+                          style={{
+                            fontSize: rem(12),
+                            lineHeight: 1.2,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: rem(120)
+                          }}
+                        >
+                          {guide.author.username}
+                        </Text>
+                      </Group>
 
                       {/* Main Content Section */}
                       <Stack

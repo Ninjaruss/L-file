@@ -140,6 +140,12 @@ const nextConfig = {
         hostname: 'raw.githubusercontent.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'external-content.duckduckgo.com',
+        port: '',
+        pathname: '/**',
       }
     ],
     // Handle domains that aren't configured

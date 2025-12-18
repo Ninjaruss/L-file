@@ -2,7 +2,6 @@ import React from 'react'
 import {
   Badge,
   Box,
-  Button,
   Card,
   Container,
   Grid,
@@ -11,9 +10,8 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { BackButton } from '../../../components/BackButton'
 import { CharacterStructuredData } from '../../../components/StructuredData'
 import type { Arc, Event, Gamble, Guide, Quote } from '../../../types'
 import { GuideStatus } from '../../../types'
@@ -195,16 +193,7 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
       />
 
       <Stack gap="xl">
-        <Button
-          component={Link}
-          href="/characters"
-          variant="subtle"
-          color="gray"
-          leftSection={<ArrowLeft size={18} />}
-          maw={200}
-        >
-          Back to Characters
-        </Button>
+        <BackButton href="/characters" label="Back to Characters" />
 
         <CharacterPageClient
           character={character}

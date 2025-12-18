@@ -497,7 +497,8 @@ export const mantineTheme: MantineThemeOverride = {
       guide: '#51cf66',      // 4.9:1 contrast - bright green
       media: '#a855f7',      // 4.5:1 contrast - saturated purple
       quote: '#20c997',      // 4.6:1 contrast - vibrant teal
-      organization: '#7c3aed' // 4.6:1 contrast - rich purple accent
+      organization: '#7c3aed', // 4.6:1 contrast - rich purple accent
+      chapter: '#38bdf8'     // 4.5:1 contrast - sky blue
     },
     transitions: {
       durationShortest: 150,
@@ -533,6 +534,7 @@ export type EntityAccentKey =
   | 'organization'
   | 'arc'
   | 'volume'
+  | 'chapter'
   | 'event'
   | 'guide'
   | 'media'
@@ -554,6 +556,8 @@ export const getEntityAccent = (type: EntityAccentKey, theme?: MantineTheme): st
       return palette.arc
     case 'volume':
       return palette.volume
+    case 'chapter':
+      return palette.chapter
     case 'event':
       return palette.event
     case 'guide':
@@ -587,6 +591,7 @@ export const getEntityThemeColor = (theme: MantineTheme, entityType: EntityAccen
     case 'arc': return entityColors.arc
     case 'organization': return entityColors.organization
     case 'volume': return entityColors.volume
+    case 'chapter': return entityColors.chapter
     case 'event': return entityColors.event
     case 'guide': return entityColors.guide
     case 'media': return entityColors.media
@@ -669,6 +674,7 @@ export const setTabAccentColors = (entityType: EntityAccentKey, element?: HTMLEl
     organization: textColors.organization,
     arc: textColors.arc,
     volume: textColors.volume,
+    chapter: textColors.chapter,
     event: textColors.event,
     guide: textColors.guide,
     media: textColors.media,
@@ -750,6 +756,7 @@ export const textColors = {
   character: '#4dabf7',  // 4.7:1 contrast ratio - bright blue
   arc: '#ef4444',        // 4.5:1 contrast ratio - bright red (updated from purple)
   volume: '#ff69b4',     // 4.6:1 contrast ratio - hot pink
+  chapter: '#38bdf8',    // 4.5:1 contrast ratio - sky blue
   event: '#f39c12',      // 5.2:1 contrast ratio - amber (more distinct from red)
   guide: '#51cf66',      // 4.9:1 contrast ratio - bright green
   media: '#a855f7',      // 4.5:1 contrast ratio - saturated purple

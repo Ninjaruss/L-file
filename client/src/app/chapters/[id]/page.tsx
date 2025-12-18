@@ -1,11 +1,9 @@
 import React from 'react'
-import { Alert, Button, Container, Stack } from '@mantine/core'
-import { colors } from '../../../lib/mantine-theme'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { api } from '../../../lib/api'
 import ChapterPageClient from './ChapterPageClient'
+import { ChapterStructuredData } from '../../../components/StructuredData'
 import type { Chapter } from '../../../types'
 
 interface PageProps {
@@ -25,6 +23,28 @@ async function getChapterData(id: string): Promise<Chapter | null> {
   } catch (error: unknown) {
     console.error('Error fetching chapter data:', error)
     return null
+  }
+}
+
+async function getChapterEvents(chapterNumber: number) {
+  try {
+    const result = await api.getEventsByChapter(chapterNumber)
+    // Ensure we always return an array
+    return Array.isArray(result) ? result : []
+  } catch (error: unknown) {
+    console.error('Error fetching chapter events:', error)
+    return []
+  }
+}
+
+async function getChapterQuotes(chapterNumber: number) {
+  try {
+    const result = await api.getQuotesByChapter(chapterNumber)
+    // Ensure we always return an array
+    return Array.isArray(result) ? result : []
+  } catch (error: unknown) {
+    console.error('Error fetching chapter quotes:', error)
+    return []
   }
 }
 
@@ -52,21 +72,25 @@ export default async function ChapterDetailPage({ params }: PageProps) {
   const chapter = await getChapterData(id)
 
   if (!chapter) {
-    return (
-      <Container size="lg" py="xl">
-        <Stack gap="md">
-          <Alert style={{ color: colors.gamble[5] }} radius="md">
-            Chapter not found
-          </Alert>
-          <Button component={Link} href="/chapters" variant="subtle" color="gray" leftSection={<ArrowLeft size={18} />}>
-            Back to Chapters
-          </Button>
-        </Stack>
-      </Container>
-    )
+    notFound()
   }
 
-  return <ChapterPageClient initialChapter={chapter} />
+  // Fetch events and quotes for this chapter
+  const [events, quotes] = await Promise.all([
+    getChapterEvents(chapter.number),
+    getChapterQuotes(chapter.number)
+  ])
+
+  return (
+    <>
+      <ChapterStructuredData chapter={chapter} />
+      <ChapterPageClient
+        initialChapter={chapter}
+        initialEvents={events}
+        initialQuotes={quotes}
+      />
+    </>
+  )
 }
 
 export const dynamic = 'force-dynamic'

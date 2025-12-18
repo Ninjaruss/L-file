@@ -471,8 +471,7 @@ export default function SubmitMediaPageContent() {
                             { value: 'arc', label: 'Arc' },
                             { value: 'event', label: 'Event' },
                             { value: 'gamble', label: 'Gamble' },
-                            { value: 'organization', label: 'Organization' },
-                            { value: 'user', label: 'User' }
+                            { value: 'organization', label: 'Organization' }
                           ]}
                           value={formData.ownerType || null}
                           onChange={(value) => {

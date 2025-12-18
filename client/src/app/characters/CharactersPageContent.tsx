@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -12,7 +12,7 @@ import {
   Loader,
   Modal,
   Pagination,
-  Paper,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -22,14 +22,20 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
-import { AlertCircle, Camera, User, Search, X } from 'lucide-react'
+import { AlertCircle, Camera, User, Search, X, ArrowUpDown, Building2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
 import MediaThumbnail from '../../components/MediaThumbnail'
+import { useHoverModal } from '../../hooks/useHoverModal'
+import { HoverModal } from '../../components/HoverModal'
+import { useProgress } from '../../providers/ProgressProvider'
+import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
+import { shouldHideSpoiler } from '../../lib/spoiler-utils'
 
 interface Character {
   id: number
@@ -58,6 +64,13 @@ interface CharactersPageContentProps {
 
 const PAGE_SIZE = 12
 
+type SortOption = 'name' | 'firstAppearance'
+
+const sortOptions = [
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'firstAppearance', label: 'First Appearance' }
+]
+
 export default function CharactersPageContent({
   initialCharacters = [],
   initialSearch = '',
@@ -68,38 +81,91 @@ export default function CharactersPageContent({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Load all characters once - no pagination needed on API level
-  const [allCharacters, setAllCharacters] = useState<Character[]>(initialCharacters)
+  const [characters, setCharacters] = useState<Character[]>(initialCharacters)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
+  const [searchInput, setSearchInput] = useState(initialSearch || '')
   const [searchQuery, setSearchQuery] = useState(initialSearch || '')
+  const [sortBy, setSortBy] = useState<SortOption>((searchParams.get('sort') as SortOption) || 'name')
 
-  // Client-side pagination
+  // Server-side pagination
   const [currentPage, setCurrentPage] = useState<number>(parseInt(searchParams.get('page') || '1', 10))
+  const [totalPages, setTotalPages] = useState(Math.ceil((initialCharacters?.length || 0) / PAGE_SIZE))
+  const [total, setTotal] = useState(initialCharacters?.length || 0)
+
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
   const [imageDisplayName, setImageDisplayName] = useState('')
   const { isModeratorOrAdmin } = useAuth()
+  const { userProgress } = useProgress()
+  const { settings: spoilerSettings } = useSpoilerSettings()
 
-  // Hover modal state
-  const [hoveredCharacter, setHoveredCharacter] = useState<Character | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Organization filter
+  const [organizationFilter, setOrganizationFilter] = useState<string | null>(
+    searchParams.get('org') || null
+  )
+  const [organizations, setOrganizations] = useState<Array<{ id: number; name: string }>>([])
+  const [organizationsLoading, setOrganizationsLoading] = useState(false)
 
-  const hasSearchQuery = searchQuery.trim().length > 0
+  // Hover modal
+  const {
+    hoveredItem: hoveredCharacter,
+    hoverPosition,
+    handleMouseEnter: handleCharacterMouseEnter,
+    handleMouseLeave: handleCharacterMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave
+  } = useHoverModal<Character>()
 
-  // Load all characters once on mount
-  const loadAllCharacters = useCallback(async () => {
+  const hasSearchQuery = searchQuery.trim().length > 0 || organizationFilter !== null
+
+  // Filter characters by organization client-side
+  const filteredCharacters = useMemo(() => {
+    if (!organizationFilter) return characters
+
+    // Filter characters that belong to the selected organization
+    return characters.filter(character =>
+      character.organizations?.some(org => org.id.toString() === organizationFilter)
+    )
+  }, [characters, organizationFilter])
+
+  // Group characters by organization for visual display
+  const groupedByOrganization = useMemo(() => {
+    if (!organizationFilter) return null
+
+    const orgName = organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Unknown'
+    return { name: orgName, characters: filteredCharacters }
+  }, [organizationFilter, organizations, filteredCharacters])
+
+  // Load characters with server-side pagination
+  const loadCharacters = useCallback(async (page: number, search: string, sort: SortOption) => {
     setLoading(true)
     setError(null)
 
     try {
-      const response = await api.get<any>('/characters?limit=500&includeOrganizations=true')
-      const dataArr: Character[] = response.characters || response.data || []
-      setAllCharacters(dataArr)
+      const params: any = {
+        page,
+        limit: PAGE_SIZE,
+        includeOrganizations: true
+      }
+      if (search) {
+        params.name = search
+      }
+      // Map sort option to API params (backend uses 'sort' and 'order')
+      if (sort === 'name') {
+        params.sort = 'name'
+        params.order = 'ASC'
+      } else if (sort === 'firstAppearance') {
+        params.sort = 'firstAppearanceChapter'
+        params.order = 'ASC'
+      }
+
+      const response = await api.getCharacters(params)
+      setCharacters(response.data || [])
+      setTotal(response.total || 0)
+      setTotalPages(response.totalPages || 1)
     } catch (err: any) {
       console.error('Error loading characters:', err)
       if (err?.status === 429) {
@@ -107,144 +173,95 @@ export default function CharactersPageContent({
       } else {
         setError('Failed to load characters. Please try again later.')
       }
+      setCharacters([])
+      setTotal(0)
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // Client-side filtering and pagination
-  const filteredCharacters = useMemo(() => {
-    if (!searchQuery.trim()) return allCharacters
-
-    const query = searchQuery.toLowerCase().trim()
-    return allCharacters.filter(character => {
-      const name = character.name?.toLowerCase() || ''
-      const alias = character.alias?.toLowerCase() || ''
-      const description = character.description?.toLowerCase() || ''
-      const alternateNames = character.alternateNames?.join(' ')?.toLowerCase() || ''
-      const tags = character.tags?.join(' ')?.toLowerCase() || ''
-      const organizations = character.organizations?.map(org => org.name)?.join(' ')?.toLowerCase() || ''
-
-      return name.includes(query) || alias.includes(query) || description.includes(query) ||
-             alternateNames.includes(query) || tags.includes(query) || organizations.includes(query)
-    })
-  }, [allCharacters, searchQuery])
-
-  const paginatedCharacters = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE
-    return filteredCharacters.slice(startIndex, startIndex + PAGE_SIZE)
-  }, [filteredCharacters, currentPage])
-
-  const totalPages = Math.ceil(filteredCharacters.length / PAGE_SIZE)
-  const total = filteredCharacters.length
-
-  // Load all characters on mount if we don't have the expected full set
-  useEffect(() => {
-    if (allCharacters.length === 0 || (allCharacters.length > 0 && allCharacters.length < 50)) {
-      loadAllCharacters()
-    }
-  }, [allCharacters.length, loadAllCharacters])
-
-  // Sync with URL parameters - only react to searchParams changes
-  useEffect(() => {
-    const urlPage = parseInt(searchParams.get('page') || '1', 10)
-    const urlSearch = searchParams.get('search') || ''
-
-    setCurrentPage(urlPage)
-    setSearchQuery(urlSearch)
-  }, [searchParams])
-
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((character?: Character) => {
-    const currentCharacter = character || hoveredCharacter
-    if (hoveredElementRef.current && currentCharacter) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredCharacter])
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredCharacter && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredCharacter, updateModalPosition])
-
-  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = event.target.value
-    setSearchQuery(newSearch)
-    setCurrentPage(1) // Reset to first page immediately when search changes
-  }, [])
-
-  // Update URL when search or page changes (no API calls needed)
-  useEffect(() => {
+  // Update URL when search, page, or sort changes
+  const updateURL = useCallback((page: number, search: string, sort: SortOption) => {
     const params = new URLSearchParams()
-    if (searchQuery) params.set('search', searchQuery)
-    if (currentPage > 1) params.set('page', currentPage.toString())
+    if (search) params.set('search', search)
+    if (page > 1) params.set('page', page.toString())
+    if (sort !== 'name') params.set('sort', sort)
 
-    const newUrl = params.toString() ? `/characters?${params.toString()}` : '/characters'
-    router.push(newUrl, { scroll: false })
-  }, [searchQuery, currentPage, router])
-
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery('')
-    setCurrentPage(1)
-    router.push('/characters', { scroll: false })
-    // No API calls needed!
+    const url = params.toString() ? `/characters?${params.toString()}` : '/characters'
+    router.push(url, { scroll: false })
   }, [router])
 
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page) // Update local state immediately
-    // No API calls needed - everything is client-side now!
+  // Load characters when page, search, or sort changes
+  useEffect(() => {
+    loadCharacters(currentPage, searchQuery, sortBy)
+  }, [currentPage, searchQuery, sortBy, loadCharacters])
+
+  // Debounced search with useDebouncedValue
+  const [debouncedSearch] = useDebouncedValue(searchInput, 300)
+
+  useEffect(() => {
+    if (debouncedSearch.trim() !== searchQuery) {
+      setSearchQuery(debouncedSearch.trim())
+      setCurrentPage(1)
+      updateURL(1, debouncedSearch.trim(), sortBy)
+    }
+  }, [debouncedSearch, searchQuery, sortBy, updateURL])
+
+  // Fetch organizations on mount
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      setOrganizationsLoading(true)
+      try {
+        const response = await api.getOrganizations({ limit: 100 })
+        setOrganizations(response.data || [])
+      } catch (err) {
+        console.error('Error fetching organizations:', err)
+      } finally {
+        setOrganizationsLoading(false)
+      }
+    }
+    fetchOrganizations()
   }, [])
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(event.target.value)
+  }
+
+  const handleClearSearch = () => {
+    setSearchInput('')
+    setSearchQuery('')
+    setOrganizationFilter(null)
+    setCurrentPage(1)
+    updateURL(1, '', sortBy)
+  }
+
+  const handleOrganizationFilterChange = (value: string | null) => {
+    setOrganizationFilter(value)
+    setCurrentPage(1)
+    // Update URL with org filter
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) {
+      params.set('org', value)
+    } else {
+      params.delete('org')
+    }
+    params.set('page', '1')
+    router.push(params.toString() ? `/characters?${params.toString()}` : '/characters')
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    updateURL(page, searchQuery, sortBy)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleSortChange = (value: string | null) => {
+    const newSort = (value as SortOption) || 'name'
+    setSortBy(newSort)
+    setCurrentPage(1)
+    updateURL(1, searchQuery, newSort)
+  }
 
   const handleEditImage = (character: Character) => {
     setSelectedCharacter(character)
@@ -277,9 +294,9 @@ export default function CharactersPageContent({
         color: 'green'
       })
 
-  // Close dialog and refresh
-  handleCloseImageDialog()
-  loadAllCharacters().catch(() => {})
+      // Close dialog and refresh
+      handleCloseImageDialog()
+      loadCharacters(currentPage, searchQuery, sortBy)
     } catch (error) {
       console.error('Upload error:', error)
       notifications.show({
@@ -308,8 +325,8 @@ export default function CharactersPageContent({
         color: 'green'
       })
 
-  handleCloseImageDialog()
-  loadAllCharacters().catch(() => {})
+      handleCloseImageDialog()
+      loadCharacters(currentPage, searchQuery, sortBy)
     } catch (error) {
       console.error('Error removing image:', error)
       notifications.show({
@@ -327,46 +344,6 @@ export default function CharactersPageContent({
     setSelectedFile(null)
     setImageDisplayName('')
     setImageDialogOpen(false)
-  }
-
-  // Hover modal handlers
-  const handleCharacterMouseEnter = (character: Character, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredCharacter(character)
-      updateModalPosition(character) // Pass character directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleCharacterMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredCharacter(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredCharacter(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
   }
 
   return (
@@ -401,9 +378,9 @@ export default function CharactersPageContent({
               Explore the rich cast of Usogui characters, from cunning gamblers to mysterious adversaries
             </Text>
 
-            {allCharacters.length > 0 && (
+            {total > 0 && (
               <Badge size="md" variant="light" c={accentCharacter} radius="xl" mt="xs">
-                {searchQuery ? `${total} of ${allCharacters.length}` : `${allCharacters.length}`} character{(searchQuery ? total : allCharacters.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
+                {total} character{total !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
               </Badge>
             )}
           </Stack>
@@ -412,11 +389,11 @@ export default function CharactersPageContent({
 
       {/* Search and Filters */}
       <Box mb="xl" px="md">
-        <Group justify="center" mb="md">
-          <Box style={{ maxWidth: rem(600), width: '100%' }}>
+        <Group justify="center" mb="md" gap="md">
+          <Box style={{ maxWidth: rem(450), width: '100%' }}>
             <TextInput
               placeholder="Search characters by name, alias, or tag..."
-              value={searchQuery}
+              value={searchInput}
               onChange={handleSearchChange}
               leftSection={<Search size={20} />}
               size="lg"
@@ -437,7 +414,60 @@ export default function CharactersPageContent({
               }}
             />
           </Box>
+          <Select
+            data={sortOptions}
+            value={sortBy}
+            onChange={handleSortChange}
+            leftSection={<ArrowUpDown size={16} />}
+            w={180}
+            size="lg"
+            radius="xl"
+            styles={{
+              input: {
+                fontSize: rem(14)
+              }
+            }}
+          />
+          <Select
+            data={[
+              { value: '', label: 'All Organizations' },
+              ...organizations.map(org => ({ value: org.id.toString(), label: org.name }))
+            ]}
+            value={organizationFilter || ''}
+            onChange={(value) => handleOrganizationFilterChange(value || null)}
+            leftSection={<Building2 size={16} />}
+            w={200}
+            size="lg"
+            radius="xl"
+            placeholder="Filter by organization"
+            clearable
+            disabled={organizationsLoading}
+            styles={{
+              input: {
+                fontSize: rem(14)
+              }
+            }}
+          />
         </Group>
+
+        {/* Active Organization Filter Badge */}
+        {organizationFilter && (
+          <Group justify="center" mt="sm">
+            <Badge
+              size="lg"
+              variant="filled"
+              style={{ backgroundColor: accentCharacter }}
+              radius="xl"
+              rightSection={
+                <ActionIcon size="xs" color="white" variant="transparent" onClick={() => handleOrganizationFilterChange(null)}>
+                  <X size={12} />
+                </ActionIcon>
+              }
+            >
+              {organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Organization'}
+            </Badge>
+          </Group>
+        )}
       </Box>
 
       {/* Error State */}
@@ -464,7 +494,7 @@ export default function CharactersPageContent({
       ) : (
         <>
           {/* Empty State */}
-          {paginatedCharacters.length === 0 ? (
+          {filteredCharacters.length === 0 ? (
             <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
               <User size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
               <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
@@ -493,7 +523,7 @@ export default function CharactersPageContent({
                   justifyItems: 'center'
                 }}
               >
-                {paginatedCharacters.map((character: Character, index: number) => (
+                {filteredCharacters.map((character: Character, index: number) => (
                   <motion.div
                     key={character.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -514,7 +544,15 @@ export default function CharactersPageContent({
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
-                        handleCharacterMouseEnter(character, e)
+                        // Only show hover modal if content is not spoilered
+                        const isSpoilered = shouldHideSpoiler(
+                          character.firstAppearanceChapter,
+                          userProgress,
+                          spoilerSettings
+                        )
+                        if (!isSpoilered) {
+                          handleCharacterMouseEnter(character, e)
+                        }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)'
@@ -586,6 +624,7 @@ export default function CharactersPageContent({
                           allowCycling={false}
                           maxWidth={200}
                           maxHeight={230}
+                          spoilerChapter={character.firstAppearanceChapter}
                         />
                       </Box>
 
@@ -637,10 +676,12 @@ export default function CharactersPageContent({
                   gap: rem(12)
                 }}>
                 {/* Always show pagination info when we have characters */}
-                {allCharacters.length > 0 && (
+                {(total > 0 || filteredCharacters.length > 0) && (
                   <Text size="sm" style={{ color: theme.colors.gray[6] }}>
-                    Showing {paginatedCharacters.length} of {total} characters
-                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                    {organizationFilter
+                      ? `${filteredCharacters.length} character${filteredCharacters.length !== 1 ? 's' : ''} in this organization`
+                      : `Showing ${filteredCharacters.length} of ${total} characters`}
+                    {!organizationFilter && totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
                   </Text>
                 )}
 
@@ -724,175 +765,152 @@ export default function CharactersPageContent({
       </Modal>
 
       {/* Hover Modal */}
-      <AnimatePresence>
-        {hoveredCharacter && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
-              style={{
-                backgroundColor: backgroundStyles.modal,
-                border: `2px solid ${accentCharacter}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
-              }}
+      <HoverModal
+        isOpen={!!hoveredCharacter}
+        position={hoverPosition}
+        accentColor={accentCharacter}
+        onMouseEnter={handleModalMouseEnter}
+        onMouseLeave={handleModalMouseLeave}
+      >
+        {hoveredCharacter && (
+          <>
+            {/* Character Name */}
+            <Title
+              order={4}
+              size="md"
+              fw={700}
+              c={accentCharacter}
+              ta="center"
+              lineClamp={2}
             >
-              <Stack gap="sm">
-                {/* Character Name */}
-                <Title
-                  order={4}
-                  size="md"
-                  fw={700}
-                  c={accentCharacter}
-                  ta="center"
-                  lineClamp={2}
+              {hoveredCharacter.name}
+            </Title>
+
+            {/* Character Alias */}
+            {hoveredCharacter.alias && (
+              <Text
+                size="sm"
+                style={{ color: theme.colors.gray[6] }}
+                ta="center"
+                className="italic"
+              >
+                &ldquo;{hoveredCharacter.alias}&rdquo;
+              </Text>
+            )}
+
+            {/* Alternate Names */}
+            {hoveredCharacter.alternateNames && hoveredCharacter.alternateNames.length > 0 && (
+              <Group justify="center" gap="xs" wrap="wrap">
+                {hoveredCharacter.alternateNames.map((name, index) => (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    c={getEntityThemeColor(theme, 'character')}
+                    style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                    size="xs"
+                    fw={500}
+                  >
+                    {name}
+                  </Badge>
+                ))}
+              </Group>
+            )}
+
+            {/* Start Chapter */}
+            {hoveredCharacter.firstAppearanceChapter && (
+              <Group justify="center" gap="xs">
+                <Badge
+                  variant="filled"
+                  c="white"
+                  style={{ backgroundColor: accentCharacter }}
+                  size="sm"
+                  fw={600}
                 >
-                  {hoveredCharacter.name}
-                </Title>
+                  Ch. {hoveredCharacter.firstAppearanceChapter}
+                </Badge>
+              </Group>
+            )}
 
-                {/* Character Alias */}
-                {hoveredCharacter.alias && (
-                  <Text
-                    size="sm"
-                    style={{ color: theme.colors.gray[6] }}
-                    ta="center"
-                    className="italic"
-                  >
-                    &ldquo;{hoveredCharacter.alias}&rdquo;
-                  </Text>
-                )}
-
-                {/* Alternate Names */}
-                {hoveredCharacter.alternateNames && hoveredCharacter.alternateNames.length > 0 && (
-                  <Group justify="center" gap="xs" wrap="wrap">
-                    {hoveredCharacter.alternateNames.map((name, index) => (
-                      <Badge
-                        key={index}
-                        variant="outline"
-                        c={getEntityThemeColor(theme, 'character')}
-                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
-                        size="xs"
-                        fw={500}
-                      >
-                        {name}
-                      </Badge>
-                    ))}
-                  </Group>
-                )}
-
-                {/* Start Chapter */}
-                {hoveredCharacter.firstAppearanceChapter && (
-                  <Group justify="center" gap="xs">
-                    <Badge
-                      variant="filled"
-                      c="white"
-                      style={{ backgroundColor: accentCharacter }}
-                      size="sm"
-                      fw={600}
-                    >
-                      Ch. {hoveredCharacter.firstAppearanceChapter}
-                    </Badge>
-                  </Group>
-                )}
-
-                {/* Organizations/Factions */}
-                {hoveredCharacter.organizations && hoveredCharacter.organizations.length > 0 && (
-                  <Group justify="center" gap="xs">
-                    {hoveredCharacter.organizations.slice(0, 2).map((org) => (
-                      <Badge
-                        key={org.id}
-                        variant="light"
-                        c={getEntityThemeColor(theme, 'event')}
-                        style={{
-                          backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
-                          borderColor: getEntityThemeColor(theme, 'event')
-                        }}
-                        size="xs"
-                        fw={500}
-                      >
-                        {org.name}
-                      </Badge>
-                    ))}
-                    {hoveredCharacter.organizations.length > 2 && (
-                      <Badge
-                        variant="light"
-                        c={getEntityThemeColor(theme, 'event')}
-                        style={{
-                          backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
-                          borderColor: getEntityThemeColor(theme, 'event')
-                        }}
-                        size="xs"
-                        fw={500}
-                      >
-                        +{hoveredCharacter.organizations.length - 2}
-                      </Badge>
-                    )}
-                  </Group>
-                )}
-
-                {/* Description */}
-                {hoveredCharacter.description && (
-                  <Text
-                    size="sm"
-                    ta="center"
-                    lineClamp={3}
+            {/* Organizations/Factions */}
+            {hoveredCharacter.organizations && hoveredCharacter.organizations.length > 0 && (
+              <Group justify="center" gap="xs">
+                {hoveredCharacter.organizations.slice(0, 2).map((org) => (
+                  <Badge
+                    key={org.id}
+                    variant="light"
+                    c={getEntityThemeColor(theme, 'event')}
                     style={{
-                      color: theme.colors.gray[6],
-                      lineHeight: 1.4,
-                      maxHeight: rem(60)
+                      backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
+                      borderColor: getEntityThemeColor(theme, 'event')
                     }}
+                    size="xs"
+                    fw={500}
                   >
-                    {hoveredCharacter.description}
-                  </Text>
+                    {org.name}
+                  </Badge>
+                ))}
+                {hoveredCharacter.organizations.length > 2 && (
+                  <Badge
+                    variant="light"
+                    c={getEntityThemeColor(theme, 'event')}
+                    style={{
+                      backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
+                      borderColor: getEntityThemeColor(theme, 'event')
+                    }}
+                    size="xs"
+                    fw={500}
+                  >
+                    +{hoveredCharacter.organizations.length - 2}
+                  </Badge>
                 )}
+              </Group>
+            )}
 
-                {/* Tags */}
-                {hoveredCharacter.tags && hoveredCharacter.tags.length > 0 && (
-                  <Group justify="center" gap="xs">
-                    {hoveredCharacter.tags.slice(0, 3).map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        c={getEntityThemeColor(theme, 'character')}
-                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
-                        size="xs"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {hoveredCharacter.tags.length > 3 && (
-                      <Badge
-                        variant="outline"
-                        c={getEntityThemeColor(theme, 'character')}
-                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
-                        size="xs"
-                      >
-                        +{hoveredCharacter.tags.length - 3}
-                      </Badge>
-                    )}
-                  </Group>
+            {/* Description */}
+            {hoveredCharacter.description && (
+              <Text
+                size="sm"
+                ta="center"
+                lineClamp={3}
+                style={{
+                  color: theme.colors.gray[6],
+                  lineHeight: 1.4,
+                  maxHeight: rem(60)
+                }}
+              >
+                {hoveredCharacter.description}
+              </Text>
+            )}
+
+            {/* Tags */}
+            {hoveredCharacter.tags && hoveredCharacter.tags.length > 0 && (
+              <Group justify="center" gap="xs">
+                {hoveredCharacter.tags.slice(0, 3).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    c={getEntityThemeColor(theme, 'character')}
+                    style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                    size="xs"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+                {hoveredCharacter.tags.length > 3 && (
+                  <Badge
+                    variant="outline"
+                    c={getEntityThemeColor(theme, 'character')}
+                    style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                    size="xs"
+                  >
+                    +{hoveredCharacter.tags.length - 3}
+                  </Badge>
                 )}
-              </Stack>
-            </Paper>
-          </motion.div>
+              </Group>
+            )}
+          </>
         )}
-      </AnimatePresence>
+      </HoverModal>
     </motion.div>
     </Box>
   )

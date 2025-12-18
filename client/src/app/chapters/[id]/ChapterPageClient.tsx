@@ -1,26 +1,36 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
-  Alert,
   Badge,
   Box,
   Button,
   Card,
   Container,
-  Divider,
-  Grid,
+  Group,
+  Paper,
   Stack,
+  Tabs,
   Text,
   Title,
   useMantineTheme
 } from '@mantine/core'
-import { ArrowLeft, BookOpen } from 'lucide-react'
+import {
+  getEntityThemeColor,
+  textColors,
+  headerColors,
+  getAlphaColor,
+  fontSize,
+  setTabAccentColors,
+  backgroundStyles,
+  getCardStyles
+} from '../../../lib/mantine-theme'
+import { BookOpen, Hash, FileText, Users, MessageSquareQuote, CalendarSearch } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
-import { getEntityThemeColor, semanticColors, backgroundStyles } from '../../../lib/mantine-theme'
+import BackButton from '../../../components/BackButton'
 import type { Chapter as ChapterResource } from '../../../types'
 
 interface Character {
@@ -59,173 +69,393 @@ export default function ChapterPageClient({
   initialCharacters = []
 }: ChapterPageClientProps) {
   const theme = useMantineTheme()
+  const [activeTab, setActiveTab] = useState<string>('overview')
 
   usePageView('chapter', initialChapter.id.toString(), true)
 
+  // Set tab accent colors for chapter entity
+  useEffect(() => {
+    setTabAccentColors('chapter')
+  }, [])
+
+  // Use consistent theme colors
+  const entityColors = {
+    chapter: getEntityThemeColor(theme, 'chapter'),
+    character: getEntityThemeColor(theme, 'character'),
+    event: getEntityThemeColor(theme, 'event'),
+    quote: getEntityThemeColor(theme, 'quote'),
+    volume: getEntityThemeColor(theme, 'volume')
+  }
+
   return (
-    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-    <Container size="lg" py="xl">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Button
-          component={Link}
-          href="/chapters"
-          variant="subtle"
-          style={{ color: semanticColors.neutral }}
-          leftSection={<ArrowLeft size={18} />}
-          mb="lg"
-        >
-          Back to Chapters
-        </Button>
+    <Box style={{
+      backgroundColor: backgroundStyles.page(theme),
+      minHeight: '100vh',
+      color: textColors.primary
+    }}>
+      <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
+        <Stack gap={theme.spacing.md}>
+          <BackButton
+            href="/chapters"
+            label="Back to Chapters"
+            entityType="chapter"
+          />
 
-        <Stack align="center" gap="sm" mb="xl">
-          <BookOpen size={48} color={getEntityThemeColor(theme, 'guide')} />
-          <Title order={1}>Chapter {initialChapter.number}</Title>
-          {initialChapter.title && (
-            <Text size="lg" c="dimmed">
-              {initialChapter.title}
-            </Text>
-          )}
-          {initialChapter.volume && (
-            <Badge
-              component={Link}
-              href={`/volumes/${initialChapter.volume.id}`}
-              variant="outline"
-              radius="lg"
-              c={getEntityThemeColor(theme, 'media')}
-              style={{ textDecoration: 'none', borderColor: getEntityThemeColor(theme, 'media') }}
-            >
-              Volume {initialChapter.volume.number}
-              {initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
-            </Badge>
-          )}
-        </Stack>
+          {/* Enhanced Chapter Header */}
+          <Card
+            withBorder
+            radius="lg"
+            shadow="lg"
+            p={0}
+            style={{
+              ...getCardStyles(theme, entityColors.chapter),
+              border: `2px solid ${entityColors.chapter}`,
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Subtle Pattern Overlay */}
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundImage: `
+                  radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
+                  radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
+                `,
+                backgroundSize: '40px 40px, 80px 80px',
+                backgroundPosition: '0 0, 20px 20px',
+                pointerEvents: 'none'
+              }}
+            />
 
-        <Grid gutter="xl">
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            {(initialChapter.description || initialChapter.summary) && (
-              <Card withBorder radius="md" className="gambling-card" shadow="sm" mb="lg">
-                <Stack gap="md" p="lg">
-                  <Title order={3}>Chapter Summary</Title>
-                  <TimelineSpoilerWrapper chapterNumber={initialChapter.number}>
-                    <Text size="sm" lh={1.6}>
-                      {initialChapter.description || initialChapter.summary}
-                    </Text>
-                  </TimelineSpoilerWrapper>
-                </Stack>
-              </Card>
-            )}
+            {/* Content */}
+            <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
+              <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: 0 }} justify="space-between">
+                  <Stack gap={theme.spacing.sm}>
+                    <Group gap={theme.spacing.sm} align="center">
+                      <BookOpen size={28} color={entityColors.chapter} />
+                      <Title
+                        order={1}
+                        size="2.8rem"
+                        fw={800}
+                        c={headerColors.h1}
+                        style={{
+                          lineHeight: 1.1,
+                          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                          letterSpacing: '-0.02em'
+                        }}
+                      >
+                        Chapter {initialChapter.number}
+                      </Title>
+                    </Group>
 
-            {initialEvents && initialEvents.length > 0 && (
-              <Card withBorder radius="md" className="gambling-card" shadow="sm" mb="lg">
-                <Stack gap="md" p="lg">
-                  <Title order={3}>Chapter Events</Title>
-                  <Stack gap="sm">
-                    {initialEvents.map((event) => (
-                      <Card key={event.id} withBorder radius="md" shadow="xs" padding="md">
-                        <Stack gap={4}>
-                          <Text
-                            component={Link}
-                            href={`/events/${event.id}`}
-                            fw={600}
-                            c={getEntityThemeColor(theme, 'character')}
-                            style={{ textDecoration: 'none' }}
-                          >
-                            {event.title}
-                          </Text>
-                          <Text size="sm" c="dimmed" lh={1.6}>
-                            {event.description}
-                          </Text>
-                        </Stack>
-                      </Card>
-                    ))}
+                    {initialChapter.title && (
+                      <Text size="lg" c={textColors.secondary} fw={500}>
+                        {initialChapter.title}
+                      </Text>
+                    )}
+
+                    {/* Volume Badge */}
+                    {initialChapter.volume && (
+                      <Badge
+                        component={Link}
+                        href={`/volumes/${initialChapter.volume.id}`}
+                        variant="filled"
+                        size="lg"
+                        radius="md"
+                        style={{
+                          background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
+                          border: `1px solid ${entityColors.volume}`,
+                          boxShadow: theme.shadows.md,
+                          fontSize: fontSize.sm,
+                          color: textColors.primary,
+                          fontWeight: 600,
+                          alignSelf: 'flex-start',
+                          textDecoration: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Volume {initialChapter.volume.number}
+                        {initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
+                      </Badge>
+                    )}
                   </Stack>
-                </Stack>
-              </Card>
-            )}
 
-            {initialQuotes && initialQuotes.length > 0 && (
-              <Card withBorder radius="md" className="gambling-card" shadow="sm">
-                <Stack gap="md" p="lg">
-                  <Title order={3}>Memorable Quotes</Title>
-                  <Stack gap="sm">
-                    {initialQuotes.map((quote) => (
-                      <Card key={quote.id} withBorder radius="md" shadow="xs" padding="md">
-                        <Stack gap={4}>
-                          <Text size="sm" style={{ fontStyle: 'italic' }}>
-                            “{quote.text}”
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            {quote.character ? `— ${quote.character.name}` : ''}
-                            {quote.pageNumber ? `, p.${quote.pageNumber}` : ''}
-                          </Text>
-                        </Stack>
-                      </Card>
-                    ))}
-                  </Stack>
-                </Stack>
-              </Card>
-            )}
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Card withBorder radius="md" className="gambling-card" shadow="sm">
-              <Stack gap="md" p="lg">
-                <Title order={4}>Chapter Info</Title>
-
-                <Stack gap={4}>
-                  <Text size="xs" c="dimmed">
-                    Chapter Number
-                  </Text>
-                  <Text fw={600}>{initialChapter.number}</Text>
-                </Stack>
-
-                {initialChapter.volume && (
-                  <Stack gap={4}>
-                    <Text size="xs" c="dimmed">
-                      Volume
-                    </Text>
-                    <Text
-                      component={Link}
-                      href={`/volumes/${initialChapter.volume.id}`}
-                      fw={600}
-                      c={getEntityThemeColor(theme, 'gamble')}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      Volume {initialChapter.volume.number}
-                      {initialChapter.volume.title ? ` — ${initialChapter.volume.title}` : ''}
-                    </Text>
-                  </Stack>
-                )}
-
-                <Divider color="rgba(255, 255, 255, 0.12)" />
-
-                {initialCharacters && initialCharacters.length > 0 ? (
-                  <Stack gap="sm">
-                    <Title order={5}>Featured Characters</Title>
-                    <Stack gap={4}>
-                      {initialCharacters.map((character) => (
-                        <Text
-                          key={character.id}
-                          component={Link}
-                          href={`/characters/${character.id}`}
-                          style={{ textDecoration: 'none', color: getEntityThemeColor(theme, 'event') }}
+                  <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+                    {/* Content Stats */}
+                    <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+                      <Badge
+                        size="lg"
+                        variant="light"
+                        c={textColors.chapter}
+                        leftSection={<Hash size={14} />}
+                        style={{
+                          fontSize: fontSize.xs,
+                          fontWeight: 600,
+                          background: getAlphaColor(entityColors.chapter, 0.2),
+                          border: `1px solid ${getAlphaColor(entityColors.chapter, 0.4)}`
+                        }}
+                      >
+                        Chapter #{initialChapter.number}
+                      </Badge>
+                      {Array.isArray(initialEvents) && initialEvents.length > 0 && (
+                        <Badge
+                          size="lg"
+                          variant="light"
+                          c={textColors.event}
+                          style={{
+                            fontSize: fontSize.xs,
+                            fontWeight: 600,
+                            background: getAlphaColor(entityColors.event, 0.2),
+                            border: `1px solid ${getAlphaColor(entityColors.event, 0.4)}`
+                          }}
                         >
-                          {character.name}
-                        </Text>
-                      ))}
-                    </Stack>
+                          {initialEvents.length} Events
+                        </Badge>
+                      )}
+                      {Array.isArray(initialQuotes) && initialQuotes.length > 0 && (
+                        <Badge
+                          size="lg"
+                          variant="light"
+                          c={textColors.quote}
+                          style={{
+                            fontSize: fontSize.xs,
+                            fontWeight: 600,
+                            background: getAlphaColor(entityColors.quote, 0.2),
+                            border: `1px solid ${getAlphaColor(entityColors.quote, 0.4)}`
+                          }}
+                        >
+                          {initialQuotes.length} Quotes
+                        </Badge>
+                      )}
+                      {initialCharacters.length > 0 && (
+                        <Badge
+                          size="lg"
+                          variant="light"
+                          c={textColors.character}
+                          style={{
+                            fontSize: fontSize.xs,
+                            fontWeight: 600,
+                            background: getAlphaColor(entityColors.character, 0.2),
+                            border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+                          }}
+                        >
+                          {initialCharacters.length} Characters
+                        </Badge>
+                      )}
+                    </Group>
                   </Stack>
-                ) : (
-                  <Alert radius="md" style={{ color: semanticColors.neutral }} title="No character data" variant="light">
-                    Character information isn’t available for this chapter yet.
-                  </Alert>
-                )}
-              </Stack>
+                </Stack>
+            </Box>
+          </Card>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
+              <Tabs
+                value={activeTab}
+                onChange={(value) => value && setActiveTab(value)}
+                keepMounted={false}
+                variant="pills"
+                className="chapter-tabs"
+              >
+                <Tabs.List>
+                  <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
+                  <Tabs.Tab value="events" leftSection={<CalendarSearch size={16} />} disabled={!Array.isArray(initialEvents) || initialEvents.length === 0}>
+                    Events ({Array.isArray(initialEvents) ? initialEvents.length : 0})
+                  </Tabs.Tab>
+                  <Tabs.Tab value="quotes" leftSection={<MessageSquareQuote size={16} />} disabled={!Array.isArray(initialQuotes) || initialQuotes.length === 0}>
+                    Quotes ({Array.isArray(initialQuotes) ? initialQuotes.length : 0})
+                  </Tabs.Tab>
+                </Tabs.List>
+
+                <Tabs.Panel value="overview" pt={theme.spacing.md}>
+                  <Stack gap={theme.spacing.lg}>
+                    {/* Chapter Summary Section */}
+                    <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.chapter)}>
+                      <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                        <Group gap={theme.spacing.sm} align="center">
+                          <FileText size={24} color={entityColors.chapter} />
+                          <Title order={3} c={headerColors.h3}>Chapter Summary</Title>
+                        </Group>
+                        {(initialChapter.description || initialChapter.summary) ? (
+                          <TimelineSpoilerWrapper chapterNumber={initialChapter.number}>
+                            <Box style={{ lineHeight: 1.6 }}>
+                              <Text size="md">{initialChapter.description || initialChapter.summary}</Text>
+                            </Box>
+                          </TimelineSpoilerWrapper>
+                        ) : (
+                          <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
+                            No summary available for this chapter yet. Check back later for updates!
+                          </Text>
+                        )}
+                      </Stack>
+                    </Card>
+
+                    {/* Featured Characters Section */}
+                    {initialCharacters.length > 0 && (
+                      <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.character)}>
+                        <Stack gap={theme.spacing.md} p={theme.spacing.md}>
+                          <Group gap={theme.spacing.sm}>
+                            <Users size={20} color={entityColors.character} />
+                            <Title order={4} c={textColors.character}>Featured Characters</Title>
+                          </Group>
+                          <Group gap={theme.spacing.sm} wrap="wrap">
+                            {initialCharacters.map((character) => (
+                              <Badge
+                                key={character.id}
+                                component={Link}
+                                href={`/characters/${character.id}`}
+                                variant="light"
+                                size="lg"
+                                radius="md"
+                                c={textColors.character}
+                                style={{
+                                  background: getAlphaColor(entityColors.character, 0.2),
+                                  border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`,
+                                  textDecoration: 'none',
+                                  cursor: 'pointer',
+                                  transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
+                                }}
+                              >
+                                {character.name}
+                              </Badge>
+                            ))}
+                          </Group>
+                        </Stack>
+                      </Card>
+                    )}
+
+                    {/* No Characters Info */}
+                    {initialCharacters.length === 0 && (
+                      <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.character)}>
+                        <Stack align="center" gap="sm" p={theme.spacing.xl}>
+                          <Users size={48} color={textColors.secondary} style={{ opacity: 0.5 }} />
+                          <Title order={4} c={textColors.secondary}>
+                            No Character Data
+                          </Title>
+                          <Text size="sm" c={textColors.tertiary} ta="center" maw={400}>
+                            Character information isn't available for this chapter yet.
+                          </Text>
+                        </Stack>
+                      </Card>
+                    )}
+                  </Stack>
+                </Tabs.Panel>
+
+                <Tabs.Panel value="events" pt={theme.spacing.md}>
+                  <Stack gap={theme.spacing.lg}>
+                    <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.event)}>
+                      <Stack gap={theme.spacing.md} p={theme.spacing.md}>
+                        <Group gap={theme.spacing.sm}>
+                          <CalendarSearch size={20} color={entityColors.event} />
+                          <Title order={4} c={textColors.event}>Chapter Events</Title>
+                        </Group>
+                        <Stack gap={theme.spacing.sm}>
+                          {Array.isArray(initialEvents) && initialEvents.map((event) => (
+                            <Paper
+                              key={event.id}
+                              withBorder
+                              radius="lg"
+                              p={theme.spacing.md}
+                              shadow="md"
+                              style={{
+                                border: `1px solid ${getAlphaColor(entityColors.event, 0.3)}`,
+                                transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
+                              }}
+                            >
+                              <Stack gap={4}>
+                                <Text
+                                  component={Link}
+                                  href={`/events/${event.id}`}
+                                  fw={600}
+                                  c={textColors.event}
+                                  style={{ textDecoration: 'none' }}
+                                >
+                                  {event.title}
+                                </Text>
+                                <Text size="sm" c={textColors.tertiary} lineClamp={2}>
+                                  {event.description}
+                                </Text>
+                              </Stack>
+                            </Paper>
+                          ))}
+                        </Stack>
+                      </Stack>
+                    </Card>
+                  </Stack>
+                </Tabs.Panel>
+
+                <Tabs.Panel value="quotes" pt={theme.spacing.md}>
+                  <Stack gap={theme.spacing.lg}>
+                    <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.quote)}>
+                      <Stack gap={theme.spacing.md} p={theme.spacing.md}>
+                        <Group gap={theme.spacing.sm}>
+                          <MessageSquareQuote size={20} color={entityColors.quote} />
+                          <Title order={4} c={textColors.quote}>Memorable Quotes</Title>
+                        </Group>
+                        <Stack gap={theme.spacing.sm}>
+                          {Array.isArray(initialQuotes) && initialQuotes.map((quote) => (
+                            <Paper
+                              key={quote.id}
+                              withBorder
+                              radius="lg"
+                              p={theme.spacing.md}
+                              shadow="md"
+                              style={{
+                                border: `1px solid ${getAlphaColor(entityColors.quote, 0.3)}`,
+                                transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
+                              }}
+                            >
+                              <Stack gap={theme.spacing.sm}>
+                                <Text size="sm" style={{ fontStyle: 'italic', lineHeight: 1.5 }}>
+                                  &ldquo;{quote.text}&rdquo;
+                                </Text>
+                                <Group gap="xs" align="center">
+                                  {quote.character && (
+                                    <Badge
+                                      component={Link}
+                                      href={`/characters/${quote.character.id}`}
+                                      c={entityColors.character}
+                                      variant="light"
+                                      radius="sm"
+                                      size="sm"
+                                      style={{
+                                        textDecoration: 'none',
+                                        cursor: 'pointer',
+                                        backgroundColor: getAlphaColor(entityColors.character, 0.2),
+                                        border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+                                      }}
+                                    >
+                                      — {quote.character.name}
+                                    </Badge>
+                                  )}
+                                  {quote.pageNumber && (
+                                    <Badge c={entityColors.quote} variant="outline" radius="sm" size="xs">
+                                      p.{quote.pageNumber}
+                                    </Badge>
+                                  )}
+                                </Group>
+                              </Stack>
+                            </Paper>
+                          ))}
+                        </Stack>
+                      </Stack>
+                    </Card>
+                  </Stack>
+                </Tabs.Panel>
+              </Tabs>
             </Card>
-          </Grid.Col>
-        </Grid>
-      </motion.div>
-    </Container>
+          </motion.div>
+        </Stack>
+      </Container>
     </Box>
   )
 }

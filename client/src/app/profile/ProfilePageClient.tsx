@@ -386,7 +386,7 @@ export default function ProfilePageClient() {
                   }
                 }}
               >
-                <UserProfileImage user={user} size={120} />
+                <UserProfileImage user={user} size={140} />
                 <Box
                   style={{
                     position: 'absolute',

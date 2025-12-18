@@ -484,16 +484,21 @@ export class GuidesService {
       id,
     );
 
+    // Build the result object
+    const result: Guide & { userHasLiked?: boolean; viewCount?: number } = {
+      ...guide,
+      viewCount,
+    };
+
     // If user is authenticated, check if they have liked this guide
-    let userHasLiked = false;
     if (currentUser) {
       const existingLike = await this.guideLikeRepository.findOne({
         where: { guideId: id, userId: currentUser.id },
       });
-      userHasLiked = !!existingLike;
+      result.userHasLiked = !!existingLike;
     }
 
-    return { ...guide, userHasLiked, viewCount };
+    return result;
   }
 
   async update(

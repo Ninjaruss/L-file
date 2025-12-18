@@ -32,7 +32,7 @@ interface MediaItem {
 }
 
 interface MediaThumbnailProps {
-  entityType: 'character' | 'arc' | 'gamble' | 'organization' | 'volume'
+  entityType: 'character' | 'arc' | 'gamble' | 'organization' | 'volume' | 'chapter' | 'event' | 'guide' | 'media' | 'quote'
   entityId: number
   entityName?: string
   className?: string
@@ -42,6 +42,8 @@ interface MediaThumbnailProps {
   maxHeight?: string | number
   inline?: boolean
   disableExternalLinks?: boolean
+  spoilerChapter?: number // Entity's chapter (e.g., firstAppearanceChapter) for spoiler protection
+  hideIfEmpty?: boolean // If true, returns null when no media is available
 }
 
 // Cache for media data to avoid redundant API calls
@@ -51,6 +53,28 @@ const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 // Retry configuration
 const RETRY_DELAYS = [1000, 2000, 4000] // Progressive backoff
 const MAX_RETRIES = 3
+
+// Helper function to detect external URLs that aren't in our allowed domains
+function isExternalUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url)
+    const hostname = urlObj.hostname
+
+    // List of our hosted/allowed domains that should use Next.js Image optimization
+    const hostedDomains = [
+      'localhost',
+      'backblazeb2.com',
+      'l-file.com'
+    ]
+
+    // Check if it's a hosted domain
+    return !hostedDomains.some(domain => hostname.includes(domain))
+  } catch {
+    // If URL parsing fails, treat as relative URL (not external)
+    return false
+  }
+}
+
 // Image component with loading states and retry logic
 function ImageWithRetry({ 
   src, 
@@ -125,6 +149,11 @@ function ImageWithRetry({
     )
   }
 
+  const isExternal = isExternalUrl(src)
+
+  // Filter out Next.js Image-specific props for regular img tag
+  const { fill, sizes, quality, priority, placeholder, blurDataURL, unoptimized, loader, ...imgProps } = props
+
   return (
     <>
       {loading && (
@@ -145,15 +174,37 @@ function ImageWithRetry({
           <Loader size="sm" color={theme.colors.red?.[5]} />
         </Box>
       )}
-      <Image
-        {...props}
-        src={`${src}?retry=${retryCount}`}
-        alt={alt}
-        onLoad={handleLoad}
-        onError={handleError}
-        priority={false}
-        loading="lazy"
-      />
+      {isExternal ? (
+        // Use regular img tag for external URLs to bypass Next.js image domain restrictions
+        <img
+          {...imgProps}
+          src={`${src}?retry=${retryCount}`}
+          alt={alt}
+          onLoad={handleLoad}
+          onError={handleError}
+          loading="lazy"
+          style={{
+            position: fill ? 'absolute' : undefined,
+            top: fill ? 0 : undefined,
+            left: fill ? 0 : undefined,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            ...imgProps.style
+          }}
+        />
+      ) : (
+        // Use Next.js Image for hosted domains to get optimization benefits
+        <Image
+          {...props}
+          src={`${src}?retry=${retryCount}`}
+          alt={alt}
+          onLoad={handleLoad}
+          onError={handleError}
+          priority={false}
+          loading="lazy"
+        />
+      )}
     </>
   )
 }
@@ -168,7 +219,9 @@ export default function MediaThumbnail({
   maxWidth = 300,
   maxHeight = 300,
   inline = false,
-  disableExternalLinks = false
+  disableExternalLinks = false,
+  spoilerChapter,
+  hideIfEmpty = false
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
   const [allEntityMedia, setAllEntityMedia] = useState<MediaItem[]>([])
@@ -757,6 +810,10 @@ export default function MediaThumbnail({
   }
 
   if (!currentThumbnail) {
+    // If hideIfEmpty is true, return null instead of showing empty state
+    if (hideIfEmpty) {
+      return null
+    }
     return renderEmptyState()
   }
 
@@ -819,7 +876,7 @@ export default function MediaThumbnail({
 
   return (
     <Box component={containerComponent} className={className} style={containerStyles}>
-      <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress}>
+      <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress} spoilerChapter={spoilerChapter}>
         {mediaContent}
       </MediaSpoilerWrapper>
 
@@ -886,17 +943,21 @@ export default function MediaThumbnail({
 function MediaSpoilerWrapper({
   media,
   userProgress,
+  spoilerChapter,
   children
 }: {
   media: MediaItem
   userProgress: number
+  spoilerChapter?: number
   children: React.ReactNode
 }) {
   const [isRevealed, setIsRevealed] = useState(false)
   const { settings } = useSpoilerSettings()
   const theme = useMantineTheme()
 
-  const chapterNumber = media.chapterNumber
+  // Prioritize media's specific chapterNumber over entity's firstAppearanceChapter
+  // because the media itself might be from a later chapter than when the character first appears
+  const chapterNumber = media.chapterNumber ?? spoilerChapter
 
   const effectiveProgress = settings.chapterTolerance > 0
     ? settings.chapterTolerance
@@ -928,29 +989,35 @@ function MediaSpoilerWrapper({
 
   return (
     <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Box style={{ opacity: 0.3, filter: 'blur(2px)', width: '100%', height: '100%' }}>
+      <Box style={{ opacity: 0.3, filter: 'blur(2px)', width: '100%', height: '100%', pointerEvents: 'none' }}>
         {children}
       </Box>
 
       <Box
         style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '80%',
-          height: '60%',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: rgba(theme.colors.red[6] ?? '#e11d48', 0.9),
+          backgroundColor: rgba(theme.colors.red[6] ?? '#e11d48', 0.85),
           borderRadius: rem(8),
           cursor: 'pointer',
           border: `1px solid ${theme.colors.red[5] ?? '#f87171'}`,
           boxShadow: theme.shadows.lg,
-          zIndex: 10
+          zIndex: 10,
+          transition: 'background-color 0.2s ease'
         }}
         onClick={handleReveal}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = rgba(theme.colors.red[6] ?? '#e11d48', 0.95)
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = rgba(theme.colors.red[6] ?? '#e11d48', 0.85)
+        }}
       >
         <Tooltip
           label={chapterNumber

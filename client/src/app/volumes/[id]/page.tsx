@@ -1,11 +1,9 @@
 import React from 'react'
-import { Alert, Box, Button, Container, Stack, Text } from '@mantine/core'
-import { colors } from '../../../lib/mantine-theme'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { api } from '../../../lib/api'
 import VolumePageClient from './VolumePageClient'
+import { VolumeStructuredData } from '../../../components/StructuredData'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -88,35 +86,19 @@ export default async function VolumeDetailPage({ params }: PageProps) {
   const data = await getVolumeData(id)
 
   if (!data?.volume) {
-    return (
-      <Container size="lg" py="xl">
-        <Stack gap="md">
-          <Alert style={{ color: colors.gamble[5] }} radius="md">
-            <Text size="sm">Volume not found</Text>
-          </Alert>
-          <Box>
-            <Button
-              component={Link}
-              href="/volumes"
-              variant="outline"
-              style={{ color: colors.gamble[5] }}
-              leftSection={<ArrowLeft size={16} />}
-            >
-              Back to Volumes
-            </Button>
-          </Box>
-        </Stack>
-      </Container>
-    )
+    notFound()
   }
 
   const { volume, chapters } = data
 
   return (
-    <VolumePageClient
-      initialVolume={volume}
-      initialChapters={chapters}
-    />
+    <>
+      <VolumeStructuredData volume={volume} />
+      <VolumePageClient
+        initialVolume={volume}
+        initialChapters={chapters}
+      />
+    </>
   )
 }
 

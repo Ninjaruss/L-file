@@ -108,8 +108,8 @@ function MediaImageCard({ media, onSelect }: MediaImageCardProps) {
           <TimelineSpoilerWrapper chapterNumber={spoilerChapter}>
             <Box
               style={{
-                width: 100,
-                height: 100,
+                width: 120,
+                height: 120,
                 backgroundImage: `url(${media.url})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',

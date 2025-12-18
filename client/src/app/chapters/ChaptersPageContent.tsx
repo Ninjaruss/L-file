@@ -48,7 +48,7 @@ interface ChaptersPageContentProps {
   initialError: string
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 12
 
 export default function ChaptersPageContent({
   initialChapters,

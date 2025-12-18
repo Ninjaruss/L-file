@@ -12,7 +12,7 @@ import {
   Loader,
   Modal,
   Pagination,
-  Paper,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -22,14 +22,19 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
-import { Search, BookOpen, Edit, Upload, X } from 'lucide-react'
+import { Search, BookOpen, Edit, Upload, X, ArrowUpDown, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'motion/react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { motion } from 'motion/react'
 import MediaThumbnail from '../../components/MediaThumbnail'
 import { api } from '../../lib/api'
 import { useAuth } from '../../providers/AuthProvider'
+import { useHoverModal } from '../../hooks/useHoverModal'
+import { HoverModal } from '../../components/HoverModal'
+import { useProgress } from '../../providers/ProgressProvider'
+import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
+import { shouldHideSpoiler } from '../../lib/spoiler-utils'
 
 interface Arc {
   id: number
@@ -55,6 +60,13 @@ interface ArcsPageContentProps {
 
 const PAGE_SIZE = 12
 
+type SortOption = 'name' | 'startChapter'
+
+const sortOptions = [
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'startChapter', label: 'Start Chapter' }
+]
+
 export default function ArcsPageContent({
   initialArcs,
   initialPage,
@@ -65,6 +77,9 @@ export default function ArcsPageContent({
   const { user } = useAuth()
   const theme = useMantineTheme()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { userProgress } = useProgress()
+  const { settings: spoilerSettings } = useSpoilerSettings()
 
   // Load all arcs once - no pagination needed on API level
   const [allArcs, setAllArcs] = useState<Arc[]>(initialArcs)
@@ -73,6 +88,7 @@ export default function ArcsPageContent({
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [characterFilter, setCharacterFilter] = useState<string | null>(initialCharacter || null)
+  const [sortBy, setSortBy] = useState<SortOption>((searchParams.get('sort') as SortOption) || 'name')
 
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
   const [selectedArc, setSelectedArc] = useState<Arc | null>(null)
@@ -81,13 +97,16 @@ export default function ArcsPageContent({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const searchDebounceRef = useRef<number | null>(null)
 
-  // Hover modal state
-  const [hoveredArc, setHoveredArc] = useState<Arc | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Hover modal
+  const {
+    hoveredItem: hoveredArc,
+    hoverPosition,
+    handleMouseEnter: handleArcMouseEnter,
+    handleMouseLeave: handleArcMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave
+  } = useHoverModal<Arc>()
 
   const isModeratorOrAdmin = user?.role === 'moderator' || user?.role === 'admin'
 
@@ -112,7 +131,7 @@ export default function ArcsPageContent({
     }
   }, [])
 
-  // Client-side filtering and pagination
+  // Client-side filtering, sorting, and pagination
   const filteredArcs = useMemo(() => {
     let filtered = allArcs
 
@@ -129,8 +148,20 @@ export default function ArcsPageContent({
     // Note: Character filtering would require additional API calls,
     // keeping it simple for now since it's complex to implement client-side
 
-    return filtered
-  }, [allArcs, searchQuery])
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '')
+        case 'startChapter':
+          return (a.startChapter || 999) - (b.startChapter || 999)
+        default:
+          return 0
+      }
+    })
+
+    return sorted
+  }, [allArcs, searchQuery, sortBy])
 
   const paginatedArcs = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE
@@ -147,79 +178,13 @@ export default function ArcsPageContent({
     }
   }, [allArcs.length, loadAllArcs])
 
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((arc?: Arc) => {
-    const currentArc = arc || hoveredArc
-    if (hoveredElementRef.current && currentArc) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredArc])
-
-  useEffect(() => {
-    return () => {
-      if (searchDebounceRef.current) {
-        window.clearTimeout(searchDebounceRef.current)
-      }
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredArc && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredArc, updateModalPosition])
-
   const updateUrl = useCallback(
-    (newPage: number, newSearch: string, newCharacter?: string | null) => {
+    (newPage: number, newSearch: string, newCharacter?: string | null, newSort?: SortOption) => {
       const params = new URLSearchParams()
       if (newSearch) params.set('search', newSearch)
       if (newCharacter) params.set('character', newCharacter)
       if (newPage > 1) params.set('page', newPage.toString())
+      if (newSort && newSort !== 'name') params.set('sort', newSort)
       const href = params.toString() ? `/arcs?${params.toString()}` : '/arcs'
       router.push(href, { scroll: false })
     },
@@ -227,31 +192,31 @@ export default function ArcsPageContent({
   )
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Client-side filtering happens immediately via useMemo
     const value = event.target.value
     setSearchQuery(value)
     setCurrentPage(1)
-    updateUrl(1, value, characterFilter)
-
-    if (searchDebounceRef.current) {
-      window.clearTimeout(searchDebounceRef.current)
-    }
-
-    searchDebounceRef.current = window.setTimeout(() => {
-      loadAllArcs().catch(() => {})
-    }, 300)
+    updateUrl(1, value, characterFilter, sortBy)
   }
 
   const handlePageChange = (pageValue: number) => {
     setCurrentPage(pageValue)
-    updateUrl(pageValue, searchQuery, characterFilter)
+    updateUrl(pageValue, searchQuery, characterFilter, sortBy)
   }
 
   const handleClearSearch = () => {
+    // Client-side filtering - no need to reload from API
     setSearchQuery('')
     setCurrentPage(1)
     setCharacterFilter(null)
-    updateUrl(1, '', null)
-    loadAllArcs().catch(() => {})
+    updateUrl(1, '', null, sortBy)
+  }
+
+  const handleSortChange = (value: string | null) => {
+    const newSort = (value as SortOption) || 'name'
+    setSortBy(newSort)
+    setCurrentPage(1)
+    updateUrl(1, searchQuery, characterFilter, newSort)
   }
 
 
@@ -367,46 +332,6 @@ export default function ArcsPageContent({
     }
   }
 
-  // Hover modal handlers
-  const handleArcMouseEnter = (arc: Arc, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredArc(arc)
-      updateModalPosition(arc) // Pass arc directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleArcMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredArc(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredArc(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
-  }
-
   const accentArc = theme.other?.usogui?.arc ?? theme.colors.pink?.[5] ?? '#dc004e'
   const hasSearchQuery = Boolean(searchQuery || characterFilter)
 
@@ -465,8 +390,8 @@ export default function ArcsPageContent({
 
       {/* Search and Filters */}
       <Box mb="xl" px="md">
-        <Group justify="center" mb="md">
-          <Box style={{ maxWidth: rem(600), width: '100%' }}>
+        <Group justify="center" mb="md" gap="md">
+          <Box style={{ maxWidth: rem(450), width: '100%' }}>
             <TextInput
               placeholder="Search arcs by name or description..."
               value={searchQuery}
@@ -490,6 +415,20 @@ export default function ArcsPageContent({
               }}
             />
           </Box>
+          <Select
+            data={sortOptions}
+            value={sortBy}
+            onChange={handleSortChange}
+            leftSection={<ArrowUpDown size={16} />}
+            w={180}
+            size="lg"
+            radius="xl"
+            styles={{
+              input: {
+                fontSize: rem(14)
+              }
+            }}
+          />
         </Group>
 
         {characterFilter && (
@@ -502,7 +441,7 @@ export default function ArcsPageContent({
                 <ActionIcon size="xs" style={{ color: getEntityThemeColor(theme, 'arc') }} variant="transparent" onClick={() => {
                   setCharacterFilter(null)
                   setCurrentPage(1)
-                  updateUrl(1, searchQuery, null)
+                  updateUrl(1, searchQuery, null, sortBy)
                   loadAllArcs()
                 }}>
                   <X size={12} />
@@ -519,10 +458,10 @@ export default function ArcsPageContent({
       {error && (
         <Box px="md">
           <Alert
-            style={{ color: getEntityThemeColor(theme, 'gamble') }}
+            color="red"
             radius="md"
             mb="xl"
-            icon={<X size={16} />}
+            icon={<AlertCircle size={16} />}
             title="Error loading arcs"
           >
             {error}
@@ -589,7 +528,15 @@ export default function ArcsPageContent({
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-4px)'
                           e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
-                          handleArcMouseEnter(arc, e)
+                          // Only show hover modal if content is not spoilered
+                          const isSpoilered = shouldHideSpoiler(
+                            arc.startChapter,
+                            userProgress,
+                            spoilerSettings
+                          )
+                          if (!isSpoilered) {
+                            handleArcMouseEnter(arc, e)
+                          }
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)'
@@ -661,6 +608,7 @@ export default function ArcsPageContent({
                             maxWidth={200}
                             maxHeight={240}
                             allowCycling={false}
+                            spoilerChapter={arc.startChapter}
                           />
                         </Box>
 
@@ -708,7 +656,7 @@ export default function ArcsPageContent({
                     total={totalPages}
                     value={currentPage}
                     onChange={handlePageChange}
-                    style={{ color: getEntityThemeColor(theme, 'arc') }}
+                    color="arc"
                     size="lg"
                     radius="xl"
                     withEdges
@@ -896,102 +844,79 @@ export default function ArcsPageContent({
       </Modal>
 
       {/* Hover Modal */}
-      <AnimatePresence>
-        {hoveredArc && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
-              style={{
-                backgroundColor: backgroundStyles.modal,
-                border: `2px solid ${accentArc}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
-              }}
+      <HoverModal
+        isOpen={!!hoveredArc}
+        position={hoverPosition}
+        accentColor={accentArc}
+        onMouseEnter={handleModalMouseEnter}
+        onMouseLeave={handleModalMouseLeave}
+      >
+        {hoveredArc && (
+          <>
+            {/* Arc Name */}
+            <Title
+              order={4}
+              size="md"
+              fw={700}
+              c={accentArc}
+              ta="center"
+              lineClamp={2}
             >
-              <Stack gap="sm">
-                {/* Arc Name */}
-                <Title
-                  order={4}
-                  size="md"
-                  fw={700}
-                  c={accentArc}
-                  ta="center"
-                  lineClamp={2}
+              {hoveredArc.name}
+            </Title>
+
+            {/* Arc Number/Order */}
+            <Group justify="center" gap="xs">
+              <Badge
+                variant="light"
+                style={{ color: getEntityThemeColor(theme, 'arc') }}
+                size="sm"
+                fw={600}
+              >
+                Arc #{filteredArcs.findIndex(a => a.id === hoveredArc.id) + 1}
+              </Badge>
+              {formatChapterRange(hoveredArc) && (
+                <Badge
+                  variant="filled"
+                  style={{ color: 'white', backgroundColor: accentArc }}
+                  size="sm"
+                  fw={600}
                 >
-                  {hoveredArc.name}
-                </Title>
+                  {formatChapterRange(hoveredArc)}
+                </Badge>
+              )}
+            </Group>
 
-                {/* Arc Number/Order */}
-                <Group justify="center" gap="xs">
-                  <Badge
-                    variant="light"
-                    style={{ color: getEntityThemeColor(theme, 'arc') }}
-                    size="sm"
-                    fw={600}
-                  >
-                    Arc #{filteredArcs.findIndex(a => a.id === hoveredArc.id) + 1}
-                  </Badge>
-                  {formatChapterRange(hoveredArc) && (
-                    <Badge
-                      variant="filled"
-                      style={{ color: 'white', backgroundColor: accentArc }}
-                      size="sm"
-                      fw={600}
-                    >
-                      {formatChapterRange(hoveredArc)}
-                    </Badge>
-                  )}
-                </Group>
+            {/* Description */}
+            {hoveredArc.description && (
+              <Text
+                size="sm"
+                ta="center"
+                lineClamp={3}
+                style={{
+                  color: theme.colors.gray[6],
+                  lineHeight: 1.4,
+                  maxHeight: rem(60)
+                }}
+              >
+                {hoveredArc.description}
+              </Text>
+            )}
 
-                {/* Description */}
-                {hoveredArc.description && (
-                  <Text
-                    size="sm"
-                    ta="center"
-                    lineClamp={3}
-                    style={{
-                      color: theme.colors.gray[6],
-                      lineHeight: 1.4,
-                      maxHeight: rem(60)
-                    }}
-                  >
-                    {hoveredArc.description}
-                  </Text>
-                )}
-
-                {/* Start Chapter */}
-                {hoveredArc.startChapter && (
-                  <Group justify="center" gap="xs">
-                    <Text size="xs" style={{ color: theme.colors.gray[6] }}>
-                      Starts:
-                    </Text>
-                    <Text size="xs" fw={500} c={accentArc}>
-                      Chapter {hoveredArc.startChapter}
-                    </Text>
-                  </Group>
-                )}
-              </Stack>
-            </Paper>
-          </motion.div>
+            {/* Start Chapter */}
+            {hoveredArc.startChapter && (
+              <Group justify="center" gap="xs">
+                <Text size="xs" style={{ color: theme.colors.gray[6] }}>
+                  Starts:
+                </Text>
+                <Text size="xs" fw={500} c={accentArc}>
+                  Chapter {hoveredArc.startChapter}
+                </Text>
+              </Group>
+            )}
+          </>
         )}
-      </AnimatePresence>
+      </HoverModal>
     </motion.div>
     </Box>
   )

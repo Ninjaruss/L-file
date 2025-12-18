@@ -100,9 +100,9 @@ export default async function GuidesPage({ searchParams }: GuidesPageProps) {
   let error = ''
 
   try {
-    const params: { page: number; limit: number; title?: string; authorId?: string; status?: string } = { page, limit: 12, status: 'approved' }
-    if (search) params.title = search
-    if (authorId) params.authorId = authorId
+    const params: { page: number; limit: number; search?: string; authorId?: number; status?: string } = { page, limit: 12, status: 'approved' }
+    if (search) params.search = search
+    if (authorId) params.authorId = parseInt(authorId)
 
     const response = await api.getGuides(params)
     guides = response.data

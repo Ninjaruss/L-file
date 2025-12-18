@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import UsersPageContent from './UsersPageContent'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,5 +20,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function UsersPage() {
-  return <UsersPageContent />
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UsersPageContent />
+    </Suspense>
+  )
 }

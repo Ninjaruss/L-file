@@ -8,14 +8,11 @@ import {
   Select,
   TextInput,
   Button,
-  SimpleGrid,
   Card,
   Badge,
-  AspectRatio,
   ActionIcon,
   Loader,
   Stack,
-  Pagination,
   Alert,
   Box,
   Container,
@@ -26,7 +23,7 @@ import {
   Image,
   Anchor
 } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
+import { useDebouncedValue, useIntersection } from '@mantine/hooks'
 import {
   Search,
   Image as ImageIcon,
@@ -75,7 +72,7 @@ interface MediaPageContentProps {
   initialSearch?: string
 }
 
-const ITEMS_PER_PAGE = 30
+const ITEMS_PER_PAGE = 24 // Increased for infinite scroll
 
 export default function MediaPageContent({
   initialPage,
@@ -95,6 +92,12 @@ export default function MediaPageContent({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [imageDimensions, setImageDimensions] = useState<Record<number, { width: number; height: number }>>({})
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hoveredMediaId, setHoveredMediaId] = useState<number | null>(null)
+
+  // Intersection observer for infinite scroll
+  const { ref: loadMoreRef, entry } = useIntersection({ threshold: 0.5 })
 
   // Filters
   const [currentPage, setCurrentPage] = useState(initialPage)
@@ -108,13 +111,17 @@ export default function MediaPageContent({
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
-  const fetchMedia = useCallback(async () => {
-    setLoading(true)
+  const fetchMedia = useCallback(async (page: number, append = false) => {
+    if (append) {
+      setLoadingMore(true)
+    } else {
+      setLoading(true)
+    }
     setError('')
 
     try {
       const params: Record<string, string | number> = {
-        page: currentPage,
+        page,
         limit: ITEMS_PER_PAGE,
         purpose: selectedPurpose
       }
@@ -138,28 +145,42 @@ export default function MediaPageContent({
       const response = await api.getApprovedMedia(params)
       const fetchedMedia = response.data || []
 
-      setMedia(fetchedMedia)
+      if (append) {
+        setMedia(prev => [...prev, ...fetchedMedia])
+      } else {
+        setMedia(fetchedMedia)
+      }
       setTotal(response.total ?? fetchedMedia.length)
       setTotalPages(response.totalPages ?? 1)
+      setHasMore(page < (response.totalPages ?? 1))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load media')
-      setMedia([])
-      setTotal(0)
-      setTotalPages(1)
+      if (!append) {
+        setMedia([])
+        setTotal(0)
+        setTotalPages(1)
+      }
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }, [currentPage, selectedType, selectedOwnerType, selectedPurpose, initialOwnerId, debouncedSearch])
+  }, [selectedType, selectedOwnerType, selectedPurpose, initialOwnerId, debouncedSearch])
 
+  // Initial load
   useEffect(() => {
-    fetchMedia()
-  }, [fetchMedia])
+    setCurrentPage(1)
+    setHasMore(true)
+    fetchMedia(1, false)
+  }, [selectedType, selectedOwnerType, selectedPurpose, debouncedSearch, fetchMedia])
 
+  // Infinite scroll - load more when sentinel is visible
   useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1)
+    if (entry?.isIntersecting && hasMore && !loading && !loadingMore) {
+      const nextPage = currentPage + 1
+      setCurrentPage(nextPage)
+      fetchMedia(nextPage, true)
     }
-  }, [selectedType, selectedOwnerType, selectedPurpose, debouncedSearch])
+  }, [entry?.isIntersecting, hasMore, loading, loadingMore, currentPage, fetchMedia])
 
   const handleClearFilters = useCallback(() => {
     setSearchValue('')
@@ -167,6 +188,7 @@ export default function MediaPageContent({
     setSelectedOwnerType('all')
     setSelectedPurpose('gallery')
     setCurrentPage(1)
+    setHasMore(true)
   }, [])
 
   const handlePageChange = (page: number) => {
@@ -202,6 +224,28 @@ export default function MediaPageContent({
       setSelectedMedia(media[newIndex])
     }
   }
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!viewerOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          handlePrevious()
+          break
+        case 'ArrowRight':
+          handleNext()
+          break
+        case 'Escape':
+          handleCloseViewer()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [viewerOpen, currentIndex, media])
 
   const handleImageLoad = (itemId: number, event: React.SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget
@@ -434,18 +478,18 @@ export default function MediaPageContent({
                   href="/submit-media"
                   size="xs"
                   radius="sm"
-                  variant="light"
+                  variant="outline"
                   color="grape"
                   leftSection={<Upload size={14} />}
                 >
-                  Submit
+                  Submit Media
                 </Button>
               </Group>
             </Stack>
           </Stack>
         </Box>
 
-        <Container size="xl" px="md">
+        <Container size="lg" px="md">
           <Paper
             withBorder
             radius="md"
@@ -594,7 +638,7 @@ export default function MediaPageContent({
         </Container>
 
         {error && (
-          <Container size="xl" px="md">
+          <Container size="lg" px="md">
             <Alert color={accentMedia} variant="light" radius="lg" title="Error loading media">
               {error}
             </Alert>
@@ -602,7 +646,7 @@ export default function MediaPageContent({
         )}
 
         {!error && (
-          <Container size="xl" px="md" pb="xl">
+          <Container size="lg" px="md" pb="xl">
             {loading ? (
               <Group justify="center" py="xl">
                 <Loader size="lg" color={accentMedia} />
@@ -638,18 +682,26 @@ export default function MediaPageContent({
                       )}
                     </Group>
 
-                    <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, md: 5, lg: 6, xl: 8 }} spacing="xs">
+                    {/* Masonry Grid Layout */}
+                    <Box className="masonry-grid">
+                      <style>{`
+                        .masonry-grid { column-count: 5; column-gap: 12px; }
+                        @media (max-width: 1400px) { .masonry-grid { column-count: 4; } }
+                        @media (max-width: 1100px) { .masonry-grid { column-count: 3; } }
+                        @media (max-width: 768px) { .masonry-grid { column-count: 2; } }
+                        .masonry-item { break-inside: avoid; margin-bottom: 12px; }
+                      `}</style>
                       {media.map((item, index) => {
                         const thumbnail = getMediaThumbnail(item)
-                        const aspectRatio = getOptimalAspectRatio(item.id)
-                        const isImageLoaded = loadedImages.has(item.id)
                         const ownerLabel = item.ownerType === 'user'
                           ? 'Community'
                           : item.ownerType
+                        const isHovered = hoveredMediaId === item.id
 
                         return (
                           <Card
                             key={item.id}
+                            className="masonry-item"
                             withBorder
                             radius="md"
                             shadow="sm"
@@ -658,144 +710,173 @@ export default function MediaPageContent({
                               background: backgroundStyles.card,
                               borderColor: `${accentMedia}20`,
                               cursor: 'pointer',
-                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                              overflow: 'hidden'
+                              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                              overflow: 'hidden',
+                              transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+                              boxShadow: isHovered ? `0 12px 28px ${accentMedia}40` : theme.shadows.sm,
+                              zIndex: isHovered ? 10 : 1,
+                              position: 'relative'
                             }}
                             onClick={() => handleMediaClick(item, index)}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = `0 8px 20px ${accentMedia}30`
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = theme.shadows.sm
-                            }}
+                            onMouseEnter={() => setHoveredMediaId(item.id)}
+                            onMouseLeave={() => setHoveredMediaId(null)}
                           >
-                            <AspectRatio ratio={isImageLoaded ? aspectRatio : 1}>
-                              {thumbnail ? (
-                                <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
-                                  <img
-                                    src={thumbnail}
-                                    alt={item.description || 'Media item'}
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      objectFit: 'cover'
-                                    }}
-                                    onLoad={(e) => handleImageLoad(item.id, e)}
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement
-                                      target.style.display = 'none'
-                                    }}
-                                  />
-                                  {item.type === 'video' && (
-                                    <Box
-                                      style={{
-                                        position: 'absolute',
-                                        top: '50%',
-                                        left: '50%',
-                                        transform: 'translate(-50%, -50%)',
-                                        backgroundColor: 'rgba(0,0,0,0.75)',
-                                        borderRadius: '50%',
-                                        padding: rem(8),
-                                        color: 'white',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                    >
-                                      <Play size={16} fill="white" />
-                                    </Box>
-                                  )}
-                                  <Badge
-                                    variant="filled"
-                                    size="xs"
-                                    radius="sm"
+                            {/* Image container - no AspectRatio for true masonry */}
+                            {thumbnail ? (
+                              <Box style={{ position: 'relative', width: '100%' }}>
+                                <img
+                                  src={thumbnail}
+                                  alt={item.description || 'Media item'}
+                                  style={{
+                                    width: '100%',
+                                    height: 'auto',
+                                    display: 'block'
+                                  }}
+                                  onLoad={(e) => handleImageLoad(item.id, e)}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement
+                                    target.style.display = 'none'
+                                  }}
+                                />
+
+                                {/* Video play overlay */}
+                                {item.type === 'video' && (
+                                  <Box
                                     style={{
                                       position: 'absolute',
-                                      top: rem(4),
-                                      left: rem(4),
-                                      backgroundColor: getOwnerTypeColor(item.ownerType),
-                                      color: '#fff',
-                                      textTransform: 'capitalize',
-                                      fontSize: rem(10),
-                                      padding: `${rem(2)} ${rem(6)}`
-                                    }}
-                                  >
-                                    {ownerLabel}
-                                  </Badge>
-                                  <ActionIcon
-                                    variant="filled"
-                                    size="sm"
-                                    component="a"
-                                    href={item.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                      position: 'absolute',
-                                      top: rem(4),
-                                      right: rem(4),
+                                      top: '50%',
+                                      left: '50%',
+                                      transform: 'translate(-50%, -50%)',
                                       backgroundColor: 'rgba(0,0,0,0.75)',
-                                      color: 'white'
+                                      borderRadius: '50%',
+                                      padding: rem(12),
+                                      color: 'white',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
                                     }}
                                   >
-                                    <ExternalLink size={12} />
-                                  </ActionIcon>
-                                </Box>
-                              ) : (
+                                    <Play size={20} fill="white" />
+                                  </Box>
+                                )}
+
+                                {/* Hover overlay with details */}
                                 <Box
                                   style={{
-                                    background: `${accentMedia}10`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '100%',
-                                    height: '100%'
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+                                    padding: rem(12),
+                                    paddingTop: rem(32),
+                                    opacity: isHovered ? 1 : 0,
+                                    transition: 'opacity 0.2s ease',
+                                    pointerEvents: isHovered ? 'auto' : 'none'
                                   }}
                                 >
-                                  {getMediaTypeIcon(item.type)}
-                                </Box>
-                              )}
-                            </AspectRatio>
-
-                            <Stack gap={4} p="xs">
-                              {item.description && (
-                                <Text size="xs" fw={500} lineClamp={2} title={item.description}>
-                                  {item.description}
-                                </Text>
-                              )}
-
-                              <Group justify="space-between" align="center" gap={4} wrap="nowrap">
-                                <Group gap={4} align="center" style={{ minWidth: 0, flex: 1 }}>
-                                  <User size={10} style={{ flexShrink: 0 }} />
-                                  <Text size="xs" c="dimmed" truncate>
-                                    {item.submittedBy.username}
+                                  {item.description && (
+                                    <Text size="xs" c="white" fw={500} lineClamp={2} mb={6}>
+                                      {item.description}
+                                    </Text>
+                                  )}
+                                  <Group gap={6} wrap="wrap">
+                                    <Badge
+                                      size="xs"
+                                      radius="sm"
+                                      style={{
+                                        backgroundColor: getOwnerTypeColor(item.ownerType),
+                                        color: '#fff',
+                                        textTransform: 'capitalize'
+                                      }}
+                                    >
+                                      {ownerLabel}
+                                    </Badge>
+                                    {item.chapterNumber && (
+                                      <Badge size="xs" variant="filled" color="dark">
+                                        Ch. {item.chapterNumber}
+                                      </Badge>
+                                    )}
+                                  </Group>
+                                  <Text size="xs" c="dimmed" mt={4}>
+                                    by {item.submittedBy.username}
                                   </Text>
-                                </Group>
-                                {item.chapterNumber && (
-                                  <Badge variant="dot" size="xs" c={accentMedia} style={{ flexShrink: 0 }}>
-                                    Ch.{item.chapterNumber}
-                                  </Badge>
-                                )}
-                              </Group>
-                            </Stack>
+                                </Box>
+
+                                {/* Always visible badges */}
+                                <Badge
+                                  variant="filled"
+                                  size="xs"
+                                  radius="sm"
+                                  style={{
+                                    position: 'absolute',
+                                    top: rem(6),
+                                    left: rem(6),
+                                    backgroundColor: getOwnerTypeColor(item.ownerType),
+                                    color: '#fff',
+                                    textTransform: 'capitalize',
+                                    fontSize: rem(10),
+                                    opacity: isHovered ? 0 : 1,
+                                    transition: 'opacity 0.2s ease'
+                                  }}
+                                >
+                                  {ownerLabel}
+                                </Badge>
+
+                                <ActionIcon
+                                  variant="filled"
+                                  size="sm"
+                                  component="a"
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    position: 'absolute',
+                                    top: rem(6),
+                                    right: rem(6),
+                                    backgroundColor: 'rgba(0,0,0,0.75)',
+                                    color: 'white'
+                                  }}
+                                >
+                                  <ExternalLink size={12} />
+                                </ActionIcon>
+                              </Box>
+                            ) : (
+                              <Box
+                                style={{
+                                  background: `${accentMedia}10`,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '100%',
+                                  height: rem(150)
+                                }}
+                              >
+                                {getMediaTypeIcon(item.type)}
+                              </Box>
+                            )}
                           </Card>
                         )
                       })}
-                    </SimpleGrid>
+                    </Box>
 
-                    {totalPages > 1 && (
-                      <Group justify="center">
-                        <Pagination
-                          value={currentPage}
-                          onChange={handlePageChange}
-                          total={totalPages}
-                          color="grape"
-                          radius="md"
-                          size="sm"
-                        />
+                    {/* Infinite scroll sentinel */}
+                    <Box ref={loadMoreRef} style={{ height: 1, marginTop: rem(16) }} />
+
+                    {/* Loading more indicator */}
+                    {loadingMore && (
+                      <Group justify="center" py="md">
+                        <Loader size="sm" color={accentMedia} />
+                        <Text size="sm" c="dimmed">Loading more...</Text>
                       </Group>
+                    )}
+
+                    {/* End of results */}
+                    {!hasMore && media.length > 0 && (
+                      <Text size="sm" c="dimmed" ta="center" py="md">
+                        You&apos;ve reached the end • {total} total items
+                      </Text>
                     )}
                   </Stack>
                 )}

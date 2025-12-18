@@ -12,24 +12,35 @@ import {
   Tabs,
   Text,
   Textarea,
+  ThemeIcon,
   Title,
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors, backgroundStyles } from '../../../lib/mantine-theme'
-import { ArrowLeft, FileText, Calendar, Heart, Edit, Save, X, Users, BookOpen, Dice6 } from 'lucide-react'
+import {
+  getEntityThemeColor,
+  textColors,
+  headerColors,
+  getAlphaColor,
+  fontSize,
+  setTabAccentColors,
+  backgroundStyles,
+  getCardStyles
+} from '../../../lib/mantine-theme'
+import { FileText, Calendar, Heart, Edit, Save, X, Users, BookOpen, Dice6, Eye, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../../lib/api'
 import { useAuth } from '../../../providers/AuthProvider'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
-// GambleChip removed — using simple Badge chips inline for gambles
 import EntityEmbedHelperWithSearch from '../../../components/EntityEmbedHelperWithSearch'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
+import MediaThumbnail from '../../../components/MediaThumbnail'
 import { motion } from 'motion/react'
 import { GuideStatus } from '../../../types'
 import AuthorProfileImage from '../../../components/AuthorProfileImage'
 import { UserRoleDisplay } from '../../../components/BadgeDisplay'
 import { usePageView } from '../../../hooks/usePageView'
+import BackButton from '../../../components/BackButton'
 
 interface Guide {
   id: number
@@ -85,18 +96,31 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
   const theme = useMantineTheme()
   const { user, loading: authLoading } = useAuth()
   const [guide, setGuide] = useState<Guide | null>(initialGuide || null)
-  const [isEditing, setIsEditing] = useState(false)
   const [editedContent, setEditedContent] = useState(initialGuide?.content || '')
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<string>('content')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Tab styling handled by Mantine theme
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // Call usePageView hook early to maintain hook order (Rules of Hooks)
   usePageView('guide', guide?.id?.toString() || '', !!guide?.id)
+
+  // Set tab accent colors for guide entity
+  useEffect(() => {
+    setTabAccentColors('guide')
+  }, [])
+
+  // Use consistent theme colors
+  const entityColors = {
+    guide: getEntityThemeColor(theme, 'guide'),
+    character: getEntityThemeColor(theme, 'character'),
+    arc: getEntityThemeColor(theme, 'arc'),
+    gamble: getEntityThemeColor(theme, 'gamble'),
+    media: getEntityThemeColor(theme, 'media'),
+    organization: getEntityThemeColor(theme, 'organization')
+  }
 
   // When the server-rendered page couldn't see the user's session,
   // initialGuide.userHasLiked may be undefined. If we have a logged-in
@@ -113,7 +137,7 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
         const fresh = await api.getGuide(guide.id)
         if (cancelled) return
         setGuide((prev) => prev ? ({ ...prev, userHasLiked: fresh.userHasLiked, likeCount: fresh.likeCount }) : null)
-      } catch (e) {
+      } catch {
         // ignore silently
       }
     }
@@ -143,19 +167,19 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
     if (!initialGuide && guideId && !authLoading) {
       setLoading(true)
       setError(null)
-      
+
       const fetchGuide = async () => {
         try {
           let fetchedGuide: Guide
-          
+
           if (user) {
             // User is authenticated, try authenticated endpoint first
             try {
               fetchedGuide = await api.getGuideAuthenticated(guideId)
-            } catch (authError: any) {
+            } catch (authError: unknown) {
+              const err = authError as { status?: number }
               // If authenticated request fails with 401/403, try public endpoint
-              if (authError?.status === 401 || authError?.status === 403) {
-                console.log('[GuidePageClient] Authenticated request failed, trying public endpoint')
+              if (err?.status === 401 || err?.status === 403) {
                 fetchedGuide = await api.getGuide(guideId)
               } else {
                 throw authError
@@ -165,7 +189,7 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
             // User not authenticated, use public endpoint
             fetchedGuide = await api.getGuide(guideId)
           }
-          
+
           // Check if user can view this guide
           if (fetchedGuide.status !== GuideStatus.APPROVED) {
             // Only allow authors to see their own non-approved guides
@@ -174,14 +198,14 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
               return
             }
           }
-          
+
           setGuide(fetchedGuide)
           setEditedContent(fetchedGuide.content)
-        } catch (err: any) {
-          console.error('[GuidePageClient] Failed to fetch guide:', err)
-          if (err?.status === 404) {
+        } catch (err: unknown) {
+          const error = err as { status?: number; isAuthError?: boolean }
+          if (error?.status === 404) {
             setError('Guide not found.')
-          } else if (err?.isAuthError) {
+          } else if (error?.isAuthError) {
             setError('Please log in to access this content.')
           } else {
             setError('Failed to load guide.')
@@ -190,7 +214,7 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
           setLoading(false)
         }
       }
-      
+
       fetchGuide()
     }
   }, [guideId, initialGuide, user, authLoading])
@@ -212,12 +236,10 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
       <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
         <Container size="lg" py="xl">
           <Stack gap="md">
-            <Button component={Link} href="/guides" variant="subtle" c={semanticColors.neutral} leftSection={<ArrowLeft size={18} />}>
-              Back to Guides
-            </Button>
+            <BackButton href="/guides" label="Back to Guides" entityType="guide" />
             <Card withBorder radius="md" className="gambling-card" shadow="md">
               <Stack gap="md" p="xl">
-                <Text c={semanticColors.warning}>{error}</Text>
+                <Text c={textColors.warning}>{error}</Text>
               </Stack>
             </Card>
           </Stack>
@@ -241,10 +263,6 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
   // Only the guide owner or admins can edit. Moderators cannot edit guides.
   const canEdit = user?.id === guide.author.id || user?.role === 'admin'
 
-  // Remove publish/unpublish button from the guide detail page UI. Publish actions are handled elsewhere.
-  const canPublish = false
-
-
   const handleLikeToggle = async () => {
     try {
       const response = await api.toggleGuideLike(guide.id)
@@ -253,12 +271,10 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
         likeCount: response.likeCount,
         userHasLiked: response.liked
       }) : null)
-    } catch (error) {
+    } catch {
       notifications.show({ message: 'Failed to toggle like.', color: 'red' })
     }
   }
-
-  // Publish/unpublish is not available in this client view; server/admin UI handles it.
 
   const handleSave = async () => {
     if (!canEdit) return
@@ -270,7 +286,6 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
         title: guide.title
       })
       setGuide(updatedGuide)
-      setIsEditing(false)
       notifications.show({ message: 'Guide updated successfully.', color: 'green' })
     } catch (error: unknown) {
       notifications.show({ message: error instanceof Error ? error.message : 'Failed to save guide.', color: 'red' })
@@ -280,257 +295,404 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
   }
 
   const handleCancel = () => {
-    setIsEditing(false)
     setEditedContent(guide.content)
   }
 
   // Show pending status banner for authors
   const showPendingBanner = guide.status !== GuideStatus.APPROVED && user?.id === guide.author.id
 
+  // Check if there are related entities
+  const hasRelatedEntities = guide.arc || (guide.gambles && guide.gambles.length > 0) || (guide.characters && guide.characters.length > 0)
+
   return (
-    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-    <Container size="lg" py="xl">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Group justify="space-between" align="flex-start" mb="lg">
-          <Button component={Link} href="/guides" variant="subtle" c={semanticColors.neutral} leftSection={<ArrowLeft size={18} />}>
-            Back to Guides
-          </Button>
-          <Group gap="sm">
-            {/* publish/unpublish removed from UI per requirements */}
+    <Box style={{
+      backgroundColor: backgroundStyles.page(theme),
+      minHeight: '100vh',
+      color: textColors.primary
+    }}>
+      <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
+        <Stack gap={theme.spacing.md}>
+          <Group justify="space-between" align="flex-start">
+            <BackButton href="/guides" label="Back to Guides" entityType="guide" />
             <Button
               variant={guide.userHasLiked ? 'filled' : 'outline'}
-              style={{ color: getEntityThemeColor(theme, 'gamble') }}
-              leftSection={<Heart size={16} />}
+              c={guide.userHasLiked ? textColors.primary : entityColors.gamble}
+              leftSection={<Heart size={16} fill={guide.userHasLiked ? 'currentColor' : 'none'} />}
               onClick={handleLikeToggle}
+              radius="xl"
+              style={{
+                border: `2px solid ${entityColors.gamble}`,
+                backgroundColor: guide.userHasLiked ? entityColors.gamble : 'transparent'
+              }}
             >
               {guide.likeCount} Like{guide.likeCount !== 1 ? 's' : ''}
             </Button>
           </Group>
-        </Group>
 
-        {/* Pending status banner */}
-        {showPendingBanner && (
-          <Card withBorder radius="md" className="gambling-card" shadow="md" mb="lg" style={{ borderColor: semanticColors.warning }}>
-            <Stack gap="sm" p="md">
-              <Text size="sm" c={semanticColors.warning} fw={500}>
-                📝 This is your {guide.status} guide. It's only visible to you until it gets approved by moderators.
-              </Text>
-            </Stack>
-          </Card>
-        )}
-
-        <Card withBorder radius="md" className="gambling-card" shadow="md" mb="xl">
-          <Stack gap="xl" p="xl">
-            <Stack gap="sm">
-              <Title order={1} mb="xs">{guide.title}</Title>
-              <Group gap="lg" align="center" mb="sm">
-                <AuthorProfileImage author={guide.author} size={40} showFallback />
-                <Text size="lg" c="dimmed" component={Link} href={`/users/${guide.author.id}`} style={{ textDecoration: 'none', fontWeight: 500 }}>
-                  By {guide.author.username}
+          {/* Pending status banner */}
+          {showPendingBanner && (
+            <Card withBorder radius="md" shadow="md" style={{ borderColor: textColors.warning, backgroundColor: getAlphaColor(textColors.warning, 0.1) }}>
+              <Stack gap="sm" p="md">
+                <Text size="sm" c={textColors.warning} fw={500}>
+                  📝 This is your {guide.status} guide. It's only visible to you until it gets approved by moderators.
                 </Text>
-                  {guide.author.customRole && (
-                    <Badge
-                      c={getEntityThemeColor(theme, 'media')}
-                      variant="outline"
-                      radius="sm"
-                      style={{ borderColor: getEntityThemeColor(theme, 'media') }}
+              </Stack>
+            </Card>
+          )}
+
+          {/* Enhanced Guide Header */}
+          <Card
+            withBorder
+            radius="lg"
+            shadow="lg"
+            p={0}
+            style={{
+              ...getCardStyles(theme, entityColors.guide),
+              border: `2px solid ${entityColors.guide}`,
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Subtle Pattern Overlay */}
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundImage: `
+                  radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
+                  radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
+                `,
+                backgroundSize: '40px 40px, 80px 80px',
+                backgroundPosition: '0 0, 20px 20px',
+                pointerEvents: 'none'
+              }}
+            />
+
+            {/* Content */}
+            <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
+              <Stack gap={theme.spacing.md}>
+                {/* Header with thumbnail and title */}
+                <Group gap={theme.spacing.md} align="flex-start" wrap="nowrap">
+                  <Box style={{ width: '200px', height: '280px', flexShrink: 0 }}>
+                    <MediaThumbnail
+                      entityType="guide"
+                      entityId={guide.id}
+                      entityName={guide.title}
+                      allowCycling
+                      maxWidth="200px"
+                      maxHeight="280px"
+                      hideIfEmpty
+                    />
+                  </Box>
+
+                  <Stack gap={theme.spacing.sm} style={{ flex: 1, minWidth: 0 }}>
+                    <Title
+                      order={1}
+                      size="2rem"
+                      fw={800}
+                      c={headerColors.h1}
+                      style={{
+                        lineHeight: 1.2,
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                        letterSpacing: '-0.02em'
+                      }}
                     >
-                      {guide.author.customRole}
-                    </Badge>
-                  )}
-                  {roleBadge && (
-                    <Badge
-                      c={roleBadge.color}
-                      variant="light"
-                      radius="sm"
-                      style={{ backgroundColor: `${roleBadge.color}20`, borderColor: roleBadge.color }}
-                    >
-                      {roleBadge.label}
-                    </Badge>
-                  )}
-                  {/* adapt author.role to the UserRoleDisplay props */}
-                  <UserRoleDisplay
-                    userRole={(guide.author.role === 'admin' || guide.author.role === 'moderator') ? guide.author.role : 'user'}
-                    customRole={guide.author.customRole}
-                    size="small"
-                  />
+                      {guide.title}
+                    </Title>
+
+                    {guide.description && (
+                      <Text size="md" c={textColors.secondary} style={{ lineHeight: 1.5 }}>
+                        {guide.description}
+                      </Text>
+                    )}
+                  </Stack>
                 </Group>
 
-                <Group gap="md" align="center" mt="md">
+                {/* Author Info */}
+                <Group gap={theme.spacing.md} align="center">
+                  <AuthorProfileImage author={guide.author} size={40} showFallback />
+                  <Stack gap={2}>
+                    <Text
+                      size="md"
+                      c={textColors.secondary}
+                      component={Link}
+                      href={`/users/${guide.author.id}`}
+                      style={{ textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      {guide.author.username}
+                    </Text>
+                    <Group gap="xs">
+                      {guide.author.customRole && (
+                        <Badge
+                          c={entityColors.media}
+                          variant="outline"
+                          radius="sm"
+                          size="xs"
+                          style={{ borderColor: entityColors.media }}
+                        >
+                          {guide.author.customRole}
+                        </Badge>
+                      )}
+                      <UserRoleDisplay
+                        userRole={(guide.author.role === 'admin' || guide.author.role === 'moderator') ? guide.author.role : 'user'}
+                        customRole={guide.author.customRole}
+                        size="small"
+                      />
+                    </Group>
+                  </Stack>
+                </Group>
+
+                {/* Stats Badges */}
+                <Group gap={theme.spacing.sm} wrap="wrap">
                   <Badge
-                    c={getEntityThemeColor(theme, 'gamble')}
-                    radius="sm"
+                    size="lg"
                     variant="light"
+                    c={textColors.guide}
                     leftSection={<Calendar size={14} />}
-                    style={{ backgroundColor: `${getEntityThemeColor(theme, 'gamble')}20`, borderColor: getEntityThemeColor(theme, 'gamble') }}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.guide, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.guide, 0.4)}`
+                    }}
                   >
-                    Published {new Date(guide.createdAt).toLocaleDateString()}
+                    {new Date(guide.createdAt).toLocaleDateString()}
                   </Badge>
                   <Badge
-                    c={getEntityThemeColor(theme, 'character')}
-                    radius="sm"
+                    size="lg"
                     variant="light"
-                    style={{ backgroundColor: `${getEntityThemeColor(theme, 'character')}20`, borderColor: getEntityThemeColor(theme, 'character') }}
+                    c={textColors.character}
+                    leftSection={<Eye size={14} />}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.character, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+                    }}
                   >
                     {guide.viewCount} view{guide.viewCount !== 1 ? 's' : ''}
                   </Badge>
                   <Badge
-                    c={getEntityThemeColor(theme, 'media')}
-                    radius="sm"
+                    size="lg"
                     variant="light"
-                    style={{ backgroundColor: `${getEntityThemeColor(theme, 'media')}20`, borderColor: getEntityThemeColor(theme, 'media') }}
+                    c={textColors.gamble}
+                    leftSection={<Heart size={14} />}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.gamble, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`
+                    }}
                   >
                     {guide.likeCount} like{guide.likeCount !== 1 ? 's' : ''}
                   </Badge>
                 </Group>
 
-                {guide.description && (
-                  <Text size="sm" c="dimmed" mt="lg" mb="md">
-                    {guide.description}
-                  </Text>
-                )}
-
-                {/* Related chips: arc, gambles, characters (moved into header) - placed above tags */}
-                <Group style={{ flexWrap: 'wrap', gap: 12 }} mt="lg">
-                  {guide.arc && (
-                    <Link href={`/arcs/${guide.arc.id}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                {/* Related Entities - Consolidated */}
+                {hasRelatedEntities && (
+                  <Group gap={theme.spacing.sm} wrap="wrap">
+                    {guide.arc && (
                       <Badge
+                        component={Link}
+                        href={`/arcs/${guide.arc.id}`}
                         radius="lg"
-                        variant="outline"
-                        size="sm"
-                        c={getEntityThemeColor(theme, 'arc')}
-                        style={{ borderColor: getEntityThemeColor(theme, 'arc') }}
+                        variant="light"
+                        size="lg"
+                        c={textColors.arc}
+                        leftSection={<BookOpen size={14} />}
+                        style={{
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          background: getAlphaColor(entityColors.arc, 0.2),
+                          border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`
+                        }}
                       >
                         {guide.arc.name}
                       </Badge>
-                    </Link>
-                  )}
-
-                  {guide.gambles && guide.gambles.length > 0 && guide.gambles.map((gamble) => (
-                    <Link key={gamble.id} href={`/gambles/${gamble.id}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                    )}
+                    {guide.gambles && guide.gambles.map((gamble) => (
                       <Badge
+                        key={gamble.id}
+                        component={Link}
+                        href={`/gambles/${gamble.id}`}
                         radius="lg"
-                        variant="outline"
-                        size="sm"
-                        c={getEntityThemeColor(theme, 'gamble')}
-                        style={{ borderColor: getEntityThemeColor(theme, 'gamble'), fontWeight: 700 }}
+                        variant="light"
+                        size="lg"
+                        c={textColors.gamble}
+                        leftSection={<Dice6 size={14} />}
+                        style={{
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          background: getAlphaColor(entityColors.gamble, 0.2),
+                          border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`
+                        }}
                       >
                         {gamble.name}
                       </Badge>
-                    </Link>
-                  ))}
-
-                  {guide.characters && guide.characters.length > 0 && guide.characters.map((character) => (
-                    <Link key={character.id} href={`/characters/${character.id}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                    ))}
+                    {guide.characters && guide.characters.map((character) => (
                       <Badge
+                        key={character.id}
+                        component={Link}
+                        href={`/characters/${character.id}`}
                         radius="lg"
-                        variant="outline"
-                        size="sm"
-                        c={getEntityThemeColor(theme, 'character')}
-                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                        variant="light"
+                        size="lg"
+                        c={textColors.character}
+                        leftSection={<Users size={14} />}
+                        style={{
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          background: getAlphaColor(entityColors.character, 0.2),
+                          border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+                        }}
                       >
                         {character.name}
                       </Badge>
-                    </Link>
-                  ))}
-                </Group>
+                    ))}
+                  </Group>
+                )}
 
-                <Group gap="xs" style={{ flexWrap: 'wrap' }}>
-                  {guide.tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant="outline"
-                      radius="sm"
-                      c={getEntityThemeColor(theme, 'organization')}
-                      style={{ borderColor: getEntityThemeColor(theme, 'organization') }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </Group>
+                {/* Tags */}
+                {guide.tags.length > 0 && (
+                  <Group gap="xs" wrap="wrap">
+                    {guide.tags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        radius="sm"
+                        c={entityColors.organization}
+                        leftSection={<Tag size={12} />}
+                        style={{ borderColor: entityColors.organization }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
               </Stack>
-          </Stack>
-        </Card>
+            </Box>
+          </Card>
 
-        <Card withBorder radius="md" className="gambling-card" shadow="md">
-          <Tabs value={activeTab} onChange={(v) => setActiveTab(v ?? 'content')} keepMounted={false}>
-            <Tabs.List>
-              <Tabs.Tab value="content" leftSection={<FileText size={16} />}>Guide Content</Tabs.Tab>
-              {canEdit && (
-                <Tabs.Tab value="edit" leftSection={<Edit size={16} />}>Edit Guide</Tabs.Tab>
-              )}
-            </Tabs.List>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
+              <Tabs
+                value={activeTab}
+                onChange={(value) => value && setActiveTab(value)}
+                keepMounted={false}
+                variant="pills"
+                className="guide-tabs"
+              >
+                <Tabs.List>
+                  <Tabs.Tab value="content" leftSection={<FileText size={16} />}>Guide Content</Tabs.Tab>
+                  {canEdit && (
+                    <Tabs.Tab value="edit" leftSection={<Edit size={16} />}>Edit Guide</Tabs.Tab>
+                  )}
+                </Tabs.List>
 
-            <Tabs.Panel value="content" pt="md">
-              <TimelineSpoilerWrapper chapterNumber={undefined}>
-                <EnhancedSpoilerMarkdown
-                  content={guide.content}
-                  enableEntityEmbeds
-                  compactEntityCards={false}
-                  className="guide-content"
-                />
-              </TimelineSpoilerWrapper>
+                <Tabs.Panel value="content" pt={theme.spacing.md}>
+                  <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.guide)}>
+                    <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                      <TimelineSpoilerWrapper chapterNumber={undefined}>
+                        <EnhancedSpoilerMarkdown
+                          content={guide.content}
+                          enableEntityEmbeds
+                          compactEntityCards={false}
+                          className="guide-content"
+                        />
+                      </TimelineSpoilerWrapper>
+                    </Stack>
+                  </Card>
+                </Tabs.Panel>
 
-              {/* Related items shown as chips below the content */}
-              <Stack gap="sm" mt="md">
-                {/* related chips moved to header */}
-              </Stack>
-            </Tabs.Panel>
+                {canEdit && (
+                  <Tabs.Panel value="edit" pt={theme.spacing.md}>
+                    <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.guide)}>
+                      <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                        <EntityEmbedHelperWithSearch onInsertEmbed={(embed) => {
+                          const textarea = textareaRef.current
+                          if (!textarea) {
+                            setEditedContent((prev) => prev + embed)
+                            return
+                          }
 
-            {canEdit && (
-              <Tabs.Panel value="edit" pt="md">
-                <Card withBorder radius="md" shadow="sm">
-                  <Stack gap="md" p="lg">
-                    {/* Provide an insertion handler so embeds are inserted at the current cursor position */}
-                    <EntityEmbedHelperWithSearch onInsertEmbed={(embed) => {
-                      const textarea = textareaRef.current
-                      if (!textarea) {
-                        // fallback: append to content
-                        setEditedContent((prev) => prev + embed)
-                        return
-                      }
+                          const start = textarea.selectionStart ?? editedContent.length
+                          const end = textarea.selectionEnd ?? start
+                          const newContent = editedContent.slice(0, start) + embed + editedContent.slice(end)
+                          setEditedContent(newContent)
 
-                      const start = textarea.selectionStart ?? editedContent.length
-                      const end = textarea.selectionEnd ?? start
-                      const newContent = editedContent.slice(0, start) + embed + editedContent.slice(end)
-                      setEditedContent(newContent)
+                          requestAnimationFrame(() => {
+                            textarea.focus()
+                            const pos = start + embed.length
+                            try {
+                              textarea.setSelectionRange(pos, pos)
+                            } catch {
+                              // ignore
+                            }
+                          })
+                        }} />
 
-                      // restore focus and place cursor after the inserted embed
-                      requestAnimationFrame(() => {
-                        textarea.focus()
-                        const pos = start + embed.length
-                        try {
-                          textarea.setSelectionRange(pos, pos)
-                        } catch (e) {
-                          // ignore
-                        }
-                      })
-                    }} />
-
-                    <Textarea
-                      ref={textareaRef}
-                      value={editedContent}
-                      onChange={(event) => setEditedContent(event.currentTarget.value)}
-                      autosize
-                      minRows={10}
-                      placeholder="Update guide content"
-                    />
-                    <Group gap="sm">
-                      <Button variant="outline" c={semanticColors.neutral} onClick={handleCancel} leftSection={<X size={16} />}>
-                        Cancel
-                      </Button>
-                      <Button style={{ color: getEntityThemeColor(theme, 'gamble') }} onClick={handleSave} loading={saving} leftSection={!saving ? <Save size={16} /> : undefined}>
-                        Save Guide
-                      </Button>
-                    </Group>
-                  </Stack>
-                </Card>
-              </Tabs.Panel>
-            )}
-          </Tabs>
-        </Card>
-      </motion.div>
-    </Container>
+                        <Textarea
+                          ref={textareaRef}
+                          value={editedContent}
+                          onChange={(event) => setEditedContent(event.currentTarget.value)}
+                          autosize
+                          minRows={15}
+                          placeholder="Update guide content..."
+                          styles={{
+                            input: {
+                              backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                              color: theme.colors.gray?.[0] ?? '#fff',
+                              borderColor: 'rgba(255,255,255,0.06)',
+                              fontFamily: 'monospace',
+                              fontSize: fontSize.sm,
+                              lineHeight: 1.6,
+                              '&:focus': {
+                                borderColor: entityColors.guide,
+                                boxShadow: `0 0 0 2px ${getAlphaColor(entityColors.guide, 0.2)}`
+                              }
+                            }
+                          }}
+                        />
+                        <Group gap={theme.spacing.sm}>
+                          <Button
+                            variant="outline"
+                            c={textColors.secondary}
+                            onClick={handleCancel}
+                            leftSection={<X size={16} />}
+                            radius="xl"
+                          >
+                            Reset
+                          </Button>
+                          <Button
+                            onClick={handleSave}
+                            loading={saving}
+                            leftSection={!saving ? <Save size={16} /> : undefined}
+                            radius="xl"
+                            style={{
+                              background: `linear-gradient(135deg, ${entityColors.guide} 0%, ${entityColors.guide}dd 100%)`,
+                              border: `1px solid ${entityColors.guide}`
+                            }}
+                          >
+                            Save Guide
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  </Tabs.Panel>
+                )}
+              </Tabs>
+            </Card>
+          </motion.div>
+        </Stack>
+      </Container>
     </Box>
   )
 }

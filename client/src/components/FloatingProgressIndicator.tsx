@@ -66,8 +66,8 @@ export const FloatingProgressIndicator: React.FC = () => {
   const progressPercentage = Math.round((userProgress / MAX_CHAPTER) * 100)
   const modalProgressPercentage = Math.round((tempProgress / MAX_CHAPTER) * 100)
 
-  const progressGradient = `linear-gradient(135deg, ${palette.guide} 0%, ${palette.character} 50%, ${palette.arc} 80%, ${palette.red} 100%)`
-  const badgeGradient = `linear-gradient(135deg, ${palette.arc} 0%, ${palette.red} 100%)`
+  // Solid red theme color for consistent branding
+  const solidRed = theme.colors.red[6]
 
   useEffect(() => {
     setTempProgress(userProgress)
@@ -224,7 +224,7 @@ export const FloatingProgressIndicator: React.FC = () => {
             onClick={handleOpen}
             styles={{
               root: {
-                backgroundImage: `linear-gradient(135deg, ${palette.guide} 0%, ${palette.character} 50%, ${palette.red} 100%)`,
+                backgroundColor: solidRed,
                 color: '#ffffff',
                 boxShadow: `0 4px 12px ${theme.colors.red[5]}40`,
                 border: `1px solid ${theme.colors.red[5]}33`,
@@ -257,7 +257,7 @@ export const FloatingProgressIndicator: React.FC = () => {
                   paddingLeft: 6,
                   paddingRight: 6,
                   borderRadius: 12,
-                  backgroundImage: badgeGradient,
+                  backgroundColor: solidRed,
                   border: `2px solid ${theme.colors.dark[9]}`,
                   display: 'flex',
                   alignItems: 'center',
@@ -379,10 +379,7 @@ export const FloatingProgressIndicator: React.FC = () => {
               size={12}
               radius="xl"
               w="100%"
-              style={{
-                color: getEntityThemeColor(theme, 'gamble'),
-                backgroundImage: progressGradient
-              }}
+              color={solidRed}
             />
           </Stack>
 

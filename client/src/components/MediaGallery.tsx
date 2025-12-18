@@ -59,7 +59,7 @@ interface MediaItem {
 }
 
 interface MediaGalleryProps {
-  ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
+  ownerType?: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume' | 'chapter' | 'guide' | 'quote'
   ownerId?: number
   purpose?: 'gallery' | 'entity_display'
   limit?: number
@@ -82,6 +82,27 @@ const mediaTypeOptions = [
   { value: 'video', label: 'Videos' },
   { value: 'audio', label: 'Audio' }
 ]
+
+// Helper function to detect external URLs that aren't in our allowed domains
+function isExternalUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url)
+    const hostname = urlObj.hostname
+
+    // List of our hosted/allowed domains that should use Next.js Image optimization
+    const hostedDomains = [
+      'localhost',
+      'backblazeb2.com',
+      'l-file.com'
+    ]
+
+    // Check if it's a hosted domain
+    return !hostedDomains.some(domain => hostname.includes(domain))
+  } catch {
+    // If URL parsing fails, treat as relative URL (not external)
+    return false
+  }
+}
 
 export default function MediaGallery({
   ownerType,
@@ -437,27 +458,54 @@ export default function MediaGallery({
               <Box style={{ position: 'relative' }}>
                 <AspectRatio ratio={16 / 9} style={{ position: 'relative' }} className="aspect-ratio-container">
                   {thumbnail ? (
-                    <NextImage
-                      src={thumbnail}
-                      alt={mediaItem.description}
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      unoptimized={!thumbnail.startsWith('/')} // Don't optimize external images
-                      onError={(event) => {
-                        const target = event.target as HTMLImageElement
-                        // Hide the broken image and show fallback
-                        target.style.display = 'none'
-                        // Find the parent container and show the fallback icon
-                        const container = target.closest('.aspect-ratio-container')
-                        if (container) {
-                          const fallback = container.querySelector('.fallback-icon')
-                          if (fallback) {
-                            (fallback as HTMLElement).style.display = 'flex'
+                    isExternalUrl(thumbnail) ? (
+                      <img
+                        src={thumbnail}
+                        alt={mediaItem.description}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                        onError={(event) => {
+                          const target = event.target as HTMLImageElement
+                          // Hide the broken image and show fallback
+                          target.style.display = 'none'
+                          // Find the parent container and show the fallback icon
+                          const container = target.closest('.aspect-ratio-container')
+                          if (container) {
+                            const fallback = container.querySelector('.fallback-icon')
+                            if (fallback) {
+                              (fallback as HTMLElement).style.display = 'flex'
+                            }
                           }
-                        }
-                      }}
-                    />
+                        }}
+                      />
+                    ) : (
+                      <NextImage
+                        src={thumbnail}
+                        alt={mediaItem.description}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                        onError={(event) => {
+                          const target = event.target as HTMLImageElement
+                          // Hide the broken image and show fallback
+                          target.style.display = 'none'
+                          // Find the parent container and show the fallback icon
+                          const container = target.closest('.aspect-ratio-container')
+                          if (container) {
+                            const fallback = container.querySelector('.fallback-icon')
+                            if (fallback) {
+                              (fallback as HTMLElement).style.display = 'flex'
+                            }
+                          }
+                        }}
+                      />
+                    )
                   ) : (
                     /* Fallback icon when no thumbnail */
                     <Box
@@ -809,13 +857,28 @@ export default function MediaGallery({
                                   boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
                                 }}
                               >
-                                <NextImage
-                                  src={getMediaThumbnail(selectedMedia)!}
-                                  alt="Video thumbnail"
-                                  fill
-                                  style={{ objectFit: 'cover' }}
-                                  sizes="320px"
-                                />
+                                {isExternalUrl(getMediaThumbnail(selectedMedia)!) ? (
+                                  <img
+                                    src={getMediaThumbnail(selectedMedia)!}
+                                    alt="Video thumbnail"
+                                    style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover'
+                                    }}
+                                  />
+                                ) : (
+                                  <NextImage
+                                    src={getMediaThumbnail(selectedMedia)!}
+                                    alt="Video thumbnail"
+                                    fill
+                                    style={{ objectFit: 'cover' }}
+                                    sizes="320px"
+                                  />
+                                )}
                               </Box>
                             )}
                             <Button

@@ -107,7 +107,7 @@ const toResultType = (type: string) => filterToResultTypeMap[type] ?? type
 
 const resolveTypeIcon = (type: string) => typeIconMap[type] ?? <Search size={16} />
 
-const RESULTS_PER_PAGE = 20
+const RESULTS_PER_PAGE = 12
 
 export default function SearchPageContent({
   initialQuery,

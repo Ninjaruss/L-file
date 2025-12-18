@@ -2332,7 +2332,6 @@ const EntitySelector = ({ entities, loadingEntities, loadEntities, getEntityChoi
             { id: 'event', name: 'Event' },
             { id: 'gamble', name: 'Gamble' },
             { id: 'organization', name: 'Organization' },
-            { id: 'user', name: 'User' },
           ]}
           fullWidth
           sx={{
@@ -2622,8 +2621,8 @@ export const MediaEdit = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={6}>
-              <SelectInput 
-                source="ownerType" 
+              <SelectInput
+                source="ownerType"
                 label="Entity Type"
                 choices={[
                   { id: 'character', name: 'Character' },
@@ -2631,10 +2630,9 @@ export const MediaEdit = () => {
                   { id: 'event', name: 'Event' },
                   { id: 'gamble', name: 'Gamble' },
                   { id: 'organization', name: 'Organization' },
-                  { id: 'user', name: 'User' },
                 ]}
                 fullWidth
-                sx={{ 
+                sx={{
                   '& .MuiInputBase-root': {
                     backgroundColor: 'rgba(10, 10, 10, 0.8)',
                     color: '#ffffff',
@@ -2742,8 +2740,8 @@ export const MediaCreate = () => (
       <Typography variant="h6" sx={{ mt: 3, mb: 2, color: 'primary.main' }}>
         Entity Relationship
       </Typography>
-      <SelectInput 
-        source="ownerType" 
+      <SelectInput
+        source="ownerType"
         label="Entity Type"
         choices={[
           { id: 'character', name: 'Character' },
@@ -2751,7 +2749,6 @@ export const MediaCreate = () => (
           { id: 'event', name: 'Event' },
           { id: 'gamble', name: 'Gamble' },
           { id: 'organization', name: 'Organization' },
-          { id: 'user', name: 'User' },
         ]}
       />
       <TextInput 
