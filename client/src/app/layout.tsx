@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import '../lib/jquery-stub'
 import { ClientProviders } from '../providers/ClientProviders'
 import { LayoutWrapper } from '../components/LayoutWrapper'
 import { ColorSchemeScript } from '@mantine/core'

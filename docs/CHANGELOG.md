@@ -11,7 +11,7 @@
 - Fixed bug where events list page did not show modal for revealed events
 - Small adjustment to popular profile pic header and badge modal text (profile page)
 - Search for list pages now works if user manually deletes text rather than pressing X to clear
-- Added general README and MIT LICENSE
+- Added general README and MIT license
 
 ## 2025-12-22
 - QA checks for frontend pages including color design and mobile friendly buttons
