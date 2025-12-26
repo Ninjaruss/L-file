@@ -1,25 +1,42 @@
 'use client'
 
-import React, { useEffect, Suspense } from 'react'
-import { Button, Card, Container, Stack, Text, Title } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import React, { useEffect, Suspense, useState } from 'react'
+import { Alert, Button, Card, Container, Stack, Text, Title } from '@mantine/core'
+import { AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { API_BASE_URL } from '../../../src/lib/api'
 
+const errorMessages: Record<string, string> = {
+  missing_token: 'Authentication token was not received. Please try again.',
+  invalid_token: 'Authentication token was invalid. Please try again.',
+  callback_error: 'An error occurred during authentication. Please try again.',
+  access_denied: 'Access was denied. Please try again or contact support.',
+  default: 'Authentication failed. Please try again.'
+}
+
 function LoginContent() {
   const searchParams = useSearchParams()
-  
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   useEffect(() => {
     // Store return URL if provided
     const returnUrl = searchParams.get('returnUrl')
     if (returnUrl) {
       localStorage.setItem('authReturnUrl', returnUrl)
     }
+
+    // Check for error parameter and display appropriate message
+    const error = searchParams.get('error')
+    if (error) {
+      setErrorMessage(errorMessages[error] || errorMessages.default)
+    }
   }, [searchParams])
 
   const handleDiscordLogin = () => {
-  window.location.href = `${API_BASE_URL}/auth/discord`
+    // Clear any previous error when attempting login
+    setErrorMessage(null)
+    window.location.href = `${API_BASE_URL}/auth/discord`
   }
 
   return (
@@ -33,9 +50,20 @@ function LoginContent() {
             </Text>
           </Stack>
 
-          <Button 
+          {errorMessage && (
+            <Alert
+              icon={<AlertCircle size={16} />}
+              color="red"
+              variant="light"
+              radius="md"
+            >
+              {errorMessage}
+            </Alert>
+          )}
+
+          <Button
             onClick={handleDiscordLogin}
-            color="indigo" 
+            color="indigo"
             fullWidth
             size="md"
             leftSection={

@@ -245,3 +245,35 @@ export interface Volume {
   createdAt: string;
   updatedAt: string;
 }
+
+export enum RelationshipType {
+  ALLY = 'ally',
+  RIVAL = 'rival',
+  MENTOR = 'mentor',
+  SUBORDINATE = 'subordinate',
+  FAMILY = 'family',
+  PARTNER = 'partner',
+  ENEMY = 'enemy',
+  ACQUAINTANCE = 'acquaintance',
+}
+
+export interface CharacterRelationship {
+  id: number;
+  sourceCharacterId: number;
+  sourceCharacter?: {
+    id: number;
+    name: string;
+  };
+  targetCharacterId: number;
+  targetCharacter?: {
+    id: number;
+    name: string;
+  };
+  relationshipType: RelationshipType;
+  description: string | null;
+  startChapter: number;
+  endChapter: number | null;
+  spoilerChapter: number;
+  createdAt: string;
+  updatedAt: string;
+}

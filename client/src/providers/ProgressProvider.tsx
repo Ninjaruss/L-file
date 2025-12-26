@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthProvider'
 import { api } from '../lib/api'
+import { MAX_CHAPTER } from '../lib/constants'
+
+export { MAX_CHAPTER }
 
 interface ProgressContextType {
   userProgress: number
@@ -14,7 +17,6 @@ interface ProgressContextType {
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined)
 
 const STORAGE_KEY = 'usogui-reading-progress'
-const MAX_CHAPTER = 539
 
 export const useProgress = () => {
   const context = useContext(ProgressContext)

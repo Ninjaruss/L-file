@@ -85,7 +85,7 @@ export const GambleList = () => (
           )
         }}
       />
-      <NumberField source="chapterId" label="Ch." />
+      <NumberField source="chapterId" label="Chapter" />
       <ArrayField source="participants" label="Participants">
         <SingleFieldList linkType={false}>
           <ChipField source="name" size="small" sx={{ mr: 0.5, mb: 0.5 }} />

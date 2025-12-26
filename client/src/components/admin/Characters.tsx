@@ -19,12 +19,35 @@ import {
   ReferenceArrayInput,
   AutocompleteArrayInput,
   ReferenceArrayField,
-  FunctionField
+  FunctionField,
+  useRecordContext,
+  TopToolbar,
+  EditButton,
+  ReferenceManyField,
+  ReferenceField,
+  WithRecord
 } from 'react-admin'
-import { Box, Card, CardContent, Typography, Grid, Chip } from '@mui/material'
-import { User, Edit3, Plus } from 'lucide-react'
+import { Box, Card, CardContent, Typography, Grid, Chip, Button as MuiButton, Divider } from '@mui/material'
+import { Edit3, Plus, Users, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
+import { RelationshipType } from '../../types'
+
+// Color mapping for relationship types
+const getRelationshipColor = (type: string) => {
+  switch (type) {
+    case 'ally': return '#22c55e'
+    case 'rival': return '#f97316'
+    case 'mentor': return '#8b5cf6'
+    case 'subordinate': return '#06b6d4'
+    case 'family': return '#ec4899'
+    case 'partner': return '#ef4444'
+    case 'enemy': return '#dc2626'
+    case 'acquaintance': return '#6b7280'
+    default: return '#9e9e9e'
+  }
+}
 
 export const CharacterList = () => (
   <List sort={{ field: 'name', order: 'ASC' }}>
@@ -249,17 +272,17 @@ export const CharacterEdit = () => (
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Box sx={{ 
-                  p: 3, 
-                  backgroundColor: 'rgba(16, 185, 129, 0.05)', 
-                  borderRadius: 2, 
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                  borderRadius: 2,
                   border: '1px solid rgba(16, 185, 129, 0.2)'
                 }}>
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
-                    Relations
+                    Organizations
                   </Typography>
                   <ReferenceArrayInput source="organizationIds" reference="organizations" label="Organizations">
-                    <AutocompleteArrayInput 
+                    <AutocompleteArrayInput
                       optionText="name"
                       sx={{
                         '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
@@ -268,6 +291,191 @@ export const CharacterEdit = () => (
                       }}
                     />
                   </ReferenceArrayInput>
+                </Box>
+              </Grid>
+
+              {/* Character Relationships Section */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2, borderColor: 'rgba(139, 92, 246, 0.3)' }} />
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 92, 246, 0.2)'
+                }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Users size={20} />
+                      Character Relationships
+                    </Typography>
+                    <WithRecord render={(record) => (
+                      <MuiButton
+                        component={Link}
+                        to={`/character-relationships/create?source=${encodeURIComponent(JSON.stringify({ sourceCharacterId: record.id }))}`}
+                        size="small"
+                        variant="contained"
+                        startIcon={<Plus size={16} />}
+                        sx={{
+                          backgroundColor: '#8b5cf6',
+                          '&:hover': { backgroundColor: '#7c3aed' }
+                        }}
+                      >
+                        Add Relationship
+                      </MuiButton>
+                    )} />
+                  </Box>
+
+                  {/* Outgoing Relationships */}
+                  <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1, mt: 2 }}>
+                    This Character&apos;s Relationships
+                  </Typography>
+                  <ReferenceManyField
+                    reference="character-relationships"
+                    target="sourceCharacterId"
+                    label={false}
+                  >
+                    <Datagrid
+                      bulkActionButtons={false}
+                      rowClick="edit"
+                      sx={{
+                        '& .RaDatagrid-table': { backgroundColor: 'transparent' },
+                        '& .RaDatagrid-headerCell': {
+                          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                          color: '#8b5cf6',
+                          fontWeight: 'bold'
+                        },
+                        '& .RaDatagrid-row': {
+                          '&:hover': { backgroundColor: 'rgba(139, 92, 246, 0.1)' }
+                        }
+                      }}
+                      empty={
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', py: 2, textAlign: 'center' }}>
+                          No outgoing relationships defined
+                        </Typography>
+                      }
+                    >
+                      <FunctionField
+                        label="To"
+                        render={(record: any) => (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ArrowRight size={14} />
+                            <ReferenceField source="targetCharacterId" reference="characters" link={false}>
+                              <TextField source="name" />
+                            </ReferenceField>
+                          </Box>
+                        )}
+                      />
+                      <FunctionField
+                        label="Type"
+                        render={(record: any) => (
+                          <Chip
+                            label={record.relationshipType}
+                            size="small"
+                            sx={{
+                              backgroundColor: `${getRelationshipColor(record.relationshipType)}20`,
+                              color: getRelationshipColor(record.relationshipType),
+                              fontWeight: 'bold',
+                              textTransform: 'capitalize'
+                            }}
+                          />
+                        )}
+                      />
+                      <FunctionField
+                        label="Chapter"
+                        render={(record: any) => (
+                          <Chip
+                            label={record.endChapter ? `Ch. ${record.startChapter}-${record.endChapter}` : `Ch. ${record.startChapter}+`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                      />
+                    </Datagrid>
+                  </ReferenceManyField>
+
+                  <Divider sx={{ my: 2, borderColor: 'rgba(139, 92, 246, 0.2)' }} />
+
+                  {/* Incoming Relationships */}
+                  <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+                    Others&apos; Relationships to This Character
+                  </Typography>
+                  <ReferenceManyField
+                    reference="character-relationships"
+                    target="targetCharacterId"
+                    label={false}
+                  >
+                    <Datagrid
+                      bulkActionButtons={false}
+                      rowClick="edit"
+                      sx={{
+                        '& .RaDatagrid-table': { backgroundColor: 'transparent' },
+                        '& .RaDatagrid-headerCell': {
+                          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                          color: '#8b5cf6',
+                          fontWeight: 'bold'
+                        },
+                        '& .RaDatagrid-row': {
+                          '&:hover': { backgroundColor: 'rgba(139, 92, 246, 0.1)' }
+                        }
+                      }}
+                      empty={
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', py: 2, textAlign: 'center' }}>
+                          No incoming relationships defined
+                        </Typography>
+                      }
+                    >
+                      <FunctionField
+                        label="From"
+                        render={(record: any) => (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ReferenceField source="sourceCharacterId" reference="characters" link={false}>
+                              <TextField source="name" />
+                            </ReferenceField>
+                            <ArrowRight size={14} />
+                          </Box>
+                        )}
+                      />
+                      <FunctionField
+                        label="Type"
+                        render={(record: any) => (
+                          <Chip
+                            label={record.relationshipType}
+                            size="small"
+                            sx={{
+                              backgroundColor: `${getRelationshipColor(record.relationshipType)}20`,
+                              color: getRelationshipColor(record.relationshipType),
+                              fontWeight: 'bold',
+                              textTransform: 'capitalize'
+                            }}
+                          />
+                        )}
+                      />
+                      <FunctionField
+                        label="Chapter"
+                        render={(record: any) => (
+                          <Chip
+                            label={record.endChapter ? `Ch. ${record.startChapter}-${record.endChapter}` : `Ch. ${record.startChapter}+`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                      />
+                    </Datagrid>
+                  </ReferenceManyField>
+
+                  <Box sx={{ mt: 2, textAlign: 'center' }}>
+                    <WithRecord render={(record) => (
+                      <MuiButton
+                        component={Link}
+                        to={`/character-relationships?filter=${encodeURIComponent(JSON.stringify({ sourceCharacterId: record.id }))}`}
+                        size="small"
+                        startIcon={<Users size={16} />}
+                        sx={{ color: '#8b5cf6' }}
+                      >
+                        View All Relationships
+                      </MuiButton>
+                    )} />
+                  </Box>
                 </Box>
               </Grid>
             </Grid>

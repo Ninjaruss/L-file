@@ -2,6 +2,7 @@ import React from 'react'
 import UserNotFound from './UserNotFound'
 import { Metadata } from 'next'
 import { api } from '../../../lib/api'
+import { MAX_CHAPTER } from '../../../lib/constants'
 import UserProfileClient from './UserProfileClient'
 
 interface PageProps {
@@ -73,7 +74,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  const readingProgress = Math.min(Math.round((user.userProgress / 539) * 100), 100)
+  const readingProgress = Math.min(Math.round((user.userProgress / MAX_CHAPTER) * 100), 100)
 
   return {
     title: `${user.username} - User Profile | Usogui Fansite`,

@@ -402,6 +402,18 @@ class ApiClient {
     }>(`/characters/${characterId}/arcs`)
   }
 
+  async getCharacterRelationships(characterId: number, userProgress?: number, grouped?: boolean) {
+    const params = new URLSearchParams()
+    if (userProgress !== undefined) {
+      params.append('userProgress', userProgress.toString())
+    }
+    if (grouped) {
+      params.append('grouped', 'true')
+    }
+    const query = params.toString()
+    return this.get<any>(`/character-relationships/character/${characterId}${query ? `?${query}` : ''}`)
+  }
+
   async getArcs(params?: {
     page?: number
     limit?: number

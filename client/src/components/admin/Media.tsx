@@ -22,20 +22,25 @@ import {
   FunctionField
 } from 'react-admin'
 import { useWatch } from 'react-hook-form'
-import { 
-  Box, 
-  Chip, 
-  Typography, 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  Grid, 
+import {
+  Box,
+  Chip,
+  Typography,
+  Card,
+  CardContent,
+  CardHeader,
+  Grid,
   Avatar,
   Button as MuiButton,
   ButtonGroup,
   Toolbar,
   AppBar,
-  TextField as MuiTextField
+  TextField as MuiTextField,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material'
 import Image from 'next/image'
 import {
@@ -78,7 +83,7 @@ const TruncatedUrlField = () => {
       }
 
       return url
-    } catch (error) {
+    } catch {
       // If URL parsing fails (relative URLs, invalid URLs), just truncate from the end
       if (url.length > maxLength) {
         return url.substring(0, maxLength - 3) + '...'
@@ -90,45 +95,49 @@ const TruncatedUrlField = () => {
   const displayUrl = truncateUrl(record.url)
 
   return (
-    <Box sx={{ 
-      maxWidth: '150px',
-      overflow: 'hidden',
-      '& a': {
-        fontWeight: 'bold',
-        color: 'primary.main',
-        textDecoration: 'none',
-        fontSize: '0.75rem',
-        display: 'block',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        '&:hover': { 
-          textDecoration: 'underline',
-          // Show full URL on hover
-          '&::after': {
-            content: `"${record.url}"`,
-            position: 'absolute',
-            bottom: '100%',
-            left: '0',
+    <Tooltip
+      title={record.url}
+      placement="top"
+      arrow
+      enterDelay={300}
+      leaveDelay={100}
+      slotProps={{
+        tooltip: {
+          sx: {
             backgroundColor: 'rgba(0, 0, 0, 0.9)',
             color: 'white',
-            padding: '4px 8px',
-            borderRadius: '4px',
             fontSize: '0.7rem',
-            whiteSpace: 'nowrap',
-            zIndex: 1000,
-            pointerEvents: 'none',
-            maxWidth: '300px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            maxWidth: '400px',
+            wordBreak: 'break-all'
           }
         }
-      }
-    }}>
-      <a href={record.url} target="_blank" rel="noopener noreferrer" title={record.url}>
-        {displayUrl}
-      </a>
-    </Box>
+      }}
+    >
+      <Box sx={{
+        maxWidth: '150px',
+        overflow: 'hidden'
+      }}>
+        <a
+          href={record.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontWeight: 'bold',
+            color: '#1976d2',
+            textDecoration: 'none',
+            fontSize: '0.75rem',
+            display: 'block',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+        >
+          {displayUrl}
+        </a>
+      </Box>
+    </Tooltip>
   )
 }
 
@@ -1223,37 +1232,136 @@ const ApproveButton = () => {
   )
 }
 
+// Media Rejection Modal Component
+const MediaRejectionModal = ({ open, onClose, mediaId, mediaUrl, onSuccess }: {
+  open: boolean;
+  onClose: () => void;
+  mediaId: number;
+  mediaUrl: string;
+  onSuccess: () => void;
+}) => {
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const notify = useNotify();
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      notify('Please enter a rejection reason', { type: 'warning' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.put(`/media/${mediaId}/reject`, { reason: reason.trim() });
+      notify('Media rejected successfully', { type: 'success' });
+      onSuccess();
+      onClose();
+      setReason('');
+    } catch (error: any) {
+      console.error('Error rejecting media:', error);
+      const errorMessage = error?.details?.message || error?.message || 'Error rejecting media';
+      notify(errorMessage, { type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!submitting) {
+      setReason('');
+      onClose();
+    }
+  };
+
+  // Truncate URL for display
+  const displayUrl = mediaUrl && mediaUrl.length > 50 ? mediaUrl.substring(0, 50) + '...' : mediaUrl;
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+        borderBottom: '1px solid rgba(244, 67, 54, 0.3)',
+        color: '#f44336',
+        fontWeight: 'bold'
+      }}>
+        <X size={24} />
+        Reject Media
+      </DialogTitle>
+      <DialogContent sx={{ pt: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Typography variant="body1">
+            Are you sure you want to reject this media submission?
+          </Typography>
+          {displayUrl && (
+            <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+              {displayUrl}
+            </Typography>
+          )}
+
+          <MuiTextField
+            fullWidth
+            required
+            multiline
+            rows={3}
+            label="Rejection Reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Explain why this media is being rejected..."
+            helperText="This reason will be shown to the submitter"
+            error={!reason.trim() && reason.length > 0}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#0f0f0f',
+              }
+            }}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 2, gap: 1 }}>
+        <MuiButton onClick={handleClose} disabled={submitting} variant="outlined">
+          Cancel
+        </MuiButton>
+        <MuiButton
+          onClick={handleSubmit}
+          disabled={submitting || !reason.trim()}
+          variant="contained"
+          color="error"
+        >
+          {submitting ? 'Rejecting...' : 'Reject Media'}
+        </MuiButton>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const RejectButton = () => {
   const record = useRecordContext()
-  const notify = useNotify()
   const refresh = useRefresh()
-  
-  const handleReject = async () => {
-    if (!record) return
-    
-    const reason = prompt('Enter rejection reason:')
-    if (!reason) return
-    
-    try {
-      await api.put(`/media/${record.id}/reject`, { reason })
-      notify('Media rejected successfully')
-      refresh()
-    } catch (error: any) {
-      console.error('Error rejecting media:', error)
-      const errorMessage = error?.details?.message || error?.message || 'Error rejecting media'
-      notify(errorMessage, { type: 'error' })
-    }
-  }
-  
+  const [modalOpen, setModalOpen] = useState(false)
+
   if (record?.status === 'rejected') return null
-  
+
   return (
-    <Button 
-      label="Reject" 
-      onClick={handleReject}
-      color="secondary"
-      startIcon={<X size={20} />}
-    />
+    <>
+      <Button
+        label="Reject"
+        onClick={() => setModalOpen(true)}
+        color="secondary"
+        startIcon={<X size={20} />}
+      />
+      {record && (
+        <MediaRejectionModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          mediaId={Number(record.id)}
+          mediaUrl={record.url || ''}
+          onSuccess={refresh}
+        />
+      )}
+    </>
   )
 }
 

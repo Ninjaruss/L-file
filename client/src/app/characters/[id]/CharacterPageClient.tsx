@@ -36,6 +36,7 @@ import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import type { Arc, Gamble, Guide, Quote } from '../../../types'
 import MediaThumbnail from '../../../components/MediaThumbnail'
+import CharacterRelationships from '../../../components/CharacterRelationships'
 
 interface Character {
   id: number
@@ -334,6 +335,12 @@ export default function CharacterPageClient({
                   )}
                 </Stack>
               </Card>
+
+              {/* Character Relationships */}
+              <CharacterRelationships
+                characterId={character.id}
+                characterName={character.name}
+              />
 
               {/* Related Story Arcs */}
               {arcs.length > 0 && (

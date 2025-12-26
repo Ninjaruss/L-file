@@ -29,6 +29,7 @@ import UserProfileImage from '../../../components/UserProfileImage'
 // GambleChip removed — using inline Badge chips for favorite gamble
 import UserBadges from '../../../components/UserBadges'
 import { UserRoleDisplay } from '../../../components/BadgeDisplay'
+import { MAX_CHAPTER } from '../../../lib/constants'
 
 interface PublicUser {
   id: number
@@ -177,7 +178,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     }
   ]
 
-  const readingProgress = Math.min(Math.round((user.userProgress / 539) * 100), 100)
+  const readingProgress = Math.min(Math.round((user.userProgress / MAX_CHAPTER) * 100), 100)
 
   return (
     <Container size="lg" py="xl">
@@ -321,7 +322,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                       Current Chapter
                     </Text>
                     <Text fw={600}>
-                      {user.userProgress} / 539
+                      {user.userProgress} / {MAX_CHAPTER}
                     </Text>
                   </Group>
 

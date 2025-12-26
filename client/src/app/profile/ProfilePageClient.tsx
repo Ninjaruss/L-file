@@ -143,11 +143,11 @@ export default function ProfilePageClient() {
         console.error('Failed to fetch profile or favorites:', err)
       }
 
-      // Then fetch other resources concurrently
+      // Then fetch other resources concurrently (with pagination limits for performance)
       const [guidesResponse, quotesResponse, gamblesResponse, badgesResponse] = await Promise.allSettled([
         api.get('/guides/my-guides'),
-        api.get('/quotes'),
-        api.get('/gambles'),
+        api.get('/quotes?limit=100'),
+        api.get('/gambles?limit=100'),
         user?.id && typeof user.id === 'number' ? api.getUserBadges(user.id) : Promise.resolve([])
       ])
 

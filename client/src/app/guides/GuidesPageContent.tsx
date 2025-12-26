@@ -20,6 +20,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -239,7 +240,17 @@ export default function GuidesPageContent({
   }
 
   const handleLikeToggle = async (guideId: number) => {
-    if (!user || liking === guideId) return
+    if (liking === guideId) return
+
+    if (!user) {
+      notifications.show({
+        title: 'Login Required',
+        message: 'Please log in to like guides',
+        color: 'yellow',
+        autoClose: 3000
+      })
+      return
+    }
 
     setLiking(guideId)
     try {

@@ -38,7 +38,7 @@ import {
   Upload
 } from 'lucide-react'
 import Link from 'next/link'
-import { api } from '../../lib/api'
+import { api, API_BASE_URL } from '../../lib/api'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles } from '../../lib/mantine-theme'
 
 interface MediaItem {
@@ -269,8 +269,8 @@ export default function MediaPageContent({
 
   const getMediaThumbnail = (mediaItem: MediaItem) => {
     if (mediaItem.type === 'image') {
-      return mediaItem.isUploaded
-        ? `${process.env.NEXT_PUBLIC_API_URL}/media/${mediaItem.fileName}`
+      return mediaItem.isUploaded && mediaItem.fileName
+        ? `${API_BASE_URL}/media/${mediaItem.fileName}`
         : mediaItem.url
     }
 

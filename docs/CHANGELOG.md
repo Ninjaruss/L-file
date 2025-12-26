@@ -2,7 +2,44 @@
 ## TODO:
 - Donation linking to badges; badge system with perks
 
+## 2025-12-25
+### Changes
+- Added Character Relationships system with full CRUD operations
+  - New entity with relationship types: ally, rival, mentor, subordinate, family, partner, enemy, acquaintance
+  - Backend module with spoiler protection based on chapter progress
+  - Support for bidirectional relationships (A→B and B→A) in a single create operation
+- Added CharacterRelationships admin page (List, Show, Create, Edit) with color-coded relationship types
+- Integrated relationship management into Character Edit page in admin dashboard
+  - Shows outgoing and incoming relationships in separate datagrids
+  - Add Relationship button pre-fills source character
+  - View All Relationships link with character filter
+- Added relationships section to character detail page
+  - Grouped by relationship type with icons and badges
+  - Separate sections for outgoing (character's relationships) and incoming (others' views)
+  - Character thumbnails with links to related character pages
+- Fixed React Admin "Created item missing required id field" error for bidirectional relationship creation
+- Fixed double spoiler overlay on relationship cards (TimelineSpoilerWrapper now handles both card and thumbnail)
+- Fixed MediaThumbnail empty state sizing for medium containers (32-80px) - now shows proportional icon only
+
+## 2025-12-24
+### Changes
+- Replaced browser `prompt()` with styled modal for guide and media rejection workflow
+- Added navigation to pending counter badge (clicks through to pending guides/media)
+- Added "showing X of Y" indicator to entity filter dropdowns in Guides admin
+- Fixed empty button handlers in GuideDraftManager (Edit/Approve now functional)
+- Changed Characters resource icon from Users to User for visual distinction
+- Replaced CSS pseudo-element URL tooltip with MUI Tooltip for cross-browser/touch support
+- Fixed duplicate badge name display in badge award modal dropdown
+- Changed Gambles list "Ch." column header to "Chapter" for clarity
+- Added notification feedback when unauthenticated users click like button on guides list page
+- Added notification feedback when unauthenticated users click like button on guide detail page
+- Login page now displays auth error messages from URL parameters
+- Fixed MediaPageContent to use API_BASE_URL constant with filename check for uploaded media URLs
+- Added pagination limits (100) to quotes/gambles fetch on profile page for performance
+- Created shared MAX_CHAPTER constant (lib/constants.ts) and updated user profile pages to use it
+
 ## 2025-12-23
+### Changes
 - Added README.md at project root with comprehensive project overview
 - Added MIT License
 - Arc timeline events compacted
@@ -14,22 +51,27 @@
 - Added general README and MIT license
 
 ## 2025-12-22
+### Changes
 - QA checks for frontend pages including color design and mobile friendly buttons
 - Timeline tab updates to ensure color visual consistency
 
 ## 2025-12-18
+### Changes
 - Added modal checking for chapter progress; mark as spoiler and show modal if spoiler is revealed
 
 ## 2025-12-17
+### Changes
 - Fixed the entity display image for the list and detail pages of characters, arcs, organizations, gambles, and events
 - Added check for user authenticated for guides list page
 
 ## 2025-12-12
+### Changes
 - Fixed sorting characters by first chapter appearance; remove newest filter from characters, arcs, gambles; add a better specific filter?
 - Guides list page also shows author user profile picture
 - Search bar result shows chapter number of chapter next to the chapter title
 
 ## 2025-12-11
+### Changes
 - Url sync to allow saving pages with search filters
 - Standardized hover modal component to reusable component
 - Shared back button component for all public detail pages

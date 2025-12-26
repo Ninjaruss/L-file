@@ -328,6 +328,16 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
   const canEdit = user?.id === guide.author.id || user?.role === 'admin'
 
   const handleLikeToggle = async () => {
+    if (!user) {
+      notifications.show({
+        title: 'Login Required',
+        message: 'Please log in to like guides',
+        color: 'yellow',
+        autoClose: 3000
+      })
+      return
+    }
+
     try {
       const response = await api.toggleGuideLike(guide.id)
       setGuide((prev) => prev ? ({

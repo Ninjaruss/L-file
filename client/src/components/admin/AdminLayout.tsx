@@ -57,6 +57,7 @@ const CustomAppBar = () => {
 const PendingCounter = () => {
   const [pendingCounts, setPendingCounts] = useState({ guides: 0, media: 0 })
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchPendingCounts = async () => {
@@ -88,23 +89,34 @@ const PendingCounter = () => {
 
   if (loading || totalPending === 0) return null
 
+  // Navigate to guides with pending filter (primary pending content)
+  const handleClick = () => {
+    if (pendingCounts.guides > 0) {
+      router.push('/admin#/guides?filter=%7B%22status%22%3A%22pending%22%7D')
+    } else if (pendingCounts.media > 0) {
+      router.push('/admin#/media?filter=%7B%22status%22%3A%22pending%22%7D')
+    }
+  }
+
   return (
-    <Box sx={{
-      ml: 2,
-      px: 1,
-      py: 0.5,
-      bgcolor: 'warning.main',
-      color: 'white',
-      borderRadius: 1,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 0.5,
-      cursor: 'pointer',
-      '&:hover': {
-        bgcolor: 'warning.dark'
-      }
-    }}
-    title={`${pendingCounts.guides} pending guides, ${pendingCounts.media} pending media submissions`}
+    <Box
+      onClick={handleClick}
+      sx={{
+        ml: 2,
+        px: 1,
+        py: 0.5,
+        bgcolor: 'warning.main',
+        color: 'white',
+        borderRadius: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: 'warning.dark'
+        }
+      }}
+      title={`Click to view pending items - ${pendingCounts.guides} guides, ${pendingCounts.media} media`}
     >
       <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
         {totalPending} PENDING APPROVAL

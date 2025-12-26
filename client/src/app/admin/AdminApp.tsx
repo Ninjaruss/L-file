@@ -21,12 +21,14 @@ import { QuoteList, QuoteEdit, QuoteCreate, QuoteShow } from '../../components/a
 import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
 import { OrganizationList, OrganizationEdit, OrganizationCreate } from '../../components/admin/Organizations'
 import { BadgeList, BadgeEdit, BadgeCreate, BadgeShow } from '../../components/admin/Badges'
+import { CharacterRelationshipList, CharacterRelationshipEdit, CharacterRelationshipCreate, CharacterRelationshipShow } from '../../components/admin/CharacterRelationships'
 
 // Icons
-import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Award } from 'lucide-react'
+import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Award, Link2 } from 'lucide-react'
 
 // Convert icons to components
 const UsersIcon = () => <Users />
+const UserIcon = () => <User />
 const BookOpenIcon = () => <BookOpen />
 const CrownIcon = () => <Crown />
 const ZapIcon = () => <Zap />
@@ -36,6 +38,7 @@ const QuoteIcon = () => <Quote />
 const TagIcon = () => <Tag />
 const ShieldIcon = () => <Shield />
 const AwardIcon = () => <Award />
+const Link2Icon = () => <Link2 />
 
 export default function AdminApp() {
   return (
@@ -60,7 +63,7 @@ export default function AdminApp() {
         edit={CharacterEdit}
         create={CharacterCreate}
         show={CharacterShow}
-        icon={UsersIcon}
+        icon={UserIcon}
       />
       <Resource
         name="arcs"
@@ -131,6 +134,15 @@ export default function AdminApp() {
         create={BadgeCreate}
         show={BadgeShow}
         icon={AwardIcon}
+      />
+      <Resource
+        name="character-relationships"
+        list={CharacterRelationshipList}
+        edit={CharacterRelationshipEdit}
+        create={CharacterRelationshipCreate}
+        show={CharacterRelationshipShow}
+        icon={Link2Icon}
+        options={{ label: 'Relationships' }}
       />
     </Admin>
     </ThemeProvider>

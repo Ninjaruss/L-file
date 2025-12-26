@@ -425,6 +425,28 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     return tagCleaned
   }
 
+  if (resource === 'character-relationships') {
+    // Keep only the fields that are allowed in the CreateCharacterRelationshipDto/UpdateCharacterRelationshipDto
+    const allowedFields = [
+      'sourceCharacterId', 'targetCharacterId', 'relationshipType',
+      'description', 'startChapter', 'endChapter', 'spoilerChapter',
+      'reverseRelationshipType', 'reverseDescription'
+    ]
+
+    const relationshipCleaned: Record<string, unknown> = {}
+    allowedFields.forEach(field => {
+      if (cleaned[field] !== undefined) {
+        relationshipCleaned[field] = cleaned[field]
+      }
+    })
+
+    // Remove relationship objects
+    delete relationshipCleaned.sourceCharacter
+    delete relationshipCleaned.targetCharacter
+
+    return relationshipCleaned
+  }
+
   // For all other resources, remove the id field as it should never be sent in update requests
   delete cleaned.id
   delete cleaned.createdAt

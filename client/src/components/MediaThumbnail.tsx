@@ -715,9 +715,12 @@ export default function MediaThumbnail({
   }
 
   const renderEmptyState = () => {
-    const isSmallContainer =
-      (typeof maxWidth === 'number' && maxWidth <= 32) ||
-      (typeof maxHeight === 'number' && maxHeight <= 32)
+    const smallestDimension = Math.min(
+      typeof maxWidth === 'number' ? maxWidth : Infinity,
+      typeof maxHeight === 'number' ? maxHeight : Infinity
+    )
+    const isSmallContainer = smallestDimension <= 32
+    const isMediumContainer = smallestDimension > 32 && smallestDimension <= 80
 
     if (isSmallContainer) {
       return (
@@ -737,6 +740,30 @@ export default function MediaThumbnail({
           }}
         >
           <ImageIcon size={16} color={theme.colors.gray[5]} />
+        </Box>
+      )
+    }
+
+    if (isMediumContainer) {
+      // Medium container - show icon only, no text
+      const iconSize = Math.min(smallestDimension * 0.5, 32)
+      return (
+        <Box
+          component={containerComponent}
+          style={{
+            width: '100%',
+            height: '100%',
+            maxWidth: maxWidth,
+            maxHeight: maxHeight,
+            display: inline ? 'inline-flex' : 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme.colors.gray[1],
+            borderRadius: rem(6),
+            border: `1px solid ${theme.colors.gray[4]}`
+          }}
+        >
+          <ImageIcon size={iconSize} color={theme.colors.gray[5]} />
         </Box>
       )
     }

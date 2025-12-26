@@ -24,6 +24,7 @@ import { PageViewsModule } from './modules/page-views/page-views.module';
 import { BadgesModule } from './modules/badges/badges.module';
 import { DonationsModule } from './modules/donations/donations.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { CharacterRelationshipsModule } from './modules/character-relationships/character-relationships.module';
 import { AppController } from './app.controller';
 import { Guide } from './entities/guide.entity';
 import { Character } from './entities/character.entity';
@@ -98,6 +99,7 @@ import { Logger } from '@nestjs/common';
     BadgesModule,
     DonationsModule,
     TasksModule,
+    CharacterRelationshipsModule,
   ],
   controllers: [AppController],
 })

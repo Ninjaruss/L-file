@@ -43,7 +43,8 @@ import {
   Box,
   IconButton,
   Tooltip,
-  Chip
+  Chip,
+  Typography
 } from '@mui/material'
 import { Delete, Add } from '@mui/icons-material'
 
@@ -166,24 +167,23 @@ const BadgeAwardModal = ({ open, onClose, userId, username }: {
               ) : (
                 availableBadges.map((badge) => (
                   <MenuItem key={badge.id} value={badge.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
                       <div
                         className="inline-flex items-center justify-center px-2 py-0.5 rounded-full border text-xs font-semibold uppercase tracking-wide flex-shrink-0"
                         style={{
                           backgroundColor: badge.backgroundColor ? `${badge.backgroundColor}33` : 'transparent',
                           borderColor: badge.color,
                           color: badge.color,
-                          minWidth: '80px'
+                          minWidth: '100px'
                         }}
                       >
                         {badge.name}
                       </div>
-                      <Box sx={{ ml: 1 }}>
-                        <div className="font-medium">{badge.name}</div>
-                        {badge.description && (
-                          <div className="text-xs text-gray-400">{badge.description}</div>
-                        )}
-                      </Box>
+                      {badge.description && (
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                          {badge.description}
+                        </Typography>
+                      )}
                     </Box>
                   </MenuItem>
                 ))

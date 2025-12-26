@@ -25,6 +25,7 @@ import {
   useRecordContext,
   useNotify,
   useRefresh,
+  useRedirect,
   Filter,
   Loading,
   useListContext,
@@ -47,7 +48,11 @@ import {
   AppBar,
   TextField as MuiTextField,
   Tab,
-  Tabs
+  Tabs,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material'
 import {
   Check,
@@ -589,10 +594,15 @@ const GuideFilterToolbar = () => {
           <Grid item xs={12} md={4}>
             <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
               👤 Characters ({selectedEntities.characters.length})
+              {filteredEntities.characters.length > 10 && (
+                <Typography component="span" sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 1 }}>
+                  showing 10 of {filteredEntities.characters.length}
+                </Typography>
+              )}
             </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
+            <Box sx={{
+              maxHeight: 150,
+              overflowY: 'auto',
               border: '1px solid rgba(124, 58, 237, 0.2)',
               borderRadius: 1,
               p: 1,
@@ -640,10 +650,15 @@ const GuideFilterToolbar = () => {
           <Grid item xs={12} md={4}>
             <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
               📖 Arcs ({selectedEntities.arcs.length})
+              {filteredEntities.arcs.length > 10 && (
+                <Typography component="span" sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 1 }}>
+                  showing 10 of {filteredEntities.arcs.length}
+                </Typography>
+              )}
             </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
+            <Box sx={{
+              maxHeight: 150,
+              overflowY: 'auto',
               border: '1px solid rgba(124, 58, 237, 0.2)',
               borderRadius: 1,
               p: 1,
@@ -691,10 +706,15 @@ const GuideFilterToolbar = () => {
           <Grid item xs={12} md={4}>
             <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
               🎲 Gambles ({selectedEntities.gambles.length})
+              {filteredEntities.gambles.length > 10 && (
+                <Typography component="span" sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 1 }}>
+                  showing 10 of {filteredEntities.gambles.length}
+                </Typography>
+              )}
             </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
+            <Box sx={{
+              maxHeight: 150,
+              overflowY: 'auto',
               border: '1px solid rgba(124, 58, 237, 0.2)',
               borderRadius: 1,
               p: 1,
@@ -808,37 +828,128 @@ const ApproveGuideButton = () => {
   )
 }
 
+// Rejection Modal Component
+const GuideRejectionModal = ({ open, onClose, guideId, guideTitle, onSuccess }: {
+  open: boolean;
+  onClose: () => void;
+  guideId: number;
+  guideTitle: string;
+  onSuccess: () => void;
+}) => {
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const notify = useNotify();
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      notify('Please enter a rejection reason', { type: 'warning' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.rejectGuide(guideId, reason.trim());
+      notify('Guide rejected successfully', { type: 'success' });
+      onSuccess();
+      onClose();
+      setReason('');
+    } catch (error: any) {
+      console.error('Error rejecting guide:', error);
+      const errorMessage = error?.details?.message || error?.message || 'Error rejecting guide';
+      notify(errorMessage, { type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!submitting) {
+      setReason('');
+      onClose();
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+        borderBottom: '1px solid rgba(244, 67, 54, 0.3)',
+        color: '#f44336',
+        fontWeight: 'bold'
+      }}>
+        <X size={24} />
+        Reject Guide
+      </DialogTitle>
+      <DialogContent sx={{ pt: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Typography variant="body1">
+            Are you sure you want to reject the guide <strong>"{guideTitle}"</strong>?
+          </Typography>
+
+          <MuiTextField
+            fullWidth
+            required
+            multiline
+            rows={3}
+            label="Rejection Reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Explain why this guide is being rejected..."
+            helperText="This reason will be shown to the author"
+            error={!reason.trim() && reason.length > 0}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#0f0f0f',
+              }
+            }}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 2, gap: 1 }}>
+        <MuiButton onClick={handleClose} disabled={submitting} variant="outlined">
+          Cancel
+        </MuiButton>
+        <MuiButton
+          onClick={handleSubmit}
+          disabled={submitting || !reason.trim()}
+          variant="contained"
+          color="error"
+        >
+          {submitting ? 'Rejecting...' : 'Reject Guide'}
+        </MuiButton>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const RejectGuideButton = () => {
   const record = useRecordContext()
-  const notify = useNotify()
   const refresh = useRefresh()
-  
-  const handleReject = async () => {
-    if (!record) return
-    
-    const reason = prompt('Enter rejection reason:')
-    if (!reason) return
-    
-    try {
-      await api.rejectGuide(Number(record.id), reason)
-      notify('Guide rejected successfully')
-      refresh()
-    } catch (error: any) {
-      console.error('Error rejecting guide:', error)
-      const errorMessage = error?.details?.message || error?.message || 'Error rejecting guide'
-      notify(errorMessage, { type: 'error' })
-    }
-  }
-  
+  const [modalOpen, setModalOpen] = useState(false)
+
   if (record?.status === GuideStatus.REJECTED) return null
-  
+
   return (
-    <Button 
-      label="Reject" 
-      onClick={handleReject}
-      color="secondary"
-      startIcon={<X size={20} />}
-    />
+    <>
+      <Button
+        label="Reject"
+        onClick={() => setModalOpen(true)}
+        color="secondary"
+        startIcon={<X size={20} />}
+      />
+      {record && (
+        <GuideRejectionModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          guideId={Number(record.id)}
+          guideTitle={record.title || 'Untitled Guide'}
+          onSuccess={refresh}
+        />
+      )}
+    </>
   )
 }
 
@@ -1139,6 +1250,63 @@ export const GuideApprovalQueue = () => (
   </List>
 )
 
+// Draft Actions Field Component
+const DraftActionsField = () => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const redirect = useRedirect()
+
+  if (!record) return null
+
+  const handleEdit = () => {
+    redirect(`/guides/${record.id}`)
+  }
+
+  const handleApprove = async () => {
+    try {
+      await api.approveGuide(Number(record.id))
+      notify('Guide approved successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      console.error('Error approving guide:', error)
+      const errorMessage = error?.details?.message || error?.message || 'Error approving guide'
+      notify(errorMessage, { type: 'error' })
+    }
+  }
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 1,
+        minWidth: '140px',
+        justifyContent: 'center',
+        '& .MuiButton-root': {
+          minWidth: '65px',
+          padding: '6px 12px',
+          fontSize: '0.7rem',
+          fontWeight: 'bold',
+          textTransform: 'uppercase'
+        }
+      }}
+    >
+      <Button
+        label="Edit"
+        onClick={handleEdit}
+        color="primary"
+        startIcon={<Edit3 size={16} />}
+      />
+      <Button
+        label="Approve"
+        onClick={handleApprove}
+        color="secondary"
+        startIcon={<Check size={16} />}
+      />
+    </Box>
+  )
+}
+
 export const GuideDraftManager = () => (
   <List
     filter={{ status: GuideStatus.PENDING }}
@@ -1278,34 +1446,7 @@ export const GuideDraftManager = () => (
       <GuideEngagementField />
 
       {/* Edit Actions */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1,
-          minWidth: '140px',
-          justifyContent: 'center',
-          '& .MuiButton-root': {
-            minWidth: '65px',
-            padding: '6px 12px',
-            fontSize: '0.7rem',
-            fontWeight: 'bold',
-            textTransform: 'uppercase'
-          }
-        }}
-      >
-        <Button
-          label="Edit"
-          onClick={() => {/* Navigate to edit */}}
-          color="primary"
-          startIcon={<Edit3 size={16} />}
-        />
-        <Button
-          label="Submit"
-          onClick={() => {/* Submit for review */}}
-          color="secondary"
-          startIcon={<Check size={16} />}
-        />
-      </Box>
+      <DraftActionsField />
     </Datagrid>
   </List>
 )
