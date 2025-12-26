@@ -23,7 +23,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { getEntityThemeColor, backgroundStyles, getCardStyles } from '../../lib/mantine-theme'
-import { CalendarSearch, Search, ChevronDown, AlertCircle, X } from 'lucide-react'
+import { CalendarSearch, Search, AlertCircle, X } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -668,7 +668,7 @@ export default function EventsPageContent({
                   px="md"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                     gap: rem(16),
                     justifyItems: 'center'
                   }}
@@ -700,7 +700,6 @@ export default function EventsPageContent({
                         }}
                       >
                         <Accordion.Control
-                          icon={<ChevronDown size={16} />}
                           style={{
                             padding: rem(16),
                             fontSize: rem(16),
@@ -724,7 +723,7 @@ export default function EventsPageContent({
                             px="md"
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: 'repeat(5, 1fr)',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                               gap: rem(16),
                               justifyItems: 'center'
                             }}
@@ -757,7 +756,6 @@ export default function EventsPageContent({
                         }}
                       >
                         <Accordion.Control
-                          icon={<ChevronDown size={16} />}
                           style={{
                             padding: rem(16),
                             fontSize: rem(16),
@@ -781,7 +779,7 @@ export default function EventsPageContent({
                             px="md"
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: 'repeat(5, 1fr)',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                               gap: rem(16),
                               justifyItems: 'center'
                             }}

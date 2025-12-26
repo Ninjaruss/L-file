@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Alert,
   Badge,
@@ -70,6 +70,9 @@ export default function ProfilePageClient() {
   const [userBadges, setUserBadges] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [customRoleSaved, setCustomRoleSaved] = useState(false)
+  const customRoleDebounceRef = useRef<number | null>(null)
+  const initialCustomRoleRef = useRef<string>('')
 
   const [quoteModalOpened, { open: openQuoteModal, close: closeQuoteModal }] = useDisclosure(false)
   const [gambleModalOpened, { open: openGambleModal, close: closeGambleModal }] = useDisclosure(false)
@@ -78,9 +81,55 @@ export default function ProfilePageClient() {
   const isAuthenticated = !!user
 
   // Check if user has active supporter badge
-  const hasActiveSupporterBadge = userBadges.some(userBadge => 
+  const hasActiveSupporterBadge = userBadges.some(userBadge =>
     userBadge.badge?.type === 'active_supporter'
   )
+
+  // Auto-save custom role with debounce
+  const autoSaveCustomRole = useCallback(async (role: string) => {
+    if (!hasActiveSupporterBadge) return
+
+    try {
+      setSaving(true)
+      await api.patch('/users/profile/custom-role', { customRole: role })
+      await refreshUser()
+      setCustomRoleSaved(true)
+      setTimeout(() => setCustomRoleSaved(false), 2000)
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to save custom role',
+        color: 'red'
+      })
+    } finally {
+      setSaving(false)
+    }
+  }, [hasActiveSupporterBadge, refreshUser])
+
+  // Effect to auto-save custom role when it changes
+  useEffect(() => {
+    // Skip if not loaded yet or no supporter badge
+    if (loading || !hasActiveSupporterBadge) return
+
+    // Skip if the value hasn't changed from initial
+    if (profileData.customRole === initialCustomRoleRef.current) return
+
+    // Clear previous debounce timer
+    if (customRoleDebounceRef.current) {
+      window.clearTimeout(customRoleDebounceRef.current)
+    }
+
+    // Set new debounce timer
+    customRoleDebounceRef.current = window.setTimeout(() => {
+      autoSaveCustomRole(profileData.customRole)
+    }, 1000)
+
+    return () => {
+      if (customRoleDebounceRef.current) {
+        window.clearTimeout(customRoleDebounceRef.current)
+      }
+    }
+  }, [profileData.customRole, loading, hasActiveSupporterBadge, autoSaveCustomRole])
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -100,11 +149,13 @@ export default function ProfilePageClient() {
       try {
         const profileResp = await api.get('/users/profile')
         const responseData = (profileResp as any).data || profileResp
+        const initialCustomRole = user?.customRole || responseData.customRole || ''
+        initialCustomRoleRef.current = initialCustomRole
         setProfileData({
           favoriteCharacter: responseData.favoriteCharacter || '',
           favoriteQuote: responseData.favoriteQuoteId ? responseData.favoriteQuoteId.toString() : '',
           favoriteGamble: responseData.favoriteGambleId ? responseData.favoriteGambleId.toString() : '',
-          customRole: user?.customRole || responseData.customRole || ''
+          customRole: initialCustomRole
         })
         favoriteQuoteId = responseData.favoriteQuoteId ?? null
         favoriteGambleId = responseData.favoriteGambleId ?? null
@@ -618,43 +669,26 @@ export default function ProfilePageClient() {
                   ) : (
                     <>
                       <Text size="sm" c="dimmed">
-                        Customize how your role appears to other users
+                        Customize how your role appears to other users (auto-saves)
                       </Text>
-                      <Group gap="md">
+                      <Stack gap="xs">
                         <TextInput
                           placeholder="Enter custom role (e.g., 'Gambling Expert')"
                           value={profileData.customRole}
-                          onChange={(e) => setProfileData(prev => ({ ...prev, customRole: e.target.value }))}
-                          style={{ flex: 1 }}
-                          maxLength={50}
-                        />
-                        <Button 
-                          onClick={async () => {
-                            try {
-                              setSaving(true)
-                              await api.patch('/users/profile/custom-role', { customRole: profileData.customRole })
-                              await refreshUser()
-                              notifications.show({
-                                title: 'Success',
-                                message: 'Custom role updated successfully',
-                                color: 'green'
-                              })
-                            } catch (error) {
-                              notifications.show({
-                                title: 'Error',
-                                message: 'Failed to update custom role',
-                                color: 'red'
-                              })
-                            } finally {
-                              setSaving(false)
-                            }
+                          onChange={(e) => {
+                            setProfileData(prev => ({ ...prev, customRole: e.target.value }))
+                            setCustomRoleSaved(false)
                           }}
-                          loading={saving}
-                          size="sm"
-                        >
-                          Save
-                        </Button>
-                      </Group>
+                          maxLength={50}
+                          rightSection={
+                            saving ? (
+                              <Loader size={16} />
+                            ) : customRoleSaved ? (
+                              <Text size="xs" c="green">Saved</Text>
+                            ) : null
+                          }
+                        />
+                      </Stack>
                     </>
                   )}
                 </Stack>

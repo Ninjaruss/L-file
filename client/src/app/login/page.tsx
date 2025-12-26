@@ -74,6 +74,22 @@ function LoginContent() {
           >
             Continue with Discord
           </Button>
+
+          <Text size="xs" c="dimmed" ta="center" style={{ lineHeight: 1.5 }}>
+            We use Discord for secure authentication. We only access your username and avatar.
+            Don&apos;t have Discord?{' '}
+            <Text
+              component="a"
+              href="https://discord.com/register"
+              target="_blank"
+              rel="noopener noreferrer"
+              size="xs"
+              c="indigo"
+              style={{ textDecoration: 'underline' }}
+            >
+              Create a free account
+            </Text>
+          </Text>
         </Stack>
       </Card>
     </Container>

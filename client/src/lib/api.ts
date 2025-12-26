@@ -617,18 +617,6 @@ class ApiClient {
     }>(`/guides/${id}/like`, {})
   }
 
-  async submitMedia(data: {
-    url: string
-    type: 'image' | 'video' | 'audio'
-    ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
-    ownerId: number
-    chapterNumber?: number
-    purpose?: 'gallery' | 'entity_display'
-    description?: string
-  }) {
-    return this.post<any>('/media', data)
-  }
-
   async submitMediaPolymorphic(data: {
     url: string
     type: 'image' | 'video' | 'audio'
@@ -636,19 +624,6 @@ class ApiClient {
     ownerId: number
     chapterNumber?: number
     description?: string
-  }) {
-    return this.post<any>('/media', data)
-  }
-
-  async createMedia(data: {
-    url: string
-    type: 'image' | 'video' | 'audio'
-    description?: string
-    characterId?: number
-    arcId?: number
-    eventId?: number
-    status?: 'pending' | 'approved' | 'rejected'
-    rejectionReason?: string
   }) {
     return this.post<any>('/media', data)
   }

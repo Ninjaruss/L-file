@@ -1,4 +1,11 @@
-import { User } from './resources';
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: 'user' | 'moderator' | 'admin';
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Arc {
   id: number;

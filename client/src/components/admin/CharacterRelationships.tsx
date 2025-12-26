@@ -407,6 +407,29 @@ export const CharacterRelationshipEdit = () => (
         <Divider sx={{ my: 1 }} />
 
         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+          B → A Relationship (Optional)
+        </Typography>
+
+        <SelectInput
+          source="reverseRelationshipType"
+          label="How B sees A"
+          choices={REVERSE_RELATIONSHIP_CHOICES}
+          fullWidth
+          helperText="Leave empty to keep as one-way relationship, or select the same type for symmetric relationships"
+        />
+
+        <TextInput
+          source="reverseDescription"
+          label="B → A Description"
+          multiline
+          rows={3}
+          fullWidth
+          helperText="How B relates to A (optional)"
+        />
+
+        <Divider sx={{ my: 1 }} />
+
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary' }}>
           Timeline
         </Typography>
 

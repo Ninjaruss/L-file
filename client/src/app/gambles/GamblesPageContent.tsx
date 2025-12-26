@@ -599,9 +599,11 @@ export default function GamblesPageContent({
                           backgroundColor: 'transparent',
                           minHeight: rem(40),
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          gap: rem(4)
                         }}
                       >
                         <Text
@@ -623,6 +625,20 @@ export default function GamblesPageContent({
                         >
                           {gamble.name}
                         </Text>
+                        {/* Touch device hint */}
+                        {isTouchDevice && hoveredGamble?.id !== gamble.id && (
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            ta="center"
+                            style={{
+                              fontSize: rem(10),
+                              opacity: 0.7
+                            }}
+                          >
+                            Tap to preview
+                          </Text>
+                        )}
                       </Box>
                     </Card>
                   </motion.div>

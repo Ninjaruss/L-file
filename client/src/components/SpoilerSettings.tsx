@@ -66,6 +66,10 @@ const SpoilerSettings: React.FC = () => {
               style={{ color: getEntityThemeColor(theme, 'gamble') }}
             />
           </Box>
+
+          <Text size="xs" c="dimmed" mt="xs">
+            Events, character details, gamble outcomes, and other story content from chapters after {settings.chapterTolerance} will be blurred until you click to reveal them.
+          </Text>
         </Stack>
 
         <Divider my="md" color="rgba(255, 255, 255, 0.12)" />

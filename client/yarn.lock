@@ -546,23 +546,10 @@
     react-textarea-autosize "8.5.9"
     type-fest "^4.41.0"
 
-"@mantine/form@^8.3.1":
-  version "8.3.10"
-  resolved "https://registry.yarnpkg.com/@mantine/form/-/form-8.3.10.tgz#2b56e53457bd71c39338d18c42c6aae68ce48dd6"
-  integrity sha512-TuBmCUIH0qHUig+y9My3bLL9CRoW4g9bijIF6743gqVh0o/daSwplc2TTVMj6sl+F1MR+SJiHtAC8FoR7fdhNw==
-  dependencies:
-    fast-deep-equal "^3.1.3"
-    klona "^2.0.6"
-
 "@mantine/hooks@^8.3.1":
   version "8.3.10"
   resolved "https://registry.yarnpkg.com/@mantine/hooks/-/hooks-8.3.10.tgz#610e306e7d5609d4994b9ffba57a9a1bfc96d03a"
   integrity sha512-bv+yYHl+keTIvakiDzVJMIjW+o8/Px0G3EdpCMFG+U2ux6SwQqluqoq+/kqrTtT6RaLvQ0fMxjpIULF2cu/xAg==
-
-"@mantine/modals@^8.3.1":
-  version "8.3.10"
-  resolved "https://registry.yarnpkg.com/@mantine/modals/-/modals-8.3.10.tgz#a60d5c6a61c531b0267f811358f90e841201d61b"
-  integrity sha512-XopCrP8dindhzSDazU47BgU8TVsiOyEG0u1UMJJ4u8TdvBctP7QVeJmGKj+B4MRHk2cHrjIF38dEGJhDgTITEg==
 
 "@mantine/notifications@^8.3.1":
   version "8.3.10"
@@ -571,13 +558,6 @@
   dependencies:
     "@mantine/store" "8.3.10"
     react-transition-group "4.4.5"
-
-"@mantine/spotlight@^8.3.1":
-  version "8.3.10"
-  resolved "https://registry.yarnpkg.com/@mantine/spotlight/-/spotlight-8.3.10.tgz#01f2eac0396b7037955079a887d7ccb2438b9e8c"
-  integrity sha512-0GfQd/smRcd5u0o6Ad7J9ZEWLcZZ81h9/Z9qUnzIlJeYjXqJdr40MMqDxNsXgZEDKscPJkggZMqMiRZXhFbdNQ==
-  dependencies:
-    "@mantine/store" "8.3.10"
 
 "@mantine/store@8.3.10":
   version "8.3.10"
@@ -2795,11 +2775,6 @@ keyv@^4.5.4:
   dependencies:
     json-buffer "3.0.1"
 
-klona@^2.0.6:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/klona/-/klona-2.0.6.tgz#85bffbf819c03b2f53270412420a4555ef882e22"
-  integrity sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==
-
 language-subtag-registry@^0.3.20:
   version "0.3.23"
   resolved "https://registry.yarnpkg.com/language-subtag-registry/-/language-subtag-registry-0.3.23.tgz#23529e04d9e3b74679d70142df3fd2eb6ec572e7"
@@ -2932,11 +2907,6 @@ lucide-react@^0.544.0:
   version "0.544.0"
   resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-0.544.0.tgz#4719953c10fd53a64dd8343bb0ed16ec79f3eeef"
   integrity sha512-t5tS44bqd825zAW45UQxpG2CvcC4urOwn2TrwSH8u+MjeE+1NnWl6QqeQ/6NdjMqdOygyiT9p3Ev0p1NJykxjw==
-
-lucide@^0.542.0:
-  version "0.542.0"
-  resolved "https://registry.yarnpkg.com/lucide/-/lucide-0.542.0.tgz#e844c3eb3b865ff439760274bc6e19e473ffbde7"
-  integrity sha512-+EtDSHjqg/nONgCfnjHCNd84OzbDjxR8ShnOf+oImlU+A8gqlptZ6pGrMCnhEDw8pVNQv3zu/L0eDvMzcc7nWA==
 
 magic-string@^0.30.21:
   version "0.30.21"

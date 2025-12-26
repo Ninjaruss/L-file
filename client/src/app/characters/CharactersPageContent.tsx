@@ -710,9 +710,11 @@ export default function CharactersPageContent({
                           backgroundColor: 'transparent',
                           minHeight: rem(40),
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          gap: rem(4)
                         }}
                       >
                         <Text
@@ -734,6 +736,20 @@ export default function CharactersPageContent({
                         >
                           {character.name}
                         </Text>
+                        {/* Touch device hint */}
+                        {isTouchDevice && hoveredCharacter?.id !== character.id && (
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            ta="center"
+                            style={{
+                              fontSize: rem(10),
+                              opacity: 0.7
+                            }}
+                          >
+                            Tap to preview
+                          </Text>
+                        )}
                       </Box>
                     </Card>
                   </motion.div>

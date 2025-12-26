@@ -663,7 +663,9 @@ export default function SubmitGuidePageContent() {
 
                   <Group align="flex-end" gap="sm" wrap="nowrap">
                     <TextInput
+                      label="Add a tag"
                       placeholder="e.g., character-analysis, gambling, theory"
+                      description="Press Enter or click Add"
                       value={newTag}
                       onChange={(event) => setNewTag(event.currentTarget.value)}
                       onKeyDown={handleKeyPress}
@@ -677,17 +679,25 @@ export default function SubmitGuidePageContent() {
                             borderColor: guideAccent,
                             boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
                           }
+                        },
+                        label: {
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          fontWeight: 500
                         }
                       }}
                     />
                     <Button
-                      variant="outline"
+                      variant="filled"
                       styles={{
                         root: {
-                          borderColor: guideAccent,
-                          color: guideAccent,
+                          backgroundColor: guideAccent,
+                          color: '#000',
                           '&:hover': {
-                            backgroundColor: 'rgba(81, 207, 102, 0.1)'
+                            backgroundColor: `${guideAccent}dd`
+                          },
+                          '&:disabled': {
+                            backgroundColor: 'rgba(81, 207, 102, 0.3)',
+                            color: 'rgba(255, 255, 255, 0.5)'
                           }
                         }
                       }}
@@ -695,12 +705,12 @@ export default function SubmitGuidePageContent() {
                       onClick={addTag}
                       disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
                     >
-                      Add
+                      Add Tag
                     </Button>
                   </Group>
 
                   <Text size="xs" c="dimmed">
-                    Add relevant tags to help others find your guide (e.g., characters, gambles, arcs, analysis)
+                    Tags help others find your guide. Add keywords like character names, gamble types, or analysis focus areas.
                   </Text>
                 </Stack>
               </Box>

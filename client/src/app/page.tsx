@@ -1,8 +1,8 @@
 'use client'
 
-import { Box, Container, Title, Text, Button, Group, Alert } from '@mantine/core'
+import { Box, Container, Title, Text, Button, Group } from '@mantine/core'
 import { useMantineTheme } from '@mantine/core'
-import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image, AlertCircle } from 'lucide-react'
+import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image } from 'lucide-react'
 import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
@@ -122,50 +122,25 @@ export default function HomePage() {
           <FAQ />
         </LazySection>
 
-        {/* Discord CTA Section */}
-        <Box style={{ marginBottom: '2rem' }} />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.1 }}
-        >
-          <Box
-            style={{
-              textAlign: 'center',
-              padding: 'clamp(1.5rem, 4vw, 2.5rem)',
-              background: `linear-gradient(135deg, #5865F2 0%, #4752C4 50%, #3C45A5 100%)`,
-              borderRadius: '1rem',
-              border: `2px solid rgba(255, 255, 255, 0.1)`,
-              color: 'white',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-          >
-            <Group justify="center" gap="md" style={{ marginBottom: '1rem' }}>
-              <MessageCircle className="w-8 h-8" />
-              <Title order={2} style={{ fontWeight: 'bold', color: '#ffffff' }}>
-                Join Our Discord Community
-              </Title>
-            </Group>
-            <Text size="xl" style={{ opacity: 0.9, marginBottom: '2rem', fontWeight: 'normal' }} c="#ffffff">
-              Connect with fellow Usogui fans, discuss theories, share insights, and stay updated on the latest content
-            </Text>
-
-            {/* Database Stats */}
-            {landingError ? (
-              <Alert
-                icon={<AlertCircle size={16} />}
-                color="yellow"
-                variant="light"
-                radius="md"
-                style={{ marginBottom: '2rem', maxWidth: 400, margin: '0 auto 2rem auto' }}
+        {/* Site Statistics Section */}
+        {landingData?.stats && !landingError && (
+          <Box style={{ marginBottom: '2rem' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1.0 }}
+            >
+              <Box
+                style={{
+                  textAlign: 'center',
+                  padding: 'clamp(1.5rem, 3vw, 2rem)',
+                  background: theme.colors.dark?.[8] ?? '#1a1a1a',
+                  borderRadius: '1rem',
+                  border: `1px solid ${theme.colors.dark?.[6] ?? '#333'}`
+                }}
               >
-                <Text size="sm">Stats temporarily unavailable. Join our community!</Text>
-              </Alert>
-            ) : landingData?.stats && (
-              <Box style={{ marginBottom: '2rem' }}>
-                <Text size="lg" fw={600} style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#ffffff' }}>
-                  Discover Rich Content & Community Insights
+                <Text size="lg" fw={600} style={{ textAlign: 'center', marginBottom: '1.5rem', color: textColors.primary }}>
+                  Site Statistics
                 </Text>
                 <Group justify="center" gap="xl" style={{ flexWrap: 'wrap' }}>
                   {landingData.stats.totalGuides && (
@@ -222,7 +197,37 @@ export default function HomePage() {
                   )}
                 </Group>
               </Box>
-            )}
+            </motion.div>
+          </Box>
+        )}
+
+        {/* Discord CTA Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 1.1 }}
+        >
+          <Box
+            style={{
+              textAlign: 'center',
+              padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+              background: `linear-gradient(135deg, #5865F2 0%, #4752C4 50%, #3C45A5 100%)`,
+              borderRadius: '1rem',
+              border: `2px solid rgba(255, 255, 255, 0.1)`,
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Group justify="center" gap="md" style={{ marginBottom: '1rem' }}>
+              <MessageCircle className="w-8 h-8" />
+              <Title order={2} style={{ fontWeight: 'bold', color: '#ffffff' }}>
+                Join Our Discord Community
+              </Title>
+            </Group>
+            <Text size="xl" style={{ opacity: 0.9, marginBottom: '1.5rem', fontWeight: 'normal' }} c="#ffffff">
+              Connect with fellow Usogui fans, discuss theories, share insights, and stay updated on the latest content
+            </Text>
 
             <Button
               component="a"

@@ -632,7 +632,7 @@ const Navigation: React.FC = () => {
               }}
             >
               <TextInput
-                placeholder="Search..."
+                placeholder="Search (2+ chars)..."
                 aria-label="Search characters, arcs, gambles, and more"
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e)}
@@ -965,7 +965,7 @@ const Navigation: React.FC = () => {
             <Box p="md" pb="sm">
               <form onSubmit={handleSearchSubmit}>
                 <TextInput
-                  placeholder="Search..."
+                  placeholder="Search (2+ chars)..."
                   aria-label="Search characters, arcs, gambles, and more"
                   value={searchValue}
                   onChange={(e) => handleSearchChange(e)}
