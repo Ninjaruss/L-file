@@ -183,7 +183,7 @@ export default React.memo(function GambleTimeline({ events, arcs, gambleName, ga
                 )
               })}
               {selectedEventTypes.size > 0 && (
-                <ActionIcon variant="subtle" style={{ color: getEntityThemeColor(theme, 'gamble') }} size="sm" onClick={clearFilters}>
+                <ActionIcon variant="subtle" style={{ color: getEntityThemeColor(theme, 'gamble') }} size="sm" onClick={clearFilters} aria-label="Clear filters">
                   <X size={14} />
                 </ActionIcon>
               )}

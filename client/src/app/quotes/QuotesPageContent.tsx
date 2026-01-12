@@ -24,6 +24,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor, semanticColors, textColors, backgroundStyles, getHeroStyles, getCardStyles } from '../../lib/mantine-theme'
 import { notifications } from '@mantine/notifications'
 import { Quote, Search, X } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
@@ -37,6 +38,7 @@ interface QuoteData {
   id: number
   text: string
   speaker: string
+  speakerId?: number
   context?: string
   tags: string[]
   chapter?: number
@@ -109,6 +111,7 @@ export default function QuotesPageContent({
       id: quote.id,
       text: quote.text,
       speaker: quote.character?.name || 'Unknown',
+      speakerId: quote.character?.id,
       context: quote.description || quote.context,
       tags: quote.tags ? (Array.isArray(quote.tags) ? quote.tags : [quote.tags]) : [],
       chapter: quote.chapterNumber,
@@ -143,6 +146,10 @@ export default function QuotesPageContent({
 
   // Update search query when debounced value changes
   useEffect(() => {
+    // Skip if input was cleared but debounce hasn't caught up yet
+    if (searchInput.trim() === '' && debouncedSearch.trim() !== '') {
+      return
+    }
     if (debouncedSearch.trim() !== searchQuery) {
       setSearchQuery(debouncedSearch.trim())
       setCurrentPage(1)
@@ -157,7 +164,7 @@ export default function QuotesPageContent({
       const queryString = params.toString()
       router.push(queryString ? `/quotes?${queryString}` : '/quotes')
     }
-  }, [debouncedSearch, searchQuery, searchParams, router])
+  }, [debouncedSearch, searchInput, searchQuery, searchParams, router])
 
   // Function to update modal position based on hovered element (following arcs pattern)
   const updateModalPosition = useCallback((quote?: QuoteData) => {
@@ -376,7 +383,7 @@ export default function QuotesPageContent({
               radius="xl"
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={clearSearch} size="sm">
+                  <ActionIcon variant="subtle" color="gray" onClick={clearSearch} size="sm" aria-label="Clear search">
                     <X size={16} />
                   </ActionIcon>
                 ) : null
@@ -399,7 +406,7 @@ export default function QuotesPageContent({
               variant={badgeVariant as any}
               radius="xl"
               rightSection={
-                <ActionIcon size="xs" style={{ color: getEntityThemeColor(theme, 'media') }} variant="transparent" onClick={clearCharacterFilter}>
+                <ActionIcon size="xs" style={{ color: getEntityThemeColor(theme, 'media') }} variant="transparent" onClick={clearCharacterFilter} aria-label="Clear character filter">
                   <X size={12} />
                 </ActionIcon>
               }
@@ -428,8 +435,8 @@ export default function QuotesPageContent({
             {/* Quotes Grid */}
             <Grid gutter="md">
             {quotes.map((quote, index) => (
-              // base: 1 column, sm: 2 columns, md: 4 columns, lg: 6 columns
-              <Grid.Col span={{ base: 12, sm: 6, md: 3, lg: 2 }} key={quote.id}>
+              // base: 1 column, sm: 2 columns, md: 3 columns, lg: 4 columns
+              <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 3 }} key={quote.id}>
                 <TimelineSpoilerWrapper chapterNumber={quote.chapter ?? 1}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -441,24 +448,16 @@ export default function QuotesPageContent({
                     radius="lg"
                     shadow="sm"
                     padding="md"
+                    className="hoverable-card hoverable-card-quote"
                     style={{
                       height: '240px', // More compact height
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease',
                       position: 'relative',
                       overflow: 'hidden',
                       backgroundColor: cardBgColor,
                     }}
                     onMouseEnter={(e) => handleCardMouseEnter(quote, e.currentTarget)}
                     onMouseLeave={handleCardMouseLeave}
-                    styles={{
-                      root: {
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: theme.shadows.lg,
-                        },
-                      },
-                    }}
                   >
                     <Stack gap="xs" h="100%" justify="space-between">
                       {/* Header */}
@@ -499,7 +498,30 @@ export default function QuotesPageContent({
                         ta="center"
                         style={{ fontSize: rem(15) }}
                       >
-                        — {quote.speaker}
+                        —{' '}
+                        {quote.speakerId ? (
+                          <Text
+                            component={Link}
+                            href={`/characters/${quote.speakerId}`}
+                            inherit
+                            style={{
+                              textDecoration: 'none',
+                              transition: 'opacity 150ms ease',
+                              '&:hover': { opacity: 0.8 }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.textDecoration = 'underline'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.textDecoration = 'none'
+                            }}
+                          >
+                            {quote.speaker}
+                          </Text>
+                        ) : (
+                          quote.speaker
+                        )}
                       </Text>
 
                       {/* Tags */}
@@ -604,7 +626,25 @@ export default function QuotesPageContent({
                   ta="center"
                   lineClamp={2}
                 >
-                  {hoveredQuote.speaker}
+                  {hoveredQuote.speakerId ? (
+                    <Text
+                      component={Link}
+                      href={`/characters/${hoveredQuote.speakerId}`}
+                      inherit
+                      c={accentQuote}
+                      style={{ textDecoration: 'none' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.textDecoration = 'underline'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.textDecoration = 'none'
+                      }}
+                    >
+                      {hoveredQuote.speaker}
+                    </Text>
+                  ) : (
+                    hoveredQuote.speaker
+                  )}
                 </Title>
 
                 {/* Context - Emphasized */}

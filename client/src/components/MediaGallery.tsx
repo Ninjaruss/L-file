@@ -37,6 +37,16 @@ import {
 import NextImage from 'next/image'
 import { api } from '../lib/api'
 import { API_BASE_URL } from '../lib/api'
+import {
+  extractYouTubeVideoId,
+  extractVimeoVideoId,
+  getYouTubeThumbnail,
+  getYouTubeEmbedUrlEnhanced,
+  getVimeoEmbedUrlEnhanced,
+  isYouTubeUrl,
+  isDirectVideoUrl,
+  canEmbedVideo as canEmbedVideoUtil
+} from '../lib/video-utils'
 
 interface MediaItem {
   id: number
@@ -143,6 +153,11 @@ export default function MediaGallery({
   const [imageZoomed, setImageZoomed] = useState(false)
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
   const [hoveredMediaId, setHoveredMediaId] = useState<number | null>(null)
+  const [failedImageIds, setFailedImageIds] = useState<Set<number>>(new Set())
+
+  const handleImageError = (mediaId: number) => {
+    setFailedImageIds(prev => new Set(prev).add(mediaId))
+  }
 
   // Filter state
   const [selectedMediaType, setSelectedMediaType] = useState<string>('all')
@@ -293,10 +308,10 @@ export default function MediaGallery({
     }
 
     if (mediaItem.type === 'video') {
-      if (mediaItem.url.includes('youtube.com') || mediaItem.url.includes('youtu.be')) {
+      if (isYouTubeUrl(mediaItem.url)) {
         const videoId = extractYouTubeVideoId(mediaItem.url)
         if (videoId) {
-          return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+          return getYouTubeThumbnail(videoId)
         }
       }
     }
@@ -304,42 +319,17 @@ export default function MediaGallery({
     return null
   }
 
-  const extractYouTubeVideoId = (url: string): string | null => {
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
-    const match = url.match(regExp)
-    return match && match[7].length === 11 ? match[7] : null
-  }
-
-  const getYouTubeEmbedUrl = (videoId: string): string =>
-    `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1&controls=1&enablejsapi=1&fs=1&cc_load_policy=0&disablekb=0&iv_load_policy=3`
-
-  const getVimeoVideoId = (url: string): string | null => {
-    const regExp = /(?:vimeo\.com\/)(?:.*\/)?(\d+)/
-    const match = url.match(regExp)
-    return match ? match[1] : null
-  }
-
-  const getVimeoEmbedUrl = (videoId: string): string =>
-    `https://player.vimeo.com/video/${videoId}?byline=0&portrait=0&color=ffffff&title=0&autoplay=0&controls=1`
-
-  const isDirectVideoUrl = (url: string): boolean => {
-    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv']
-    const urlPath = url.toLowerCase()
-    return videoExtensions.some((ext) => urlPath.includes(ext))
-  }
-
-  const canEmbedVideo = (url: string): boolean =>
-    Boolean(extractYouTubeVideoId(url) || getVimeoVideoId(url) || isDirectVideoUrl(url))
+  const canEmbedVideo = canEmbedVideoUtil
 
   const getEmbedUrl = (url: string): string | null => {
     const youtubeId = extractYouTubeVideoId(url)
     if (youtubeId) {
-      return getYouTubeEmbedUrl(youtubeId)
+      return getYouTubeEmbedUrlEnhanced(youtubeId)
     }
 
-    const vimeoId = getVimeoVideoId(url)
+    const vimeoId = extractVimeoVideoId(url)
     if (vimeoId) {
-      return getVimeoEmbedUrl(vimeoId)
+      return getVimeoEmbedUrlEnhanced(vimeoId)
     }
 
     return null
@@ -456,8 +446,8 @@ export default function MediaGallery({
               }}
             >
               <Box style={{ position: 'relative' }}>
-                <AspectRatio ratio={16 / 9} style={{ position: 'relative' }} className="aspect-ratio-container">
-                  {thumbnail ? (
+                <AspectRatio ratio={16 / 9} style={{ position: 'relative' }}>
+                  {thumbnail && !failedImageIds.has(mediaItem.id) ? (
                     isExternalUrl(thumbnail) ? (
                       <img
                         src={thumbnail}
@@ -470,19 +460,7 @@ export default function MediaGallery({
                           height: '100%',
                           objectFit: 'cover'
                         }}
-                        onError={(event) => {
-                          const target = event.target as HTMLImageElement
-                          // Hide the broken image and show fallback
-                          target.style.display = 'none'
-                          // Find the parent container and show the fallback icon
-                          const container = target.closest('.aspect-ratio-container')
-                          if (container) {
-                            const fallback = container.querySelector('.fallback-icon')
-                            if (fallback) {
-                              (fallback as HTMLElement).style.display = 'flex'
-                            }
-                          }
-                        }}
+                        onError={() => handleImageError(mediaItem.id)}
                       />
                     ) : (
                       <NextImage
@@ -491,25 +469,12 @@ export default function MediaGallery({
                         fill
                         style={{ objectFit: 'cover' }}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                        onError={(event) => {
-                          const target = event.target as HTMLImageElement
-                          // Hide the broken image and show fallback
-                          target.style.display = 'none'
-                          // Find the parent container and show the fallback icon
-                          const container = target.closest('.aspect-ratio-container')
-                          if (container) {
-                            const fallback = container.querySelector('.fallback-icon')
-                            if (fallback) {
-                              (fallback as HTMLElement).style.display = 'flex'
-                            }
-                          }
-                        }}
+                        onError={() => handleImageError(mediaItem.id)}
                       />
                     )
                   ) : (
-                    /* Fallback icon when no thumbnail */
+                    /* Fallback icon when no thumbnail or image failed to load */
                     <Box
-                      className="fallback-icon"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -517,32 +482,6 @@ export default function MediaGallery({
                         color: theme.colors.gray[5],
                         width: '100%',
                         height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.1)',
-                        flexDirection: 'column',
-                        gap: rem(8)
-                      }}
-                    >
-                      {getMediaTypeIcon(mediaItem.type)}
-                      <Text size="xs" c="dimmed" ta="center">
-                        {mediaItem.type === 'image' ? 'External Image' : 'Media'}
-                      </Text>
-                    </Box>
-                  )}
-
-                  {/* Fallback icon for broken images - only shown when thumbnail exists but fails to load */}
-                  {thumbnail && (
-                    <Box
-                      className="fallback-icon"
-                      style={{
-                        display: 'none',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: theme.colors.gray[5],
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
                         backgroundColor: 'rgba(0,0,0,0.1)',
                         flexDirection: 'column',
                         gap: rem(8)
@@ -709,7 +648,7 @@ export default function MediaGallery({
                     variant="subtle"
                     onClick={handlePrevious}
                     disabled={currentImageIndex === 0}
-                    aria-label="Previous"
+                    aria-label="Previous media"
                   >
                     <ChevronLeft size={18} />
                   </ActionIcon>
@@ -717,7 +656,7 @@ export default function MediaGallery({
                     variant="subtle"
                     onClick={handleNext}
                     disabled={currentImageIndex === filteredMedia.length - 1}
-                    aria-label="Next"
+                    aria-label="Next media"
                   >
                     <ChevronRight size={18} />
                   </ActionIcon>

@@ -343,6 +343,7 @@ export default function ChaptersPageContent({
                     onClick={handleClearSearch}
                     size="sm"
                     title="Clear search"
+                    aria-label="Clear search"
                   >
                     <X size={16} />
                   </ActionIcon>

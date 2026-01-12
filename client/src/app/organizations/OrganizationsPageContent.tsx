@@ -330,7 +330,7 @@ export default function OrganizationsPageContent({
               radius="xl"
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm" aria-label="Clear search">
                     <X size={16} />
                   </ActionIcon>
                 ) : null

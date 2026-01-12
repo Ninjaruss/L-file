@@ -456,11 +456,11 @@ export default function EventsPageContent({
         radius="lg"
         shadow="sm"
         padding="xs"
+        className="hoverable-card hoverable-card-event"
         style={{
           width: '100%',
           height: '100%',
           cursor: 'pointer',
-          transition: 'all 0.3s ease',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -468,14 +468,6 @@ export default function EventsPageContent({
         onMouseLeave={handleEventMouseLeave}
         component={Link}
         href={`/events/${event.id}`}
-        styles={{
-          root: {
-            '&:hover': {
-              transform: 'translateY(-4px)',
-              boxShadow: theme.shadows.lg,
-            },
-          },
-        }}
       >
         <EventSpoilerWrapper
           event={event}
@@ -591,7 +583,7 @@ export default function EventsPageContent({
               radius="xl"
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm" aria-label="Clear search">
                     <X size={16} />
                   </ActionIcon>
                 ) : null

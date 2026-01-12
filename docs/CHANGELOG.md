@@ -2,6 +2,75 @@
 ## TODO:
 - Donation linking to badges; badge system with perks
 
+## 2026-01-04
+- Added bulk actions for guides/media
+- Fixed pending approval button to navigate to higher priority pending items (by count)
+
+## 2026-01-02
+### Admin & Moderator Workflow Improvements
+- **Role Elevation Protection**: Added confirmation dialog when promoting users to admin role
+  - Shows explicit warning about admin privileges before confirmation
+  - Moderators can no longer see admin role option in dropdown (backend already enforced)
+- **Guide Rejection Validation**: Added real-time validation requiring rejection reason when status is set to "Rejected"
+  - Visual warning box highlights missing reason
+  - Form validation prevents saving without reason
+- **Bulk Actions for Guides**: Added bulk approve/reject buttons to Guide list view
+  - Multi-select guides and approve/reject in batch
+  - Bulk rejection requires shared reason for all selected guides
+- **Bulk Actions for Media**: Added bulk approve/reject buttons to Media list and approval queue
+  - Multi-select media items and approve/reject in batch
+  - Bulk rejection requires shared reason for all selected items
+- **Bulk Actions for Events**: Added bulk approve/reject buttons to Events list view
+  - Multi-select events and approve/reject pending items in batch
+  - Only processes events with pending status
+
+### Admin Dashboard UX Improvements
+- **Clickable Dashboard Navigation**: All stat cards and quick actions now navigate to respective pages
+  - Stat cards link directly to resource list views
+  - Quick actions link to filtered lists (e.g., pending items) or create forms
+  - Hover effects indicate clickability with smooth animations
+- **Badges Admin Standardization**: Updated Badges component to match styling of other admin resources
+  - Added EditToolbar with delete confirmation dialog to BadgeEdit
+  - Standardized card layouts, gradient headers, and color theming (amber #f59e0b)
+  - Enhanced BadgeShow, BadgeCreate, and BadgeEdit with consistent admin UI patterns
+
+### Code Quality
+- **Removed Debug Statements**: Cleaned up 30+ console.log/console.warn statements from AdminDataProvider.ts
+  - Kept console.error in catch blocks for production error logging
+  - Reduces console noise during development and production
+
+## 2025-12-31
+### Changes
+- Added CSS-based card hover effects to globals.css (`.hoverable-card`, `.hoverable-card-*` entity variants)
+- Replaced inline `onMouseEnter`/`onMouseLeave` style manipulation with CSS classes across all listing pages:
+  - CharactersPageContent, ArcsPageContent, GamblesPageContent, EventsPageContent, QuotesPageContent, GuidesPageContent
+- Added focus trap to mobile navigation menu using `useFocusTrap` from @mantine/hooks
+- Added body scroll lock when mobile menu is open
+- Added Escape key handler to close mobile menu
+- Implemented URL hash sync for tab state on detail pages (CharacterPageClient, GamblePageClient)
+  - Tabs now persist in URL (e.g., `/characters/1#timeline`) and support back/forward navigation
+- Fixed search bar clearing to properly reset filters and URL state
+  - Updated `updateURL` function to handle organization filter parameter
+  - Added URL sync effect to sync component state with URL params on back/forward navigation
+  - Fixed `handleClearSearch` to properly clear all filters from URL
+- Added loading state and accessibility improvements to Discord OAuth login button
+  - Shows loading spinner during redirect
+  - Added `aria-busy` and dynamic `aria-label` for screen readers
+  - Button text changes to "Redirecting to Discord..." during redirect
+- Improved DeviantArt expired token handling in MediaThumbnail
+  - Added "View on DeviantArt" link when images are unavailable due to expired CDN tokens
+
+## 2025-12-30
+### Changes
+- Fixed hover styles in GamblePageClient
+- Fixed MediaGallery DOM manipulation
+- Created centralized routes configuration
+- Add breadcrumbs to detail pages for better url navigation
+- Made quote speakers clickable
+- Fix Ko-fi support link
+- Improve quote card grid layout
+- Migrate pages to useHoverModal hook
+
 ## 2025-12-27
 ### Changes
 - Fixed React Admin "Created item missing required id field" error for bidirectional relationship creation

@@ -133,7 +133,7 @@ export default function CustomRoleEditor({
           )}
           
           <Tooltip label="Edit custom role" openDelay={200}>
-            <ActionIcon size="sm" variant="light" color="grape" onClick={() => setIsEditing(true)}>
+            <ActionIcon size="sm" variant="light" color="grape" onClick={() => setIsEditing(true)} aria-label="Edit custom role">
               <Edit size={16} />
             </ActionIcon>
           </Tooltip>
@@ -145,6 +145,7 @@ export default function CustomRoleEditor({
                 variant="light"
                 style={{ color: getEntityThemeColor(theme, 'gamble') }}
                 onClick={() => setConfirmDialogOpen(true)}
+                aria-label="Remove custom role"
               >
                 <X size={16} />
               </ActionIcon>

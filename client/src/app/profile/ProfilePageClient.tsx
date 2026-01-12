@@ -12,6 +12,7 @@ import {
   Group,
   Loader,
   SimpleGrid,
+  Skeleton,
   Stack,
   Text,
   TextInput,
@@ -52,6 +53,60 @@ interface UserGuide {
   createdAt: string
   updatedAt: string
   readingProgress?: number
+}
+
+// Profile loading skeleton
+function ProfileSkeleton() {
+  return (
+    <Container size="lg" py="xl">
+      <Stack gap="xl">
+        {/* Header skeleton */}
+        <Card withBorder radius="lg" shadow="md" p="xl">
+          <Group align="flex-start" gap="xl">
+            <Skeleton circle height={120} width={120} />
+            <Stack gap="sm" style={{ flex: 1 }}>
+              <Skeleton height={28} width={200} />
+              <Skeleton height={20} width={150} />
+              <Group gap="xs">
+                <Skeleton height={24} width={80} radius="xl" />
+                <Skeleton height={24} width={100} radius="xl" />
+              </Group>
+            </Stack>
+          </Group>
+        </Card>
+
+        {/* Stats skeleton */}
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} withBorder radius="md" p="md">
+              <Stack gap="xs" align="center">
+                <Skeleton height={40} width={40} circle />
+                <Skeleton height={24} width={60} />
+                <Skeleton height={16} width={80} />
+              </Stack>
+            </Card>
+          ))}
+        </SimpleGrid>
+
+        {/* Favorites skeleton */}
+        <Card withBorder radius="lg" shadow="md" p="xl">
+          <Stack gap="md">
+            <Skeleton height={24} width={150} />
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} withBorder radius="md" p="md">
+                  <Stack gap="xs">
+                    <Skeleton height={20} width={100} />
+                    <Skeleton height={60} />
+                  </Stack>
+                </Card>
+              ))}
+            </SimpleGrid>
+          </Stack>
+        </Card>
+      </Stack>
+    </Container>
+  )
 }
 
 export default function ProfilePageClient() {
@@ -353,13 +408,7 @@ export default function ProfilePageClient() {
   }
 
   if (authLoading) {
-    return (
-      <Container size="lg" py="xl">
-        <Center h={300}>
-          <Loader size="lg" />
-        </Center>
-      </Container>
-    )
+    return <ProfileSkeleton />
   }
 
   if (!isAuthenticated) {
@@ -392,13 +441,7 @@ export default function ProfilePageClient() {
   }
 
   if (loading) {
-    return (
-      <Container size="lg" py="xl">
-        <Center h={300}>
-          <Loader size="lg" />
-        </Center>
-      </Container>
-    )
+    return <ProfileSkeleton />
   }
 
   return (
@@ -512,7 +555,7 @@ export default function ProfilePageClient() {
               <Stack gap="md">
                 <Group justify="space-between">
                   <Text fw={600} size="lg">Profile Picture Options</Text>
-                  <ActionIcon variant="subtle" onClick={closeProfilePictureSelector}>
+                  <ActionIcon variant="subtle" onClick={closeProfilePictureSelector} aria-label="Close profile picture options">
                     <X size={16} />
                   </ActionIcon>
                 </Group>
@@ -654,15 +697,15 @@ export default function ProfilePageClient() {
                         <Text size="sm">
                           Support us on Ko-fi to unlock custom role customization and help keep this fansite running.
                         </Text>
-                        <Button 
-                          component="a" 
-                          href="https://ko-fi.com" 
-                          target="_blank" 
+                        <Button
+                          component="a"
+                          href="https://ko-fi.com/ninjaruss"
+                          target="_blank"
                           rel="noopener noreferrer"
                           size="sm"
                           style={{ color: getEntityThemeColor(theme, 'character') }}
                         >
-                          Support on Ko-fi
+                          ☕ Support on Ko-fi
                         </Button>
                       </Stack>
                     </Alert>

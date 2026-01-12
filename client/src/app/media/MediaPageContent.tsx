@@ -40,6 +40,9 @@ import {
 import Link from 'next/link'
 import { api, API_BASE_URL } from '../../lib/api'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles } from '../../lib/mantine-theme'
+import { CardGridSkeleton } from '../../components/CardGridSkeleton'
+import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl } from '../../lib/video-utils'
+import styles from './media.module.css'
 
 interface MediaItem {
   id: number
@@ -204,26 +207,26 @@ export default function MediaPageContent({
     setViewerOpen(true)
   }
 
-  const handleCloseViewer = () => {
+  const handleCloseViewer = useCallback(() => {
     setViewerOpen(false)
     setSelectedMedia(null)
-  }
+  }, [])
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
       const newIndex = currentIndex - 1
       setCurrentIndex(newIndex)
       setSelectedMedia(media[newIndex])
     }
-  }
+  }, [currentIndex, media])
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIndex < media.length - 1) {
       const newIndex = currentIndex + 1
       setCurrentIndex(newIndex)
       setSelectedMedia(media[newIndex])
     }
-  }
+  }, [currentIndex, media])
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -245,7 +248,7 @@ export default function MediaPageContent({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [viewerOpen, currentIndex, media])
+  }, [viewerOpen, handlePrevious, handleNext, handleCloseViewer])
 
   const handleImageLoad = (itemId: number, event: React.SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget
@@ -275,21 +278,15 @@ export default function MediaPageContent({
     }
 
     if (mediaItem.type === 'video') {
-      if (mediaItem.url.includes('youtube.com') || mediaItem.url.includes('youtu.be')) {
+      if (isYouTubeUrl(mediaItem.url)) {
         const videoId = extractYouTubeVideoId(mediaItem.url)
         if (videoId) {
-          return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+          return getYouTubeThumbnail(videoId)
         }
       }
     }
 
     return null
-  }
-
-  const extractYouTubeVideoId = (url: string): string | null => {
-    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
-    const match = url.match(regExp)
-    return match ? match[1] : null
   }
 
   const getMediaTypeIcon = (type: string) => {
@@ -523,6 +520,7 @@ export default function MediaPageContent({
                             setHasMore(true)
                           }}
                           style={{ color: accentMedia }}
+                          aria-label="Clear search"
                         >
                           <X size={14} />
                         </ActionIcon>
@@ -660,9 +658,7 @@ export default function MediaPageContent({
         {!error && (
           <Container size="lg" px="md" pb="xl">
             {loading ? (
-              <Group justify="center" py="xl">
-                <Loader size="lg" color={accentMedia} />
-              </Group>
+              <CardGridSkeleton count={12} cardWidth={280} cardHeight={200} accentColor={accentMedia} />
             ) : (
               <>
                 {media.length === 0 ? (
@@ -695,14 +691,7 @@ export default function MediaPageContent({
                     </Group>
 
                     {/* Masonry Grid Layout */}
-                    <Box className="masonry-grid">
-                      <style>{`
-                        .masonry-grid { column-count: 5; column-gap: 12px; }
-                        @media (max-width: 1400px) { .masonry-grid { column-count: 4; } }
-                        @media (max-width: 1100px) { .masonry-grid { column-count: 3; } }
-                        @media (max-width: 768px) { .masonry-grid { column-count: 2; } }
-                        .masonry-item { break-inside: avoid; margin-bottom: 12px; }
-                      `}</style>
+                    <Box className={styles.masonryGrid}>
                       {media.map((item, index) => {
                         const thumbnail = getMediaThumbnail(item)
                         const ownerLabel = item.ownerType === 'user'
@@ -713,7 +702,7 @@ export default function MediaPageContent({
                         return (
                           <Card
                             key={item.id}
-                            className="masonry-item"
+                            className={styles.masonryItem}
                             withBorder
                             radius="md"
                             shadow="sm"
@@ -739,6 +728,7 @@ export default function MediaPageContent({
                                 <img
                                   src={thumbnail}
                                   alt={item.description || 'Media item'}
+                                  loading="lazy"
                                   style={{
                                     width: '100%',
                                     height: 'auto',
@@ -850,6 +840,7 @@ export default function MediaPageContent({
                                     backgroundColor: 'rgba(0,0,0,0.75)',
                                     color: 'white'
                                   }}
+                                  aria-label="Open in new tab"
                                 >
                                   <ExternalLink size={12} />
                                 </ActionIcon>
@@ -921,6 +912,7 @@ export default function MediaPageContent({
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 color: 'white'
               }}
+              aria-label="Close viewer"
             >
               <X size={20} />
             </ActionIcon>
@@ -939,6 +931,7 @@ export default function MediaPageContent({
                   backgroundColor: 'rgba(0,0,0,0.7)',
                   color: 'white'
                 }}
+                aria-label="Previous image"
               >
                 <ChevronLeft size={24} />
               </ActionIcon>
@@ -958,6 +951,7 @@ export default function MediaPageContent({
                   backgroundColor: 'rgba(0,0,0,0.7)',
                   color: 'white'
                 }}
+                aria-label="Next image"
               >
                 <ChevronRight size={24} />
               </ActionIcon>
@@ -1085,6 +1079,7 @@ export default function MediaPageContent({
                         href={selectedMedia.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label="Open original"
                       >
                         <ExternalLink size={16} />
                       </ActionIcon>

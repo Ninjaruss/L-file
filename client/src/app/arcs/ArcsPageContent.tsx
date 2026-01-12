@@ -411,7 +411,7 @@ export default function ArcsPageContent({
               radius="xl"
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm" aria-label="Clear search">
                     <X size={16} />
                   </ActionIcon>
                 ) : null
@@ -453,7 +453,7 @@ export default function ArcsPageContent({
                   setCurrentPage(1)
                   updateUrl(1, searchQuery, null, sortBy)
                   loadAllArcs()
-                }}>
+                }} aria-label="Clear character filter">
                   <X size={12} />
                 </ActionIcon>
               }
@@ -531,11 +531,9 @@ export default function ArcsPageContent({
                         withBorder={false}
                         radius="lg"
                         shadow="sm"
+                        className="hoverable-card hoverable-card-arc"
                         style={getPlayingCardStyles(theme, accentArc)}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)'
-                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
-
                           // Store the currently hovered arc and element
                           currentlyHoveredRef.current = { arc, element: e.currentTarget as HTMLElement }
 
@@ -550,9 +548,7 @@ export default function ArcsPageContent({
                             handleArcMouseEnter(arc, e)
                           }
                         }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = theme.shadows.sm
+                        onMouseLeave={() => {
                           currentlyHoveredRef.current = null
                           handleArcMouseLeave()
                         }}

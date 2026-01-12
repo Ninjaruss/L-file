@@ -563,6 +563,17 @@ export default function MediaThumbnail({
         const isExpiredDeviantArt = mediaInfo.platform === 'deviantart' &&
           (media.url.includes('images-wixmp-') && media.url.includes('token='))
 
+        // For DeviantArt, try to reconstruct a usable link to the original
+        const getDeviantArtOriginalUrl = () => {
+          // Try to extract the original DeviantArt page URL from the CDN URL
+          // CDN URLs don't directly map back, so we link to DeviantArt search or the mediaInfo.originalUrl if available
+          if (mediaInfo.originalUrl) {
+            return mediaInfo.originalUrl
+          }
+          // Fallback to DeviantArt homepage if we can't determine the original
+          return 'https://www.deviantart.com/'
+        }
+
         const content = (
           <>
             <Text size={rem(32)} style={{ lineHeight: 1 }}>
@@ -572,9 +583,28 @@ export default function MediaThumbnail({
               {placeholder.label}
             </Text>
             {isExpiredDeviantArt ? (
-              <Text size="xs" ta="center" style={{ color: theme.colors.gray[6], maxWidth: '90%' }}>
-                Image temporarily unavailable
-              </Text>
+              <>
+                <Text size="xs" ta="center" style={{ color: theme.colors.gray[6], maxWidth: '90%' }}>
+                  Image temporarily unavailable
+                </Text>
+                <Text
+                  component="a"
+                  href={getDeviantArtOriginalUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="xs"
+                  ta="center"
+                  style={{
+                    color: placeholder.color,
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    marginTop: rem(4)
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View on DeviantArt
+                </Text>
+              </>
             ) : (
               <>
                 {displayTitle && (
@@ -596,10 +626,10 @@ export default function MediaThumbnail({
 
         return (
           <Box
-            component={disableExternalLinks || isExpiredDeviantArt ? 'div' : 'a'}
-            href={disableExternalLinks || isExpiredDeviantArt ? undefined : media.url}
-            target={disableExternalLinks || isExpiredDeviantArt ? undefined : '_blank'}
-            rel={disableExternalLinks || isExpiredDeviantArt ? undefined : 'noopener noreferrer'}
+            component={disableExternalLinks ? 'div' : 'a'}
+            href={disableExternalLinks ? undefined : media.url}
+            target={disableExternalLinks ? undefined : '_blank'}
+            rel={disableExternalLinks ? undefined : 'noopener noreferrer'}
             style={{
               width: '100%',
               height: '100%',
@@ -612,10 +642,10 @@ export default function MediaThumbnail({
               borderRadius: rem(8),
               gap: rem(8),
               textDecoration: 'none',
-              cursor: (disableExternalLinks || isExpiredDeviantArt) ? 'default' : 'pointer',
+              cursor: disableExternalLinks ? 'default' : 'pointer',
               transition: 'all 0.2s ease',
               border: `2px solid ${placeholder.color}20`,
-              '&:hover': (disableExternalLinks || isExpiredDeviantArt) ? {} : {
+              '&:hover': disableExternalLinks ? {} : {
                 backgroundColor: theme.colors.gray[2],
                 transform: 'scale(1.02)'
               }
@@ -936,6 +966,7 @@ export default function MediaThumbnail({
             size="sm"
             radius="xl"
             onClick={handlePrevious}
+            aria-label="Previous image"
             style={{
               position: 'absolute',
               left: rem(8),
@@ -954,6 +985,7 @@ export default function MediaThumbnail({
             size="sm"
             radius="xl"
             onClick={handleNext}
+            aria-label="Next image"
             style={{
               position: 'absolute',
               right: rem(8),

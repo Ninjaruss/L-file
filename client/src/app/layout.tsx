@@ -59,6 +59,9 @@ export default function RootLayout({
         <ColorSchemeScript defaultColorScheme="dark" forceColorScheme="dark" />
       </head>
       <body suppressHydrationWarning>
+        <a href="#main-content" className="skip-to-content">
+          Skip to main content
+        </a>
         <ClientProviders>
           <LayoutWrapper>
             {children}

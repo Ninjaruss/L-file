@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Layout, AppBar, usePermissions } from 'react-admin'
 import { Box, Typography, IconButton } from '@mui/material'
-import { Crown, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 
 const CustomAppBar = () => {
@@ -57,7 +58,7 @@ const CustomAppBar = () => {
 const PendingCounter = () => {
   const [pendingCounts, setPendingCounts] = useState({ guides: 0, media: 0 })
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchPendingCounts = async () => {
@@ -89,12 +90,13 @@ const PendingCounter = () => {
 
   if (loading || totalPending === 0) return null
 
-  // Navigate to guides with pending filter (primary pending content)
+  // Navigate to guides or media with pending filter using React Router
   const handleClick = () => {
+    const filterParam = encodeURIComponent(JSON.stringify({ status: 'pending' }))
     if (pendingCounts.guides > 0) {
-      router.push('/admin#/guides?filter=%7B%22status%22%3A%22pending%22%7D')
+      navigate(`/guides?displayedFilters=${filterParam}&filter=${filterParam}&order=ASC&page=1&perPage=25&sort=id`)
     } else if (pendingCounts.media > 0) {
-      router.push('/admin#/media?filter=%7B%22status%22%3A%22pending%22%7D')
+      navigate(`/media?displayedFilters=${filterParam}&filter=${filterParam}&order=ASC&page=1&perPage=25&sort=id`)
     }
   }
 

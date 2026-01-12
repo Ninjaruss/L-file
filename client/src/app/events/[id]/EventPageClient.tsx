@@ -33,7 +33,7 @@ import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import MediaGallery from '../../../components/MediaGallery'
 import MediaThumbnail from '../../../components/MediaThumbnail'
-import BackButton from '../../../components/BackButton'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import type { Event } from '../../../types'
 
 interface EventPageClientProps {
@@ -69,9 +69,9 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
     }}>
       <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
         <Stack gap={theme.spacing.md}>
-          <BackButton
-            href="/events"
-            label="Back to Events"
+          {/* Breadcrumb Navigation */}
+          <BreadcrumbNav
+            items={createEntityBreadcrumbs('event', initialEvent.title)}
             entityType="event"
           />
 

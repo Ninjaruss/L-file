@@ -29,9 +29,11 @@ import {
   Filter,
   Loading,
   useListContext,
-  FunctionField
+  FunctionField,
+  useUnselectAll,
+  BulkDeleteButton
 } from 'react-admin'
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { GuideStatus } from '../../types'
 import {
   Box,
@@ -484,8 +486,9 @@ const GuideFilterToolbar = () => {
   return (
     <Box sx={{
       backgroundColor: 'rgba(10, 10, 10, 0.95)',
-      borderRadius: '8px 8px 0 0',
+      borderRadius: 0,
       border: '1px solid rgba(225, 29, 72, 0.2)',
+      borderTop: 'none',
       borderBottom: 'none',
       mb: 0,
       p: 2,
@@ -953,8 +956,353 @@ const RejectGuideButton = () => {
   )
 }
 
+// Approval Toolbar - Always visible with Select All Pending
+const GuideApprovalToolbar = () => {
+  const { data, selectedIds, onSelect } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('guides')
+  const [approving, setApproving] = useState(false)
+  const [rejectModalOpen, setRejectModalOpen] = useState(false)
+
+  // Get all pending items from current data
+  const pendingItems = data ? data.filter((item: any) => item.status === GuideStatus.PENDING) : []
+  const pendingIds = pendingItems.map((item: any) => item.id)
+
+  const handleSelectAllPending = () => {
+    if (pendingIds.length > 0) {
+      onSelect(pendingIds)
+      notify(`Selected ${pendingIds.length} pending guide(s)`, { type: 'info' })
+    }
+  }
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return
+
+    setApproving(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.approveGuide(Number(id))
+        successCount++
+      } catch (error) {
+        console.error(`Error approving guide ${id}:`, error)
+        errorCount++
+      }
+    }
+
+    setApproving(false)
+    unselectAll()
+    refresh()
+
+    if (errorCount === 0) {
+      notify(`Successfully approved ${successCount} guide(s)`, { type: 'success' })
+    } else {
+      notify(`Approved ${successCount} guide(s), ${errorCount} failed`, { type: 'warning' })
+    }
+  }
+
+  const handleRejectSuccess = () => {
+    unselectAll()
+    refresh()
+  }
+
+  return (
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      p: 2,
+      backgroundColor: 'rgba(10, 10, 10, 0.95)',
+      borderRadius: '8px 8px 0 0',
+      border: '1px solid rgba(225, 29, 72, 0.3)',
+      borderBottom: 'none',
+      mb: 0
+    }}>
+      {/* Pending count badge */}
+      <Chip
+        label={`${pendingIds.length} Pending`}
+        color="warning"
+        size="small"
+        sx={{ fontWeight: 'bold' }}
+      />
+
+      {/* Select All Pending Button */}
+      <MuiButton
+        variant="outlined"
+        size="small"
+        onClick={handleSelectAllPending}
+        disabled={pendingIds.length === 0}
+        startIcon={<Check size={16} />}
+        sx={{
+          borderColor: '#f57c00',
+          color: '#f57c00',
+          '&:hover': {
+            borderColor: '#ef6c00',
+            backgroundColor: 'rgba(245, 124, 0, 0.1)'
+          },
+          '&:disabled': {
+            borderColor: 'rgba(245, 124, 0, 0.3)',
+            color: 'rgba(245, 124, 0, 0.5)'
+          }
+        }}
+      >
+        Select All Pending
+      </MuiButton>
+
+      <Box sx={{ flex: 1 }} />
+
+      {/* Selected count */}
+      {selectedIds.length > 0 && (
+        <Typography variant="body2" sx={{ color: 'white', mr: 1 }}>
+          {selectedIds.length} selected
+        </Typography>
+      )}
+
+      {/* Approve Button - Always visible */}
+      <MuiButton
+        variant="contained"
+        size="small"
+        onClick={handleBulkApprove}
+        disabled={approving || selectedIds.length === 0}
+        startIcon={<Check size={16} />}
+        sx={{
+          backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
+          color: 'white',
+          '&:hover': { backgroundColor: '#388e3c' },
+          '&:disabled': {
+            backgroundColor: 'rgba(76, 175, 80, 0.3)',
+            color: 'rgba(255, 255, 255, 0.5)'
+          }
+        }}
+      >
+        {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+      </MuiButton>
+
+      {/* Reject Button - Always visible */}
+      <MuiButton
+        variant="contained"
+        size="small"
+        onClick={() => setRejectModalOpen(true)}
+        disabled={selectedIds.length === 0}
+        startIcon={<X size={16} />}
+        sx={{
+          backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
+          color: 'white',
+          '&:hover': { backgroundColor: '#d32f2f' },
+          '&:disabled': {
+            backgroundColor: 'rgba(244, 67, 54, 0.3)',
+            color: 'rgba(255, 255, 255, 0.5)'
+          }
+        }}
+      >
+        Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+      </MuiButton>
+
+      <BulkRejectModal
+        open={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        selectedIds={selectedIds}
+        onSuccess={handleRejectSuccess}
+      />
+    </Box>
+  )
+}
+
+// Bulk Approve Button
+const BulkApproveButton = () => {
+  const { selectedIds } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('guides')
+  const [loading, setLoading] = useState(false)
+
+  const handleBulkApprove = async () => {
+    setLoading(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.approveGuide(Number(id))
+        successCount++
+      } catch (error) {
+        console.error(`Error approving guide ${id}:`, error)
+        errorCount++
+      }
+    }
+
+    setLoading(false)
+    unselectAll()
+    refresh()
+
+    if (errorCount === 0) {
+      notify(`Successfully approved ${successCount} guide(s)`, { type: 'success' })
+    } else {
+      notify(`Approved ${successCount} guide(s), ${errorCount} failed`, { type: 'warning' })
+    }
+  }
+
+  return (
+    <Button
+      label={loading ? 'Approving...' : `Approve (${selectedIds.length})`}
+      onClick={handleBulkApprove}
+      disabled={loading || selectedIds.length === 0}
+      startIcon={<Check size={16} />}
+      sx={{
+        backgroundColor: '#4caf50',
+        color: 'white',
+        '&:hover': { backgroundColor: '#388e3c' },
+        mr: 1
+      }}
+    />
+  )
+}
+
+// Bulk Reject Modal
+const BulkRejectModal = ({ open, onClose, selectedIds, onSuccess }: {
+  open: boolean
+  onClose: () => void
+  selectedIds: any[]
+  onSuccess: () => void
+}) => {
+  const [reason, setReason] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const notify = useNotify()
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      notify('Please enter a rejection reason', { type: 'warning' })
+      return
+    }
+
+    setSubmitting(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.rejectGuide(Number(id), reason.trim())
+        successCount++
+      } catch (error) {
+        console.error(`Error rejecting guide ${id}:`, error)
+        errorCount++
+      }
+    }
+
+    setSubmitting(false)
+
+    if (errorCount === 0) {
+      notify(`Successfully rejected ${successCount} guide(s)`, { type: 'success' })
+    } else {
+      notify(`Rejected ${successCount} guide(s), ${errorCount} failed`, { type: 'warning' })
+    }
+
+    onSuccess()
+    onClose()
+    setReason('')
+  }
+
+  return (
+    <Dialog open={open} onClose={() => !submitting && onClose()} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+        borderBottom: '1px solid rgba(244, 67, 54, 0.3)',
+        color: '#f44336',
+        fontWeight: 'bold'
+      }}>
+        <X size={24} />
+        Bulk Reject {selectedIds.length} Guide(s)
+      </DialogTitle>
+      <DialogContent sx={{ pt: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Typography variant="body1">
+            You are about to reject <strong>{selectedIds.length}</strong> guide(s).
+            All selected guides will receive the same rejection reason.
+          </Typography>
+
+          <MuiTextField
+            fullWidth
+            required
+            multiline
+            rows={3}
+            label="Rejection Reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Explain why these guides are being rejected..."
+            helperText="This reason will be shown to the authors"
+            error={!reason.trim() && reason.length > 0}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 2, gap: 1 }}>
+        <MuiButton onClick={onClose} disabled={submitting} variant="outlined">
+          Cancel
+        </MuiButton>
+        <MuiButton
+          onClick={handleSubmit}
+          disabled={submitting || !reason.trim()}
+          variant="contained"
+          color="error"
+        >
+          {submitting ? 'Rejecting...' : `Reject ${selectedIds.length} Guide(s)`}
+        </MuiButton>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+// Bulk Reject Button
+const BulkRejectButton = () => {
+  const { selectedIds } = useListContext()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('guides')
+  const [modalOpen, setModalOpen] = useState(false)
+
+  const handleSuccess = () => {
+    unselectAll()
+    refresh()
+  }
+
+  return (
+    <>
+      <Button
+        label={`Reject (${selectedIds.length})`}
+        onClick={() => setModalOpen(true)}
+        disabled={selectedIds.length === 0}
+        startIcon={<X size={16} />}
+        sx={{
+          backgroundColor: '#f44336',
+          color: 'white',
+          '&:hover': { backgroundColor: '#d32f2f' },
+          mr: 1
+        }}
+      />
+      <BulkRejectModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        selectedIds={selectedIds}
+        onSuccess={handleSuccess}
+      />
+    </>
+  )
+}
+
+// Bulk Action Buttons Component
+const GuideBulkActionButtons = () => (
+  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <BulkApproveButton />
+    <BulkRejectButton />
+  </Box>
+)
+
 export const GuideList = () => (
-  <List 
+  <List
     perPage={25}
     sx={{
       '& .RaList-content': {
@@ -964,9 +1312,11 @@ export const GuideList = () => (
       }
     }}
   >
+    <GuideApprovalToolbar />
     <GuideFilterToolbar />
-    <Datagrid 
+    <Datagrid
       rowClick="show"
+      bulkActionButtons={<GuideBulkActionButtons />}
       sx={{
         marginTop: 0,
         borderRadius: '0 0 8px 8px',
@@ -2202,6 +2552,117 @@ const ContentInputWithPreviewCreate = () => {
   )
 }
 
+// Publication Status Input with rejection reason validation
+const PublicationStatusInput = () => {
+  const { setValue, setError, clearErrors, formState: { errors } } = useFormContext()
+  const status = useWatch({ name: 'status' })
+  const rejectionReason = useWatch({ name: 'rejectionReason' })
+  const notify = useNotify()
+  const [showReasonWarning, setShowReasonWarning] = useState(false)
+
+  useEffect(() => {
+    if (status === GuideStatus.REJECTED && (!rejectionReason || rejectionReason.trim() === '')) {
+      setShowReasonWarning(true)
+      setError('rejectionReason', {
+        type: 'required',
+        message: 'Rejection reason is required when status is rejected'
+      })
+    } else {
+      setShowReasonWarning(false)
+      clearErrors('rejectionReason')
+    }
+  }, [status, rejectionReason, setError, clearErrors])
+
+  const handleStatusChange = (event: any) => {
+    const newStatus = event.target.value
+    setValue('status', newStatus, { shouldDirty: true, shouldValidate: true })
+
+    if (newStatus === GuideStatus.REJECTED) {
+      notify('Please provide a rejection reason below', { type: 'warning' })
+    }
+  }
+
+  return (
+    <Box sx={{
+      p: 3,
+      backgroundColor: 'rgba(245, 124, 0, 0.05)',
+      borderRadius: 2,
+      border: showReasonWarning ? '2px solid #f44336' : '1px solid rgba(245, 124, 0, 0.2)'
+    }}>
+      <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
+        Publication Status
+      </Typography>
+
+      <SelectInput
+        source="status"
+        choices={[
+          { id: GuideStatus.PENDING, name: 'Pending Review' },
+          { id: GuideStatus.APPROVED, name: 'Approved' },
+          { id: GuideStatus.REJECTED, name: 'Rejected' }
+        ]}
+        fullWidth
+        onChange={handleStatusChange}
+        sx={{
+          '& .MuiSelect-select': {
+            backgroundColor: '#0f0f0f'
+          }
+        }}
+      />
+
+      <TextInput
+        source="rejectionReason"
+        multiline
+        rows={3}
+        label="Rejection Reason"
+        helperText={showReasonWarning
+          ? "REQUIRED: You must provide a reason when rejecting a guide"
+          : "Required when status is rejected"
+        }
+        fullWidth
+        sx={{
+          mt: 2,
+          '& .MuiOutlinedInput-root': {
+            borderColor: showReasonWarning ? '#f44336' : undefined,
+            '&:hover': {
+              borderColor: showReasonWarning ? '#f44336' : undefined
+            }
+          },
+          '& .MuiFormHelperText-root': {
+            color: showReasonWarning ? '#f44336' : undefined,
+            fontWeight: showReasonWarning ? 'bold' : undefined
+          }
+        }}
+        validate={(value: string) => {
+          if (status === GuideStatus.REJECTED && (!value || value.trim() === '')) {
+            return 'Rejection reason is required when status is rejected'
+          }
+          return undefined
+        }}
+      />
+
+      {showReasonWarning && (
+        <Box sx={{
+          mt: 2,
+          p: 2,
+          backgroundColor: 'rgba(244, 67, 54, 0.1)',
+          borderRadius: 1,
+          border: '1px solid #f44336'
+        }}>
+          <Typography variant="body2" sx={{
+            color: '#f44336',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
+            You must provide a rejection reason before saving
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  )
+}
+
 export const GuideEdit = () => {
   const { permissions } = usePermissions()
 
@@ -2343,39 +2804,7 @@ export const GuideEdit = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Box sx={{ 
-                    p: 3, 
-                    backgroundColor: 'rgba(245, 124, 0, 0.05)', 
-                    borderRadius: 2, 
-                    border: '1px solid rgba(245, 124, 0, 0.2)'
-                  }}>
-                    <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
-                      Publication Status
-                    </Typography>
-                    <SelectInput 
-                      source="status" 
-                      choices={[
-                        { id: GuideStatus.PENDING, name: 'Pending Review' },
-                        { id: GuideStatus.APPROVED, name: 'Approved' },
-                        { id: GuideStatus.REJECTED, name: 'Rejected' }
-                      ]} 
-                      fullWidth
-                      sx={{
-                        '& .MuiSelect-select': {
-                          backgroundColor: '#0f0f0f'
-                        }
-                      }}
-                    />
-                    <TextInput 
-                      source="rejectionReason" 
-                      multiline 
-                      rows={3} 
-                      label="Rejection Reason" 
-                      helperText="Required when status is rejected"
-                      fullWidth
-                      sx={{ mt: 2 }}
-                    />
-                  </Box>
+                  <PublicationStatusInput />
                 </Grid>
 
                 <Grid item xs={12}>

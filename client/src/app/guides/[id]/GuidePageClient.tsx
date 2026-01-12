@@ -41,7 +41,7 @@ import { GuideStatus } from '../../../types'
 import AuthorProfileImage from '../../../components/AuthorProfileImage'
 import { UserRoleDisplay } from '../../../components/BadgeDisplay'
 import { usePageView } from '../../../hooks/usePageView'
-import BackButton from '../../../components/BackButton'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 
 interface Guide {
   id: number
@@ -220,66 +220,64 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
     }
   }, [guideId, initialGuide, user, authLoading])
 
-  // Show loading state with skeleton
-  if (authLoading || loading) {
-    return (
-      <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-        <Container size="lg" py="xl">
-          <Stack gap="md">
-            {/* Back button skeleton */}
-            <Skeleton height={36} width={160} radius="md" />
+  // Reusable loading skeleton component
+  const LoadingSkeleton = () => (
+    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
+      <Container size="lg" py="xl">
+        <Stack gap="md">
+          {/* Breadcrumb skeleton */}
+          <Skeleton height={36} width={160} radius="md" />
 
-            {/* Header card skeleton */}
-            <Card withBorder radius="lg" shadow="lg" p="lg">
-              <Group gap="md" align="flex-start" wrap="nowrap">
-                {/* Thumbnail skeleton */}
-                <Skeleton height={280} width={200} radius="md" style={{ flexShrink: 0 }} />
+          {/* Header card skeleton - responsive layout */}
+          <Card withBorder radius="lg" shadow="lg" p="lg">
+            <Stack gap="md">
+              {/* Title skeleton - always visible */}
+              <Skeleton height={32} width="80%" radius="sm" />
+              <Skeleton height={24} width="60%" radius="sm" />
 
-                <Stack gap="sm" style={{ flex: 1 }}>
-                  {/* Title skeleton */}
-                  <Skeleton height={32} width="80%" radius="sm" />
-                  <Skeleton height={32} width="60%" radius="sm" />
+              {/* Description skeleton */}
+              <Skeleton height={20} width="100%" radius="sm" />
+              <Skeleton height={20} width="90%" radius="sm" />
 
-                  {/* Description skeleton */}
-                  <Skeleton height={20} width="100%" radius="sm" mt="sm" />
-                  <Skeleton height={20} width="90%" radius="sm" />
-
-                  {/* Author skeleton */}
-                  <Group gap="md" mt="md">
-                    <Skeleton height={40} width={40} radius="xl" />
-                    <Stack gap={4}>
-                      <Skeleton height={16} width={120} radius="sm" />
-                      <Skeleton height={14} width={80} radius="sm" />
-                    </Stack>
-                  </Group>
-
-                  {/* Stats badges skeleton */}
-                  <Group gap="sm" mt="md">
-                    <Skeleton height={28} width={100} radius="xl" />
-                    <Skeleton height={28} width={80} radius="xl" />
-                    <Skeleton height={28} width={90} radius="xl" />
-                  </Group>
+              {/* Author skeleton */}
+              <Group gap="md" mt="md">
+                <Skeleton height={40} width={40} radius="xl" />
+                <Stack gap={4}>
+                  <Skeleton height={16} width={120} radius="sm" />
+                  <Skeleton height={14} width={80} radius="sm" />
                 </Stack>
               </Group>
-            </Card>
 
-            {/* Content card skeleton */}
-            <Card withBorder radius="lg" shadow="lg" p="lg">
-              <Stack gap="md">
-                <Skeleton height={40} width={200} radius="md" />
-                <Skeleton height={20} width="100%" radius="sm" />
-                <Skeleton height={20} width="95%" radius="sm" />
-                <Skeleton height={20} width="100%" radius="sm" />
-                <Skeleton height={20} width="85%" radius="sm" />
-                <Skeleton height={20} width="90%" radius="sm" />
-                <Skeleton height={20} width="100%" radius="sm" />
-                <Skeleton height={20} width="70%" radius="sm" />
-              </Stack>
-            </Card>
-          </Stack>
-        </Container>
-      </Box>
-    )
+              {/* Stats badges skeleton */}
+              <Group gap="sm" mt="md" wrap="wrap">
+                <Skeleton height={28} width={100} radius="xl" />
+                <Skeleton height={28} width={80} radius="xl" />
+                <Skeleton height={28} width={90} radius="xl" />
+              </Group>
+            </Stack>
+          </Card>
+
+          {/* Content card skeleton */}
+          <Card withBorder radius="lg" shadow="lg" p="lg">
+            <Stack gap="md">
+              <Skeleton height={40} width={200} radius="md" />
+              <Skeleton height={20} width="100%" radius="sm" />
+              <Skeleton height={20} width="95%" radius="sm" />
+              <Skeleton height={20} width="100%" radius="sm" />
+              <Skeleton height={20} width="85%" radius="sm" />
+              <Skeleton height={20} width="90%" radius="sm" />
+              <Skeleton height={20} width="100%" radius="sm" />
+              <Skeleton height={20} width="70%" radius="sm" />
+            </Stack>
+          </Card>
+        </Stack>
+      </Container>
+    </Box>
+  )
+
+  // Show loading state with skeleton
+  if (authLoading || loading) {
+    return <LoadingSkeleton />
   }
 
   // Show error state
@@ -288,7 +286,10 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
       <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
         <Container size="lg" py="xl">
           <Stack gap="md">
-            <BackButton href="/guides" label="Back to Guides" entityType="guide" />
+            <BreadcrumbNav
+              items={[{ label: 'Guides', href: '/guides' }, { label: 'Error' }]}
+              entityType="guide"
+            />
             <Card withBorder radius="md" className="gambling-card" shadow="md">
               <Stack gap="md" p="xl">
                 <Text c={textColors.warning}>{error}</Text>
@@ -302,25 +303,7 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
 
   // Show loading state if guide is still null
   if (!guide) {
-    return (
-      <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-        <Container size="lg" py="xl">
-          <Stack gap="md">
-            <Skeleton height={36} width={160} radius="md" />
-            <Card withBorder radius="lg" shadow="lg" p="lg">
-              <Group gap="md" align="flex-start" wrap="nowrap">
-                <Skeleton height={280} width={200} radius="md" style={{ flexShrink: 0 }} />
-                <Stack gap="sm" style={{ flex: 1 }}>
-                  <Skeleton height={32} width="70%" radius="sm" />
-                  <Skeleton height={20} width="90%" radius="sm" mt="sm" />
-                  <Skeleton height={20} width="80%" radius="sm" />
-                </Stack>
-              </Group>
-            </Card>
-          </Stack>
-        </Container>
-      </Box>
-    )
+    return <LoadingSkeleton />
   }
 
 
@@ -386,8 +369,12 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
     }}>
       <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
         <Stack gap={theme.spacing.md}>
-          <Group justify="space-between" align="flex-start">
-            <BackButton href="/guides" label="Back to Guides" entityType="guide" />
+          {/* Breadcrumb and Like Button Row */}
+          <Group justify="space-between" align="center" wrap="wrap">
+            <BreadcrumbNav
+              items={createEntityBreadcrumbs('guide', guide.title)}
+              entityType="guide"
+            />
             <Button
               variant={guide.userHasLiked ? 'filled' : 'outline'}
               c={guide.userHasLiked ? textColors.primary : entityColors.gamble}
@@ -448,21 +435,10 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
             {/* Content */}
             <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
               <Stack gap={theme.spacing.md}>
-                {/* Header with thumbnail and title */}
-                <Group gap={theme.spacing.md} align="flex-start" wrap="nowrap">
-                  <Box style={{ width: '200px', height: '280px', flexShrink: 0 }}>
-                    <MediaThumbnail
-                      entityType="guide"
-                      entityId={guide.id}
-                      entityName={guide.title}
-                      allowCycling
-                      maxWidth="200px"
-                      maxHeight="280px"
-                      hideIfEmpty
-                    />
-                  </Box>
-
-                  <Stack gap={theme.spacing.sm} style={{ flex: 1, minWidth: 0 }}>
+                {/* Header with title - thumbnail shown inline when available */}
+                <Stack gap={theme.spacing.md}>
+                  {/* Title and description */}
+                  <Stack gap={theme.spacing.sm}>
                     <Title
                       order={1}
                       size="2rem"
@@ -471,7 +447,8 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                       style={{
                         lineHeight: 1.2,
                         textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                        letterSpacing: '-0.02em'
+                        letterSpacing: '-0.02em',
+                        wordBreak: 'break-word'
                       }}
                     >
                       {guide.title}
@@ -483,7 +460,18 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                       </Text>
                     )}
                   </Stack>
-                </Group>
+
+                  {/* Thumbnail - only takes space when media exists */}
+                  <MediaThumbnail
+                    entityType="guide"
+                    entityId={guide.id}
+                    entityName={guide.title}
+                    allowCycling
+                    maxWidth="200px"
+                    maxHeight="280px"
+                    hideIfEmpty
+                  />
+                </Stack>
 
                 {/* Author Info */}
                 <Group gap={theme.spacing.md} align="center">

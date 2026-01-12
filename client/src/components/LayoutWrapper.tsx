@@ -21,7 +21,7 @@ export const LayoutWrapper: React.FC<LayoutWrapperProps> = ({ children }) => {
         minHeight: '100vh'
       }}
     >
-      <Box style={{ flex: 1 }}>
+      <Box component="main" id="main-content" style={{ flex: 1 }}>
         {children}
       </Box>
       {!isAdminPage && <Footer />}

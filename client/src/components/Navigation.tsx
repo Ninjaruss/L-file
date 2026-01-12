@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 // Note: Avoid importing Mantine Header to preserve compatibility; using native <header> element
 import {
   Group,
@@ -18,6 +18,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
+import { useFocusTrap } from '@mantine/hooks'
 import {
   Menu as MenuIcon,
   User,
@@ -25,7 +26,6 @@ import {
   Crown,
   BookOpen,
   Image,
-  Heart,
   Users,
   Dices,
   CalendarSearch,
@@ -64,6 +64,35 @@ const Navigation: React.FC = () => {
 
   // Mobile menu open state (controlled Menu)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Focus trap for mobile menu accessibility
+  const focusTrapRef = useFocusTrap(mobileMenuOpen)
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.classList.add('focus-trap-active')
+    } else {
+      document.body.classList.remove('focus-trap-active')
+    }
+    return () => {
+      document.body.classList.remove('focus-trap-active')
+    }
+  }, [mobileMenuOpen])
+
+  // Handle escape key to close mobile menu
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape' && mobileMenuOpen) {
+      setMobileMenuOpen(false)
+    }
+  }, [mobileMenuOpen])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleKeyDown])
 
   // Search state - extracted to custom hook for cleaner component
   const {
@@ -252,6 +281,8 @@ const Navigation: React.FC = () => {
 
   return (
     <header
+      role="banner"
+      aria-label="Main navigation"
       style={{
         height: '60px',
         padding: `0 ${rem(16)}`,
@@ -632,7 +663,7 @@ const Navigation: React.FC = () => {
               }}
             >
               <TextInput
-                placeholder="Search (2+ chars)..."
+                placeholder="Search"
                 aria-label="Search characters, arcs, gambles, and more"
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e)}
@@ -864,7 +895,7 @@ const Navigation: React.FC = () => {
                 <Menu.Item
                   component={Link}
                   href="/about"
-                  leftSection={<Heart size={16} />}
+                  leftSection={<Info size={16} />}
                   style={{
                     backgroundColor: 'transparent',
                     borderRadius: 6,
@@ -875,7 +906,7 @@ const Navigation: React.FC = () => {
                   }}
                   styles={{ item: menuHoverStyles }}
                 >
-                  Donate
+                  About
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item
@@ -933,7 +964,8 @@ const Navigation: React.FC = () => {
           withArrow
           arrowPosition="center"
           offset={4}
-          withinPortal={false}
+          withinPortal={true}
+          zIndex={1100}
           styles={{
             dropdown: {
               left: '0 !important',
@@ -960,7 +992,7 @@ const Navigation: React.FC = () => {
             </ActionIcon>
           </Menu.Target>
 
-          <Menu.Dropdown className="md:hidden">
+          <Menu.Dropdown className="md:hidden" ref={focusTrapRef}>
             {/* Mobile Search */}
             <Box p="md" pb="sm">
               <form onSubmit={handleSearchSubmit}>
@@ -1003,15 +1035,15 @@ const Navigation: React.FC = () => {
                 <Menu.Item
                   component={Link}
                   href="/about"
-                  leftSection={<Heart size={16} />}
+                  leftSection={<Info size={16} />}
                   onClick={handleMobileMenuClose}
-                  onMouseEnter={() => setMobileAccountHighlight('donate')}
+                  onMouseEnter={() => setMobileAccountHighlight('about')}
                   onMouseLeave={() => {
-                    setMobileAccountHighlight((current) => (current === 'donate' ? null : current))
+                    setMobileAccountHighlight((current) => (current === 'about' ? null : current))
                   }}
-                  onFocus={() => setMobileAccountHighlight('donate')}
+                  onFocus={() => setMobileAccountHighlight('about')}
                   onBlur={() => {
-                    setMobileAccountHighlight((current) => (current === 'donate' ? null : current))
+                    setMobileAccountHighlight((current) => (current === 'about' ? null : current))
                   }}
                   style={{
                     backgroundColor: 'transparent',
@@ -1020,7 +1052,7 @@ const Navigation: React.FC = () => {
                   }}
                   styles={{ item: menuHoverStyles }}
                 >
-                  Donate
+                  About
                 </Menu.Item>
                 {(user.role === 'admin' || user.role === 'moderator') && (
                   <Menu.Item

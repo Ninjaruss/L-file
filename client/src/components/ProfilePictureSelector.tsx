@@ -469,7 +469,7 @@ export default function ProfilePictureSelector({
             </Text>
             <Button
               component="a"
-              href="https://ko-fi.com/usogui"
+              href="https://ko-fi.com/ninjaruss"
               target="_blank"
               rel="noopener noreferrer"
               size="sm"

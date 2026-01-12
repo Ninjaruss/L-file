@@ -29,6 +29,7 @@ import ErrorBoundary from '../../components/ErrorBoundary'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
+import { EXPECTED_VOLUME_COUNT } from '../../lib/constants'
 
 interface Volume {
   id: number
@@ -136,7 +137,7 @@ export default function VolumesPageContent({
 
   // Load all volumes on mount if we don't have the expected full set
   useEffect(() => {
-    if (allVolumes.length === 0 || (allVolumes.length > 0 && allVolumes.length < 40)) {
+    if (allVolumes.length === 0 || allVolumes.length < EXPECTED_VOLUME_COUNT) {
       loadAllVolumes()
     }
   }, [allVolumes.length, loadAllVolumes])
@@ -245,6 +246,7 @@ export default function VolumesPageContent({
                     onClick={handleClearSearch}
                     size="sm"
                     title="Clear search"
+                    aria-label="Clear search"
                   >
                     <X size={16} />
                   </ActionIcon>

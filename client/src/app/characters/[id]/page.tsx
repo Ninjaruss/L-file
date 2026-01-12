@@ -86,12 +86,6 @@ async function fetchCharacterData(characterId: number): Promise<CharacterPageDat
     // This endpoint returns gambles that are related to the character through events
     const characterGambles = gamblesData.data || []
 
-    // Debug logging
-    console.log('Character ID:', characterId)
-    console.log('Gambles response status:', gamblesRes.ok)
-    console.log('Gambles data:', gamblesData)
-    console.log('Character gambles:', characterGambles)
-
     return {
       character,
       gambles: characterGambles,

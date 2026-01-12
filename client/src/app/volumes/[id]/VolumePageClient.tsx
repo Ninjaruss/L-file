@@ -14,6 +14,7 @@ import {
   Tabs,
   Text,
   Title,
+  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import {
@@ -32,7 +33,7 @@ import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaThumbnail from '../../../components/MediaThumbnail'
-import BackButton from '../../../components/BackButton'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 
 interface Volume {
   id: number
@@ -87,9 +88,9 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
     }}>
       <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
         <Stack gap={theme.spacing.md}>
-          <BackButton
-            href="/volumes"
-            label="Back to Volumes"
+          {/* Breadcrumb Navigation */}
+          <BreadcrumbNav
+            items={createEntityBreadcrumbs('volume', initialVolume.title || `Volume ${initialVolume.number}`)}
             entityType="volume"
           />
 
@@ -247,9 +248,16 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
               >
                 <Tabs.List>
                   <Tabs.Tab value="overview" leftSection={<Book size={16} />}>Overview</Tabs.Tab>
-                  <Tabs.Tab value="chapters" leftSection={<BookOpen size={16} />} disabled={initialChapters.length === 0}>
-                    Chapters ({initialChapters.length})
-                  </Tabs.Tab>
+                  <Tooltip
+                    label="No chapters available for this volume"
+                    disabled={initialChapters.length > 0}
+                    position="bottom"
+                    withArrow
+                  >
+                    <Tabs.Tab value="chapters" leftSection={<BookOpen size={16} />} disabled={initialChapters.length === 0}>
+                      Chapters ({initialChapters.length})
+                    </Tabs.Tab>
+                  </Tooltip>
                 </Tabs.List>
 
                 <Tabs.Panel value="overview" pt={theme.spacing.md}>

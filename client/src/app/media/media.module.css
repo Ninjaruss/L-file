@@ -1,0 +1,27 @@
+.masonryGrid {
+  column-count: 5;
+  column-gap: 12px;
+}
+
+@media (max-width: 1400px) {
+  .masonryGrid {
+    column-count: 4;
+  }
+}
+
+@media (max-width: 1100px) {
+  .masonryGrid {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .masonryGrid {
+    column-count: 2;
+  }
+}
+
+.masonryItem {
+  break-inside: avoid;
+  margin-bottom: 12px;
+}

@@ -28,6 +28,7 @@ import {
   Filter,
   Loading,
   useListContext,
+  useUnselectAll,
   FunctionField,
   TabbedForm,
   FormTab
@@ -326,6 +327,138 @@ const EventRelatedEntitiesField = () => {
   )
 }
 
+// Bulk Approve Button for Events
+const BulkApproveButton = () => {
+  const { selectedIds, data } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('events')
+  const [loading, setLoading] = useState(false)
+
+  const handleApprove = async () => {
+    if (selectedIds.length === 0) return
+
+    setLoading(true)
+    try {
+      // Filter to only pending events
+      const pendingIds = selectedIds.filter(id => {
+        const event = data?.find((e: any) => e.id === id)
+        return event?.status === EventStatus.PENDING
+      })
+
+      if (pendingIds.length === 0) {
+        notify('No pending events selected', { type: 'warning' })
+        setLoading(false)
+        return
+      }
+
+      await Promise.all(
+        pendingIds.map(id =>
+          api.put(`/events/${id}`, { status: EventStatus.APPROVED })
+        )
+      )
+
+      notify(`${pendingIds.length} event(s) approved successfully`, { type: 'success' })
+      unselectAll()
+      refresh()
+    } catch (error) {
+      console.error('Error approving events:', error)
+      notify('Error approving events', { type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <MuiButton
+      onClick={handleApprove}
+      disabled={loading || selectedIds.length === 0}
+      variant="contained"
+      size="small"
+      startIcon={<Check size={16} />}
+      sx={{
+        backgroundColor: '#16a34a',
+        color: 'white',
+        '&:hover': { backgroundColor: '#15803d' },
+        fontWeight: 600,
+        textTransform: 'none'
+      }}
+    >
+      {loading ? 'Approving...' : `Approve (${selectedIds.length})`}
+    </MuiButton>
+  )
+}
+
+// Bulk Reject Button for Events
+const BulkRejectButton = () => {
+  const { selectedIds, data } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('events')
+  const [loading, setLoading] = useState(false)
+
+  const handleReject = async () => {
+    if (selectedIds.length === 0) return
+
+    setLoading(true)
+    try {
+      // Filter to only pending events
+      const pendingIds = selectedIds.filter(id => {
+        const event = data?.find((e: any) => e.id === id)
+        return event?.status === EventStatus.PENDING
+      })
+
+      if (pendingIds.length === 0) {
+        notify('No pending events selected', { type: 'warning' })
+        setLoading(false)
+        return
+      }
+
+      await Promise.all(
+        pendingIds.map(id =>
+          api.put(`/events/${id}`, { status: EventStatus.REJECTED })
+        )
+      )
+
+      notify(`${pendingIds.length} event(s) rejected`, { type: 'success' })
+      unselectAll()
+      refresh()
+    } catch (error) {
+      console.error('Error rejecting events:', error)
+      notify('Error rejecting events', { type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <MuiButton
+      onClick={handleReject}
+      disabled={loading || selectedIds.length === 0}
+      variant="contained"
+      size="small"
+      startIcon={<X size={16} />}
+      sx={{
+        backgroundColor: '#dc2626',
+        color: 'white',
+        '&:hover': { backgroundColor: '#b91c1c' },
+        fontWeight: 600,
+        textTransform: 'none'
+      }}
+    >
+      {loading ? 'Rejecting...' : `Reject (${selectedIds.length})`}
+    </MuiButton>
+  )
+}
+
+// Combined bulk action buttons component
+const EventBulkActionButtons = () => (
+  <Box sx={{ display: 'flex', gap: 1 }}>
+    <BulkApproveButton />
+    <BulkRejectButton />
+  </Box>
+)
+
 // Custom Filter Toolbar Component
 const EventFilterToolbar = () => {
   const { filterValues, setFilters } = useListContext()
@@ -563,6 +696,7 @@ export const EventList = () => (
     <EventFilterToolbar />
     <Datagrid
       rowClick="show"
+      bulkActionButtons={<EventBulkActionButtons />}
       sx={{
         marginTop: 0,
         borderRadius: '0 0 8px 8px',

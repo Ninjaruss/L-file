@@ -19,7 +19,8 @@ import {
   useNotify,
   useRefresh,
   useListContext,
-  FunctionField
+  FunctionField,
+  useUnselectAll
 } from 'react-admin'
 import { useWatch } from 'react-hook-form'
 import {
@@ -660,9 +661,10 @@ const MediaFilterToolbar = () => {
   return (
     <Box sx={{
       backgroundColor: 'rgba(10, 10, 10, 0.95)',
-      borderRadius: '8px 8px 0 0', // Only round top corners
+      borderRadius: 0,
       border: '1px solid rgba(225, 29, 72, 0.2)',
-      borderBottom: 'none', // Remove bottom border to connect with table
+      borderTop: 'none',
+      borderBottom: 'none',
       mb: 0,
       p: 2,
       backdropFilter: 'blur(8px)'
@@ -1487,6 +1489,351 @@ const EntityNameDisplay = () => {
   )
 }
 
+// Approval Toolbar - Always visible with Select All Pending
+const MediaApprovalToolbar = () => {
+  const { data, selectedIds, onSelect } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('media')
+  const [approving, setApproving] = useState(false)
+  const [rejectModalOpen, setRejectModalOpen] = useState(false)
+
+  // Get all pending items from current data
+  const pendingItems = data ? data.filter((item: any) => item.status === 'pending') : []
+  const pendingIds = pendingItems.map((item: any) => item.id)
+
+  const handleSelectAllPending = () => {
+    if (pendingIds.length > 0) {
+      onSelect(pendingIds)
+      notify(`Selected ${pendingIds.length} pending media item(s)`, { type: 'info' })
+    }
+  }
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return
+
+    setApproving(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.put(`/media/${id}/approve`, {})
+        successCount++
+      } catch (error) {
+        console.error(`Error approving media ${id}:`, error)
+        errorCount++
+      }
+    }
+
+    setApproving(false)
+    unselectAll()
+    refresh()
+
+    if (errorCount === 0) {
+      notify(`Successfully approved ${successCount} media item(s)`, { type: 'success' })
+    } else {
+      notify(`Approved ${successCount} item(s), ${errorCount} failed`, { type: 'warning' })
+    }
+  }
+
+  const handleRejectSuccess = () => {
+    unselectAll()
+    refresh()
+  }
+
+  return (
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      p: 2,
+      backgroundColor: 'rgba(10, 10, 10, 0.95)',
+      borderRadius: '8px 8px 0 0',
+      border: '1px solid rgba(225, 29, 72, 0.3)',
+      borderBottom: 'none',
+      mb: 0
+    }}>
+      {/* Pending count badge */}
+      <Chip
+        label={`${pendingIds.length} Pending`}
+        color="warning"
+        size="small"
+        sx={{ fontWeight: 'bold' }}
+      />
+
+      {/* Select All Pending Button */}
+      <MuiButton
+        variant="outlined"
+        size="small"
+        onClick={handleSelectAllPending}
+        disabled={pendingIds.length === 0}
+        startIcon={<Check size={16} />}
+        sx={{
+          borderColor: '#f57c00',
+          color: '#f57c00',
+          '&:hover': {
+            borderColor: '#ef6c00',
+            backgroundColor: 'rgba(245, 124, 0, 0.1)'
+          },
+          '&:disabled': {
+            borderColor: 'rgba(245, 124, 0, 0.3)',
+            color: 'rgba(245, 124, 0, 0.5)'
+          }
+        }}
+      >
+        Select All Pending
+      </MuiButton>
+
+      <Box sx={{ flex: 1 }} />
+
+      {/* Selected count */}
+      {selectedIds.length > 0 && (
+        <Typography variant="body2" sx={{ color: 'white', mr: 1 }}>
+          {selectedIds.length} selected
+        </Typography>
+      )}
+
+      {/* Approve Button - Always visible */}
+      <MuiButton
+        variant="contained"
+        size="small"
+        onClick={handleBulkApprove}
+        disabled={approving || selectedIds.length === 0}
+        startIcon={<Check size={16} />}
+        sx={{
+          backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
+          color: 'white',
+          '&:hover': { backgroundColor: '#388e3c' },
+          '&:disabled': {
+            backgroundColor: 'rgba(76, 175, 80, 0.3)',
+            color: 'rgba(255, 255, 255, 0.5)'
+          }
+        }}
+      >
+        {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+      </MuiButton>
+
+      {/* Reject Button - Always visible */}
+      <MuiButton
+        variant="contained"
+        size="small"
+        onClick={() => setRejectModalOpen(true)}
+        disabled={selectedIds.length === 0}
+        startIcon={<X size={16} />}
+        sx={{
+          backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
+          color: 'white',
+          '&:hover': { backgroundColor: '#d32f2f' },
+          '&:disabled': {
+            backgroundColor: 'rgba(244, 67, 54, 0.3)',
+            color: 'rgba(255, 255, 255, 0.5)'
+          }
+        }}
+      >
+        Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+      </MuiButton>
+
+      <MediaBulkRejectModal
+        open={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        selectedIds={selectedIds}
+        onSuccess={handleRejectSuccess}
+      />
+    </Box>
+  )
+}
+
+// Bulk Approve Button for Media
+const MediaBulkApproveButton = () => {
+  const { selectedIds } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('media')
+  const [loading, setLoading] = useState(false)
+
+  const handleBulkApprove = async () => {
+    setLoading(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.put(`/media/${id}/approve`, {})
+        successCount++
+      } catch (error) {
+        console.error(`Error approving media ${id}:`, error)
+        errorCount++
+      }
+    }
+
+    setLoading(false)
+    unselectAll()
+    refresh()
+
+    if (errorCount === 0) {
+      notify(`Successfully approved ${successCount} media item(s)`, { type: 'success' })
+    } else {
+      notify(`Approved ${successCount} item(s), ${errorCount} failed`, { type: 'warning' })
+    }
+  }
+
+  return (
+    <Button
+      label={loading ? 'Approving...' : `Approve (${selectedIds.length})`}
+      onClick={handleBulkApprove}
+      disabled={loading || selectedIds.length === 0}
+      startIcon={<Check size={16} />}
+      sx={{
+        backgroundColor: '#4caf50',
+        color: 'white',
+        '&:hover': { backgroundColor: '#388e3c' },
+        mr: 1
+      }}
+    />
+  )
+}
+
+// Bulk Reject Modal for Media
+const MediaBulkRejectModal = ({ open, onClose, selectedIds, onSuccess }: {
+  open: boolean
+  onClose: () => void
+  selectedIds: any[]
+  onSuccess: () => void
+}) => {
+  const [reason, setReason] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const notify = useNotify()
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      notify('Please enter a rejection reason', { type: 'warning' })
+      return
+    }
+
+    setSubmitting(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.put(`/media/${id}/reject`, { reason: reason.trim() })
+        successCount++
+      } catch (error) {
+        console.error(`Error rejecting media ${id}:`, error)
+        errorCount++
+      }
+    }
+
+    setSubmitting(false)
+
+    if (errorCount === 0) {
+      notify(`Successfully rejected ${successCount} media item(s)`, { type: 'success' })
+    } else {
+      notify(`Rejected ${successCount} item(s), ${errorCount} failed`, { type: 'warning' })
+    }
+
+    onSuccess()
+    onClose()
+    setReason('')
+  }
+
+  return (
+    <Dialog open={open} onClose={() => !submitting && onClose()} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+        borderBottom: '1px solid rgba(244, 67, 54, 0.3)',
+        color: '#f44336',
+        fontWeight: 'bold'
+      }}>
+        <X size={24} />
+        Bulk Reject {selectedIds.length} Media Item(s)
+      </DialogTitle>
+      <DialogContent sx={{ pt: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Typography variant="body1">
+            You are about to reject <strong>{selectedIds.length}</strong> media item(s).
+            All selected items will receive the same rejection reason.
+          </Typography>
+
+          <MuiTextField
+            fullWidth
+            required
+            multiline
+            rows={3}
+            label="Rejection Reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Explain why these media items are being rejected..."
+            helperText="This reason will be shown to the submitters"
+            error={!reason.trim() && reason.length > 0}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 2, gap: 1 }}>
+        <MuiButton onClick={onClose} disabled={submitting} variant="outlined">
+          Cancel
+        </MuiButton>
+        <MuiButton
+          onClick={handleSubmit}
+          disabled={submitting || !reason.trim()}
+          variant="contained"
+          color="error"
+        >
+          {submitting ? 'Rejecting...' : `Reject ${selectedIds.length} Item(s)`}
+        </MuiButton>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+// Bulk Reject Button for Media
+const MediaBulkRejectButton = () => {
+  const { selectedIds } = useListContext()
+  const refresh = useRefresh()
+  const unselectAll = useUnselectAll('media')
+  const [modalOpen, setModalOpen] = useState(false)
+
+  const handleSuccess = () => {
+    unselectAll()
+    refresh()
+  }
+
+  return (
+    <>
+      <Button
+        label={`Reject (${selectedIds.length})`}
+        onClick={() => setModalOpen(true)}
+        disabled={selectedIds.length === 0}
+        startIcon={<X size={16} />}
+        sx={{
+          backgroundColor: '#f44336',
+          color: 'white',
+          '&:hover': { backgroundColor: '#d32f2f' },
+          mr: 1
+        }}
+      />
+      <MediaBulkRejectModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        selectedIds={selectedIds}
+        onSuccess={handleSuccess}
+      />
+    </>
+  )
+}
+
+// Media Bulk Action Buttons Component
+const MediaBulkActionButtons = () => (
+  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <MediaBulkApproveButton />
+    <MediaBulkRejectButton />
+  </Box>
+)
+
 // Custom Datagrid that applies client-side filtering
 const FilteredDatagrid = () => {
   const { filterValues, data, isLoading } = useListContext()
@@ -1510,6 +1857,7 @@ const FilteredDatagrid = () => {
     <Datagrid
       data={filteredData}
       rowClick="show"
+      bulkActionButtons={<MediaBulkActionButtons />}
       sx={{
         marginTop: 0,
         borderRadius: '0 0 8px 8px',
@@ -1631,6 +1979,7 @@ export const MediaList = () => (
       }
     }}
   >
+    <MediaApprovalToolbar />
     <MediaFilterToolbar />
     <FilteredDatagrid />
   </List>
@@ -1640,6 +1989,7 @@ export const MediaApprovalQueue = () => (
   <List filter={{ status: 'pending' }} title="Media Approval Queue">
     <Datagrid
       rowClick="show"
+      bulkActionButtons={<MediaBulkActionButtons />}
       sx={{
         '& .RaDatagrid-headerCell': {
           fontWeight: 'bold',

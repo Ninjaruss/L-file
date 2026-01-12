@@ -6,15 +6,14 @@ import { MessageCircle, Heart } from 'lucide-react'
 import NextLink from 'next/link'
 
 export const Footer: React.FC = () => {
-  const [currentYear, setCurrentYear] = React.useState<number>(2024)
-
-  React.useEffect(() => {
-    setCurrentYear(new Date().getFullYear())
-  }, [])
+  // Use current year directly - no need for state/effect since this is static
+  const currentYear = new Date().getFullYear()
 
   return (
     <Box
       component="footer"
+      role="contentinfo"
+      aria-label="Site footer"
       style={{
         marginTop: 'auto',
         backgroundColor: 'rgba(15, 15, 15, 0.95)',
@@ -37,7 +36,7 @@ export const Footer: React.FC = () => {
               L-File
             </Text>
             <Group gap="sm" align="center">
-              <Text size="xs" c="gray.6">
+              <Text size="xs" c="gray.5">
                 Independent fan resource
               </Text>
               <Text c="gray.6" size="xs">•</Text>
@@ -45,7 +44,22 @@ export const Footer: React.FC = () => {
                 component={NextLink}
                 href="/about"
                 c="gray.4"
-                style={{ textDecoration: 'none', fontSize: '0.75rem' }}
+                underline="hover"
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '0.25rem 0.5rem',
+                  margin: '-0.25rem -0.5rem',
+                  borderRadius: '4px',
+                  transition: 'color 0.2s ease, background-color 0.2s ease'
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      color: '#ffffff',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                    }
+                  }
+                }}
               >
                 About
               </Anchor>
@@ -54,23 +68,39 @@ export const Footer: React.FC = () => {
                 component={NextLink}
                 href="/disclaimer"
                 c="gray.4"
-                style={{ textDecoration: 'none', fontSize: '0.75rem' }}
+                underline="hover"
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '0.25rem 0.5rem',
+                  margin: '-0.25rem -0.5rem',
+                  borderRadius: '4px',
+                  transition: 'color 0.2s ease, background-color 0.2s ease'
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      color: '#ffffff',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                    }
+                  }
+                }}
               >
                 Disclaimer
               </Anchor>
               <Text c="gray.6" size="xs">•</Text>
-              <Text size="xs" c="gray.6">
+              <Text size="xs" c="gray.5">
                 © {currentYear} L-File
               </Text>
             </Group>
           </Group>
 
           {/* Right: Emphasized Discord and Support */}
-          <Group gap="lg" align="center">
+          <Group gap="md" align="center">
             <Anchor
               href="https://discord.gg/JXeRhV2qpY"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Join Discord community (opens in new tab)"
               style={{
                 textDecoration: 'none',
                 color: '#5865f2',
@@ -79,16 +109,29 @@ export const Footer: React.FC = () => {
                 gap: '0.5rem',
                 fontSize: '0.875rem',
                 fontWeight: 500,
+                padding: '0.5rem 0.75rem',
+                margin: '-0.5rem -0.75rem',
+                borderRadius: '6px',
                 transition: 'all 0.2s ease'
               }}
+              styles={{
+                root: {
+                  '&:hover': {
+                    color: '#7289da',
+                    backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                    transform: 'translateY(-1px)'
+                  }
+                }
+              }}
             >
-              <MessageCircle size={18} />
+              <MessageCircle size={18} aria-hidden="true" />
               Join Discord
             </Anchor>
             <Anchor
               href="https://ko-fi.com/ninjaruss"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Support us on Ko-fi (opens in new tab)"
               style={{
                 textDecoration: 'none',
                 color: '#ff5f5f',
@@ -97,10 +140,22 @@ export const Footer: React.FC = () => {
                 gap: '0.5rem',
                 fontSize: '0.875rem',
                 fontWeight: 500,
+                padding: '0.5rem 0.75rem',
+                margin: '-0.5rem -0.75rem',
+                borderRadius: '6px',
                 transition: 'all 0.2s ease'
               }}
+              styles={{
+                root: {
+                  '&:hover': {
+                    color: '#ff8080',
+                    backgroundColor: 'rgba(255, 95, 95, 0.1)',
+                    transform: 'translateY(-1px)'
+                  }
+                }
+              }}
             >
-              <Heart size={18} />
+              <Heart size={18} aria-hidden="true" />
               Support Us
             </Anchor>
           </Group>

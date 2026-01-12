@@ -722,14 +722,6 @@ export const setTabAccentColors = (entityType: EntityAccentKey, element?: HTMLEl
   target.style.setProperty('--tab-active-outline', activeOutline)
   target.style.setProperty('--tab-active-hover-bg', activeHoverBg)
   target.style.setProperty('--tab-border', border)
-  
-  // Debug logging
-  console.log(`🎨 Set tab colors for ${entityType}:`, {
-    accentColor,
-    hoverBg,
-    hoverOutline,
-    activeOutline
-  })
 }
 
 // Consistent spacing and sizing utilities

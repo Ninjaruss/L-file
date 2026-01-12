@@ -11,6 +11,7 @@ import {
   Stack,
   Tabs,
   Title,
+  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import {
@@ -61,10 +62,16 @@ interface Event {
   characters?: Character[]
 }
 
+interface Gamble {
+  id: number
+  name: string
+  chapterId?: number
+}
+
 interface ArcPageClientProps {
   initialArc: Arc
   initialEvents: Event[]
-  initialGambles: any[]
+  initialGambles: Gamble[]
 }
 
 export default function ArcPageClient({ initialArc, initialEvents, initialGambles }: ArcPageClientProps) {
@@ -273,9 +280,16 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
-            <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={initialEvents.length === 0}>
-              Timeline
-            </Tabs.Tab>
+            <Tooltip
+              label="No timeline events available for this arc"
+              disabled={initialEvents.length > 0}
+              position="bottom"
+              withArrow
+            >
+              <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={initialEvents.length === 0}>
+                Timeline
+              </Tabs.Tab>
+            </Tooltip>
             <Tabs.Tab value="media" leftSection={<ImageIcon size={16} />}>Media</Tabs.Tab>
           </Tabs.List>
 

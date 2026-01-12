@@ -13,6 +13,7 @@ import {
   Tabs,
   Text,
   Title,
+  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import {
@@ -36,8 +37,10 @@ import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import type { Arc, Gamble, Guide, Quote } from '../../../types'
 import MediaThumbnail from '../../../components/MediaThumbnail'
+import ErrorBoundary from '../../../components/ErrorBoundary'
 import CharacterRelationships from '../../../components/CharacterRelationships'
 import CharacterOrganizationMemberships from '../../../components/CharacterOrganizationMemberships'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 
 interface Character {
   id: number
@@ -77,13 +80,50 @@ export default function CharacterPageClient({
   arcs
 }: CharacterPageClientProps) {
   const theme = useMantineTheme()
-  const [activeTab, setActiveTab] = useState<string>('overview')
+
+  // Get initial tab from URL hash or default to 'overview'
+  const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.slice(1)
+      if (['overview', 'timeline', 'media'].includes(hash)) {
+        return hash
+      }
+    }
+    return 'overview'
+  }
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab)
 
   usePageView('character', character.id.toString(), true)
 
   // Set tab accent colors for character entity
   useEffect(() => {
     setTabAccentColors('character')
+  }, [])
+
+  // Sync tab state with URL hash
+  useEffect(() => {
+    // Update URL hash when tab changes (without triggering navigation)
+    const newHash = activeTab === 'overview' ? '' : `#${activeTab}`
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname + window.location.search
+      window.history.replaceState(null, '', currentPath + newHash)
+    }
+  }, [activeTab])
+
+  // Listen for hash changes (e.g., back/forward navigation)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1)
+      if (['overview', 'timeline', 'media'].includes(hash)) {
+        setActiveTab(hash)
+      } else if (!hash) {
+        setActiveTab('overview')
+      }
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
   // Use consistent theme colors for better readability
@@ -105,6 +145,12 @@ export default function CharacterPageClient({
     }}>
     <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
     <Stack gap={theme.spacing.md}>
+      {/* Breadcrumb Navigation */}
+      <BreadcrumbNav
+        items={createEntityBreadcrumbs('character', character.name)}
+        entityType="character"
+      />
+
       {/* Enhanced Character Header */}
       <Card
         withBorder
@@ -151,14 +197,16 @@ export default function CharacterPageClient({
                   transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
                 }}
               >
-                <MediaThumbnail
-                  entityType="character"
-                  entityId={character.id}
-                  entityName={character.name}
-                  allowCycling={false}
-                  maxWidth="200px"
-                  maxHeight="280px"
-                />
+                <ErrorBoundary>
+                  <MediaThumbnail
+                    entityType="character"
+                    entityId={character.id}
+                    entityName={character.name}
+                    allowCycling={false}
+                    maxWidth="200px"
+                    maxHeight="280px"
+                  />
+                </ErrorBoundary>
               </Box>
             </Box>
 
@@ -309,9 +357,16 @@ export default function CharacterPageClient({
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<User size={16} />}>Overview</Tabs.Tab>
-            <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={events.length === 0}>
-              Timeline
-            </Tabs.Tab>
+            <Tooltip
+              label="No timeline events available for this character"
+              disabled={events.length > 0}
+              position="bottom"
+              withArrow
+            >
+              <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={events.length === 0}>
+                Timeline
+              </Tabs.Tab>
+            </Tooltip>
             <Tabs.Tab value="media" leftSection={<BookOpen size={16} />}>Media</Tabs.Tab>
           </Tabs.List>
 

@@ -39,6 +39,7 @@ import { motion } from 'motion/react'
 import UserProfileImage from '../../components/UserProfileImage'
 import UserBadges from '../../components/UserBadges'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
+import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 
 interface PublicUser {
   id: number
@@ -133,6 +134,10 @@ export default function UsersPageContent() {
   }, [pageData])
 
   useEffect(() => {
+    // Skip if input was cleared but debounce hasn't caught up yet
+    if (searchInput.trim() === '' && debouncedSearch.trim() !== '') {
+      return
+    }
     const normalized = debouncedSearch.trim()
     if (searchQuery === normalized) {
       return
@@ -141,7 +146,7 @@ export default function UsersPageContent() {
     setSearchQuery(normalized)
     setPage(1)
     updateURL(normalized, 1, sortBy)
-  }, [debouncedSearch, searchQuery, sortBy, updateURL])
+  }, [debouncedSearch, searchInput, searchQuery, sortBy, updateURL])
 
   const sortedUsers = useMemo(() => {
     const usersCopy = [...users]
@@ -323,6 +328,7 @@ export default function UsersPageContent() {
                           variant="subtle"
                           onClick={handleClearSearch}
                           style={{ color: accentCommunity }}
+                          aria-label="Clear search"
                         >
                           <X size={14} />
                         </ActionIcon>
@@ -431,9 +437,7 @@ export default function UsersPageContent() {
         {!errorMessage && (
           <Container size="lg" px="md" pb="xl">
             {isLoading ? (
-              <Group justify="center" py="xl">
-                <Loader size="lg" color={accentCommunity} />
-              </Group>
+              <CardGridSkeleton count={12} cardWidth={280} cardHeight={160} accentColor={accentCommunity} />
             ) : (
               <>
                 {users.length === 0 ? (

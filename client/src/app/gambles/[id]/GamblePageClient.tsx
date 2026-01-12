@@ -15,9 +15,10 @@ import {
   Tabs,
   Text,
   Title,
+  Tooltip,
   useMantineTheme
 } from '@mantine/core'
-import { ArrowLeft, Crown, Users, Trophy, Calendar, BookOpen, Image as ImageIcon } from 'lucide-react'
+import { Crown, Users, Trophy, Calendar, BookOpen, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
@@ -26,7 +27,9 @@ import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import GambleTimeline from '../../../components/GambleTimeline'
 import MediaGallery from '../../../components/MediaGallery'
 import MediaThumbnail from '../../../components/MediaThumbnail'
+import ErrorBoundary from '../../../components/ErrorBoundary'
 import { GambleStructuredData } from '../../../components/StructuredData'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import { api } from '../../../lib/api'
 import {
   getEntityThemeColor,
@@ -66,20 +69,80 @@ interface GamblePageClientProps {
   initialGamble: Gamble
 }
 
+// Types for timeline data matching GambleTimeline component
+interface GambleTimelineEvent {
+  id: number
+  title: string
+  description: string | null
+  chapterNumber: number
+  type: 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution' | null
+  arcId: number
+  arcName: string
+  isSpoiler?: boolean
+  spoilerChapter?: number
+  gambleId?: number
+  characters?: Array<{ id: number; name: string }>
+}
+
+interface TimelineArc {
+  id: number
+  name: string
+  description: string | null
+  startChapter: number
+  endChapter: number | null
+}
+
 export default function GamblePageClient({ initialGamble }: GamblePageClientProps) {
   const theme = useMantineTheme()
   const gambleColor = getEntityThemeColor(theme, 'gamble')
   const characterColor = getEntityThemeColor(theme, 'character')
-  const [timelineEvents, setTimelineEvents] = useState<any[]>([])
-  const [arcs, setArcs] = useState<any[]>([])
+  const [timelineEvents, setTimelineEvents] = useState<GambleTimelineEvent[]>([])
+  const [arcs, setArcs] = useState<TimelineArc[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<string>('overview')
+
+  // Get initial tab from URL hash or default to 'overview'
+  const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.slice(1)
+      if (['overview', 'timeline', 'media'].includes(hash)) {
+        return hash
+      }
+    }
+    return 'overview'
+  }
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab)
 
   usePageView('gamble', initialGamble.id.toString(), true)
 
   // Set tab accent colors for gamble entity
   useEffect(() => {
     setTabAccentColors('gamble')
+  }, [])
+
+  // Sync tab state with URL hash
+  useEffect(() => {
+    // Update URL hash when tab changes (without triggering navigation)
+    const newHash = activeTab === 'overview' ? '' : `#${activeTab}`
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname + window.location.search
+      window.history.replaceState(null, '', currentPath + newHash)
+    }
+  }, [activeTab])
+
+  // Listen for hash changes (e.g., back/forward navigation)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1)
+      if (['overview', 'timeline', 'media'].includes(hash)) {
+        setActiveTab(hash)
+      } else if (!hash) {
+        setActiveTab('overview')
+      }
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
   useEffect(() => {
@@ -92,7 +155,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
         ])
 
         const gambleChapter = initialGamble.chapter?.number || initialGamble.chapterId
-        const filteredEvents = eventsResponse.data.filter((event: any) => {
+        const filteredEvents = eventsResponse.data.filter((event: GambleTimelineEvent) => {
           if (event.gambleId === initialGamble.id) {
             return true
           }
@@ -134,24 +197,11 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
         }}
       />
 
-      <Button
-        component={Link}
-        href="/gambles"
-        variant="subtle"
-        c={textColors.secondary}
-        leftSection={<ArrowLeft size={18} />}
-        mb="lg"
-        style={{
-          alignSelf: 'flex-start',
-          color: textColors.secondary,
-          '&:hover': {
-            color: textColors.primary,
-            backgroundColor: getAlphaColor(getEntityThemeColor(theme, 'gamble'), 0.1)
-          }
-        }}
-      >
-        Back to Gambles
-      </Button>
+      {/* Breadcrumb Navigation */}
+      <BreadcrumbNav
+        items={createEntityBreadcrumbs('gamble', initialGamble.name)}
+        entityType="gamble"
+      />
 
       {/* Enhanced Gamble Header */}
       <Card
@@ -199,14 +249,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                   transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
                 }}
               >
-                <MediaThumbnail
-                  entityType="gamble"
-                  entityId={initialGamble.id}
-                  entityName={initialGamble.name}
-                  allowCycling={false}
-                  maxWidth="200px"
-                  maxHeight="280px"
-                />
+                <ErrorBoundary>
+                  <MediaThumbnail
+                    entityType="gamble"
+                    entityId={initialGamble.id}
+                    entityName={initialGamble.name}
+                    allowCycling={false}
+                    maxWidth="200px"
+                    maxHeight="280px"
+                  />
+                </ErrorBoundary>
               </Box>
             </Box>
 
@@ -303,9 +355,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
-            <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={timelineEvents.length === 0 && timelineLoading}>
-              Timeline
-            </Tabs.Tab>
+            <Tooltip
+              label="No timeline events available for this gamble"
+              disabled={timelineEvents.length > 0 || !timelineLoading}
+              position="bottom"
+              withArrow
+            >
+              <Tabs.Tab value="timeline" leftSection={<Calendar size={16} />} disabled={timelineEvents.length === 0 && timelineLoading}>
+                Timeline
+              </Tabs.Tab>
+            </Tooltip>
             <Tabs.Tab value="media" leftSection={<ImageIcon size={16} />}>Media</Tabs.Tab>
           </Tabs.List>
 
@@ -400,24 +459,40 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                     </Group>
                     <Stack gap={theme.spacing.sm}>
                       {initialGamble.participants.map((participant) => (
-                        <Paper key={participant.id} withBorder radius="lg" p={theme.spacing.md} shadow="md" style={{
-                          border: `1px solid ${getAlphaColor(characterColor, 0.3)}`,
-                          transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
-                          '&:hover': {
-                            transform: theme.other?.effects?.cardHoverTransform || 'translateY(-2px)',
-                            boxShadow: theme.shadows.lg
-                          }
-                        }}>
-                          <Group justify="space-between" align="flex-start">
-                            <Box style={{ flex: 1 }}>
-                              <Text
-                                fw={600}
-                                size="sm"
-                                c={textColors.character}
-                                style={{ textDecoration: 'none' }}
-                              >
-                                {participant.name}
-                              </Text>
+                        <Link
+                          key={participant.id}
+                          href={`/characters/${participant.id}`}
+                          style={{ textDecoration: 'none' }}
+                        >
+                          <Paper
+                            withBorder
+                            radius="lg"
+                            p={theme.spacing.md}
+                            shadow="md"
+                            style={{
+                              border: `1px solid ${getAlphaColor(characterColor, 0.3)}`,
+                              transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px)'
+                              e.currentTarget.style.boxShadow = theme.shadows.lg
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)'
+                              e.currentTarget.style.boxShadow = theme.shadows.md
+                            }}
+                          >
+                            <Group justify="space-between" align="flex-start">
+                              <Box style={{ flex: 1 }}>
+                                <Text
+                                  fw={600}
+                                  size="sm"
+                                  c={textColors.character}
+                                  style={{ textDecoration: 'none' }}
+                                >
+                                  {participant.name}
+                                </Text>
                               {participant.alternateNames && participant.alternateNames.length > 0 && (
                                 <Group gap={theme.spacing.xs} wrap="wrap" mt={spacing.xs}>
                                   {participant.alternateNames.slice(0, 2).map((name) => (
@@ -447,6 +522,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                             </Box>
                           </Group>
                         </Paper>
+                        </Link>
                       ))}
                     </Stack>
                   </Stack>
@@ -462,8 +538,8 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                 </Box>
               ) : (
                 <GambleTimeline
-                  events={timelineEvents as any}
-                  arcs={arcs as any}
+                  events={timelineEvents}
+                  arcs={arcs}
                   gambleName={initialGamble.name}
                   gambleChapter={initialGamble.chapter?.number ?? initialGamble.chapterId}
                 />
@@ -493,15 +569,17 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                       View All
                     </Button>
                   </Group>
-                  <MediaGallery
-                    ownerType="gamble"
-                    ownerId={initialGamble.id}
-                    purpose="gallery"
-                    limit={8}
-                    showTitle={false}
-                    compactMode
-                    showFilters={false}
-                  />
+                  <ErrorBoundary>
+                    <MediaGallery
+                      ownerType="gamble"
+                      ownerId={initialGamble.id}
+                      purpose="gallery"
+                      limit={8}
+                      showTitle={false}
+                      compactMode
+                      showFilters={false}
+                    />
+                  </ErrorBoundary>
                 </Stack>
               </Card>
             </Stack>

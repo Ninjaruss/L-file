@@ -16,7 +16,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
-import { Heart, Mail, Coffee, Github, Twitter } from 'lucide-react'
+import { Heart, Mail, Coffee, Github } from 'lucide-react'
 
 const supportItems = [
   {
@@ -112,6 +112,81 @@ export function AboutPageContent() {
         </Box>
 
         <Grid gutter="xl">
+          {/* Support Section - Prominent at top */}
+          <Grid.Col span={12}>
+            <Card
+              radius="xl"
+              p="xl"
+              style={accentCardStyle}>
+              <Grid gutter="xl" align="center">
+                <Grid.Col span={{ base: 12, md: 7 }}>
+                  <Stack gap="md">
+                    <Group gap="sm">
+                      <Heart size={28} color={accentRedHex} />
+                      <Title order={3} c={accentRedHex}>
+                        Support L-File
+                      </Title>
+                    </Group>
+                    <Text size="md" c={hexToRgba(whiteHex, 0.85)}>
+                      L-File is a passion project that takes considerable time and effort to maintain.
+                      Your support helps cover hosting costs and development time, allowing us to keep
+                      this resource free and ad-free for the entire Usogui community.
+                    </Text>
+                    <Group gap="sm" mt="sm">
+                      <Button
+                        component="a"
+                        href="https://ko-fi.com/ninjaruss"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="lg"
+                        variant="gradient"
+                        gradient={{ from: accentRedHex, to: accentPurpleHex }}
+                        leftSection={<Coffee size={20} />}>
+                        Support on Ko-fi
+                      </Button>
+                      <Button
+                        component="a"
+                        href="https://github.com/ninjaruss"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="lg"
+                        variant="outline"
+                        style={{
+                          color: hexToRgba(whiteHex, 0.9),
+                          borderColor: hexToRgba(whiteHex, 0.3)
+                        }}
+                        leftSection={<Github size={20} />}>
+                        GitHub
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 5 }}>
+                  <Stack gap="xs">
+                    {supportItems.slice(0, 3).map((item) => (
+                      <Box
+                        key={item.primary}
+                        style={{
+                          background: hexToRgba(surfaceUpperHex, 0.5),
+                          borderRadius: theme.radius.md,
+                          border: `1px solid ${hexToRgba(accentPurpleHex, 0.2)}`,
+                          padding: `${theme.spacing.sm} ${theme.spacing.md}`
+                        }}>
+                        <Text fw={600} size="sm" c={whiteHex}>
+                          {item.primary}
+                        </Text>
+                        <Text size="xs" c={hexToRgba(whiteHex, 0.6)}>
+                          {item.secondary}
+                        </Text>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Grid.Col>
+              </Grid>
+            </Card>
+          </Grid.Col>
+
+          {/* About Section */}
           <Grid.Col span={12}>
             <Card radius="xl" p="xl" style={cardBaseStyle}>
               <Stack gap="md">
@@ -137,58 +212,8 @@ export function AboutPageContent() {
             </Card>
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              radius="xl"
-              p="xl"
-              style={{ ...accentCardStyle, display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Stack gap="md" style={{ flex: 1 }}>
-                <Group gap="sm">
-                  <Heart size={24} color={accentRedHex} />
-                  <Title order={3} c={accentRedHex}>
-                    Support Me
-                  </Title>
-                </Group>
-                <Text size="md" c={hexToRgba(whiteHex, 0.78)}>
-                  L-File is a passion project that takes considerable time and effort to maintain. If you find this resource helpful
-                  and would like to support its continued development, here are some ways you can help:
-                </Text>
-                <List spacing="md" size="sm" withPadding>
-                  {supportItems.map((item) => (
-                    <List.Item
-                      key={item.primary}
-                      style={{
-                        background: hexToRgba(surfaceUpperHex, 0.65),
-                        borderRadius: theme.radius.md,
-                        border: `1px solid ${hexToRgba(accentPurpleHex, 0.25)}`,
-                        padding: `${theme.spacing.sm} ${theme.spacing.md}`
-                      }}>
-                      <Text fw={600} c={whiteHex}>
-                        {item.primary}
-                      </Text>
-                      <Text size="sm" c={hexToRgba(whiteHex, 0.6)}>
-                        {item.secondary}
-                      </Text>
-                    </List.Item>
-                  ))}
-                </List>
-                <Group gap="sm" mt="md">
-                  <Button
-                    size="md"
-                    variant="gradient"
-                    gradient={{ from: accentRedHex, to: accentPurpleHex }}
-                    leftSection={<Coffee size={16} />}>
-                    Ko-fi (Coming Soon)
-                  </Button>
-                  <Button size="md" variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} leftSection={<Github size={16} />}>
-                    GitHub (Coming Soon)
-                  </Button>
-                </Group>
-              </Stack>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, md: 6 }}>
+          {/* Supporters Section */}
+          <Grid.Col span={12}>
             <Card radius="xl" p="xl" style={cardBaseStyle}>
               <Stack gap="md">
                 <Title order={3} c={accentPurpleHex}>
@@ -197,12 +222,8 @@ export function AboutPageContent() {
                 <Text size="md" c={hexToRgba(whiteHex, 0.8)}>
                   A huge thank you to everyone who has supported L-File through contributions, feedback, and by spreading the word!
                 </Text>
-                <Text size="sm" c={hexToRgba(whiteHex, 0.55)} fs="italic">
-                  Supporter list coming soon...
-                </Text>
-                <Divider my="md" color={hexToRgba(accentPurpleHex, 0.35)} />
                 <Text size="sm" c={hexToRgba(whiteHex, 0.6)}>
-                  Want to be featured here? Support the project and help us grow the Usogui community!
+                  Ko-fi supporters automatically receive special badges on their profiles. Your support helps keep this project running!
                 </Text>
               </Stack>
             </Card>
@@ -231,18 +252,32 @@ export function AboutPageContent() {
                       </Group>
                       <Group gap="sm">
                         <Github size={20} />
-                        <Text size="md" c={mutedTextColor}>
-                          GitHub: Coming Soon
-                        </Text>
+                        <Anchor
+                          href="https://github.com/ninjaruss"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          c={whiteHex}
+                          underline="hover"
+                          size="md"
+                        >
+                          @ninjaruss
+                        </Anchor>
                       </Group>
                     </Stack>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Group gap="sm">
-                      <Twitter size={20} />
-                      <Text size="md" c={mutedTextColor}>
-                        Twitter: Coming Soon
-                      </Text>
+                      <Coffee size={20} />
+                      <Anchor
+                        href="https://ko-fi.com/ninjaruss"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        c={whiteHex}
+                        underline="hover"
+                        size="md"
+                      >
+                        ko-fi.com/ninjaruss
+                      </Anchor>
                     </Group>
                   </Grid.Col>
                 </Grid>

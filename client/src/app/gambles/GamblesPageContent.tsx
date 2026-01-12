@@ -33,6 +33,7 @@ import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
 import { ScrollToTop } from '../../components/ScrollToTop'
+import { SearchEmptyState, EmptyState } from '../../components/EmptyState'
 import { useProgress } from '../../providers/ProgressProvider'
 import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { shouldHideSpoiler } from '../../lib/spoiler-utils'
@@ -235,6 +236,10 @@ export default function GamblesPageContent({
 
   // Update search query when debounced value changes
   useEffect(() => {
+    // Skip if input was cleared but debounce hasn't caught up yet
+    if (searchInput.trim() === '' && debouncedSearch.trim() !== '') {
+      return
+    }
     if (debouncedSearch.trim() !== searchQuery) {
       setSearchQuery(debouncedSearch.trim())
       setCurrentPage(1)
@@ -245,7 +250,7 @@ export default function GamblesPageContent({
       params.set('page', '1')
       router.push(`/gambles?${params.toString()}`)
     }
-  }, [debouncedSearch, searchQuery, characterFilter, sortBy, router])
+  }, [debouncedSearch, searchInput, searchQuery, characterFilter, sortBy, router])
 
   const handleClearSearch = useCallback(() => {
     setSearchInput('')
@@ -441,22 +446,20 @@ export default function GamblesPageContent({
         <>
           {/* Empty State */}
           {gambles.length === 0 ? (
-            <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
-              <Dices size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
-                {hasSearchQuery ? 'No gambles found' : 'No gambles available'}
-              </Title>
-              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
-                {hasSearchQuery
-                  ? 'Try adjusting your search terms or filters'
-                  : 'Check back later for new gambles'}
-              </Text>
-              {hasSearchQuery && (
-                <Button variant="outline" style={{ color: getEntityThemeColor(theme, 'gamble') }} onClick={handleClearSearch}>
-                  Clear search
-                </Button>
-              )}
-            </Box>
+            hasSearchQuery ? (
+              <SearchEmptyState
+                query={searchQuery}
+                onClearSearch={handleClearSearch}
+                accentColor={getEntityThemeColor(theme, 'gamble')}
+              />
+            ) : (
+              <EmptyState
+                icon={<Dices size={48} />}
+                title="No gambles available"
+                description="Check back later for new gambles"
+                accentColor={getEntityThemeColor(theme, 'gamble')}
+              />
+            )
           ) : (
             <>
               {/* Results Grid */}
@@ -486,6 +489,7 @@ export default function GamblesPageContent({
                       withBorder={false}
                       radius="lg"
                       shadow="sm"
+                      className="hoverable-card hoverable-card-gamble"
                       style={getPlayingCardStyles(theme, accentGamble)}
                       onClick={(e) => {
                         // On touch devices, first tap shows preview, second tap navigates
@@ -508,8 +512,6 @@ export default function GamblesPageContent({
                       }}
                       onMouseEnter={(e) => {
                         if (isTouchDevice) return // Skip hover on touch devices
-                        e.currentTarget.style.transform = 'translateY(-4px)'
-                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
 
                         // Store the currently hovered gamble and element
                         currentlyHoveredRef.current = { gamble, element: e.currentTarget as HTMLElement }
@@ -525,10 +527,8 @@ export default function GamblesPageContent({
                           handleGambleMouseEnter(gamble, e)
                         }
                       }}
-                      onMouseLeave={(e) => {
+                      onMouseLeave={() => {
                         if (isTouchDevice) return // Skip hover on touch devices
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = theme.shadows.sm
                         currentlyHoveredRef.current = null
                         handleGambleMouseLeave()
                       }}

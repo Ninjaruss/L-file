@@ -132,6 +132,29 @@ export default function CharactersPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0 || organizationFilter !== null
 
+  // Sync component state with URL params on mount and when URL changes
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    const urlPage = parseInt(searchParams.get('page') || '1', 10)
+    const urlSort = (searchParams.get('sort') as SortOption) || 'firstAppearance'
+    const urlOrg = searchParams.get('org') || null
+
+    // Only update if values differ to avoid unnecessary re-renders
+    if (urlSearch !== searchQuery) {
+      setSearchInput(urlSearch)
+      setSearchQuery(urlSearch)
+    }
+    if (urlPage !== currentPage) {
+      setCurrentPage(urlPage)
+    }
+    if (urlSort !== sortBy) {
+      setSortBy(urlSort)
+    }
+    if (urlOrg !== organizationFilter) {
+      setOrganizationFilter(urlOrg)
+    }
+  }, [searchParams]) // Only depend on searchParams to avoid infinite loops
+
   // Filter characters by organization client-side
   const filteredCharacters = useMemo(() => {
     if (!organizationFilter) return characters
@@ -192,16 +215,17 @@ export default function CharactersPageContent({
     }
   }, [])
 
-  // Update URL when search, page, or sort changes
-  const updateURL = useCallback((page: number, search: string, sort: SortOption) => {
+  // Update URL when search, page, sort, or org filter changes
+  const updateURL = useCallback((page: number, search: string, sort: SortOption, org: string | null = organizationFilter) => {
     const params = new URLSearchParams()
     if (search) params.set('search', search)
     if (page > 1) params.set('page', page.toString())
     if (sort !== 'firstAppearance') params.set('sort', sort)
+    if (org) params.set('org', org)
 
     const url = params.toString() ? `/characters?${params.toString()}` : '/characters'
     router.push(url, { scroll: false })
-  }, [router])
+  }, [router, organizationFilter])
 
   // Load characters when page, search, or sort changes
   useEffect(() => {
@@ -212,12 +236,16 @@ export default function CharactersPageContent({
   const [debouncedSearch] = useDebouncedValue(searchInput, 300)
 
   useEffect(() => {
+    // Skip if input was cleared but debounce hasn't caught up yet
+    if (searchInput.trim() === '' && debouncedSearch.trim() !== '') {
+      return
+    }
     if (debouncedSearch.trim() !== searchQuery) {
       setSearchQuery(debouncedSearch.trim())
       setCurrentPage(1)
       updateURL(1, debouncedSearch.trim(), sortBy)
     }
-  }, [debouncedSearch, searchQuery, sortBy, updateURL])
+  }, [debouncedSearch, searchInput, searchQuery, sortBy, updateURL])
 
   // Fetch organizations on mount
   useEffect(() => {
@@ -243,7 +271,8 @@ export default function CharactersPageContent({
     if (value.trim() === '' && searchQuery !== '') {
       setSearchQuery('')
       setCurrentPage(1)
-      updateURL(1, '', sortBy)
+      // Keep organization filter when just clearing search text
+      updateURL(1, '', sortBy, organizationFilter)
     }
   }
 
@@ -252,21 +281,15 @@ export default function CharactersPageContent({
     setSearchQuery('')
     setOrganizationFilter(null)
     setCurrentPage(1)
-    updateURL(1, '', sortBy)
+    // Pass null explicitly for org to clear the filter from URL
+    updateURL(1, '', sortBy, null)
   }
 
   const handleOrganizationFilterChange = (value: string | null) => {
     setOrganizationFilter(value)
     setCurrentPage(1)
-    // Update URL with org filter
-    const params = new URLSearchParams(searchParams.toString())
-    if (value) {
-      params.set('org', value)
-    } else {
-      params.delete('org')
-    }
-    params.set('page', '1')
-    router.push(params.toString() ? `/characters?${params.toString()}` : '/characters')
+    // Use updateURL for consistency
+    updateURL(1, searchQuery, sortBy, value)
   }
 
   const handlePageChange = (page: number) => {
@@ -571,6 +594,7 @@ export default function CharactersPageContent({
                       withBorder={false}
                       radius="lg"
                       shadow="sm"
+                      className="hoverable-card hoverable-card-character"
                       style={getPlayingCardStyles(theme, accentCharacter)}
                       onClick={(e) => {
                         // On touch devices, first tap shows preview, second tap navigates
@@ -593,8 +617,6 @@ export default function CharactersPageContent({
                       }}
                       onMouseEnter={(e) => {
                         if (isTouchDevice) return // Skip hover on touch devices
-                        e.currentTarget.style.transform = 'translateY(-4px)'
-                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
 
                         // Store the currently hovered character and element
                         currentlyHoveredRef.current = { character, element: e.currentTarget as HTMLElement }
@@ -610,10 +632,8 @@ export default function CharactersPageContent({
                           handleCharacterMouseEnter(character, e)
                         }
                       }}
-                      onMouseLeave={(e) => {
+                      onMouseLeave={() => {
                         if (isTouchDevice) return // Skip hover on touch devices
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = theme.shadows.sm
                         currentlyHoveredRef.current = null
                         handleCharacterMouseLeave()
                       }}
@@ -648,6 +668,7 @@ export default function CharactersPageContent({
                           variant="filled"
                           color="dark"
                           radius="xl"
+                          aria-label="Edit character image"
                           style={{
                             position: 'absolute',
                             top: rem(8),

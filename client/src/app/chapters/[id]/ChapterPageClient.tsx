@@ -13,6 +13,7 @@ import {
   Tabs,
   Text,
   Title,
+  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import {
@@ -30,7 +31,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
-import BackButton from '../../../components/BackButton'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import type { Chapter as ChapterResource } from '../../../types'
 
 interface Character {
@@ -95,9 +96,9 @@ export default function ChapterPageClient({
     }}>
       <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
         <Stack gap={theme.spacing.md}>
-          <BackButton
-            href="/chapters"
-            label="Back to Chapters"
+          {/* Breadcrumb Navigation */}
+          <BreadcrumbNav
+            items={createEntityBreadcrumbs('chapter', initialChapter.title || `Chapter ${initialChapter.number}`)}
             entityType="chapter"
           />
 
@@ -268,12 +269,26 @@ export default function ChapterPageClient({
               >
                 <Tabs.List>
                   <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
-                  <Tabs.Tab value="events" leftSection={<CalendarSearch size={16} />} disabled={!Array.isArray(initialEvents) || initialEvents.length === 0}>
-                    Events ({Array.isArray(initialEvents) ? initialEvents.length : 0})
-                  </Tabs.Tab>
-                  <Tabs.Tab value="quotes" leftSection={<MessageSquareQuote size={16} />} disabled={!Array.isArray(initialQuotes) || initialQuotes.length === 0}>
-                    Quotes ({Array.isArray(initialQuotes) ? initialQuotes.length : 0})
-                  </Tabs.Tab>
+                  <Tooltip
+                    label="No events available for this chapter"
+                    disabled={Array.isArray(initialEvents) && initialEvents.length > 0}
+                    position="bottom"
+                    withArrow
+                  >
+                    <Tabs.Tab value="events" leftSection={<CalendarSearch size={16} />} disabled={!Array.isArray(initialEvents) || initialEvents.length === 0}>
+                      Events ({Array.isArray(initialEvents) ? initialEvents.length : 0})
+                    </Tabs.Tab>
+                  </Tooltip>
+                  <Tooltip
+                    label="No quotes available for this chapter"
+                    disabled={Array.isArray(initialQuotes) && initialQuotes.length > 0}
+                    position="bottom"
+                    withArrow
+                  >
+                    <Tabs.Tab value="quotes" leftSection={<MessageSquareQuote size={16} />} disabled={!Array.isArray(initialQuotes) || initialQuotes.length === 0}>
+                      Quotes ({Array.isArray(initialQuotes) ? initialQuotes.length : 0})
+                    </Tabs.Tab>
+                  </Tooltip>
                 </Tabs.List>
 
                 <Tabs.Panel value="overview" pt={theme.spacing.md}>

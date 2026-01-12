@@ -231,6 +231,7 @@ export default function GambleSelectionPopup({
                                 event.stopPropagation()
                                 toggleExpanded(gamble.id)
                               }}
+                              aria-label={expandedGamble === gamble.id ? 'Collapse details' : 'Expand details'}
                             >
                               {expandedGamble === gamble.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                             </ActionIcon>

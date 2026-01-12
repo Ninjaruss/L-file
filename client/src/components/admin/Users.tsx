@@ -28,8 +28,10 @@ import {
   useCreate,
   useNotify,
   useRefresh,
-  useDataProvider
+  useDataProvider,
+  usePermissions
 } from 'react-admin'
+import { useFormContext, useWatch } from 'react-hook-form'
 import {
   Dialog,
   DialogTitle,
@@ -46,7 +48,7 @@ import {
   Chip,
   Typography
 } from '@mui/material'
-import { Delete, Add } from '@mui/icons-material'
+import { Delete, Add, Warning } from '@mui/icons-material'
 
 // Badge Award Modal Component
 const BadgeAwardModal = ({ open, onClose, userId, username }: {
@@ -725,19 +727,216 @@ export const UserShow = () => (
   </Show>
 )
 
+// Role Select Input with elevation protection
+const RoleSelectInput = () => {
+  const { permissions } = usePermissions()
+  const record = useRecordContext()
+  const { setValue } = useFormContext()
+  const currentRole = useWatch({ name: 'role' })
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingRole, setPendingRole] = useState<string | null>(null)
+  const notify = useNotify()
+
+  const isAdmin = permissions === 'admin'
+  const isModerator = permissions === 'moderator'
+
+  // Moderators cannot promote to admin
+  const availableChoices = isModerator
+    ? [
+        { id: 'user', name: 'User' },
+        { id: 'moderator', name: 'Moderator' },
+      ]
+    : [
+        { id: 'user', name: 'User' },
+        { id: 'moderator', name: 'Moderator' },
+        { id: 'admin', name: 'Admin' },
+      ]
+
+  const handleRoleChange = (event: any) => {
+    const newRole = event.target.value
+    const originalRole = record?.role
+
+    // Require confirmation for admin promotion
+    if (newRole === 'admin' && originalRole !== 'admin') {
+      setPendingRole(newRole)
+      setConfirmOpen(true)
+      return
+    }
+
+    // Require confirmation for admin demotion
+    if (originalRole === 'admin' && newRole !== 'admin') {
+      setPendingRole(newRole)
+      setConfirmOpen(true)
+      return
+    }
+
+    setValue('role', newRole, { shouldDirty: true })
+  }
+
+  const handleConfirm = () => {
+    if (pendingRole) {
+      setValue('role', pendingRole, { shouldDirty: true })
+      notify(
+        pendingRole === 'admin'
+          ? 'Admin role will be applied on save'
+          : 'Role change will be applied on save',
+        { type: 'info' }
+      )
+    }
+    setConfirmOpen(false)
+    setPendingRole(null)
+  }
+
+  const handleCancel = () => {
+    setConfirmOpen(false)
+    setPendingRole(null)
+  }
+
+  const isPromotingToAdmin = pendingRole === 'admin' && record?.role !== 'admin'
+  const isDemotingFromAdmin = record?.role === 'admin' && pendingRole !== 'admin'
+
+  return (
+    <>
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Role</InputLabel>
+        <Select
+          value={currentRole || record?.role || 'user'}
+          onChange={handleRoleChange}
+          label="Role"
+        >
+          {availableChoices.map((choice) => (
+            <MenuItem key={choice.id} value={choice.id}>
+              {choice.name}
+              {choice.id === 'admin' && (
+                <Chip
+                  label="Elevated"
+                  size="small"
+                  color="error"
+                  sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                />
+              )}
+            </MenuItem>
+          ))}
+        </Select>
+        {isModerator && (
+          <Typography variant="caption" sx={{ mt: 0.5, color: 'text.secondary' }}>
+            Moderators cannot promote users to admin role
+          </Typography>
+        )}
+      </FormControl>
+
+      <Dialog
+        open={confirmOpen}
+        onClose={handleCancel}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: '#0a0a0a',
+            border: '2px solid #f44336',
+            borderRadius: 2,
+            color: '#ffffff'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          backgroundColor: 'rgba(244, 67, 54, 0.1)',
+          borderBottom: '1px solid rgba(244, 67, 54, 0.3)',
+          color: '#f44336',
+          fontWeight: 'bold'
+        }}>
+          <Warning />
+          {isPromotingToAdmin ? 'Confirm Admin Promotion' : 'Confirm Role Change'}
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography variant="body1" sx={{ color: '#ffffff', mb: 2 }}>
+            {isPromotingToAdmin ? (
+              <>
+                You are about to promote <strong>{record?.username}</strong> to <strong>Admin</strong>.
+                <br /><br />
+                Admins have full access to:
+                <ul style={{ marginTop: 8 }}>
+                  <li>Promote/demote any user including other admins</li>
+                  <li>Delete any content permanently</li>
+                  <li>Manage all system settings</li>
+                </ul>
+              </>
+            ) : isDemotingFromAdmin ? (
+              <>
+                You are about to demote <strong>{record?.username}</strong> from Admin to <strong>{pendingRole}</strong>.
+                <br /><br />
+                They will lose all admin privileges immediately upon save.
+              </>
+            ) : (
+              <>
+                You are about to change <strong>{record?.username}</strong>&apos;s role to <strong>{pendingRole}</strong>.
+              </>
+            )}
+          </Typography>
+
+          <Box sx={{
+            p: 2,
+            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+            borderRadius: 1,
+            border: '1px solid rgba(255, 152, 0, 0.3)'
+          }}>
+            <Typography variant="body2" sx={{
+              color: '#ff9800',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <Warning sx={{ fontSize: 16 }} />
+              This action will take effect when you save the form.
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button
+            onClick={handleCancel}
+            variant="outlined"
+            sx={{
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              color: '#ffffff',
+              '&:hover': {
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            variant="contained"
+            color="error"
+            sx={{
+              backgroundColor: '#f44336',
+              '&:hover': {
+                backgroundColor: '#d32f2f'
+              }
+            }}
+          >
+            {isPromotingToAdmin ? 'Confirm Promotion' : 'Confirm Change'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  )
+}
+
 export const UserEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="username" required />
       <TextInput source="email" type="email" required />
-      <SelectInput
-        source="role"
-        choices={[
-          { id: 'user', name: 'User' },
-          { id: 'moderator', name: 'Moderator' },
-          { id: 'admin', name: 'Admin' },
-        ]}
-      />
+      <RoleSelectInput />
       <BooleanInput source="isEmailVerified" />
     </SimpleForm>
   </Edit>

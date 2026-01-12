@@ -219,7 +219,8 @@ body {
 /* Base tab styles for all entity types */
 .character-tabs .mantine-Tabs-tab,
 .gamble-tabs .mantine-Tabs-tab,
-.arc-tabs .mantine-Tabs-tab {
+.arc-tabs .mantine-Tabs-tab,
+.guide-tabs .mantine-Tabs-tab {
   color: rgba(255, 255, 255, 0.7) !important;
   background-color: transparent !important;
   border-radius: 6px !important;
@@ -243,6 +244,12 @@ body {
 
 .arc-tabs .mantine-Tabs-tab:hover {
   background-color: rgba(249, 115, 22, 0.25) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  transform: translateY(-1px) !important;
+}
+
+.guide-tabs .mantine-Tabs-tab:hover {
+  background-color: rgba(81, 207, 102, 0.25) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   transform: translateY(-1px) !important;
 }
@@ -281,10 +288,22 @@ body {
   border-color: var(--color-arc) !important;
 }
 
+.guide-tabs .mantine-Tabs-tab[data-active="true"],
+.guide-tabs .mantine-Tabs-tab[data-active],
+.guide-tabs .mantine-Tabs-tab[aria-selected="true"],
+.guide-tabs [data-active="true"],
+.guide-tabs [data-active],
+.guide-tabs [aria-selected="true"] {
+  background-color: var(--color-guide) !important;
+  color: var(--usogui-white) !important;
+  border-color: var(--color-guide) !important;
+}
+
 /* Disabled tab states - clear visual feedback */
 .character-tabs .mantine-Tabs-tab[data-disabled],
 .gamble-tabs .mantine-Tabs-tab[data-disabled],
-.arc-tabs .mantine-Tabs-tab[data-disabled] {
+.arc-tabs .mantine-Tabs-tab[data-disabled],
+.guide-tabs .mantine-Tabs-tab[data-disabled] {
   color: rgba(255, 255, 255, 0.35) !important;
   background-color: rgba(255, 255, 255, 0.02) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
@@ -295,7 +314,8 @@ body {
 
 .character-tabs .mantine-Tabs-tab[data-disabled]:hover,
 .gamble-tabs .mantine-Tabs-tab[data-disabled]:hover,
-.arc-tabs .mantine-Tabs-tab[data-disabled]:hover {
+.arc-tabs .mantine-Tabs-tab[data-disabled]:hover,
+.guide-tabs .mantine-Tabs-tab[data-disabled]:hover {
   background-color: rgba(255, 255, 255, 0.02) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
   transform: none !important;
@@ -318,4 +338,143 @@ body {
 
 .search-result-item:hover {
   background-color: rgba(225, 29, 72, 0.08);
+}
+
+/* Skip to content link for accessibility */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 12px 24px;
+  background-color: var(--usogui-red);
+  color: var(--usogui-white);
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: top 0.2s ease;
+}
+
+.skip-to-content:focus {
+  top: 16px;
+  outline: 2px solid var(--usogui-white);
+  outline-offset: 2px;
+}
+
+/* Global focus-visible styles for better keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--usogui-red);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--usogui-red);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline when not keyboard navigating */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================
+   Card Hover Effects (CSS-based for reliability)
+   Use these classes instead of inline onMouseEnter/onMouseLeave
+   ============================================ */
+
+/* Base hoverable card - works on all devices including touch */
+.hoverable-card {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  will-change: transform;
+}
+
+.hoverable-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Entity-specific hoverable cards with accent colors */
+.hoverable-card-character:hover {
+  border-color: var(--color-character);
+  box-shadow: 0 12px 32px rgba(77, 171, 247, 0.2);
+}
+
+.hoverable-card-gamble:hover {
+  border-color: var(--color-gamble);
+  box-shadow: 0 12px 32px rgba(255, 85, 85, 0.2);
+}
+
+.hoverable-card-arc:hover {
+  border-color: var(--color-arc);
+  box-shadow: 0 12px 32px rgba(249, 115, 22, 0.2);
+}
+
+.hoverable-card-event:hover {
+  border-color: var(--color-event);
+  box-shadow: 0 12px 32px rgba(243, 156, 18, 0.2);
+}
+
+.hoverable-card-guide:hover {
+  border-color: var(--color-guide);
+  box-shadow: 0 12px 32px rgba(81, 207, 102, 0.2);
+}
+
+.hoverable-card-media:hover {
+  border-color: var(--color-media);
+  box-shadow: 0 12px 32px rgba(168, 85, 247, 0.2);
+}
+
+.hoverable-card-quote:hover {
+  border-color: var(--color-quote);
+  box-shadow: 0 12px 32px rgba(32, 201, 151, 0.2);
+}
+
+.hoverable-card-volume:hover {
+  border-color: var(--color-volume);
+  box-shadow: 0 12px 32px rgba(255, 105, 180, 0.2);
+}
+
+.hoverable-card-chapter:hover {
+  border-color: var(--color-chapter);
+  box-shadow: 0 12px 32px rgba(56, 189, 248, 0.2);
+}
+
+.hoverable-card-organization:hover {
+  border-color: var(--color-organization);
+  box-shadow: 0 12px 32px rgba(192, 132, 252, 0.2);
+}
+
+/* Hoverable badge - for tags and small interactive elements */
+.hoverable-badge {
+  transition: background-color 200ms ease, transform 200ms ease;
+  cursor: pointer;
+}
+
+.hoverable-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Focus trap overlay for mobile navigation */
+.focus-trap-active {
+  overflow: hidden;
+}
+
+/* Loading button state */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: inherit;
 }

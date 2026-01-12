@@ -24,7 +24,7 @@ import { notifications } from '@mantine/notifications'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
@@ -96,6 +96,7 @@ export default function GuidesPageContent({
   const { user } = useAuth()
   const theme = useMantineTheme()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [guides, setGuides] = useState<Guide[]>(initialGuides)
   const [loading, setLoading] = useState(false)
@@ -111,6 +112,33 @@ export default function GuidesPageContent({
   const [authorFilter, setAuthorFilter] = useState<string | null>(initialAuthorId || null)
   const [authorName, setAuthorName] = useState<string | null>(initialAuthorName || null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+
+  // Sync component state with URL params on mount and when URL changes
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    const urlPage = parseInt(searchParams.get('page') || '1', 10)
+    const urlAuthor = searchParams.get('author') || null
+    const urlAuthorName = searchParams.get('authorName') || null
+    const urlTag = searchParams.get('tag') || null
+
+    // Only update if values differ to avoid unnecessary re-renders
+    if (urlSearch !== searchQuery) {
+      setSearchInput(urlSearch)
+      setSearchQuery(urlSearch)
+    }
+    if (urlPage !== currentPage) {
+      setCurrentPage(urlPage)
+    }
+    if (urlAuthor !== authorFilter) {
+      setAuthorFilter(urlAuthor)
+    }
+    if (urlAuthorName !== authorName) {
+      setAuthorName(urlAuthorName)
+    }
+    if (urlTag !== tagFilter) {
+      setTagFilter(urlTag)
+    }
+  }, [searchParams]) // Only depend on searchParams to avoid infinite loops
 
   // Hover modal state
   const [hoveredGuide, setHoveredGuide] = useState<Guide | null>(null)
@@ -191,12 +219,16 @@ export default function GuidesPageContent({
 
   // Update search query when debounced value changes
   useEffect(() => {
+    // Skip if input was cleared but debounce hasn't caught up yet
+    if (searchInput.trim() === '' && debouncedSearch.trim() !== '') {
+      return
+    }
     if (debouncedSearch.trim() !== searchQuery) {
       setSearchQuery(debouncedSearch.trim())
       setCurrentPage(1)
       updateUrl(1, debouncedSearch.trim(), authorFilter || undefined, authorName || undefined, tagFilter || undefined)
     }
-  }, [debouncedSearch, searchQuery, authorFilter, authorName, tagFilter, updateUrl])
+  }, [debouncedSearch, searchInput, searchQuery, authorFilter, authorName, tagFilter, updateUrl])
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
@@ -445,7 +477,7 @@ export default function GuidesPageContent({
               radius="xl"
               rightSection={
                 hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm">
+                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="sm" aria-label="Clear search">
                     <X size={16} />
                   </ActionIcon>
                 ) : null
@@ -579,17 +611,10 @@ export default function GuidesPageContent({
                       withBorder={false}
                       radius="lg"
                       shadow="sm"
+                      className="hoverable-card hoverable-card-guide"
                       style={getPlayingCardStyles(theme, accentGuide)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)'
-                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
-                        handleGuideMouseEnter(guide, e)
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = theme.shadows.sm
-                        handleGuideMouseLeave()
-                      }}
+                      onMouseEnter={(e) => handleGuideMouseEnter(guide, e)}
+                      onMouseLeave={() => handleGuideMouseLeave()}
                     >
                       {/* Author Badge at Top Left */}
                       <Group
@@ -683,28 +708,19 @@ export default function GuidesPageContent({
                                 size="sm"
                                 c={getEntityThemeColor(theme, 'organization')}
                                 variant="light"
+                                className="hoverable-badge"
                                 style={{
                                   backgroundColor: `${getEntityThemeColor(theme, 'organization')}15`,
                                   borderColor: getEntityThemeColor(theme, 'organization'),
                                   border: `1px solid ${getEntityThemeColor(theme, 'organization')}40`,
                                   fontSize: rem(11),
                                   height: rem(24),
-                                  paddingInline: rem(8),
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease'
+                                  paddingInline: rem(8)
                                 }}
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
                                   handleTagClick(tag.name)
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = `${getEntityThemeColor(theme, 'organization')}30`
-                                  e.currentTarget.style.transform = 'scale(1.05)'
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = `${getEntityThemeColor(theme, 'organization')}15`
-                                  e.currentTarget.style.transform = 'scale(1)'
                                 }}
                               >
                                 #{tag.name}

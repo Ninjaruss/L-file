@@ -4,7 +4,7 @@ import { api } from '../../lib/api'
 // Function to clean update data by removing read-only fields and relationship objects
 const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   const cleaned = { ...data }
-  
+
   // Common relationship fields to remove (these are populated by the server)
   const relationshipFields = [
     'user', 'author', 'character', 'characters', 'chapter', 'chapters', 'arc', 'arcs',
@@ -13,29 +13,28 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     'users', 'chapters', 'volumes', 'teams', 'rounds', 'observers', 'members',
     'winner', 'media', 'guides'
   ]
-  
+
   relationshipFields.forEach(field => {
     delete cleaned[field]
   })
-  
+
   // Resource-specific cleaning
   if (resource === 'events') {
     // Keep only the fields that are allowed in the CreateEventDto/UpdateEventDto
     const allowedFields = [
-      'title', 'description', 'type', 'status', 'arcId', 'gambleId', 
+      'title', 'description', 'type', 'status', 'arcId', 'gambleId',
       'chapterNumber', 'spoilerChapter', 'characterIds'
     ]
-    
+
     const eventCleaned: Record<string, unknown> = {}
     allowedFields.forEach(field => {
       if (cleaned[field] !== undefined) {
         eventCleaned[field] = cleaned[field]
       }
     })
-    
+
     // Handle characterIds - ReferenceArrayInput might set this as objects or IDs
     if (eventCleaned.characterIds && Array.isArray(eventCleaned.characterIds)) {
-      console.log('Processing characterIds for event:', eventCleaned.characterIds)
       eventCleaned.characterIds = eventCleaned.characterIds.map((c: unknown) => {
         // If it's already a number, keep it
         if (typeof c === 'number') return c
@@ -46,48 +45,39 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
           const id = (c as Record<string, unknown>).id
           return typeof id === 'number' ? id : Number(id)
         }
-        console.warn('Unexpected characterId format:', c)
         return c
       }).filter(id => {
         const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-        if (!isValid) console.warn('Filtered out invalid characterId:', id)
         return isValid
       })
-      console.log('Processed characterIds for event:', eventCleaned.characterIds)
     } else if (data.characters && Array.isArray(data.characters)) {
       // If characterIds doesn't exist but characters does, extract IDs from characters
-      console.log('Extracting characterIds from characters for event:', data.characters)
-      eventCleaned.characterIds = data.characters.map((c: any) => 
+      eventCleaned.characterIds = data.characters.map((c: any) =>
         typeof c === 'object' && c !== null ? c.id : c
       ).filter((id: any) => {
         const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-        if (!isValid) console.warn('Filtered out invalid extracted characterId:', id)
         return isValid
       })
-      console.log('Extracted characterIds for event:', eventCleaned.characterIds)
     }
-    
+
     return eventCleaned
   }
-  
+
   if (resource === 'gambles') {
     // Keep only the fields that are allowed in the CreateGambleDto/UpdateGambleDto
     const allowedFields = [
       'name', 'description', 'rules', 'winCondition', 'chapterId', 'participantIds'
     ]
-    
+
     const gambleCleaned: Record<string, unknown> = {}
     allowedFields.forEach(field => {
       if (cleaned[field] !== undefined) {
         gambleCleaned[field] = cleaned[field]
       }
     })
-    
+
     // Handle participantIds - ReferenceArrayInput might set this as objects or IDs
     if (gambleCleaned.participantIds && Array.isArray(gambleCleaned.participantIds)) {
-      // Log for debugging
-      console.log('Original participantIds:', gambleCleaned.participantIds)
-      
       gambleCleaned.participantIds = gambleCleaned.participantIds.map((p: unknown) => {
         // If it's already a number, keep it
         if (typeof p === 'number') return p
@@ -100,44 +90,33 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
         }
         return p
       }).filter(id => id !== null && id !== undefined && !isNaN(Number(id)))
-      
-      // Log for debugging
-      console.log('Processed participantIds:', gambleCleaned.participantIds)
     } else if (data.participants && Array.isArray(data.participants)) {
       // If participantIds doesn't exist but participants does, extract IDs from participants
-      console.log('Original participants:', data.participants)
-      gambleCleaned.participantIds = data.participants.map((p: any) => 
+      gambleCleaned.participantIds = data.participants.map((p: any) =>
         typeof p === 'object' && p !== null ? (p.id || p.characterId) : p
       ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
-      console.log('Extracted participantIds from participants:', gambleCleaned.participantIds)
     }
-    
+
     return gambleCleaned
   }
-  
+
   if (resource === 'guides') {
-    console.log('=== GUIDE DATA CLEANING DEBUG ===')
-    console.log('Original data:', JSON.stringify(data, null, 2))
-    
     // Keep only the fields that are allowed in the CreateGuideDto/UpdateGuideDto
     const allowedFields = [
       'title', 'description', 'content', 'status', 'tagNames', 'authorId',
       'characterIds', 'arcId', 'gambleIds', 'rejectionReason'
     ]
-    
+
     const guideCleaned: Record<string, unknown> = {}
     allowedFields.forEach(field => {
       if (cleaned[field] !== undefined) {
         guideCleaned[field] = cleaned[field]
       }
     })
-    
-    console.log('After allowed fields filtering:', JSON.stringify(guideCleaned, null, 2))
-    
+
     // Handle characterIds - ReferenceArrayInput might set this as objects or IDs
     try {
       if (guideCleaned.characterIds && Array.isArray(guideCleaned.characterIds)) {
-        console.log('Processing characterIds:', guideCleaned.characterIds)
         guideCleaned.characterIds = guideCleaned.characterIds.map((c: unknown) => {
           // If it's already a number, keep it
           if (typeof c === 'number') return c
@@ -148,34 +127,27 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
             const id = (c as Record<string, unknown>).id
             return typeof id === 'number' ? id : Number(id)
           }
-          console.warn('Unexpected characterId format:', c)
           return c
         }).filter(id => {
           const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-          if (!isValid) console.warn('Filtered out invalid characterId:', id)
           return isValid
         })
-        console.log('Processed characterIds:', guideCleaned.characterIds)
       } else if (data.characters && Array.isArray(data.characters)) {
-        console.log('Extracting characterIds from characters:', data.characters)
-        guideCleaned.characterIds = data.characters.map((c: any) => 
+        guideCleaned.characterIds = data.characters.map((c: any) =>
           typeof c === 'object' && c !== null ? c.id : c
         ).filter((id: any) => {
           const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-          if (!isValid) console.warn('Filtered out invalid extracted characterId:', id)
           return isValid
         })
-        console.log('Extracted characterIds:', guideCleaned.characterIds)
       }
     } catch (error) {
       console.error('Error processing characterIds:', error)
       delete guideCleaned.characterIds
     }
-    
+
     // Handle gambleIds - ReferenceArrayInput might set this as objects or IDs
     try {
       if (guideCleaned.gambleIds && Array.isArray(guideCleaned.gambleIds)) {
-        console.log('Processing gambleIds:', guideCleaned.gambleIds)
         guideCleaned.gambleIds = guideCleaned.gambleIds.map((g: unknown) => {
           // If it's already a number, keep it
           if (typeof g === 'number') return g
@@ -186,74 +158,63 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
             const id = (g as Record<string, unknown>).id
             return typeof id === 'number' ? id : Number(id)
           }
-          console.warn('Unexpected gambleId format:', g)
           return g
         }).filter(id => {
           const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-          if (!isValid) console.warn('Filtered out invalid gambleId:', id)
           return isValid
         })
-        console.log('Processed gambleIds:', guideCleaned.gambleIds)
       } else if (data.gambles && Array.isArray(data.gambles)) {
-        console.log('Extracting gambleIds from gambles:', data.gambles)
-        guideCleaned.gambleIds = data.gambles.map((g: any) => 
+        guideCleaned.gambleIds = data.gambles.map((g: any) =>
           typeof g === 'object' && g !== null ? g.id : g
         ).filter((id: any) => {
           const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-          if (!isValid) console.warn('Filtered out invalid extracted gambleId:', id)
           return isValid
         })
-        console.log('Extracted gambleIds:', guideCleaned.gambleIds)
       }
     } catch (error) {
       console.error('Error processing gambleIds:', error)
       delete guideCleaned.gambleIds
     }
-    
+
     // Handle arcId - might be an object with id property, or null/empty string for clearing
     try {
       if (guideCleaned.arcId !== undefined) {
         if (guideCleaned.arcId && typeof guideCleaned.arcId === 'object' && guideCleaned.arcId !== null && 'id' in (guideCleaned.arcId as Record<string, unknown>)) {
           const id = (guideCleaned.arcId as Record<string, unknown>).id
-          console.log('Extracting arcId from object:', guideCleaned.arcId, 'extracted:', id)
           guideCleaned.arcId = typeof id === 'number' ? id : Number(id)
         } else if (guideCleaned.arcId === null || guideCleaned.arcId === '' || guideCleaned.arcId === 'null') {
           // Handle clearing the arc relation
-          console.log('Clearing arcId (was:', guideCleaned.arcId, ')')
           guideCleaned.arcId = null
         }
       } else if (data.arc && typeof data.arc === 'object' && data.arc !== null && 'id' in (data.arc as Record<string, unknown>)) {
         const id = (data.arc as Record<string, unknown>).id
-        console.log('Extracting arcId from data.arc:', data.arc, 'extracted:', id)
         guideCleaned.arcId = typeof id === 'number' ? id : Number(id)
       }
-      
+
       // Validate arcId is a valid number or null (for clearing)
       if (guideCleaned.arcId !== undefined && guideCleaned.arcId !== null && (isNaN(Number(guideCleaned.arcId)))) {
-        console.warn('Invalid arcId, removing:', guideCleaned.arcId)
         delete guideCleaned.arcId
       }
     } catch (error) {
       console.error('Error processing arcId:', error)
       delete guideCleaned.arcId
     }
-    
+
     // Handle tagNames - ensure it's an array of strings
     try {
       if (guideCleaned.tagNames && Array.isArray(guideCleaned.tagNames)) {
-        guideCleaned.tagNames = guideCleaned.tagNames.filter(tag => 
+        guideCleaned.tagNames = guideCleaned.tagNames.filter(tag =>
           typeof tag === 'string' && tag.trim().length > 0
         )
-        console.log('Processed tagNames:', guideCleaned.tagNames)
       }
     } catch (error) {
       console.error('Error processing tagNames:', error)
       delete guideCleaned.tagNames
     }
-    
+
     // Remove read-only fields that are auto-calculated by backend
     delete guideCleaned.viewCount
-    delete guideCleaned.likeCount  
+    delete guideCleaned.likeCount
     delete guideCleaned.author
     delete guideCleaned.likes
     delete guideCleaned.characters
@@ -262,26 +223,23 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     delete guideCleaned.tags
     delete guideCleaned.createdAt
     delete guideCleaned.updatedAt
-    
-    console.log('Final cleaned data:', JSON.stringify(guideCleaned, null, 2))
-    console.log('=== END GUIDE DATA CLEANING DEBUG ===')
-    
+
     return guideCleaned
   }
-  
+
   if (resource === 'media') {
     // Keep only the fields that are allowed in the media DTOs using polymorphic system
     const allowedFields = [
       'url', 'type', 'description', 'ownerType', 'ownerId', 'chapterNumber', 'status', 'rejectionReason', 'purpose'
     ]
-    
+
     const mediaCleaned: Record<string, unknown> = {}
     allowedFields.forEach(field => {
       if (cleaned[field] !== undefined) {
         mediaCleaned[field] = cleaned[field]
       }
     })
-    
+
     // Remove read-only fields that are auto-populated
     delete mediaCleaned.submittedBy
     delete mediaCleaned.character
@@ -290,7 +248,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     delete mediaCleaned.gamble
     delete mediaCleaned.organization
     delete mediaCleaned.user
-    
+
     // Remove legacy relationship fields to prevent conflicts
     delete mediaCleaned.characterId
     delete mediaCleaned.arcId
@@ -298,26 +256,25 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     delete mediaCleaned.gambleId
     delete mediaCleaned.organizationId
     delete mediaCleaned.userId
-    
+
     return mediaCleaned
   }
-  
+
   if (resource === 'characters') {
     // Keep only the fields that are allowed in the CreateCharacterDto/UpdateCharacterDto
     const allowedFields = [
       'name', 'description', 'firstAppearanceChapter', 'alternateNames', 'organizationIds'
     ]
-    
+
     const characterCleaned: Record<string, unknown> = {}
     allowedFields.forEach(field => {
       if (cleaned[field] !== undefined) {
         characterCleaned[field] = cleaned[field]
       }
     })
-    
+
     // Handle organizationIds (organization IDs) - ReferenceArrayInput might set this as objects or IDs
     if (characterCleaned.organizationIds && Array.isArray(characterCleaned.organizationIds)) {
-      console.log('Processing organization IDs for character:', characterCleaned.organizationIds)
       characterCleaned.organizationIds = characterCleaned.organizationIds.map((f: unknown) => {
         // If it's already a number, keep it
         if (typeof f === 'number') return f
@@ -328,30 +285,24 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
           const id = (f as Record<string, unknown>).id
           return typeof id === 'number' ? id : Number(id)
         }
-        console.warn('Unexpected organization ID format:', f)
         return f
       }).filter(id => {
         const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-        if (!isValid) console.warn('Filtered out invalid organization ID:', id)
         return isValid
       })
-      console.log('Processed organization IDs for character:', characterCleaned.organizationIds)
     } else if (data.organizations && Array.isArray(data.organizations)) {
       // If organizationIds doesn't exist but organizations does, extract IDs from organizations
-      console.log('Extracting organization IDs from organizations for character:', data.organizations)
-      characterCleaned.organizationIds = data.organizations.map((f: any) => 
+      characterCleaned.organizationIds = data.organizations.map((f: any) =>
         typeof f === 'object' && f !== null ? f.id : f
       ).filter((id: any) => {
         const isValid = id !== null && id !== undefined && !isNaN(Number(id))
-        if (!isValid) console.warn('Filtered out invalid extracted organization ID:', id)
         return isValid
       })
-      console.log('Extracted organization IDs for character:', characterCleaned.organizationIds)
     }
-    
+
     return characterCleaned
   }
-  
+
   if (resource === 'quotes') {
     // Keep only the fields that are allowed in the CreateQuoteDto/UpdateQuoteDto
     const allowedFields = [
@@ -480,13 +431,13 @@ export const AdminDataProvider: DataProvider = {
   getList: async (resource, params) => {
     const { page, perPage } = params.pagination || { page: 1, perPage: 20 }
     const { field, order } = params.sort || { field: 'id', order: 'ASC' }
-    
+
     // Special handling for media-approval resource
     if (resource === 'media-approval') {
       try {
         const response = await api.get<unknown>('/media/pending')
         const items = Array.isArray(response) ? response : (response as Record<string, unknown>)?.data || []
-        
+
         return {
           data: (items as any[]).map((item: any) => ({ ...item, id: item.id })),
           total: (items as any[]).length,
@@ -499,21 +450,21 @@ export const AdminDataProvider: DataProvider = {
         throw new HttpError(message, status, error)
       }
     }
-    
+
     // Base query parameters - filter out invalid values and client-side only filters
     const cleanFilter: Record<string, string> = {}
     if (params.filter) {
       Object.keys(params.filter).forEach(key => {
         const value = params.filter[key]
         // Skip undefined, null, empty strings, NaN, "NaN" values, and client-side only filters
-        if (value !== undefined && value !== null && value !== '' && 
+        if (value !== undefined && value !== null && value !== '' &&
             !Number.isNaN(value) && value !== 'NaN' &&
             key !== 'guideType') { // Skip guideType as it's handled client-side
           cleanFilter[key] = String(value)
         }
       })
     }
-    
+
     const query: Record<string, string> = {
       page: page.toString(),
       limit: perPage.toString(),
@@ -550,27 +501,24 @@ export const AdminDataProvider: DataProvider = {
                 ...user,
                 userBadges: Array.isArray(badgesData) ? badgesData : []
               }
-            } catch (error) {
-              console.warn(`Failed to fetch badges for user ${user.id}:`, error)
+            } catch {
               return { ...user, userBadges: [] }
             }
           }))
-        } catch (error) {
-          console.warn('Failed to fetch badges for users:', error)
+        } catch {
+          // Continue with users without badges if fetching fails
         }
       }
-      
+
       // Apply client-side filtering for guides if guideType filter is present
       if (resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all') {
         const guideType = params.filter.guideType as string
-        console.log(`Filtering guides by type: ${guideType}`)
-        console.log(`Total guides before filtering: ${(items as any[]).length}`)
-        
+
         items = (items as any[]).filter((guide: any) => {
           const hasCharacters = guide.characters && guide.characters.length > 0
           const hasArc = guide.arc && guide.arc.name
           const hasGambles = guide.gambles && guide.gambles.length > 0
-          
+
           let shouldInclude = false
           switch (guideType) {
             case 'character':
@@ -597,20 +545,14 @@ export const AdminDataProvider: DataProvider = {
             default:
               shouldInclude = true
           }
-          
-          if (shouldInclude) {
-            console.log(`Including guide: ${guide.title} (characters: ${hasCharacters}, arc: ${hasArc}, gambles: ${hasGambles})`)
-          }
-          
+
           return shouldInclude
         })
-        
-        console.log(`Total guides after filtering: ${(items as any[]).length}`)
       }
-      
+
       return {
         data: (items as any[]).map((item: any) => ({ ...item, id: item.id })),
-        total: resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all' 
+        total: resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all'
           ? (items as any[]).length // Use filtered count for guides with type filter
           : originalTotal as number, // Use original total for other cases
       }
@@ -678,46 +620,42 @@ export const AdminDataProvider: DataProvider = {
         )
       }
     }
-    
+
     try {
       const response = await api.get<unknown>(`/${resource}/${params.id}`)
-      
+
       // Handle different response structures
       // For single item endpoints, response might be the item directly or wrapped in data
       const data = (response as Record<string, unknown>)?.data ?? response
-      
+
       if (!data) {
         throw new HttpError('No data returned from server', 404)
       }
-      
+
       // Ensure the item has an id, using the requested id as fallback
       const item = { ...(data as Record<string, unknown>), id: (data as Record<string, unknown>).id ?? params.id }
-      
+
       // Resource-specific data transformations for editing
       if (resource === 'events') {
         // Transform characters array to characterIds for the form
         const itemData = item as any
         if (itemData.characters && Array.isArray(itemData.characters)) {
-          console.log('Transforming characters to characterIds for event:', itemData.id, itemData.characters)
-          itemData.characterIds = itemData.characters.map((character: any) => 
+          itemData.characterIds = itemData.characters.map((character: any) =>
             typeof character === 'object' && character !== null ? character.id : character
           ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
-          console.log('Generated characterIds:', itemData.characterIds)
         }
       }
-      
+
       if (resource === 'characters') {
         // Transform organizations array to organizationIds for the form
         const itemData = item as any
         if (itemData.organizations && Array.isArray(itemData.organizations)) {
-          console.log('Transforming organizations to organizationIds for character:', itemData.id, itemData.organizations)
-          itemData.organizationIds = itemData.organizations.map((organization: any) => 
+          itemData.organizationIds = itemData.organizations.map((organization: any) =>
             typeof organization === 'object' && organization !== null ? organization.id : organization
           ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
-          console.log('Generated organizationIds:', itemData.organizationIds)
         }
       }
-      
+
       return { data: item as any }
     } catch (error: unknown) {
       console.error(`Error in getOne for ${resource}:`, error)
@@ -732,24 +670,24 @@ export const AdminDataProvider: DataProvider = {
 
   getMany: async (resource, params) => {
     // Filter out invalid IDs (NaN, null, undefined)
-    const validIds = params.ids.filter(id => 
+    const validIds = params.ids.filter(id =>
       id !== null && id !== undefined && !Number.isNaN(id) && id !== 'NaN'
     )
-    
+
     if (validIds.length === 0) {
       return { data: [] }
     }
-    
+
     try {
       const responses = await Promise.all(
         validIds.map((id) => api.get<unknown>(`/${resource}/${id}`))
       )
-      
+
       const data = responses.map((response, index) => {
         const item = (response as Record<string, unknown>)?.data ?? response
         return item ? { ...(item as Record<string, unknown>), id: (item as Record<string, unknown>).id ?? validIds[index] } : null
       }).filter(Boolean) // Remove any null entries
-      
+
       return { data: data as any[] }
     } catch (error: unknown) {
       console.error(`Error in getMany for ${resource}:`, error)
@@ -763,20 +701,20 @@ export const AdminDataProvider: DataProvider = {
   getManyReference: async (resource, params) => {
     const { page, perPage } = params.pagination || { page: 1, perPage: 20 }
     const { field, order } = params.sort || { field: 'id', order: 'ASC' }
-    
+
     // Base query parameters - filter out invalid values
     const cleanFilter: Record<string, string> = {}
     if (params.filter) {
       Object.keys(params.filter).forEach(key => {
         const value = params.filter[key]
         // Skip undefined, null, empty strings, NaN, and "NaN" values
-        if (value !== undefined && value !== null && value !== '' && 
+        if (value !== undefined && value !== null && value !== '' &&
             !Number.isNaN(value) && value !== 'NaN') {
           cleanFilter[key] = String(value)
         }
       })
     }
-    
+
     const query: Record<string, string> = {
       page: page.toString(),
       limit: perPage.toString(),
@@ -796,12 +734,12 @@ export const AdminDataProvider: DataProvider = {
 
     try {
       const response = await api.get<unknown>(`/${resource}?${new URLSearchParams(query).toString()}`)
-      
+
       // Handle different response structures
       const responseData = (response as Record<string, unknown>)?.data ?? response
       const items = Array.isArray(responseData) ? responseData : (responseData as Record<string, unknown>)?.data || []
       const total = (response as Record<string, unknown>)?.total ?? (responseData as Record<string, unknown>)?.total ?? (items as Record<string, unknown>[]).length
-      
+
       return {
         data: (items as any[]).map((item: any) => ({ ...item, id: item.id })),
         total: total as number,
@@ -826,7 +764,6 @@ export const AdminDataProvider: DataProvider = {
           metadata: params.data.year ? { year: params.data.year } : null,
         }
 
-        console.log('Awarding badge:', awardData)
         const response = await api.post<unknown>('/badges/award', awardData)
         const data = (response as Record<string, unknown>)?.data ?? response
 
@@ -836,32 +773,21 @@ export const AdminDataProvider: DataProvider = {
       // Clean the create data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
 
-      if (resource === 'gambles') {
-        console.log('=== GAMBLE CREATE DEBUG ===')
-        console.log('Original params.data:', params.data)
-        console.log('Cleaned data being sent:', cleanedData)
-      }
-
       const response = await api.post<unknown>(`/${resource}`, cleanedData)
-      
+
       const data = (response as Record<string, unknown>)?.data ?? response
-      
-      if (resource === 'gambles') {
-        console.log('Gamble create server response data:', data)
-        console.log('=== END GAMBLE CREATE DEBUG ===')
-      }
-      
+
       if (!data) {
         throw new HttpError('No data returned from server', 500)
       }
-      
+
       // Ensure created item has an id
       const item = { ...(data as Record<string, unknown>), id: (data as Record<string, unknown>).id }
-      
+
       if (!item.id) {
         throw new HttpError('Created item missing required id field', 500)
       }
-      
+
       return { data: item as any }
     } catch (error: unknown) {
       console.error(`Error in create for ${resource}:`, error)
@@ -876,66 +802,40 @@ export const AdminDataProvider: DataProvider = {
     try {
       // Clean the update data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
-      
-      if (resource === 'guides') {
-        console.log('=== GUIDE UPDATE DEBUG ===')
-        console.log('Original params.data:', params.data)
-        console.log('Cleaned data being sent:', cleanedData)
-      }
-      
-      if (resource === 'gambles') {
-        console.log('=== GAMBLE UPDATE DEBUG ===')
-        console.log('Original params.data:', params.data)
-        console.log('Cleaned data being sent:', cleanedData)
-      }
-      
+
       // Use PATCH for resources that support it, PUT for others
       const usePatch = ['quotes', 'guides', 'media'].includes(resource)
-      const response = usePatch 
+      const response = usePatch
         ? await api.patch<unknown>(`/${resource}/${params.id}`, cleanedData)
         : await api.put<unknown>(`/${resource}/${params.id}`, cleanedData)
-      
+
       const data = (response as Record<string, unknown>)?.data ?? response
-      
-      if (resource === 'guides') {
-        console.log('Server response data:', data)
-      }
-      
-      if (resource === 'gambles') {
-        console.log('Gamble server response data:', data)
-        console.log('=== END GAMBLE UPDATE DEBUG ===')
-      }
-      
+
       // Ensure the returned item has proper id and includes all the updated data
-      const item = { 
-        ...(data as any), 
+      const item = {
+        ...(data as any),
         id: (data as any).id ?? params.id,
       }
-      
+
       // For guides, ensure authorId is properly set if it was in the response
       if (resource === 'guides' && (data as any).authorId) {
         item.authorId = (data as any).authorId
       }
-      
-      if (resource === 'guides') {
-        console.log('Final item being returned to React Admin:', item)
-        console.log('=== END GUIDE UPDATE DEBUG ===')
-      }
-      
+
       return { data: item as any }
     } catch (error: unknown) {
       console.error(`Error in update for ${resource}:`, error)
       const err = error as { status?: number; name?: string; message?: string }
       const status = err.status || (err.name === 'TypeError' ? 500 : 400)
       const message = err.message || 'Failed to update item'
-      
+
       if (err.status === 404) {
         throw new HttpError(`${resource} not found`, 404, error)
       }
       if (err.status === 401 || err.status === 403) {
         throw new HttpError('Authentication required or insufficient permissions', err.status, error)
       }
-      
+
       throw new HttpError(message, status, error)
     }
   },
@@ -944,12 +844,12 @@ export const AdminDataProvider: DataProvider = {
     try {
       // Clean the update data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
-      
+
       // Use PATCH for resources that support it, PUT for others
       const usePatch = ['quotes', 'guides'].includes(resource)
       await Promise.all(
-        params.ids.map((id) => 
-          usePatch 
+        params.ids.map((id) =>
+          usePatch
             ? api.patch(`/${resource}/${id}`, cleanedData)
             : api.put(`/${resource}/${id}`, cleanedData)
         )

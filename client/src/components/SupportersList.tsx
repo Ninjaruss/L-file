@@ -202,7 +202,7 @@ export default function SupportersList() {
             Want to support us?
           </p>
           <a
-            href="https://ko-fi.com/usogui" // Replace with your actual Ko-fi link
+            href="https://ko-fi.com/ninjaruss"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
