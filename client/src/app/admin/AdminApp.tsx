@@ -20,12 +20,11 @@ import { UserList, UserEdit, UserShow } from '../../components/admin/Users'
 import { QuoteList, QuoteEdit, QuoteCreate, QuoteShow } from '../../components/admin/Quotes'
 import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
 import { OrganizationList, OrganizationEdit, OrganizationCreate } from '../../components/admin/Organizations'
-import { BadgeList, BadgeEdit, BadgeCreate, BadgeShow } from '../../components/admin/Badges'
 import { CharacterRelationshipList, CharacterRelationshipEdit, CharacterRelationshipCreate, CharacterRelationshipShow } from '../../components/admin/CharacterRelationships'
 import { CharacterOrganizationList, CharacterOrganizationEdit, CharacterOrganizationCreate, CharacterOrganizationShow } from '../../components/admin/CharacterOrganizations'
 
 // Icons
-import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Award, Link2, Building2 } from 'lucide-react'
+import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Link2, Building2 } from 'lucide-react'
 
 // Convert icons to components
 const UsersIcon = () => <Users />
@@ -38,7 +37,6 @@ const ImageIcon = () => <Image />
 const QuoteIcon = () => <Quote />
 const TagIcon = () => <Tag />
 const ShieldIcon = () => <Shield />
-const AwardIcon = () => <Award />
 const Link2Icon = () => <Link2 />
 const Building2Icon = () => <Building2 />
 
@@ -128,14 +126,6 @@ export default function AdminApp() {
         edit={OrganizationEdit}
         create={OrganizationCreate}
         icon={ShieldIcon}
-      />
-      <Resource
-        name="badges"
-        list={BadgeList}
-        edit={BadgeEdit}
-        create={BadgeCreate}
-        show={BadgeShow}
-        icon={AwardIcon}
       />
       <Resource
         name="character-relationships"

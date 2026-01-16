@@ -8,6 +8,7 @@ import { VolumeSeeder } from './volume.seeder';
 import { QuoteSeeder } from './quote.seeder';
 import { EventSeeder } from './event.seeder';
 import { OrganizationSeeder } from './organization.seeder';
+import { CharacterOrganizationSeeder } from './character-organization.seeder';
 import { TagSeeder } from './tag.seeder';
 import { MediaSeeder } from './media.seeder';
 import { GambleSeeder } from './gamble.seeder';
@@ -40,6 +41,7 @@ export class MainSeeder {
       // Characters and content
       new CharacterSeeder(this.dataSource), // Character profiles
       new OrganizationSeeder(this.dataSource), // Organizations and groups
+      new CharacterOrganizationSeeder(this.dataSource), // Character-organization relationships with roles
       new TagSeeder(this.dataSource), // Content categorization tags
 
       // Interactive content

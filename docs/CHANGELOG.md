@@ -2,6 +2,13 @@
 ## TODO:
 - Donation linking to badges; badge system with perks
 
+## 2026-01-16
+- Updated seeder data to have more accurate initial data (though tons of placeholder text exists)
+- Favorite quote/gamble selection color updated
+
+## 2026-01-15
+- Docker and Supabase setup complete
+
 ## 2026-01-04
 - Added bulk actions for guides/media
 - Fixed pending approval button to navigate to higher priority pending items (by count)
@@ -40,7 +47,6 @@
   - Reduces console noise during development and production
 
 ## 2025-12-31
-### Changes
 - Added CSS-based card hover effects to globals.css (`.hoverable-card`, `.hoverable-card-*` entity variants)
 - Replaced inline `onMouseEnter`/`onMouseLeave` style manipulation with CSS classes across all listing pages:
   - CharactersPageContent, ArcsPageContent, GamblesPageContent, EventsPageContent, QuotesPageContent, GuidesPageContent
@@ -61,7 +67,6 @@
   - Added "View on DeviantArt" link when images are unavailable due to expired CDN tokens
 
 ## 2025-12-30
-### Changes
 - Fixed hover styles in GamblePageClient
 - Fixed MediaGallery DOM manipulation
 - Created centralized routes configuration
@@ -72,7 +77,6 @@
 - Migrate pages to useHoverModal hook
 
 ## 2025-12-27
-### Changes
 - Fixed React Admin "Created item missing required id field" error for bidirectional relationship creation
 - Fixed double spoiler overlay on relationship cards (TimelineSpoilerWrapper now handles both card and thumbnail)
 - Fixed MediaThumbnail empty state sizing for medium containers (32-80px) - now shows proportional icon only
@@ -81,7 +85,6 @@
 - Removed multiple unused files and removed compromised secrets found in cookies.txt through adding it in .gitignore
 
 ## 2025-12-25
-### Changes
 - Added Character Relationships system with full CRUD operations
   - New entity with relationship types: ally, rival, mentor, subordinate, family, partner, enemy, acquaintance
   - Backend module with spoiler protection based on chapter progress
@@ -97,7 +100,7 @@
   - Character thumbnails with links to related character pages
 
 ## 2025-12-24
-### Changes
+
 - Replaced browser `prompt()` with styled modal for guide and media rejection workflow
 - Added navigation to pending counter badge (clicks through to pending guides/media)
 - Added "showing X of Y" indicator to entity filter dropdowns in Guides admin
@@ -114,7 +117,6 @@
 - Created shared MAX_CHAPTER constant (lib/constants.ts) and updated user profile pages to use it
 
 ## 2025-12-23
-### Changes
 - Added README.md at project root with comprehensive project overview
 - Added MIT License
 - Arc timeline events compacted
@@ -126,33 +128,27 @@
 - Added general README and MIT license
 
 ## 2025-12-22
-### Changes
 - QA checks for frontend pages including color design and mobile friendly buttons
 - Timeline tab updates to ensure color visual consistency
 
 ## 2025-12-18
-### Changes
 - Added modal checking for chapter progress; mark as spoiler and show modal if spoiler is revealed
 
 ## 2025-12-17
-### Changes
 - Fixed the entity display image for the list and detail pages of characters, arcs, organizations, gambles, and events
 - Added check for user authenticated for guides list page
 
 ## 2025-12-12
-### Changes
 - Fixed sorting characters by first chapter appearance; remove newest filter from characters, arcs, gambles; add a better specific filter?
 - Guides list page also shows author user profile picture
 - Search bar result shows chapter number of chapter next to the chapter title
 
 ## 2025-12-11
-### Changes
 - Url sync to allow saving pages with search filters
 - Standardized hover modal component to reusable component
 - Shared back button component for all public detail pages
 
 ## 2025-12-10
-### Changes
 - Further clean up using Opus 4.5 to QA the application
 - Resolved "property id should not exist" issue with admin dashboard (it was not trimming the additional fields received from react admin)
 - Adjusting search for users page
@@ -162,31 +158,26 @@ Added sorting to characters, arcs, and gambles list pages
 - Consistent 404 handling for all list pages
 
 ## 2025-10-01
-### Changes
 - Multiple updates to ensure build goes through properly (eslint and typing)
 - Updated theming to user detail page
 - Landing page volume cover pop outs accept single and pair volume covers (still need to test)
 - 
 
 ## 2025-09-23
-### Changes
 - Adjustments to look of list pages and detail pages
 - Cleaned up landing page to have only essential elements
 
 ## 2025-09-22
-### Changes
 - Updated events admin page to be similar to guides/media admin pages
 - Adjusted colors/themeing to be centralized to mantine theme
 - Added hover effects to tabs using global css (does not work with mantine navbar)
 
 ## 2025-09-20
-### Changes
 - Added filter only volumes for media
 - Centeralized Mantine theme; needs adjustment of text colors (some are using overlapping colors)
 - Characters detail page layout updated
 
 ## 2025-09-19
-### Changes
 - Finished layout/styling of arcs list page
 - Added detail modal for arcs list page
 - Adjusted styling of all public list pages
@@ -200,7 +191,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Debouncing is the solution for the search function calling continuous api calls. A simple timeout delay between the first call and subsequent calls limits how many calls are made while typing in search.
 
 ## 2025-09-18
-### Changes
 - Conversion of all public pages from MUI to Mantine
 
 ### Notes
@@ -209,7 +199,6 @@ Added sorting to characters, arcs, and gambles list pages
 - I have bought a subscription to Codex and at least first impression, it is clearly a step above Claude right now. There was a specific issue where I wanted to migrate the Navbar to start using Matine instead of MUI, but Claude Code would consistently give broken code. It could be that the Serena MCP could be interfering for the results or as usual my prompting, but will further test to see consistency. Those Claude Code performance issues might have some validity as I noted in earlier notes.
 
 ## 2025-09-16
-### Changes
 - Renamed all instances of organization into organization
 - Small updates to landing page (counters, footer, discord banner)
 - Implemented SSR and meta tags for all data pages and detail pages except users/guides/admin and any client heavy page.
@@ -218,7 +207,6 @@ Added sorting to characters, arcs, and gambles list pages
 - I am realizing more and more that using Material UI has become a lot more troublesome. Mainly due to it conflicting with a lot of server side rendering and causes many hydration issues. The reason to leverage server side rendering is to improve SEO and to provide the user with a prerendered page with initial data (so the backend can continue to load the rest of the javascript in the background). The drawback is a longer initial load, but subsequent loads are extremely fast. 
 
 ## 2025-09-15
-### Changes
 - Replaced all markdown components into enhanced version (support for entity embeds and spoilers)
 - Embedded entity support editing added to guide admin page
 - Added badge system with support for Ko-fi and expiration of badge
@@ -229,14 +217,12 @@ Added sorting to characters, arcs, and gambles list pages
 - It seems MUI styling can interfere with event detection for mouse leaving a component.
 
 ## 2025-09-14
-### Changes
 - Updated guides admin page to look like the media admin page
 - Updated media/guide endpoints to allow sorting 
 - Search and filter by entity added to both media/guide admin pages
 - Added embedded entity support for markdown
 
 ## 2025-09-13
-### Changes
 - Added organization relation to character detail page and added characters to organizations detail page
 - Added support for markdown for descriptions of entities
 - Fixed log in pop up to close properly
@@ -248,7 +234,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Updated media page to use better filters and truncate urls
 
 ## 2025-09-12
-### Changes 
 - Profile picture can now select from available character display media or keep default Discord profile
 - Updated users page and profile to load the new modern profile header
 - Normalized spoiler wrapper component by replacing it with timeline spoiler component
@@ -259,34 +244,30 @@ Added sorting to characters, arcs, and gambles list pages
 - I really like the new profile picture selection. I was inspired by the og duelingnetwork profile pictures that showed the card art of the iconic monsters.
 
 ## 2025-09-11
-### Changes
 - Overhauled media to now support polymorphic ownership; added entity purpose
 - Added media thumbnails to load images
 - Implemented media with entity display type to load based on chapter progress and update the thumbnail
 
 ## 2025-09-10
-### Changes
 - Fixed arc relation for events/gambles admin pages
 - Fixed guides page to show descriptions and link user profiles
 - Added confirmation for deletion of data
 
 ## 2025-09-09
-### Changes
 - Replaced email register/login with Discord Oauth2 login
 
 ### Notes
 - Claude code had a lot of issues trying to implement Discord OAuth2 login. It seemed to get lik 80-90% of the code, but couldn't get it to work until a couple of tries to debug.
 
 ## 2025-09-07
-### Changes
 - Fixed guides data saving in admin pages; added relations to characters, arcs, and gambles
+
 ### Notes
 - Spent a little too long trying to troubleshoot relation issues. A lot of these issues are from not really knowing how the frontend handles the data as typically the backend endpoints I know work correctly.
 - Apparently, Anthropic admitted there were performance issues over the past month, so likely some of my sessions were affected. I'll see if Claude code is more consistent over the next week.
 - So far, there have been no issues with the LLM forgetting to check the build and the code generated. This was an issue that got worse over last week where I would try to have it implement a feature, but the code would be riddled with missing types or duplicated brackets.
 
 ## 2025-09-06
-### Changes
 - Added tabs and media to gambles
 
 ### Notes
@@ -294,7 +275,6 @@ Added sorting to characters, arcs, and gambles list pages
 
 
 ## 2025-09-05
-### Changes
 - Fixed syntax errors in arc and character detail pages causing build failures
 - Completed ArcTimeline component implementation with spoiler protection
 - Streamlined timelines to have modals, spoilers, and event type filtering
@@ -308,7 +288,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Might have issues with styling down the line since styling is split between MUI React components (v6) and Tailwind CSS. This is because MUI uses JSS for styling, while Tailwind uses utility classes. I am probably leaving an absolute mess for anyone (me) if I need to edit the styling.
 
 ## 2025-09-04
-### Changes
 - Added disclaimer page and FAQ section
 - Fixed spoilers on character detail page to use useSpoilerSettings hook
 - Updated character timeline to hide spoilers and list multiple events per arc
@@ -326,7 +305,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Some tips are: always try to run /clear to free up context to limit tokens used. Long chats will continue to pull previous tokens, so it's best to clear it often.
 
 ## 2025-09-03
-### Changes
 - Update show and edit admin pages for guides/media layout to be easier to see
 - Fix view all guides in user (filter doesn't work on guides page)
 - Added spoilers to gambles
@@ -343,7 +321,6 @@ Added sorting to characters, arcs, and gambles list pages
 - It seems to be a good choice to sort of do this project with a rough idea of what is needed/wanted in my mind. I'm finding a lot of additional small things to add as I implement each feature. Maybe not the best workflow for a project, but I think I'd be stuck with planning a little too long. Seeing the website change gives me more reason to keep going.
 
 ## 2025-09-02
-### Changes
 - Arc and gamble appearances added to character detail page
 - Fixed saving data of observers/participants in gambles admin page
 - Adjustment in layout for nav bar to center
@@ -368,7 +345,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Taking my time with adding frontend edits to ensure user experience is good. However, I am going at a lot slower pace since I am trying to fine tune certain things (i.e. landing page) without a plan to reference
 
 ## 2025-09-01
-### Changes
 - Updated character page with further details and show events/gambles
 - Gambles admin page streamlined to look better
 - Removed start/end chapter and set single chapter event occurs
@@ -384,7 +360,6 @@ Added sorting to characters, arcs, and gambles list pages
 - As stated previously, there are ongoing issues with Claude and it's hard for me to know if my Serena MCP is working as intended or Claude's code quality really is poorer at the moment. I am finding more issues with the code it generates, so I need to try refining my prompting a lot more to mitigate the issues.
 
 ## 2025-08-31
-### Changes
 - Show titles for events in events page
 - Added likes to guides
 - Update admin dashboard to show accurate number of data entries
@@ -397,7 +372,6 @@ Added sorting to characters, arcs, and gambles list pages
 
 
 ## 2025-08-30
-### Changes
 - Adjusting fields for admin pages to edit data
 - Fixed updating data of most fields; need more work on complex fields like gambles
 - Fixed views of gambles, events, and guides on the home page; also added search by title for gambles/events
@@ -413,7 +387,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Added Serena MCP to improve Claude code. So far, it has saved a bit more on the usage limit and seems to be more understanding of the code. I need to look into adjusting Serena because it is clear Claude misses a bit of the memories it store. Not sure if this is a config issue. Despite this, I will look into more MCP implementations as adding Serena has improved the quality of the responses overall while not costing additional usage.
 
 ## 2025-08-28
-### Changes
 - Reset everything to regenerate code from scratch with Claude 3.7
 
 ### Notes
@@ -422,16 +395,13 @@ Added sorting to characters, arcs, and gambles list pages
 - Fixed character relation for events (still need to update for character/event pages)
 
 ## 2025-08-27
-### Changes
 - Reset everything for the frontend; rebuilt basic frontend with Grok Code Fast 1 (preview)
 - Working admin dashboard for data; elements seem to work, but need to hook endpoints for data on admin updates
-- 
 
-###
+### Notes
 - Been messing around with Grok since it is available for a limited time. It seems significantly useful, but that may be due to it being a larger model than the free unlimited models. I find results to be significantly more accurate once I give more specific instructions with a limited scope. Though, it may be due to the LLM checking my existing copilot-instructions as it will get derailed if you have not updated parts of your code.
 
 ## 2025-08-26
-### Changes
 - Generated basic webpage frontend
 - Updating backend endpoints to return Paginated response rather than an Array of data
 - Normalizing expecting paginated responses for all pages
@@ -450,7 +420,6 @@ Added sorting to characters, arcs, and gambles list pages
 - I realize that I would have saved myself a lot of headaches if I knew about making instruction documents for the LLM. For example, defining use of OpenAPI documents/decorators or specifying structure for response. Even though I would prompt the LLM to scan through files and find any discrepancies, it would not realize the file's data structure was not the same as the rest of the project.
 
 ## 2025-08-25
-### Changes
 - Added guides module for users to write out guides in markdown
 - Added full search to check across all data (no full text yet; may consider for guides/gambles/events)
 - Updated user to have chapter userProgress stored
@@ -460,7 +429,6 @@ Added sorting to characters, arcs, and gambles list pages
 - There is a setting button for Github Copilot's chat window to generate instructions. Using this will generate a reference document for the LLM to refer to based on the entire project. So far, the auto generated one looks really helpful, but could benefit specifics if I plan to implemeent complex features that interact with a lot of moving parts.
 
 ## 2025-08-23
-### Changes
 - Removed chapter-spoilers and consolidated it into events module
 - Added quotes data
 - Normalized OpenAPI tags between controllers and entities
@@ -473,7 +441,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Figured out that migrations are necessary if we already have data on the server and need to change the data structure. This is definitiely something to look out for in places that involve user submitted data like user database and media
 
 ## 2025-08-22
-### Changes
 - Support for Japanese translated database via translation module
 - Added additional character details (firstChapter, alternate names, roles, etc)
 - Included chapter spoiler for deaths 
@@ -483,7 +450,6 @@ Added sorting to characters, arcs, and gambles list pages
 - For some reason, I thought I would put gambles into arcs or something; added gambles to database
 - Added copilot instructions file
 - Cleaned up any discrepancies between entity, controller, and dto for each module
-
 
 ### Notes
 - Translation setup for Japanese made; however, will need to manually input translations in the admin panel. Considering AI translation for any missing translations.
@@ -496,7 +462,7 @@ Added sorting to characters, arcs, and gambles list pages
 
 
 ## 2025-08-21
-### Changes
+
 - Added modules for auth including setup for authentication role guards
 - Authentication reads both local and jwt tokens
 - Confirmed all routes for register user, verify email, log in user, get user, request password request, confirm password request  via Postman testing
@@ -516,12 +482,8 @@ Added sorting to characters, arcs, and gambles list pages
 - Database migrations might be a headache if I don't ensure connection of the database is clean. Hard reset may be required when it gets really confusing; so I should have a backup of the data saved
 
 
-### TODO:
-- Need a refresher on extending classes. I am not familar with strategies (choice for which auth method to use) and guards (block requests based on authenticated status)
-- Implement some sort of backup of existing database 
-
 ## 2025-08-20
-### Changes
+
 - Initialized data for multiple data points (characters, arcs, chapters, etc)
 - Connected TypeOrmModule for postgres connection; added relationships between data to relevant entities (ex. Media for Characters)
 - Controllers for REST endpoints, Services for basic Create-Remove-Update-Delete functions, Modules for abstraction (separation of features for easier debugging)

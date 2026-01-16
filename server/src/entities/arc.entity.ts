@@ -5,6 +5,7 @@ import {
   ManyToOne,
   OneToMany,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -53,6 +54,28 @@ export class Arc {
   })
   @Column({ type: 'int', nullable: true })
   endChapter: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Parent arc ID for sub-arcs',
+    example: 1,
+  })
+  @Column({ type: 'int', nullable: true })
+  parentId: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Parent arc (for sub-arcs)',
+    type: () => Arc,
+  })
+  @ManyToOne(() => Arc, (arc) => arc.children, { nullable: true })
+  @JoinColumn({ name: 'parentId' })
+  parent: Arc | null;
+
+  @ApiPropertyOptional({
+    description: 'Child/sub arcs',
+    type: () => [Arc],
+  })
+  @OneToMany(() => Arc, (arc) => arc.parent)
+  children: Arc[];
 
   // Media relationships are now handled polymorphically through the Media entity
   // with ownerType='arc' and ownerId=arc.id

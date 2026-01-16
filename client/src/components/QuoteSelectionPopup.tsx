@@ -255,7 +255,7 @@ export default function QuoteSelectionPopup({
           <Button onClick={handleCancel} variant="subtle" color="gray">
             Cancel
           </Button>
-          <Button onClick={handleConfirm} style={{ color: getEntityThemeColor(theme, 'gamble') }} disabled={loading}>
+          <Button onClick={handleConfirm} color="teal" disabled={loading}>
             Confirm Selection
           </Button>
         </Group>
