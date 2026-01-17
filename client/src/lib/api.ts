@@ -436,6 +436,7 @@ class ApiClient {
     page?: number
     limit?: number
     name?: string
+    includeHierarchy?: boolean
   }) {
     const searchParams = new URLSearchParams()
     if (params) {

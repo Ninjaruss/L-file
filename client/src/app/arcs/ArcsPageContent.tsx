@@ -17,6 +17,7 @@ import {
   Text,
   TextInput,
   Title,
+  Tooltip,
   rem,
   useMantineTheme
 } from '@mantine/core'
@@ -48,6 +49,8 @@ interface Arc {
   updatedAt?: string
   imageFileName?: string
   imageDisplayName?: string
+  parentId?: number | null
+  children?: Arc[]
 }
 
 interface ArcsPageContentProps {
@@ -120,14 +123,14 @@ export default function ArcsPageContent({
 
   const isModeratorOrAdmin = user?.role === 'moderator' || user?.role === 'admin'
 
-  // Load all arcs once on mount
+  // Load all arcs once on mount (with hierarchy - parent arcs include children)
   const loadAllArcs = useCallback(async () => {
     setLoading(true)
     setError('')
 
     try {
-      // Load all arcs (small dataset)
-      const response = await api.getArcs({ limit: 100 })
+      // Load all arcs with hierarchy (parent arcs include nested children)
+      const response = await api.getArcs({ limit: 100, includeHierarchy: true })
       setAllArcs(response.data || [])
     } catch (err: any) {
       console.error('Error loading arcs:', err)
@@ -145,13 +148,18 @@ export default function ArcsPageContent({
   const filteredArcs = useMemo(() => {
     let filtered = allArcs
 
-    // Apply search filter
+    // Apply search filter - search in both parent and children
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter(arc => {
-        const name = arc.name?.toLowerCase() || ''
-        const description = arc.description?.toLowerCase() || ''
-        return name.includes(query) || description.includes(query)
+        const nameMatch = arc.name?.toLowerCase().includes(query)
+        const descMatch = arc.description?.toLowerCase().includes(query)
+        // Also check if any child matches
+        const childMatch = arc.children?.some(child =>
+          child.name?.toLowerCase().includes(query) ||
+          child.description?.toLowerCase().includes(query)
+        )
+        return nameMatch || descMatch || childMatch
       })
     }
 
@@ -509,8 +517,8 @@ export default function ArcsPageContent({
                 px="md"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: rem(16),
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: rem(24),
                   justifyItems: 'center'
                 }}
               >
@@ -520,157 +528,205 @@ export default function ArcsPageContent({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
-                    style={{
-                      width: '200px',
-                      height: '280px' // Playing card aspect ratio: 200px * 1.4 = 280px
-                    }}
+                    style={{ width: '100%', maxWidth: '220px' }}
                   >
-                    <Card
-                        component={Link}
-                        href={`/arcs/${arc.id}`}
-                        withBorder={false}
-                        radius="lg"
-                        shadow="sm"
-                        className="hoverable-card hoverable-card-arc"
-                        style={getPlayingCardStyles(theme, accentArc)}
-                        onMouseEnter={(e) => {
-                          // Store the currently hovered arc and element
-                          currentlyHoveredRef.current = { arc, element: e.currentTarget as HTMLElement }
-
-                          // Only show hover modal if content is not spoilered OR has been revealed
-                          const isSpoilered = shouldHideSpoiler(
-                            arc.startChapter,
-                            userProgress,
-                            spoilerSettings
-                          )
-                          const hasBeenRevealed = revealedArcs.has(arc.id)
-                          if (!isSpoilered || hasBeenRevealed) {
-                            handleArcMouseEnter(arc, e)
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          currentlyHoveredRef.current = null
-                          handleArcMouseLeave()
-                        }}
-                      >
-                        {/* Chapter Number Badge at Top Left */}
-                        {formatChapterRange(arc) && (
-                          <Badge
-                            variant="filled"
-                            radius="sm"
-                            size="sm"
-                            style={{
-                              color: 'white',
-                              position: 'absolute',
-                              top: rem(8),
-                              left: rem(8),
-                              backgroundColor: accentArc,
-                              fontSize: rem(10),
-                              fontWeight: 700,
-                              zIndex: 10,
-                              backdropFilter: 'blur(4px)',
-                              maxWidth: isModeratorOrAdmin ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
-                            }}
-                          >
-                            {formatChapterRange(arc)}
-                          </Badge>
-                        )}
-
-                        {/* Edit Button at Top Right */}
-                        {isModeratorOrAdmin && (
-                          <ActionIcon
-                            size="xs"
-                            variant="filled"
-                            color="dark"
-                            radius="xl"
-                            style={{
-                              position: 'absolute',
-                              top: rem(8),
-                              right: rem(8),
-                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                              backdropFilter: 'blur(4px)',
-                              zIndex: 10,
-                              width: rem(24),
-                              height: rem(24)
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleEditImage(arc)
-                            }}
-                          >
-                            <Edit size={12} />
-                          </ActionIcon>
-                        )}
-
-                        {/* Main Image Section - Takes up most of the card */}
-                        <Box style={{
-                          position: 'relative',
-                          overflow: 'hidden',
-                          flex: 1,
-                          minHeight: 0
-                        }}>
-                          <MediaThumbnail
-                            entityType="arc"
-                            entityId={arc.id}
-                            entityName={arc.name}
-                            maxWidth={200}
-                            maxHeight={240}
-                            allowCycling={false}
-                            spoilerChapter={arc.startChapter}
-                            onSpoilerRevealed={() => {
-                              setRevealedArcs(prev => new Set(prev).add(arc.id))
-                              // If this arc is currently being hovered, trigger the modal
-                              if (currentlyHoveredRef.current?.arc.id === arc.id) {
-                                const element = currentlyHoveredRef.current.element
-                                // Create a synthetic event for the handleArcMouseEnter function
-                                const syntheticEvent = {
-                                  currentTarget: element,
-                                  target: element
-                                } as unknown as React.MouseEvent
-                                handleArcMouseEnter(
-                                  currentlyHoveredRef.current.arc,
-                                  syntheticEvent
-                                )
-                              }
-                            }}
-                          />
-                        </Box>
-
-                        {/* Arc Name at Bottom */}
-                        <Box
-                          p={rem(6)}
-                          ta="center"
-                          style={{
-                            backgroundColor: 'transparent',
-                            minHeight: rem(40),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
+                    {/* Arc Card with Sub-arcs */}
+                    <Stack gap="xs">
+                      {/* Main Arc Card */}
+                      <Box style={{ width: '200px', height: '280px', margin: '0 auto' }}>
+                        <Card
+                          component={Link}
+                          href={`/arcs/${arc.id}`}
+                          withBorder={false}
+                          radius="lg"
+                          shadow="sm"
+                          className="hoverable-card hoverable-card-arc"
+                          style={getPlayingCardStyles(theme, accentArc)}
+                          onMouseEnter={(e) => {
+                            currentlyHoveredRef.current = { arc, element: e.currentTarget as HTMLElement }
+                            const isSpoilered = shouldHideSpoiler(arc.startChapter, userProgress, spoilerSettings)
+                            const hasBeenRevealed = revealedArcs.has(arc.id)
+                            if (!isSpoilered || hasBeenRevealed) {
+                              handleArcMouseEnter(arc, e)
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            currentlyHoveredRef.current = null
+                            handleArcMouseLeave()
                           }}
                         >
-                          <Text
-                            size="sm"
-                            fw={700}
-                            lineClamp={2}
-                            c={accentArc}
+                          {formatChapterRange(arc) && (
+                            <Badge
+                              variant="filled"
+                              radius="sm"
+                              size="sm"
+                              style={{
+                                color: 'white',
+                                position: 'absolute',
+                                top: rem(8),
+                                left: rem(8),
+                                backgroundColor: accentArc,
+                                fontSize: rem(10),
+                                fontWeight: 700,
+                                zIndex: 10,
+                                backdropFilter: 'blur(4px)',
+                                maxWidth: isModeratorOrAdmin ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
+                              }}
+                            >
+                              {formatChapterRange(arc)}
+                            </Badge>
+                          )}
+
+                          {isModeratorOrAdmin && (
+                            <ActionIcon
+                              size="xs"
+                              variant="filled"
+                              color="dark"
+                              radius="xl"
+                              style={{
+                                position: 'absolute',
+                                top: rem(8),
+                                right: rem(8),
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                backdropFilter: 'blur(4px)',
+                                zIndex: 10,
+                                width: rem(24),
+                                height: rem(24)
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleEditImage(arc)
+                              }}
+                            >
+                              <Edit size={12} />
+                            </ActionIcon>
+                          )}
+
+                          <Box style={{ position: 'relative', overflow: 'hidden', flex: 1, minHeight: 0 }}>
+                            <MediaThumbnail
+                              entityType="arc"
+                              entityId={arc.id}
+                              entityName={arc.name}
+                              maxWidth={200}
+                              maxHeight={240}
+                              allowCycling={false}
+                              spoilerChapter={arc.startChapter}
+                              onSpoilerRevealed={() => {
+                                setRevealedArcs(prev => new Set(prev).add(arc.id))
+                                if (currentlyHoveredRef.current?.arc.id === arc.id) {
+                                  const element = currentlyHoveredRef.current.element
+                                  const syntheticEvent = { currentTarget: element, target: element } as unknown as React.MouseEvent
+                                  handleArcMouseEnter(currentlyHoveredRef.current.arc, syntheticEvent)
+                                }
+                              }}
+                            />
+                          </Box>
+
+                          <Box
+                            p={rem(6)}
                             ta="center"
                             style={{
-                              lineHeight: 1.2,
-                              fontSize: rem(15),
-                              background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
-                              backdropFilter: 'blur(4px)',
-                              borderRadius: rem(6),
-                              padding: `${rem(4)} ${rem(8)}`,
-                              border: `1px solid rgba(255,255,255,0.1)`
+                              backgroundColor: 'transparent',
+                              minHeight: rem(40),
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
                             }}
                           >
-                            {arc.name}
-                          </Text>
-                        </Box>
-                      </Card>
-                    </motion.div>
+                            <Text
+                              size="sm"
+                              fw={700}
+                              lineClamp={2}
+                              c={accentArc}
+                              ta="center"
+                              style={{
+                                lineHeight: 1.2,
+                                fontSize: rem(15),
+                                background: `linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`,
+                                backdropFilter: 'blur(4px)',
+                                borderRadius: rem(6),
+                                padding: `${rem(4)} ${rem(8)}`,
+                                border: `1px solid rgba(255,255,255,0.1)`
+                              }}
+                            >
+                              {arc.name}
+                            </Text>
+                          </Box>
+                        </Card>
+                      </Box>
+
+                      {/* Sub-arcs section */}
+                      {arc.children && arc.children.length > 0 && (
+                        <Stack gap="xs">
+                          {/* Sub-arcs header */}
+                          <Box
+                            px="xs"
+                            py={4}
+                            style={{
+                              borderLeft: `3px solid ${accentArc}`,
+                              background: `linear-gradient(90deg, ${accentArc}15, transparent)`,
+                              borderRadius: `0 ${rem(4)} ${rem(4)} 0`
+                            }}
+                          >
+                            <Group gap="xs" align="center">
+                              <Text size="xs" fw={700} c={accentArc} tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                                {arc.children.length} Sub-arc{arc.children.length > 1 ? 's' : ''}
+                              </Text>
+                            </Group>
+                          </Box>
+
+                          {/* Sub-arcs list */}
+                          <Stack gap={4} px="xs">
+                            {arc.children.map((child) => (
+                            <Card
+                              key={child.id}
+                              component={Link}
+                              href={`/arcs/${child.id}`}
+                              withBorder
+                              radius="sm"
+                              padding="xs"
+                              style={{
+                                textDecoration: 'none',
+                                borderColor: `${accentArc}40`,
+                                backgroundColor: backgroundStyles.card,
+                                transition: 'all 0.2s ease',
+                                cursor: 'pointer'
+                              }}
+                              className="hoverable-card"
+                              onMouseEnter={(e) => {
+                                currentlyHoveredRef.current = { arc: child, element: e.currentTarget as HTMLElement }
+                                const isSpoilered = shouldHideSpoiler(child.startChapter, userProgress, spoilerSettings)
+                                const hasBeenRevealed = revealedArcs.has(child.id)
+                                if (!isSpoilered || hasBeenRevealed) {
+                                  handleArcMouseEnter(child, e)
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                currentlyHoveredRef.current = null
+                                handleArcMouseLeave()
+                              }}
+                            >
+                              <Group gap="xs" justify="space-between" wrap="nowrap">
+                                <Tooltip label={child.name} position="top" withArrow multiline maw={300}>
+                                  <Text size="xs" fw={600} c={accentArc} lineClamp={1} style={{ flex: 1 }}>
+                                    {child.name}
+                                  </Text>
+                                </Tooltip>
+                                {formatChapterRange(child) && (
+                                  <Badge size="xs" variant="light" c={accentArc} style={{ flexShrink: 0 }}>
+                                    {formatChapterRange(child)}
+                                  </Badge>
+                                )}
+                              </Group>
+                            </Card>
+                          ))}
+                          </Stack>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </motion.div>
                 ))}
               </Box>
 

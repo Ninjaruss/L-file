@@ -63,6 +63,12 @@ export class ArcsController {
     description: 'Filter by description content',
   })
   @ApiQuery({
+    name: 'parentId',
+    required: false,
+    type: Number,
+    description: 'Filter by parent arc ID (to get sub-arcs of a specific arc)',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     description: 'Page number (default: 1)',
@@ -78,6 +84,12 @@ export class ArcsController {
     required: false,
     enum: ['ASC', 'DESC'],
     description: 'Sort order (default: ASC)',
+  })
+  @ApiQuery({
+    name: 'includeHierarchy',
+    required: false,
+    type: Boolean,
+    description: 'Include child arcs nested under parents (default: false)',
   })
   @ApiResponse({
     status: 200,
@@ -113,18 +125,22 @@ export class ArcsController {
   async getAll(
     @Query('name') name?: string,
     @Query('description') description?: string,
+    @Query('parentId') parentId?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
     @Query('sort') sort?: string,
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
+    @Query('includeHierarchy') includeHierarchy?: string,
   ): Promise<{ data: Arc[]; total: number; page: number; totalPages: number }> {
     return this.service.findAll({
       name,
       description,
+      parentId: parentId ? parseInt(parentId) : undefined,
       page: parseInt(page),
       limit: parseInt(limit),
       sort,
       order,
+      includeHierarchy: includeHierarchy === 'true',
     });
   }
 

@@ -2,6 +2,9 @@
 ## TODO:
 - Donation linking to badges; badge system with perks
 
+## 2026-01-17
+- Added sub arcs hierarchy
+
 ## 2026-01-16
 - Updated seeder data to have more accurate initial data (though tons of placeholder text exists)
 - Favorite quote/gamble selection color updated

@@ -65,4 +65,13 @@ export class CreateArcDto {
     example: 10,
   })
   endChapter?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @ApiPropertyOptional({
+    description: 'Parent arc ID for sub-arcs',
+    example: 1,
+  })
+  parentId?: number;
 }

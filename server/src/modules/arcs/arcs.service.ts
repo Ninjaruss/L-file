@@ -19,17 +19,34 @@ export class ArcsService {
 
   /**
    * Pagination: page (default 1), limit (default 20)
+   * includeHierarchy: when true, returns only parent arcs with children nested
    */
   async findAll(filters: {
     name?: string;
     description?: string;
+    parentId?: number;
     page?: number;
     limit?: number;
     sort?: string;
     order?: 'ASC' | 'DESC';
+    includeHierarchy?: boolean;
   }) {
-    const { page = 1, limit = 20, sort, order = 'ASC' } = filters;
+    const { page = 1, limit = 20, sort, order = 'ASC', includeHierarchy = false } = filters;
     const query = this.repo.createQueryBuilder('arc');
+
+    // Load children relation for hierarchical display
+    if (includeHierarchy) {
+      query.leftJoinAndSelect('arc.children', 'children');
+      // Only return top-level arcs (no parent)
+      query.andWhere('arc.parentId IS NULL');
+    }
+
+    // Filter by parentId (for finding sub-arcs of a specific arc)
+    if (filters.parentId !== undefined) {
+      query.andWhere('arc.parentId = :parentId', {
+        parentId: filters.parentId,
+      });
+    }
 
     if (filters.name) {
       query.andWhere('LOWER(arc.name) LIKE LOWER(:name)', {
@@ -51,6 +68,11 @@ export class ArcsService {
       query.orderBy('arc.order', 'ASC'); // Default: canonical order
     }
 
+    // Order children by their order field when hierarchy is included
+    if (includeHierarchy) {
+      query.addOrderBy('children.order', 'ASC');
+    }
+
     query.skip((page - 1) * limit).take(limit);
     const [data, total] = await query.getManyAndCount();
     return {
@@ -62,7 +84,10 @@ export class ArcsService {
   }
 
   findOne(id: number) {
-    return this.repo.findOne({ where: { id } });
+    return this.repo.findOne({
+      where: { id },
+      relations: ['parent', 'children'],
+    });
   }
 
   async create(data: CreateArcDto) {
@@ -72,6 +97,7 @@ export class ArcsService {
       description: data.description,
       startChapter: data.startChapter,
       endChapter: data.endChapter,
+      parentId: data.parentId,
     });
     return this.repo.save(arc);
   }

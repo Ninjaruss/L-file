@@ -13,18 +13,137 @@ import {
   FunctionField,
   TabbedShowLayout,
   Tab,
-  ReferenceManyField
+  ReferenceManyField,
+  ReferenceField,
+  ReferenceInput,
+  AutocompleteInput,
+  useGetList
 } from 'react-admin'
-import { Typography, Chip, Box, Card, CardContent, Grid } from '@mui/material'
-import { Edit3, Plus, BookOpen, Layers } from 'lucide-react'
+import { Typography, Chip, Box, Card, CardContent, Grid, Tooltip } from '@mui/material'
+import { Edit3, Plus, BookOpen, Layers, GitBranch } from 'lucide-react'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
+
+// Component to show arc type with sub-arc count tooltip
+const ArcTypeWithTooltip = ({ record }: { record: any }) => {
+  // Fetch sub-arcs for this arc to get the count
+  const { data: subArcs, isLoading } = useGetList(
+    'arcs',
+    {
+      filter: { parentId: record.id },
+      pagination: { page: 1, perPage: 100 },
+    },
+    { enabled: !record.parentId } // Only fetch for major arcs
+  )
+
+  const subArcCount = subArcs?.length || 0
+  const isMajorArc = !record.parentId
+
+  const tooltipContent = isMajorArc
+    ? isLoading
+      ? 'Loading sub-arcs...'
+      : subArcCount > 0
+        ? `${subArcCount} sub-arc${subArcCount !== 1 ? 's' : ''}: ${subArcs?.map(a => a.name).join(', ')}`
+        : 'No sub-arcs'
+    : 'This is a sub-arc'
+
+  return (
+    <Tooltip
+      title={tooltipContent}
+      arrow
+      placement="top"
+      slotProps={{
+        tooltip: {
+          sx: {
+            bgcolor: '#1a1a1a',
+            color: '#fff',
+            fontSize: '0.75rem',
+            maxWidth: 300,
+            border: '1px solid rgba(255, 152, 0, 0.3)',
+            '& .MuiTooltip-arrow': {
+              color: '#1a1a1a',
+            }
+          }
+        }
+      }}
+    >
+      <Chip
+        size="small"
+        label={
+          isMajorArc
+            ? subArcCount > 0
+              ? `Major Arc (${subArcCount})`
+              : 'Major Arc'
+            : 'Sub-Arc'
+        }
+        sx={{
+          backgroundColor: record.parentId
+            ? 'rgba(156, 39, 176, 0.1)'
+            : 'rgba(255, 152, 0, 0.1)',
+          color: record.parentId ? '#9c27b0' : '#ff9800',
+          fontWeight: '500',
+          fontSize: '0.7rem',
+          cursor: 'pointer'
+        }}
+      />
+    </Tooltip>
+  )
+}
+
+// Component for parent arc input in edit mode
+const ParentArcInput = () => {
+  return (
+    <ReferenceInput
+      source="parentId"
+      reference="arcs"
+      label="Parent Arc"
+    >
+      <AutocompleteInput
+        optionText="name"
+        filterToQuery={(searchText: string) => ({ name: searchText })}
+        helperText="Leave empty for top-level arc, or select a parent to make this a sub-arc. Do not select the current arc as its own parent."
+        sx={{
+          '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
+            backgroundColor: '#0f0f0f'
+          }
+        }}
+      />
+    </ReferenceInput>
+  )
+}
 
 export const ArcList = () => (
   <List sort={{ field: 'startChapter', order: 'ASC' }}>
     <Datagrid rowClick="show">
       <TextField source="id" sortable />
       <TextField source="name" sortable />
+      <FunctionField
+        label="Type"
+        render={(record: any) => <ArcTypeWithTooltip record={record} />}
+      />
+      <ReferenceField
+        source="parentId"
+        reference="arcs"
+        label="Parent Arc"
+        link="show"
+        emptyText="—"
+      >
+        <FunctionField
+          render={(record: any) => (
+            <Chip
+              size="small"
+              icon={<GitBranch size={14} />}
+              label={record?.name || 'Unknown'}
+              sx={{
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                color: '#ff9800',
+                fontWeight: '500',
+                '& .MuiChip-icon': { color: '#ff9800' }
+              }}
+            />
+          )}
+        />
+      </ReferenceField>
       <NumberField source="startChapter" sortable />
       <NumberField source="endChapter" sortable />
       <FunctionField
@@ -121,7 +240,23 @@ export const ArcShow = () => (
                   }
                 }}
               />
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <FunctionField
+                  render={(record: any) => (
+                    <Chip
+                      icon={record.parentId ? <GitBranch size={16} /> : undefined}
+                      label={record.parentId ? 'Sub-Arc' : 'Major Arc'}
+                      sx={{
+                        backgroundColor: record.parentId
+                          ? 'rgba(156, 39, 176, 0.3)'
+                          : 'rgba(255,255,255,0.2)',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem'
+                      }}
+                    />
+                  )}
+                />
                 <Chip
                   icon={<Layers size={16} />}
                   label={
@@ -269,6 +404,114 @@ export const ArcShow = () => (
             </ReferenceManyField>
           </Box>
         </Tab>
+
+        <Tab label="Hierarchy">
+          <Box sx={{ p: 4, backgroundColor: '#0a0a0a' }}>
+            {/* Parent Arc Section */}
+            <Typography variant="h6" gutterBottom sx={{ color: '#ffffff', fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <GitBranch size={20} color="#ff9800" />
+              Parent Arc
+            </Typography>
+            <Box sx={{
+              p: 3,
+              bgcolor: '#0f0f0f',
+              borderRadius: 2,
+              border: '2px solid rgba(255, 152, 0, 0.3)',
+              mb: 4
+            }}>
+              <ReferenceField
+                source="parentId"
+                reference="arcs"
+                label=""
+                link="show"
+                emptyText=""
+              >
+                <FunctionField
+                  render={(record: any) => (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <GitBranch size={20} color="#ff9800" />
+                      <Typography sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+                        {record?.name}
+                      </Typography>
+                      {record?.startChapter && record?.endChapter && (
+                        <Chip
+                          size="small"
+                          label={`Ch. ${record.startChapter} - ${record.endChapter}`}
+                          sx={{
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            color: '#ff9800'
+                          }}
+                        />
+                      )}
+                    </Box>
+                  )}
+                />
+              </ReferenceField>
+              <FunctionField
+                render={(record: any) =>
+                  !record.parentId && (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      This is a top-level arc (no parent)
+                    </Typography>
+                  )
+                }
+              />
+            </Box>
+
+            {/* Sub-Arcs Section */}
+            <Typography variant="h6" gutterBottom sx={{ color: '#ffffff', fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <GitBranch size={20} color="#9c27b0" />
+              Sub-Arcs
+            </Typography>
+            <ReferenceManyField
+              reference="arcs"
+              target="parentId"
+              label={false}
+            >
+              <Datagrid
+                bulkActionButtons={false}
+                rowClick="show"
+                empty={
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      No sub-arcs
+                    </Typography>
+                  </Box>
+                }
+                sx={{
+                  boxShadow: 'none',
+                  backgroundColor: '#0f0f0f',
+                  border: '1px solid rgba(156, 39, 176, 0.3)',
+                  borderRadius: 2,
+                  '& .MuiTableCell-root': {
+                    color: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  '& .MuiTableHead-root .MuiTableCell-root': {
+                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    fontWeight: 'bold'
+                  }
+                }}
+              >
+                <TextField source="name" sx={{ fontWeight: 500, color: '#ffffff' }} />
+                <NumberField source="order" label="Order" />
+                <FunctionField
+                  label="Chapter Range"
+                  render={(record: any) => (
+                    <Chip
+                      size="small"
+                      label={`Ch. ${record.startChapter || '?'} - ${record.endChapter || '?'}`}
+                      sx={{
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                        color: '#9c27b0'
+                      }}
+                    />
+                  )}
+                />
+              </Datagrid>
+            </ReferenceManyField>
+          </Box>
+        </Tab>
       </TabbedShowLayout>
     </Box>
   </Show>
@@ -380,6 +623,22 @@ export const ArcEdit = () => (
                       label="Arc Description"
                       helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
                     />
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: 'rgba(156, 39, 176, 0.05)',
+                    borderRadius: 2,
+                    border: '1px solid rgba(156, 39, 176, 0.2)',
+                    mb: 3
+                  }}>
+                    <Typography variant="h6" sx={{ color: '#9c27b0', mb: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GitBranch size={20} />
+                      Arc Hierarchy
+                    </Typography>
+                    <ParentArcInput />
                   </Box>
                 </Grid>
 
@@ -546,6 +805,37 @@ export const ArcCreate = () => (
                       label="Arc Description"
                       helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
                     />
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: 'rgba(156, 39, 176, 0.05)',
+                    borderRadius: 2,
+                    border: '1px solid rgba(156, 39, 176, 0.2)',
+                    mb: 3
+                  }}>
+                    <Typography variant="h6" sx={{ color: '#9c27b0', mb: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GitBranch size={20} />
+                      Arc Hierarchy
+                    </Typography>
+                    <ReferenceInput
+                      source="parentId"
+                      reference="arcs"
+                      label="Parent Arc"
+                    >
+                      <AutocompleteInput
+                        optionText="name"
+                        filterToQuery={(searchText: string) => ({ name: searchText })}
+                        helperText="Leave empty for top-level arc, or select a parent to make this a sub-arc"
+                        sx={{
+                          '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
+                            backgroundColor: '#0f0f0f'
+                          }
+                        }}
+                      />
+                    </ReferenceInput>
                   </Box>
                 </Grid>
 

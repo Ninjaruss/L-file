@@ -11,7 +11,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     'gamble', 'gambles', 'event', 'events', 'organization', 'organizations', 'tag', 'tags',
     'quote', 'quotes', 'volume', 'volumes', 'submittedBy', 'profileImage', 'likes',
     'users', 'chapters', 'volumes', 'teams', 'rounds', 'observers', 'members',
-    'winner', 'media', 'guides'
+    'winner', 'media', 'guides', 'parent', 'children'
   ]
 
   relationshipFields.forEach(field => {
@@ -331,7 +331,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   if (resource === 'arcs') {
     // Keep only the fields that are allowed in the CreateArcDto/UpdateArcDto
     const allowedFields = [
-      'name', 'description', 'order', 'startChapter', 'endChapter'
+      'name', 'description', 'order', 'startChapter', 'endChapter', 'parentId'
     ]
 
     const arcCleaned: Record<string, unknown> = {}
@@ -340,6 +340,30 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
         arcCleaned[field] = cleaned[field]
       }
     })
+
+    // Handle parentId - might be an object with id property, or null/empty string for clearing
+    try {
+      if (arcCleaned.parentId !== undefined) {
+        if (arcCleaned.parentId && typeof arcCleaned.parentId === 'object' && arcCleaned.parentId !== null && 'id' in (arcCleaned.parentId as Record<string, unknown>)) {
+          const id = (arcCleaned.parentId as Record<string, unknown>).id
+          arcCleaned.parentId = typeof id === 'number' ? id : Number(id)
+        } else if (arcCleaned.parentId === null || arcCleaned.parentId === '' || arcCleaned.parentId === 'null') {
+          // Handle clearing the parent relation
+          arcCleaned.parentId = null
+        }
+      } else if (data.parent && typeof data.parent === 'object' && data.parent !== null && 'id' in (data.parent as Record<string, unknown>)) {
+        const id = (data.parent as Record<string, unknown>).id
+        arcCleaned.parentId = typeof id === 'number' ? id : Number(id)
+      }
+
+      // Validate parentId is a valid number or null (for clearing)
+      if (arcCleaned.parentId !== undefined && arcCleaned.parentId !== null && isNaN(Number(arcCleaned.parentId))) {
+        delete arcCleaned.parentId
+      }
+    } catch (error) {
+      console.error('Error processing parentId:', error)
+      delete arcCleaned.parentId
+    }
 
     return arcCleaned
   }

@@ -13,6 +13,8 @@ interface Arc {
   updatedAt?: string
   imageFileName?: string
   imageDisplayName?: string
+  parentId?: number | null
+  children?: Arc[]
 }
 
 interface ArcsPageProps {
@@ -84,7 +86,11 @@ export default async function ArcsPage({ searchParams }: ArcsPageProps) {
         response = { data: [], total: 0, totalPages: 1 }
       }
     } else {
-      const params: { page: number; limit: number; name?: string } = { page, limit: 12 }
+      const params: { page: number; limit: number; name?: string; includeHierarchy?: boolean } = {
+        page: 1,
+        limit: 100,
+        includeHierarchy: true
+      }
       if (search) params.name = search
       response = await api.getArcs(params)
     }

@@ -24,7 +24,7 @@ import {
   setTabAccentColors,
   backgroundStyles
 } from '../../../lib/mantine-theme'
-import { ArrowLeft, BookOpen, Calendar, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, ArrowUp, BookOpen, Calendar, Image as ImageIcon, Layers } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
@@ -35,17 +35,26 @@ import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import MediaThumbnail from '../../../components/MediaThumbnail'
 import { ArcStructuredData } from '../../../components/StructuredData'
 
-interface Arc {
+interface ArcBase {
   id: number
   name: string
-  description: string
-  startChapter: number
-  endChapter: number
+  description?: string
+  startChapter?: number
+  endChapter?: number
   order?: number
   imageFileName?: string
   imageDisplayName?: string
+}
+
+interface Arc extends ArcBase {
+  description: string
+  startChapter: number
+  endChapter: number
   createdAt: string
   updatedAt: string
+  parentId?: number | null
+  parent?: ArcBase | null
+  children?: ArcBase[]
 }
 
 interface Character {
@@ -114,7 +123,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
         variant="subtle"
         c={textColors.secondary}
         leftSection={<ArrowLeft size={18} />}
-        mb="lg"
+        mb={initialArc.parent ? 'sm' : 'lg'}
         style={{
           alignSelf: 'flex-start',
           color: textColors.secondary,
@@ -126,6 +135,40 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
       >
         Back to Arcs
       </Button>
+
+      {/* Parent Arc Link - shown if this is a sub-arc */}
+      {initialArc.parent && (
+        <Card
+          withBorder
+          radius="md"
+          p="sm"
+          mb="lg"
+          style={{
+            background: backgroundStyles.card,
+            borderColor: getAlphaColor(arcColor, 0.4)
+          }}
+        >
+          <Group gap="sm">
+            <ArrowUp size={16} color={arcColor} />
+            <Badge size="sm" variant="light" c={arcColor}>Part of</Badge>
+            <Button
+              component={Link}
+              href={`/arcs/${initialArc.parent.id}`}
+              variant="subtle"
+              size="sm"
+              c={arcColor}
+              style={{ fontWeight: 600 }}
+            >
+              {initialArc.parent.name}
+            </Button>
+            {initialArc.parent.startChapter && initialArc.parent.endChapter && (
+              <Badge size="sm" variant="outline" c={arcColor}>
+                Ch. {initialArc.parent.startChapter}-{initialArc.parent.endChapter}
+              </Badge>
+            )}
+          </Group>
+        </Card>
+      )}
 
       {/* Enhanced Arc Header */}
       <Card
@@ -255,6 +298,25 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                       Arc #{initialArc.order}
                     </Badge>
                   )}
+                  {initialArc.children && initialArc.children.length > 0 && (
+                    <Badge size="lg" variant="light" c={textColors.arc} style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(arcColor, 0.2),
+                      border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
+                    }}>
+                      {initialArc.children.length} Sub-arcs
+                    </Badge>
+                  )}
+                  {initialArc.parent && (
+                    <Badge size="lg" variant="outline" c={textColors.arc} style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      borderColor: getAlphaColor(arcColor, 0.4)
+                    }}>
+                      Sub-arc
+                    </Badge>
+                  )}
                 </Group>
               </Stack>
             </Stack>
@@ -366,6 +428,75 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                   </Group>
                 </Stack>
               </Card>
+
+              {/* Sub-arcs Section */}
+              {initialArc.children && initialArc.children.length > 0 && (
+                <Card withBorder radius="lg" shadow="lg" style={{
+                  background: backgroundStyles.card,
+                  border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
+                }}>
+                  <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                    <Group gap={theme.spacing.sm} align="center">
+                      <Layers size={24} color={arcColor} />
+                      <Title order={3} c={headerColors.h3}>Sub-arcs</Title>
+                      <Badge size="md" variant="light" c={arcColor}>
+                        {initialArc.children.length}
+                      </Badge>
+                    </Group>
+                    <Box
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: theme.spacing.md
+                      }}
+                    >
+                      {initialArc.children.map((child) => (
+                        <Card
+                          key={child.id}
+                          component={Link}
+                          href={`/arcs/${child.id}`}
+                          withBorder
+                          radius="md"
+                          padding="md"
+                          style={{
+                            textDecoration: 'none',
+                            borderColor: getAlphaColor(arcColor, 0.3),
+                            background: backgroundStyles.card,
+                            transition: 'all 0.2s ease',
+                            cursor: 'pointer'
+                          }}
+                          className="hoverable-card"
+                        >
+                          <Stack gap="xs">
+                            <Group justify="space-between" align="flex-start">
+                              <Title order={5} c={arcColor} lineClamp={2} style={{ flex: 1 }}>
+                                {child.name}
+                              </Title>
+                            </Group>
+                            <Group gap="xs">
+                              {child.startChapter && child.endChapter && (
+                                <Badge size="sm" variant="light" c={arcColor}>
+                                  Ch. {child.startChapter}-{child.endChapter}
+                                </Badge>
+                              )}
+                              {child.startChapter && child.endChapter && (
+                                <Badge size="xs" variant="outline" c={textColors.secondary}>
+                                  {child.endChapter - child.startChapter + 1} chapters
+                                </Badge>
+                              )}
+                            </Group>
+                            {child.description && (
+                              <Box style={{ color: textColors.secondary, fontSize: fontSize.sm, lineClamp: 2 }}>
+                                {child.description.slice(0, 120)}{child.description.length > 120 ? '...' : ''}
+                              </Box>
+                            )}
+                          </Stack>
+                        </Card>
+                      ))}
+                    </Box>
+                  </Stack>
+                </Card>
+              )}
             </Stack>
           </Tabs.Panel>
 
