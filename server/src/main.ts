@@ -5,9 +5,12 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import * as express from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { performDatabaseSafetyChecks } from './utils/db-consistency-check';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
+import { CsrfGuard } from './common/guards/csrf.guard';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   // Perform database safety checks before starting the application
@@ -22,6 +25,10 @@ async function bootstrap() {
   app.use(helmet());
   // Cookie parsing for refresh token cookie
   app.use(cookieParser());
+
+  // SECURITY: Body size limits to prevent DoS via large payloads
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   const defaultDevOrigins = ['http://localhost:3000', 'http://localhost:3002'];
   const rawOriginList =
@@ -99,6 +106,31 @@ async function bootstrap() {
     }),
   );
 
+  // SECURITY: Stricter rate limiting for write operations (content creation)
+  // Prevents spam and abuse of media uploads and guide submissions
+  const WRITE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+  const WRITE_RATE_LIMIT_MAX = process.env.NODE_ENV === 'production' ? 50 : 500;
+
+  app.use(
+    '/api/media/upload',
+    rateLimit({
+      windowMs: WRITE_RATE_LIMIT_WINDOW_MS,
+      max: WRITE_RATE_LIMIT_MAX,
+      message: 'Too many uploads, please try again later',
+    }),
+  );
+
+  app.use(
+    '/api/guides',
+    rateLimit({
+      windowMs: WRITE_RATE_LIMIT_WINDOW_MS,
+      max: WRITE_RATE_LIMIT_MAX,
+      message: 'Too many guide submissions, please try again later',
+      // Skip rate limiting for GET requests (reading guides)
+      skip: (req) => req.method === 'GET',
+    }),
+  );
+
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
@@ -112,6 +144,10 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   // Global response transformer: normalize list responses and set X-Total-Count header
   app.useGlobalInterceptors(new TransformResponseInterceptor());
+
+  // CSRF Protection Guard - validates Origin header and custom headers for state-changing requests
+  const configService = app.get(ConfigService);
+  app.useGlobalGuards(new CsrfGuard(configService));
 
   // API Documentation
   const config = new DocumentBuilder()

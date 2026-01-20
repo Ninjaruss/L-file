@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 
 class EnvironmentVariables {
+  // --- Database Configuration ---
   @IsString()
   DATABASE_HOST: string;
 
@@ -29,12 +30,14 @@ class EnvironmentVariables {
   @IsIn(['true', 'false'])
   DATABASE_SSL?: string;
 
+  // --- JWT Configuration ---
   @IsString()
   JWT_SECRET: string;
 
   @IsString()
   JWT_EXPIRES: string;
 
+  // --- Server Configuration ---
   @IsNumber()
   PORT: number;
 
@@ -42,6 +45,7 @@ class EnvironmentVariables {
   @IsIn(['development', 'production', 'test'])
   NODE_ENV: string;
 
+  // --- Email Service ---
   @IsString()
   RESEND_API_KEY: string;
 
@@ -55,16 +59,59 @@ class EnvironmentVariables {
   })
   FRONTEND_URL: string;
 
+  // --- Discord OAuth2 Configuration ---
+  // SECURITY: Required for Discord authentication to work
+  @IsString()
+  DISCORD_CLIENT_ID: string;
+
+  @IsString()
+  DISCORD_CLIENT_SECRET: string;
+
+  @IsString()
+  @IsUrl({
+    require_tld: process.env.NODE_ENV === 'production',
+    require_protocol: true,
+    require_host: true,
+    protocols: ['http', 'https'],
+  })
+  DISCORD_CALLBACK_URL: string;
+
+  // Discord user ID for initial admin access
+  @IsString()
+  @IsOptional()
+  ADMIN_DISCORD_ID?: string;
+
+  // --- Backblaze B2 Storage ---
+  // SECURITY: Required for media uploads to work
+  @IsString()
+  B2_APPLICATION_KEY_ID: string;
+
+  @IsString()
+  B2_APPLICATION_KEY: string;
+
+  @IsString()
+  B2_BUCKET_NAME: string;
+
+  @IsString()
+  B2_BUCKET_ID: string;
+
+  @IsString()
+  @IsOptional()
+  B2_CUSTOM_DOMAIN?: string;
+
+  // --- Database Migration Controls ---
   @IsString()
   @IsOptional()
   @IsIn(['true', 'false'])
   RUN_MIGRATIONS?: string;
 
+  // WARNING: Schema sync can modify your database! Use 'false' in production.
   @IsString()
   @IsOptional()
   @IsIn(['true', 'false'])
   ENABLE_SCHEMA_SYNC?: string;
 
+  // --- Optional Integrations ---
   @IsString()
   @IsOptional()
   KOFI_WEBHOOK_TOKEN?: string;
@@ -72,6 +119,12 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   CORS_ALLOWED_ORIGINS?: string;
+
+  // SECURITY: Required only in development for dev-login bypass
+  // This should NEVER be set in production environments
+  @IsString()
+  @IsOptional()
+  DEV_BYPASS_SECRET?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -8,13 +8,15 @@ const characters = [
   {
     name: 'Madarame Baku',
     alternateNames: ['Usogui', 'The Lie Eater'],
-    description: 'The main protagonist, a genius gambler known as "Usogui" (The Lie Eater) for his ability to detect lies and manipulate situations.',
+    description:
+      'The main protagonist, a genius gambler known as "Usogui" (The Lie Eater) for his ability to detect lies and manipulate situations.',
     firstAppearanceChapter: 1,
   },
   {
     name: 'Kaji Takaomi',
     alternateNames: ['Kaji'],
-    description: "Baku's closest ally and friend who becomes deeply involved in Kakerou's world.",
+    description:
+      "Baku's closest ally and friend who becomes deeply involved in Kakerou's world.",
     firstAppearanceChapter: 1,
   },
   {
@@ -26,13 +28,13 @@ const characters = [
   {
     name: 'Kyara',
     alternateNames: [],
-    description: 'A Kakerou referee and one of Baku\'s trusted allies.',
+    description: "A Kakerou referee and one of Baku's trusted allies.",
     firstAppearanceChapter: null,
   },
   {
     name: 'Karl Belmont',
     alternateNames: [],
-    description: 'A foreign ally who joins Baku\'s group.',
+    description: "A foreign ally who joins Baku's group.",
     firstAppearanceChapter: null,
   },
 

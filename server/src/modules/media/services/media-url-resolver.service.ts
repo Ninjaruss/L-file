@@ -112,13 +112,13 @@ export class MediaUrlResolverService {
   /**
    * Resolve Pixiv URLs (placeholder - would need Pixiv API access)
    */
-  private async resolvePixivUrl(url: string): Promise<ResolvedMediaInfo> {
+  private resolvePixivUrl(url: string): Promise<ResolvedMediaInfo> {
     // Pixiv requires authentication for their API
     // For now, return the original URL
-    return {
+    return Promise.resolve({
       originalUrl: url,
       platform: 'pixiv',
-    };
+    });
   }
 
   /**

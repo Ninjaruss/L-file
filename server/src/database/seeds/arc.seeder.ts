@@ -7,7 +7,8 @@ const majorArcs = [
   {
     name: 'Introduction Arc',
     order: 0,
-    description: 'Introduction to Baku Madarame and his abilities as a lie detector.',
+    description:
+      'Introduction to Baku Madarame and his abilities as a lie detector.',
     startChapter: 1,
     endChapter: 3,
   },
@@ -28,7 +29,8 @@ const majorArcs = [
   {
     name: 'Labyrinth Arc',
     order: 3,
-    description: 'The Labyrinth games including the 0 Yen Gamble and Minotaur\'s Labyrinth.',
+    description:
+      "The Labyrinth games including the 0 Yen Gamble and Minotaur's Labyrinth.",
     startChapter: 80,
     endChapter: 146,
   },
@@ -63,7 +65,8 @@ const majorArcs = [
   {
     name: 'Protoporos Arc',
     order: 8,
-    description: 'The Protoporos island arc containing multiple sub-games and tournaments.',
+    description:
+      'The Protoporos island arc containing multiple sub-games and tournaments.',
     startChapter: 329,
     endChapter: 428,
   },

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -73,13 +74,33 @@ export class MediaService {
     const fileExtension = originalFileName.split('.').pop();
     const uniqueFileName = `${timestamp}_${originalFileName}`;
 
-    // Upload to B2
-    const uploadResult = await b2Service.uploadFile(
-      file,
-      uniqueFileName,
-      contentType,
-      'media',
-    );
+    // Upload to B2 with proper error handling
+    let uploadResult: { url: string; fileName: string; fileId: string };
+    try {
+      uploadResult = await b2Service.uploadFile(
+        file,
+        uniqueFileName,
+        contentType,
+        'media',
+      );
+    } catch (uploadError) {
+      // Log the error for debugging but don't expose internal details
+      this.logger.error(
+        `B2 upload failed for file: ${originalFileName}`,
+        uploadError instanceof Error ? uploadError.stack : uploadError,
+      );
+      throw new InternalServerErrorException(
+        'Failed to upload file. Please try again later.',
+      );
+    }
+
+    // Only create media record if upload succeeded
+    if (!uploadResult?.url) {
+      this.logger.error('B2 upload returned invalid result', uploadResult);
+      throw new InternalServerErrorException(
+        'File upload completed but returned invalid data.',
+      );
+    }
 
     const media = this.mediaRepo.create({
       url: uploadResult.url,
@@ -306,8 +327,8 @@ export class MediaService {
     media.status = MediaStatus.APPROVED;
     const savedMedia = await this.mediaRepo.save(media);
 
-    // Skip email for test user or if no email
-    if (media.submittedBy.email && !this.isTestUser(media.submittedBy.email)) {
+    // Skip email for test user, if no submitter, or if no email
+    if (media.submittedBy?.email && !this.isTestUser(media.submittedBy.email)) {
       await this.emailService.sendMediaApprovalNotification(
         media.submittedBy.email,
         media.description || 'your submission',
@@ -334,8 +355,8 @@ export class MediaService {
 
     const savedMedia = await this.mediaRepo.save(media);
 
-    // Skip email for test user or if no email
-    if (media.submittedBy.email && !this.isTestUser(media.submittedBy.email)) {
+    // Skip email for test user, if no submitter, or if no email
+    if (media.submittedBy?.email && !this.isTestUser(media.submittedBy.email)) {
       await this.emailService.sendMediaRejectionNotification(
         media.submittedBy.email,
         media.description || 'your submission',
@@ -822,7 +843,7 @@ export class MediaService {
   /**
    * Migration function to convert old relationships to polymorphic
    */
-  async migrateToPolymorphic(): Promise<{
+  migrateToPolymorphic(): Promise<{
     migrated: number;
     failed: number;
     errors: string[];
@@ -832,7 +853,7 @@ export class MediaService {
     // This method is kept for compatibility but the migration
     // should be handled by database migrations instead
 
-    return results;
+    return Promise.resolve(results);
   }
 
   /**

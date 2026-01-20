@@ -6,7 +6,7 @@ import { Chapter } from '../../entities/chapter.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { CreateArcDto } from './dto/create-arc.dto';
 import { MediaService } from '../media/media.service';
-import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
+import { MediaOwnerType } from '../../entities/media.entity';
 
 @Injectable()
 export class ArcsService {
@@ -31,7 +31,13 @@ export class ArcsService {
     order?: 'ASC' | 'DESC';
     includeHierarchy?: boolean;
   }) {
-    const { page = 1, limit = 20, sort, order = 'ASC', includeHierarchy = false } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sort,
+      order = 'ASC',
+      includeHierarchy = false,
+    } = filters;
     const query = this.repo.createQueryBuilder('arc');
 
     // Load children relation for hierarchical display
@@ -179,7 +185,7 @@ export class ArcsService {
       limit?: number;
     } = {},
   ) {
-    const arc = await this.findOne(arcId);
+    await this.findOne(arcId); // Validate arc exists
 
     const result = await this.mediaService.findForEntityDisplay(
       MediaOwnerType.ARC,
@@ -214,7 +220,7 @@ export class ArcsService {
       limit?: number;
     } = {},
   ) {
-    const arc = await this.findOne(arcId);
+    await this.findOne(arcId); // Validate arc exists
 
     const result = await this.mediaService.findForGallery(
       MediaOwnerType.ARC,
@@ -241,7 +247,7 @@ export class ArcsService {
    * Get the current entity display media for arc thumbnail
    */
   async getArcCurrentThumbnail(arcId: number, userProgress?: number) {
-    const arc = await this.findOne(arcId);
+    await this.findOne(arcId); // Validate arc exists
 
     // First try to get the default entity display media
     const defaultMedia = await this.mediaService.getDefaultForOwner(

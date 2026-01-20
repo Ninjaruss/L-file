@@ -3,11 +3,13 @@ import {
   Controller,
   Get,
   Post,
-  Request,
+  Req,
+  Res,
   UseGuards,
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -19,15 +21,19 @@ import { PasswordResetConfirmDto } from './dto/password-reset-confirm.dto';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
-  ApiBody,
   ApiQuery,
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { User } from '../../entities/user.entity';
+
+// Extend Express Request to include user
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 @ApiTags('auth')
 @Controller('auth')
@@ -99,12 +105,15 @@ export class AuthController {
   })
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  async login(@Body() _dto: LoginDto, @Request() req) {
-    const payload = await this.auth.login(req.user);
+  async login(
+    @Body() _dto: LoginDto,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const payload = await this.auth.login(req.user as User);
     // Set refresh token as httpOnly cookie
     try {
-      const res = req.res;
-      if (res && payload.refresh_token) {
+      if (payload.refresh_token) {
         res.cookie('refreshToken', payload.refresh_token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -112,11 +121,11 @@ export class AuthController {
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         });
       }
-    } catch (e) {
+    } catch {
       // ignore if unable to set cookie
     }
     // Do not return refresh_token in body for security
-    const { refresh_token, ...safe } = payload as any;
+    const { refresh_token: _refresh, ...safe } = payload;
     return safe;
   }
 
@@ -151,7 +160,7 @@ export class AuthController {
     },
   })
   @Post('refresh')
-  async refresh(@Request() req) {
+  async refresh(@Req() req: AuthenticatedRequest) {
     const refresh = req.cookies?.refreshToken;
     if (!refresh) throw new UnauthorizedException('No refresh token');
     const payload = await this.auth.refreshAccessToken(refresh);
@@ -172,12 +181,30 @@ export class AuthController {
       },
     },
   })
+  /**
+   * SECURITY NOTE: JWT Token Invalidation Limitation
+   *
+   * Current implementation clears the refresh token but does NOT invalidate
+   * the JWT access token. The JWT remains valid until it expires (default: 24h).
+   *
+   * This means if a JWT is stolen, logout won't help until the token expires.
+   *
+   * To fully invalidate JWTs on logout, you would need to implement one of:
+   * 1. JWT Blacklist: Store invalidated JWTs in Redis until they expire
+   * 2. Shorter JWT lifetime: Reduce to 15 minutes and rely on refresh tokens
+   * 3. Token versioning: Store a version number per user and check it on each request
+   *
+   * For now, this is an accepted limitation. The refresh token (which has a
+   * longer lifetime) IS properly invalidated.
+   */
   @Post('logout')
-  async logout(@Request() req) {
+  async logout(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
-      const res = req.res;
       // clear cookie
-      if (res) res.clearCookie('refreshToken');
+      res.clearCookie('refreshToken');
       // clear stored refresh token on user if present
       const user = req.user;
       if (user && user.id) {
@@ -197,7 +224,7 @@ export class AuthController {
           }
         }
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     return { message: 'Logged out' };
@@ -235,12 +262,15 @@ export class AuthController {
   })
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@Request() req) {
-    // log a compact, parseable representation for debugging
-    try {
-      console.log('/me request:', JSON.stringify(req.user));
-    } catch {
-      /* ignore */
+  me(@Req() req: AuthenticatedRequest) {
+    // SECURITY: Don't log user data in production - it may contain sensitive info
+    // Only log in development for debugging purposes
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.log('/me request:', req.user?.id, req.user?.username);
+      } catch {
+        /* ignore */
+      }
     }
     return req.user;
   }

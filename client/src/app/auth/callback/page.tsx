@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from 'react'
 
+// SECURITY: Validate that a URL is same-origin to prevent open redirect attacks
+function isValidReturnUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.origin)
+    // Only allow same-origin redirects
+    return parsed.origin === window.location.origin
+  } catch {
+    // If URL parsing fails, check if it's a relative path
+    return url.startsWith('/') && !url.startsWith('//')
+  }
+}
+
 export default function AuthCallback() {
   const [status, setStatus] = useState('Processing authentication...')
   const [isError, setIsError] = useState(false)
@@ -32,7 +44,7 @@ export default function AuthCallback() {
           return
         }
 
-        // Validate token format
+        // Validate token format (basic JWT structure check)
         if (!token.includes('.') || token.split('.').length !== 3) {
           setStatus('Authentication failed. Redirecting to login...')
           setIsError(true)
@@ -42,25 +54,49 @@ export default function AuthCallback() {
           return
         }
 
-        // Clear any existing token first
-        localStorage.removeItem('accessToken')
+        // SECURITY: Use BroadcastChannel to communicate token to main tab
+        // Token is NOT stored in localStorage to prevent XSS token theft
+        // The AuthProvider will receive this and store token in memory only
+        try {
+          const authChannel = new BroadcastChannel('auth_channel')
+          authChannel.postMessage({
+            type: 'DISCORD_AUTH_SUCCESS',
+            token: token,
+            refreshUser: true
+          })
+          authChannel.close()
+        } catch (broadcastError) {
+          // BroadcastChannel not supported, try postMessage to opener
+          console.log('[AUTH CALLBACK] BroadcastChannel failed, trying opener.postMessage')
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'DISCORD_AUTH_SUCCESS',
+              token: token,
+              refreshUser: true
+            }, window.location.origin)
+          }
+        }
 
-        // Store access token
-        localStorage.setItem('accessToken', token)
-
-        // Set callback flag for AuthProvider polling
-        localStorage.setItem('authCallback', Date.now().toString())
-
-        // Check for return URL
-        const returnUrl = localStorage.getItem('authReturnUrl')
+        // Check for return URL from sessionStorage (not localStorage for slightly better security)
+        // SECURITY: Validate URL to prevent open redirect attacks
+        const returnUrl = sessionStorage.getItem('authReturnUrl')
         let redirectUrl = '/'
 
-        if (returnUrl) {
+        if (returnUrl && isValidReturnUrl(returnUrl)) {
           redirectUrl = returnUrl
-          localStorage.removeItem('authReturnUrl')
+          sessionStorage.removeItem('authReturnUrl')
         }
 
         setStatus('Authentication successful! Redirecting...')
+
+        // If this is a popup, try to close it and let the opener handle redirect
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CLOSE_AUTH_POPUP' }, window.location.origin)
+          setTimeout(() => {
+            window.close()
+          }, 500)
+          return
+        }
 
         // Redirect to the intended destination after a brief delay
         setTimeout(() => {
@@ -68,6 +104,7 @@ export default function AuthCallback() {
         }, 1000)
 
       } catch (error) {
+        console.error('[AUTH CALLBACK] Error processing auth:', error)
         setStatus('Authentication failed. Redirecting to login...')
         setIsError(true)
         setTimeout(() => {

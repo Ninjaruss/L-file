@@ -43,48 +43,82 @@ export class GuidesService {
     const { tagNames, characterIds, arcId, gambleIds, ...guideData } =
       createGuideDto;
 
-    // Create the guide first - set to PENDING for moderator approval
-    const guide = this.guideRepository.create({
-      ...guideData,
-      authorId: author.id,
-      status: guideData.status || GuideStatus.PENDING,
+    // SECURITY/CONSISTENCY: Wrap in transaction to prevent orphaned data
+    return await this.guideRepository.manager.transaction(async (manager) => {
+      const guideRepo = manager.getRepository(Guide);
+      const tagRepo = manager.getRepository(Tag);
+      const characterRepo = manager.getRepository(Character);
+      const arcRepo = manager.getRepository(Arc);
+      const gambleRepo = manager.getRepository(Gamble);
+
+      // Create the guide first - set to PENDING for moderator approval
+      const guide = guideRepo.create({
+        ...guideData,
+        authorId: author.id,
+        status: guideData.status || GuideStatus.PENDING,
+      });
+
+      // Handle tags if provided - batch fetch existing and batch insert new (N+1 fix)
+      if (tagNames && tagNames.length > 0) {
+        const existingTags = await tagRepo.find({
+          where: { name: In(tagNames) },
+        });
+        const existingTagMap = new Map(existingTags.map((t) => [t.name, t]));
+
+        // Collect tags that need to be created
+        const newTagNames = tagNames.filter(
+          (name) => !existingTagMap.has(name),
+        );
+
+        // Batch insert all new tags at once (instead of one-by-one)
+        if (newTagNames.length > 0) {
+          const newTags = newTagNames.map((name) =>
+            tagRepo.create({ name, description: `Auto-created tag: ${name}` }),
+          );
+          const savedNewTags = await tagRepo.save(newTags);
+          savedNewTags.forEach((tag) => existingTagMap.set(tag.name, tag));
+        }
+
+        // Build final tags array in original order
+        guide.tags = tagNames.map((name) => existingTagMap.get(name)!);
+      }
+
+      // Handle character relations - use In() instead of deprecated findByIds
+      if (characterIds && characterIds.length > 0) {
+        const characters = await characterRepo.find({
+          where: { id: In(characterIds) },
+        });
+        if (characters.length !== characterIds.length) {
+          throw new BadRequestException(
+            'One or more character IDs are invalid',
+          );
+        }
+        guide.characters = characters;
+      }
+
+      // Handle arc relation
+      if (arcId) {
+        const arc = await arcRepo.findOne({ where: { id: arcId } });
+        if (!arc) {
+          throw new BadRequestException('Invalid arc ID');
+        }
+        guide.arc = arc;
+        guide.arcId = arcId;
+      }
+
+      // Handle gamble relations - use In() instead of deprecated findByIds
+      if (gambleIds && gambleIds.length > 0) {
+        const gambles = await gambleRepo.find({
+          where: { id: In(gambleIds) },
+        });
+        if (gambles.length !== gambleIds.length) {
+          throw new BadRequestException('One or more gamble IDs are invalid');
+        }
+        guide.gambles = gambles;
+      }
+
+      return await guideRepo.save(guide);
     });
-
-    // Handle tags if provided
-    if (tagNames && tagNames.length > 0) {
-      const tags = await this.findOrCreateTags(tagNames);
-      guide.tags = tags;
-    }
-
-    // Handle character relations
-    if (characterIds && characterIds.length > 0) {
-      const characters = await this.characterRepository.findByIds(characterIds);
-      if (characters.length !== characterIds.length) {
-        throw new BadRequestException('One or more character IDs are invalid');
-      }
-      guide.characters = characters;
-    }
-
-    // Handle arc relation
-    if (arcId) {
-      const arc = await this.arcRepository.findOne({ where: { id: arcId } });
-      if (!arc) {
-        throw new BadRequestException('Invalid arc ID');
-      }
-      guide.arc = arc;
-      guide.arcId = arcId;
-    }
-
-    // Handle gamble relations
-    if (gambleIds && gambleIds.length > 0) {
-      const gambles = await this.gambleRepository.findByIds(gambleIds);
-      if (gambles.length !== gambleIds.length) {
-        throw new BadRequestException('One or more gamble IDs are invalid');
-      }
-      guide.gambles = gambles;
-    }
-
-    return await this.guideRepository.save(guide);
   }
 
   async findAll(query: GuideQueryDto): Promise<{

@@ -193,4 +193,7 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true })
   refreshToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  refreshTokenExpiresAt: Date | null;
 }

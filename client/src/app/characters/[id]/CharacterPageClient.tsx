@@ -81,18 +81,17 @@ export default function CharacterPageClient({
 }: CharacterPageClientProps) {
   const theme = useMantineTheme()
 
-  // Get initial tab from URL hash or default to 'overview'
-  const getInitialTab = () => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.slice(1)
-      if (['overview', 'timeline', 'media'].includes(hash)) {
-        return hash
-      }
-    }
-    return 'overview'
-  }
+  // FIX: Initialize with default value to prevent hydration mismatch
+  // The hash is read in useEffect after hydration completes
+  const [activeTab, setActiveTab] = useState<string>('overview')
 
-  const [activeTab, setActiveTab] = useState<string>(getInitialTab)
+  // Read initial tab from URL hash after mount (client-side only)
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (['overview', 'timeline', 'media'].includes(hash)) {
+      setActiveTab(hash)
+    }
+  }, [])
 
   usePageView('character', character.id.toString(), true)
 

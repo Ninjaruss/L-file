@@ -11,11 +11,7 @@ import {
   UseGuards,
   ValidationPipe,
   UsePipes,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -24,7 +20,6 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
-  ApiConsumes,
 } from '@nestjs/swagger';
 import { ArcsService } from './arcs.service';
 import { Arc } from '../../entities/arc.entity';

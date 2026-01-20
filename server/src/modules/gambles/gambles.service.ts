@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, UpdateResult, DeleteResult } from 'typeorm';
+import { Repository, DeleteResult } from 'typeorm';
 import { Gamble } from '../../entities/gamble.entity';
 import { Character } from '../../entities/character.entity';
 import { CreateGambleDto } from './dto/create-gamble.dto';
 import { UpdateGambleDto } from './dto/update-gamble.dto';
 import { MediaService } from '../media/media.service';
-import { MediaOwnerType, MediaPurpose } from '../../entities/media.entity';
+import { MediaOwnerType } from '../../entities/media.entity';
 
 @Injectable()
 export class GamblesService {
@@ -208,11 +208,11 @@ export class GamblesService {
       .getMany();
   }
 
-  async findByTeam(teamName: string): Promise<Gamble[]> {
+  findByTeam(_teamName: string): Promise<Gamble[]> {
     // Note: This method needs to be implemented based on team-gamble relationships
     // For now, returning empty array to fix TypeScript errors
     // TODO: Implement proper team-gamble relationship logic
-    return [];
+    return Promise.resolve([]);
   }
 
   async getTeamsForGamble(id: number): Promise<string[]> {
@@ -234,7 +234,7 @@ export class GamblesService {
       limit?: number;
     } = {},
   ) {
-    const gamble = await this.findOne(gambleId);
+    await this.findOne(gambleId); // Validate gamble exists
 
     const result = await this.mediaService.findForEntityDisplay(
       MediaOwnerType.GAMBLE,
@@ -271,7 +271,7 @@ export class GamblesService {
       limit?: number;
     } = {},
   ) {
-    const gamble = await this.findOne(gambleId);
+    await this.findOne(gambleId); // Validate gamble exists
 
     const result = await this.mediaService.findForGallery(
       MediaOwnerType.GAMBLE,
@@ -301,7 +301,7 @@ export class GamblesService {
    * Default changes to the one with the latest chapter number within user progress
    */
   async getGambleCurrentThumbnail(gambleId: number, userProgress?: number) {
-    const gamble = await this.findOne(gambleId);
+    await this.findOne(gambleId); // Validate gamble exists
 
     // Get all entity display media for this gamble
     const allMedia = await this.mediaService.findForEntityDisplay(

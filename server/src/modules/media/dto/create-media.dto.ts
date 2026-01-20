@@ -2,12 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUrl,
   Matches,
-  IsNumber,
-  IsBoolean,
 } from 'class-validator';
 import {
   MediaType,
@@ -23,7 +22,7 @@ export class CreateMediaDto {
   @IsNotEmpty()
   @IsUrl()
   @Matches(
-    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|tiktok\.com|vm\.tiktok\.com|deviantart\.com|pixiv\.net|twitter\.com|x\.com|instagram\.com|imgur\.com|i\.imgur\.com|soundcloud\.com)\/.+$|^https?:\/\/[\w\-._~:\/?#\[\]@!$&'()*+,;=]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm|mp3|wav|ogg|flac)$/i,
+    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|tiktok\.com|vm\.tiktok\.com|deviantart\.com|pixiv\.net|twitter\.com|x\.com|instagram\.com|imgur\.com|i\.imgur\.com|soundcloud\.com)\/.+$|^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm|mp3|wav|ogg|flac)$/i,
     {
       message:
         'URL must be from supported platforms (YouTube, TikTok, Instagram, Twitter, DeviantArt, Pixiv, Imgur, SoundCloud) or a direct media file link',

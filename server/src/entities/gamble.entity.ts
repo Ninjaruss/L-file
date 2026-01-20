@@ -6,10 +6,8 @@ import {
   UpdateDateColumn,
   ManyToMany,
   JoinTable,
-  OneToMany,
 } from 'typeorm';
 import { Character } from './character.entity';
-import { Media } from './media.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()

@@ -87,24 +87,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('[AUTH PROVIDER] Already initializing, skipping...')
       return
     }
-    
+
     setIsInitializing(true)
     console.log('[AUTH PROVIDER] Initializing auth...')
+
     try {
-      // Try existing token
-      const existingToken = localStorage.getItem('accessToken')
-      console.log('[AUTH PROVIDER] Existing token found:', existingToken ? 'YES' : 'NO')
-      
-      if (existingToken) {
-        console.log('[AUTH PROVIDER] Setting API token and fetching user data')
-        api.setToken(existingToken)
+      // SECURITY: Access tokens are now stored in memory only (not localStorage)
+      // On page load, we always try to get a new token via refresh token cookie
+      // This is more secure as tokens can't be stolen via XSS
+
+      // Check if we have a token in memory (e.g., from a previous auth in this session)
+      if (api.hasToken()) {
+        console.log('[AUTH PROVIDER] Token exists in memory, fetching user data')
         try {
           const userData = await api.getCurrentUser()
           console.log('[AUTH PROVIDER] User data received:', userData.username)
           setUser(userData)
         } catch (error) {
           console.error('[AUTH PROVIDER] Error fetching user data:', error)
-          
+
           // If token is expired, try refreshing it
           if ((error as any).status === 401) {
             console.log('[AUTH PROVIDER] Token expired, attempting refresh...')
@@ -113,61 +114,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (refreshResult && refreshResult.access_token) {
                 console.log('[AUTH PROVIDER] Token refresh successful, setting user')
                 api.setToken(refreshResult.access_token)
-                localStorage.setItem('accessToken', refreshResult.access_token)
-                
+
                 // Fetch user data again with new token
-                try {
-                  const userData = await api.getCurrentUser()
-                  console.log('[AUTH PROVIDER] User data received after token refresh:', userData.username)
-                  setUser(userData)
-                } catch (userError) {
-                  console.error('[AUTH PROVIDER] Error fetching user data after token refresh:', userError)
-                  localStorage.removeItem('accessToken')
-                  api.setToken(null)
-                  setUser(null)
-                }
+                const userData = await api.getCurrentUser()
+                console.log('[AUTH PROVIDER] User data received after token refresh:', userData.username)
+                setUser(userData)
               } else {
                 console.error('[AUTH PROVIDER] Token refresh response missing data')
-                localStorage.removeItem('accessToken')
                 api.setToken(null)
                 setUser(null)
               }
             } catch (refreshError) {
               console.error('[AUTH PROVIDER] Token refresh failed:', refreshError)
-              localStorage.removeItem('accessToken')
               api.setToken(null)
               setUser(null)
             }
           } else {
             console.error('[AUTH PROVIDER] Error fetching user not related to token expiration')
-            localStorage.removeItem('accessToken')
             api.setToken(null)
             setUser(null)
           }
         }
       } else {
-        console.log('[AUTH PROVIDER] No existing token, checking for refresh token...')
-        // No access token in localStorage, but there might be a refresh token cookie
-        // Try to refresh to get a new access token
+        // No token in memory - try silent refresh via httpOnly refresh token cookie
+        console.log('[AUTH PROVIDER] No token in memory, attempting silent refresh...')
         try {
-          console.log('[AUTH PROVIDER] Attempting to refresh token without access token')
           const refreshResult = await api.refreshToken()
           if (refreshResult && refreshResult.access_token) {
-            console.log('[AUTH PROVIDER] Token refresh successful, fetching user data')
+            console.log('[AUTH PROVIDER] Silent refresh successful, fetching user data')
             api.setToken(refreshResult.access_token)
-            localStorage.setItem('accessToken', refreshResult.access_token)
-            
+
             // Fetch user data with new token
-            try {
-              const userData = await api.getCurrentUser()
-              console.log('[AUTH PROVIDER] User data received after refresh:', userData.username)
-              setUser(userData)
-            } catch (userError) {
-              console.error('[AUTH PROVIDER] Error fetching user data after refresh:', userError)
-              localStorage.removeItem('accessToken')
-              api.setToken(null)
-              setUser(null)
-            }
+            const userData = await api.getCurrentUser()
+            console.log('[AUTH PROVIDER] User data received after refresh:', userData.username)
+            setUser(userData)
           } else {
             console.log('[AUTH PROVIDER] No refresh token available or refresh failed')
             setUser(null)
@@ -180,7 +160,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('[AUTH PROVIDER] Failed to initialize auth:', error)
-      localStorage.removeItem('accessToken')
       api.setToken(null)
       setUser(null)
     } finally {
@@ -206,51 +185,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Only start polling when component is mounted (client-side)
     if (!mounted) return
-    
-    // Simplified polling for auth callback detection only
-    const pollForAuth = setInterval(() => {
-      if (typeof window === 'undefined') return
-      
-      const authCallback = localStorage.getItem('authCallback')
-      
-      // Check if authCallback flag was set (indicates callback completed)
-      if (authCallback) {
-        console.log('[AUTH PROVIDER] Auth callback flag detected, refreshing auth state')
-        initializeAuthRef.current?.()
-        localStorage.removeItem('authCallback')
-      }
-    }, 1000) // Check every 1 second for faster response
-    
-    // Clear polling after 2 minutes (shorter timeout for auth callback)
-    const clearPolling = setTimeout(() => {
-      clearInterval(pollForAuth)
-      console.log('[AUTH PROVIDER] Auth callback polling stopped after 2 minutes')
-    }, 120000) // 2 minutes
 
-    return () => {
-      clearInterval(pollForAuth)
-      clearTimeout(clearPolling)
-    }
+    // SECURITY: Removed localStorage polling for auth callback
+    // Auth state is now managed via:
+    // 1. BroadcastChannel for same-origin tab communication
+    // 2. postMessage from auth popup
+    // 3. Silent refresh via httpOnly cookie on page load
+
+    // No polling needed - this is more efficient and secure
+    return () => {}
   }, [mounted]) // Only depend on mounted state
 
   useEffect(() => {
     // Only add event listeners when component is mounted (client-side)
     if (!mounted || typeof window === 'undefined') return
 
-    // Listen for storage changes to detect when auth tokens are added from another tab
+    // SECURITY: Storage event listener for cross-tab logout only
+    // Access tokens are no longer stored in localStorage
     const handleStorageChange = (event: StorageEvent) => {
-      console.log('[AUTH PROVIDER] Storage event:', event.key, event.newValue)
-      
-      if (event.key === 'accessToken' && event.newValue && !user) {
-        console.log('[AUTH PROVIDER] New access token detected, refreshing auth state')
-        // New auth token detected, refresh auth state
-        initializeAuthRef.current?.()
-      }
-      
-      if (event.key === 'authCallback' && event.newValue) {
-        console.log('[AUTH PROVIDER] Auth callback flag detected, refreshing auth state')
-        // Auth callback completed, refresh auth state
-        initializeAuthRef.current?.()
+      // Only handle logout signals - tokens are not in localStorage anymore
+      if (event.key === 'logout_signal' && event.newValue) {
+        console.log('[AUTH PROVIDER] Logout signal detected from another tab')
+        api.setToken(null)
+        setUser(null)
+        // Clear the signal
+        localStorage.removeItem('logout_signal')
       }
     }
 
@@ -290,9 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
           console.log('[AUTH PROVIDER] Processing token from message')
 
-          // Clear any existing token first
-          localStorage.removeItem('accessToken')
-          localStorage.setItem('accessToken', token)
+          // SECURITY: Token stored in memory only (not localStorage)
           api.setToken(token)
 
           try {
@@ -301,11 +258,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(userData)
             console.log('[AUTH PROVIDER] User data fetched and set:', userData.username)
 
-            // Check for return URL, otherwise redirect to homepage if on login page
-            const returnUrl = localStorage.getItem('authReturnUrl')
+            // Check for return URL (still using sessionStorage for non-sensitive data)
+            const returnUrl = sessionStorage.getItem('authReturnUrl')
             if (returnUrl) {
               console.log('[AUTH PROVIDER] Redirecting to return URL:', returnUrl)
-              localStorage.removeItem('authReturnUrl')
+              sessionStorage.removeItem('authReturnUrl')
               window.location.href = returnUrl
             } else if (window.location.pathname === '/login') {
               console.log('[AUTH PROVIDER] Redirecting to homepage')
@@ -341,14 +298,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
           console.log('[AUTH PROVIDER] Processing token from broadcast - Token length:', token.length)
 
-          // Clear any existing token first
-          localStorage.removeItem('accessToken')
-
-          // Store token in this tab's localStorage
-          localStorage.setItem('accessToken', token)
+          // SECURITY: Token stored in memory only (not localStorage)
           api.setToken(token)
 
-          console.log('[AUTH PROVIDER] Tokens stored, attempting to fetch user data...')
+          console.log('[AUTH PROVIDER] Token set in memory, attempting to fetch user data...')
 
           try {
             // Get user data and set it
@@ -356,11 +309,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(userData)
             console.log('[AUTH PROVIDER] User data fetched from broadcast:', userData.username, 'Role:', userData.role)
 
-            // Check for return URL, otherwise redirect to homepage if on login page
-            const returnUrl = localStorage.getItem('authReturnUrl')
+            // Check for return URL (using sessionStorage for non-sensitive data)
+            const returnUrl = sessionStorage.getItem('authReturnUrl')
             if (returnUrl) {
               console.log('[AUTH PROVIDER] Redirecting to return URL from broadcast:', returnUrl)
-              localStorage.removeItem('authReturnUrl')
+              sessionStorage.removeItem('authReturnUrl')
               window.location.href = returnUrl
             } else if (window.location.pathname === '/login') {
               console.log('[AUTH PROVIDER] Redirecting to homepage from broadcast')
@@ -383,27 +336,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleCustomEvent = async (event: Event) => {
       const customEvent = event as CustomEvent
       console.log('[AUTH PROVIDER] Custom event received:', customEvent.detail)
-      
+
       if (customEvent.detail && customEvent.detail.token) {
         console.log('[AUTH PROVIDER] Processing token from custom event')
         const { token, refreshUser } = customEvent.detail
-        
-        // Clear any existing token first
-        localStorage.removeItem('accessToken')
-        localStorage.setItem('accessToken', token)
+
+        // SECURITY: Token stored in memory only (not localStorage)
         api.setToken(token)
-        
+
         try {
           // Get user data and set it
           const userData = await api.getCurrentUser()
           setUser(userData)
           console.log('[AUTH PROVIDER] User data fetched from custom event:', userData.username)
-          
-          // Check for return URL, otherwise redirect to homepage if on login page
-          const returnUrl = localStorage.getItem('authReturnUrl')
+
+          // Check for return URL (using sessionStorage for non-sensitive data)
+          const returnUrl = sessionStorage.getItem('authReturnUrl')
           if (returnUrl) {
             console.log('[AUTH PROVIDER] Redirecting to return URL from custom event:', returnUrl)
-            localStorage.removeItem('authReturnUrl')
+            sessionStorage.removeItem('authReturnUrl')
             window.location.href = returnUrl
           } else if (window.location.pathname === '/login') {
             console.log('[AUTH PROVIDER] Redirecting to homepage from custom event')
@@ -461,30 +412,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const devLogin = async (asAdmin: boolean = false) => {
+    // SECURITY: Dev login is strictly for local development only
+    // Never expose secrets in client bundles via NEXT_PUBLIC_* variables
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Development login is not available in production')
+    }
+
     try {
+      // SECURITY: Prompt for secret at runtime instead of storing in bundle
+      // This prevents the secret from being extracted from JS source
+      let devSecret = sessionStorage.getItem('_dev_secret')
+      if (!devSecret) {
+        devSecret = window.prompt('Enter development bypass secret:')
+        if (!devSecret) {
+          throw new Error('Development secret is required')
+        }
+        // Store in sessionStorage (cleared when browser closes, not persisted)
+        sessionStorage.setItem('_dev_secret', devSecret)
+      }
+
       const response = await fetch(`${API_BASE_URL}/auth/dev-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Dev-Secret': devSecret,
+          'X-Requested-With': 'Fetch', // CSRF protection
         },
         credentials: 'include', // Important for cookies (refresh token)
-        body: JSON.stringify({ asAdmin }),
+        body: JSON.stringify({ asAdmin, devSecret }),
       })
-      
+
       if (!response.ok) {
-        throw new Error('Development login failed')
+        // Clear stored secret on auth failure (might be wrong)
+        sessionStorage.removeItem('_dev_secret')
+        throw new Error('Development login failed - check your secret')
       }
-      
+
       const data = await response.json()
-      
-      // Store access token (refresh token is now handled via httpOnly cookie)
-      localStorage.setItem('accessToken', data.access_token)
+
+      // SECURITY: Token stored in memory only (refresh token is in httpOnly cookie)
       api.setToken(data.access_token)
-      
+
       setUser(data.user)
-      
-      // Return to the current page instead of forcing a reload
-      // This prevents the login/logout cycle
+
       console.log('[AUTH PROVIDER] Dev login successful, user set:', data.user.username)
     } catch (error) {
       console.error('Dev login failed:', error)
@@ -499,9 +469,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Logout failed:', error)
     } finally {
-      localStorage.removeItem('accessToken')
       api.setToken(null)
       setUser(null)
+      // Signal other tabs to logout (non-sensitive, just a trigger)
+      localStorage.setItem('logout_signal', Date.now().toString())
       // Redirect to home page after logout
       window.location.href = '/'
     }

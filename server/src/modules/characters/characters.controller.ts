@@ -9,12 +9,8 @@ import {
   NotFoundException,
   Query,
   UseGuards,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
   ParseIntPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -23,7 +19,6 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
-  ApiConsumes,
 } from '@nestjs/swagger';
 import { CharactersService } from './characters.service';
 import { Character } from '../../entities/character.entity';
@@ -31,7 +26,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
-import { UpdateCharacterImageDto } from './dto/update-character-image.dto';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { BackblazeB2Service } from '../../services/backblaze-b2.service';

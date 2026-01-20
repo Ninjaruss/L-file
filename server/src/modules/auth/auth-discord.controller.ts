@@ -3,16 +3,17 @@ import {
   Get,
   Post,
   UseGuards,
-  Request,
-  Response,
+  Req,
+  Res,
   Body,
-  UnauthorizedException,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { DiscordAuthGuard } from './guards/discord-auth.guard';
 import { DevBypassAuthGuard } from './guards/dev-bypass-auth.guard';
 import { ConfigService } from '@nestjs/config';
+import { User } from '../../entities/user.entity';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -52,9 +53,9 @@ export class AuthDiscordController {
   })
   @Get('discord/callback')
   @UseGuards(DiscordAuthGuard)
-  async discordCallback(@Request() req, @Response() res) {
+  async discordCallback(@Req() req: Request, @Res() res: Response) {
     // Generate JWT token for the authenticated user
-    const loginResult = await this.authService.login(req.user);
+    const loginResult = await this.authService.login(req.user as User);
 
     // Set refresh token as httpOnly cookie before redirecting
     if (loginResult.refresh_token) {
@@ -90,12 +91,12 @@ export class AuthDiscordController {
   @Post('dev-login')
   @UseGuards(DevBypassAuthGuard)
   async devLogin(
-    @Request() req,
-    @Response() res,
-    @Body() body: { asAdmin?: boolean },
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() _body: { asAdmin?: boolean },
   ) {
     // This is handled by the DevBypassAuthGuard and strategy
-    const loginResult = await this.authService.login(req.user);
+    const loginResult = await this.authService.login(req.user as User);
 
     // Set refresh token as httpOnly cookie
     if (loginResult.refresh_token) {

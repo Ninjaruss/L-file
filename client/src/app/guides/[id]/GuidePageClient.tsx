@@ -164,8 +164,13 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
   }, [guide?.author?.role, theme.other?.usogui])
 
   // Fetch guide with authentication when guideId is provided but no initialGuide
+  // FIX: Added AbortController for proper cleanup and race condition prevention
   useEffect(() => {
     if (!initialGuide && guideId && !authLoading) {
+      // Create AbortController for this effect instance
+      const abortController = new AbortController()
+      let isCancelled = false
+
       setLoading(true)
       setError(null)
 
@@ -173,11 +178,17 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
         try {
           let fetchedGuide: Guide
 
-          if (user) {
+          // Capture user at the start to avoid closure issues
+          const currentUser = user
+
+          if (currentUser) {
             // User is authenticated, try authenticated endpoint first
             try {
               fetchedGuide = await api.getGuideAuthenticated(guideId)
             } catch (authError: unknown) {
+              // Check if request was cancelled
+              if (isCancelled) return
+
               const err = authError as { status?: number }
               // If authenticated request fails with 401/403, try public endpoint
               if (err?.status === 401 || err?.status === 403) {
@@ -191,10 +202,13 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
             fetchedGuide = await api.getGuide(guideId)
           }
 
+          // Check if cancelled before updating state
+          if (isCancelled) return
+
           // Check if user can view this guide
           if (fetchedGuide.status !== GuideStatus.APPROVED) {
             // Only allow authors to see their own non-approved guides
-            if (!user || user.id !== fetchedGuide.author.id) {
+            if (!currentUser || currentUser.id !== fetchedGuide.author.id) {
               setError('This guide is not available to the public.')
               return
             }
@@ -203,7 +217,13 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
           setGuide(fetchedGuide)
           setEditedContent(fetchedGuide.content)
         } catch (err: unknown) {
-          const error = err as { status?: number; isAuthError?: boolean }
+          // Don't update state if cancelled
+          if (isCancelled) return
+
+          const error = err as { status?: number; isAuthError?: boolean; name?: string }
+          // Ignore abort errors
+          if (error?.name === 'AbortError') return
+
           if (error?.status === 404) {
             setError('Guide not found.')
           } else if (error?.isAuthError) {
@@ -212,11 +232,19 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
             setError('Failed to load guide.')
           }
         } finally {
-          setLoading(false)
+          if (!isCancelled) {
+            setLoading(false)
+          }
         }
       }
 
       fetchGuide()
+
+      // Cleanup function: cancel any in-flight requests
+      return () => {
+        isCancelled = true
+        abortController.abort()
+      }
     }
   }, [guideId, initialGuide, user, authLoading])
 

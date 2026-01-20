@@ -41,7 +41,7 @@ export class SearchService {
     let total = 0;
 
     switch (type) {
-      case SearchType.CHAPTERS:
+      case SearchType.CHAPTERS: {
         const chapterResults = await this.searchChapters(
           query,
           userProgress,
@@ -51,7 +51,8 @@ export class SearchService {
         results = chapterResults.results;
         total = chapterResults.total;
         break;
-      case SearchType.CHARACTERS:
+      }
+      case SearchType.CHARACTERS: {
         const characterResults = await this.searchCharacters(
           query,
           offset,
@@ -60,7 +61,8 @@ export class SearchService {
         results = characterResults.results;
         total = characterResults.total;
         break;
-      case SearchType.EVENTS:
+      }
+      case SearchType.EVENTS: {
         const eventResults = await this.searchEvents(
           query,
           userProgress,
@@ -70,17 +72,20 @@ export class SearchService {
         results = eventResults.results;
         total = eventResults.total;
         break;
-      case SearchType.ARCS:
+      }
+      case SearchType.ARCS: {
         const arcResults = await this.searchArcs(query, offset, limit);
         results = arcResults.results;
         total = arcResults.total;
         break;
-      case SearchType.GAMBLES:
+      }
+      case SearchType.GAMBLES: {
         const gambleResults = await this.searchGambles(query, offset, limit);
         results = gambleResults.results;
         total = gambleResults.total;
         break;
-      case SearchType.ORGANIZATIONS:
+      }
+      case SearchType.ORGANIZATIONS: {
         const organizationResults = await this.searchOrganizations(
           query,
           offset,
@@ -89,8 +94,9 @@ export class SearchService {
         results = organizationResults.results;
         total = organizationResults.total;
         break;
+      }
       case SearchType.ALL:
-      default:
+      default: {
         const allResults = await this.searchAll(
           query,
           userProgress,
@@ -100,6 +106,7 @@ export class SearchService {
         results = allResults.results;
         total = allResults.total;
         break;
+      }
     }
 
     const totalPages = Math.ceil(total / limit);

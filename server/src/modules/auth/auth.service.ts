@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User, UserRole } from '../../entities/user.entity';
@@ -8,8 +12,13 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
+  // SECURITY: Test user functionality is strictly for development/testing only
+  // Triple-check: must NOT be production AND must be explicitly enabled AND email must match
   private readonly isTestUser = (email: string) =>
-    email === 'testuser@example.com';
+    this.configService.get<string>('NODE_ENV') !== 'production' &&
+    this.configService.get<string>('ENABLE_TEST_USER') === 'true' &&
+    email ===
+      this.configService.get<string>('TEST_USER_EMAIL', 'testuser@example.com');
 
   constructor(
     private readonly usersService: UsersService,
@@ -58,8 +67,21 @@ export class AuthService {
 
   // --- Development Bypass ---
   async validateDevBypass(asAdmin: boolean = false): Promise<User> {
-    if (this.configService.get<string>('NODE_ENV') !== 'development') {
-      throw new Error('Development bypass only available in development');
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+
+    // SECURITY: Defense-in-depth - final check before creating user
+    // This should never be reached in production if guard and strategy work correctly
+    if (nodeEnv !== 'development') {
+      throw new ForbiddenException(
+        'Development bypass only available in development',
+      );
+    }
+
+    // SECURITY: Verify that DEV_BYPASS_SECRET is configured
+    // This ensures the feature can't work even in development without explicit configuration
+    const devBypassSecret = this.configService.get<string>('DEV_BYPASS_SECRET');
+    if (!devBypassSecret) {
+      throw new ForbiddenException('Development bypass not configured');
     }
 
     // Use different dev users for admin vs regular user
@@ -154,19 +176,11 @@ export class AuthService {
 
   // Refresh access token using a stored refresh token
   async refreshAccessToken(refreshToken: string) {
-    console.log('refreshAccessToken called with token:', refreshToken);
-    console.log('refreshToken type:', typeof refreshToken);
-    console.log('refreshToken length:', refreshToken?.length);
-    console.log('refreshToken truthy:', !!refreshToken);
-
     if (!refreshToken) {
-      console.log('No refresh token provided, throwing error');
       throw new UnauthorizedException('No refresh token provided');
     }
 
-    console.log('Looking for user with refresh token...');
     const user = await this.usersService.findByRefreshToken(refreshToken);
-    console.log('User found:', !!user);
 
     if (!user) throw new UnauthorizedException('Invalid refresh token');
 

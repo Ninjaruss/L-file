@@ -10,7 +10,7 @@ export class AddGuideToMediaOwnerType1734040000000
     `);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(_queryRunner: QueryRunner): Promise<void> {
     // Note: PostgreSQL doesn't support removing values from enums directly
     // This would require recreating the enum and updating all references
     // For now, we'll leave this empty as removing enum values is complex

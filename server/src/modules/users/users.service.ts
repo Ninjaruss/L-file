@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, MoreThan, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole, ProfilePictureType } from '../../entities/user.entity';
 import { Quote } from '../../entities/quote.entity';
@@ -16,6 +16,9 @@ import { Guide, GuideStatus } from '../../entities/guide.entity';
 import { GuideLike } from '../../entities/guide-like.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
+
+// Refresh token expiration duration (30 days)
+const REFRESH_TOKEN_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class UsersService {
@@ -62,34 +65,53 @@ export class UsersService {
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
-    // Process each user to filter active badges for list view and add character info
+    // Process each user to filter active badges for list view
+    const now = new Date();
     for (const user of data) {
       // Filter to show only active, non-expired badges in the list view
       if (user.badges) {
-        const now = new Date();
         user.badges = user.badges.filter(
           (userBadge) =>
             userBadge.isActive &&
             (!userBadge.expiresAt || userBadge.expiresAt > now),
         );
       }
+    }
 
-      // Fetch character information for selected character media
-      if (
-        user.selectedCharacterMedia &&
-        user.selectedCharacterMedia.ownerType === 'character'
-      ) {
-        const characterRepo = this.repo.manager.getRepository(Character);
-        const character = await characterRepo.findOne({
-          where: { id: user.selectedCharacterMedia.ownerId },
-        });
+    // PERFORMANCE FIX: Batch load all character information to avoid N+1 queries
+    // Collect all character IDs from users with character media
+    const characterIds = data
+      .filter(
+        (user) =>
+          user.selectedCharacterMedia &&
+          user.selectedCharacterMedia.ownerType === 'character',
+      )
+      .map((user) => user.selectedCharacterMedia!.ownerId);
 
-        if (character) {
-          // Add character information to the media object
-          (user.selectedCharacterMedia as any).character = {
-            id: character.id,
-            name: character.name,
-          };
+    // Batch fetch all characters in a single query
+    if (characterIds.length > 0) {
+      const characterRepo = this.repo.manager.getRepository(Character);
+      const characters = await characterRepo.find({
+        where: { id: In(characterIds) },
+        select: ['id', 'name'],
+      });
+      const characterMap = new Map(characters.map((c) => [c.id, c]));
+
+      // Attach character info to each user's media
+      for (const user of data) {
+        if (
+          user.selectedCharacterMedia &&
+          user.selectedCharacterMedia.ownerType === 'character'
+        ) {
+          const character = characterMap.get(
+            user.selectedCharacterMedia.ownerId,
+          );
+          if (character) {
+            (user.selectedCharacterMedia as any).character = {
+              id: character.id,
+              name: character.name,
+            };
+          }
         }
       }
     }
@@ -399,23 +421,41 @@ export class UsersService {
   async setRefreshToken(userId: number, token: string): Promise<void> {
     const user = await this.findOne(userId);
     user.refreshToken = token;
+    // SECURITY: Set expiration time for refresh token
+    user.refreshTokenExpiresAt = new Date(
+      Date.now() + REFRESH_TOKEN_EXPIRATION_MS,
+    );
     await this.repo.save(user);
   }
 
   async clearRefreshToken(userId: number): Promise<void> {
     const user = await this.findOne(userId);
     user.refreshToken = null;
+    user.refreshTokenExpiresAt = null;
     await this.repo.save(user);
   }
 
   async verifyRefreshToken(userId: number, token: string): Promise<boolean> {
     const user = await this.findOne(userId);
-    return !!(user.refreshToken && user.refreshToken === token);
+    if (!user.refreshToken || user.refreshToken !== token) {
+      return false;
+    }
+    // SECURITY: Check if refresh token has expired
+    if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
+      return false;
+    }
+    return true;
   }
 
   async findByRefreshToken(token: string): Promise<User | null> {
     if (!token) return null;
-    return this.repo.findOne({ where: { refreshToken: token } });
+    // SECURITY: Only return user if refresh token exists AND hasn't expired
+    return this.repo.findOne({
+      where: {
+        refreshToken: token,
+        refreshTokenExpiresAt: MoreThan(new Date()),
+      },
+    });
   }
 
   // --- Profile customization methods ---

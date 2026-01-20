@@ -5,18 +5,10 @@ import {
   ManyToOne,
   CreateDateColumn,
   Index,
-  JoinColumn,
 } from 'typeorm';
-import { Character } from './character.entity';
 import { User } from './user.entity';
 import { Event } from './event.entity';
-import { Arc } from './arc.entity';
-import { Gamble } from './gamble.entity';
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-  ApiHideProperty,
-} from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum MediaType {
   IMAGE = 'image',
@@ -163,6 +155,6 @@ export class Media {
     description: 'User who submitted this media',
     type: () => User,
   })
-  @ManyToOne(() => User, { nullable: false })
-  submittedBy: User;
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  submittedBy: User | null;
 }

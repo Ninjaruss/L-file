@@ -42,6 +42,61 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 
+// SECURITY: Validate file magic bytes to prevent MIME type spoofing
+function validateImageMagicBytes(buffer: Buffer): {
+  valid: boolean;
+  detectedType: string | null;
+} {
+  if (buffer.length < 12) {
+    return { valid: false, detectedType: null };
+  }
+
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return { valid: true, detectedType: 'image/jpeg' };
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return { valid: true, detectedType: 'image/png' };
+  }
+
+  // GIF: 47 49 46 38 (GIF8)
+  if (
+    buffer[0] === 0x47 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x38
+  ) {
+    return { valid: true, detectedType: 'image/gif' };
+  }
+
+  // WebP: RIFF....WEBP
+  if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return { valid: true, detectedType: 'image/webp' };
+  }
+
+  return { valid: false, detectedType: null };
+}
+
 @ApiTags('media')
 @Controller('media')
 export class MediaController {
@@ -304,11 +359,18 @@ export class MediaController {
   @Post('upload')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB max file size
+        files: 1, // Only 1 file at a time
+      },
+    }),
+  )
   @ApiOperation({
     summary: 'Upload media file',
     description:
-      'Upload a media file directly to the server (requires authentication)',
+      'Upload a media file directly to the server (requires authentication). Max file size: 50MB.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -318,7 +380,7 @@ export class MediaController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Media file to upload',
+          description: 'Media file to upload (max 50MB)',
         },
         type: {
           type: 'string',
@@ -357,6 +419,7 @@ export class MediaController {
   })
   @ApiResponse({ status: 400, description: 'Invalid file or parameters' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 413, description: 'File too large (max 50MB)' })
   async uploadMedia(
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadData: UploadMediaDto,
@@ -366,12 +429,20 @@ export class MediaController {
       throw new BadRequestException('File is required');
     }
 
+    // Defense-in-depth: Validate file size in service layer too
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    if (file.size > MAX_FILE_SIZE) {
+      throw new BadRequestException(
+        `File size exceeds maximum allowed size of 50MB`,
+      );
+    }
+
     // Only allow image uploads for now
     if (uploadData.type !== 'image') {
       throw new BadRequestException('Only image uploads are supported');
     }
 
-    // Validate file type
+    // Validate file type - check both MIME and magic bytes
     const allowedMimeTypes = [
       'image/jpeg',
       'image/png',
@@ -381,6 +452,25 @@ export class MediaController {
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
         'Only image files (JPEG, PNG, WebP, GIF) are allowed',
+      );
+    }
+
+    // SECURITY: Validate magic bytes to prevent MIME type spoofing attacks
+    const magicByteCheck = validateImageMagicBytes(file.buffer);
+    if (!magicByteCheck.valid) {
+      throw new BadRequestException(
+        'Invalid file content. The file does not appear to be a valid image.',
+      );
+    }
+
+    // Optionally warn if MIME type doesn't match detected type (but still allow)
+    if (
+      magicByteCheck.detectedType &&
+      magicByteCheck.detectedType !== file.mimetype
+    ) {
+      // Log mismatch for monitoring, but use the detected type
+      console.warn(
+        `[MEDIA UPLOAD] MIME type mismatch: claimed ${file.mimetype}, detected ${magicByteCheck.detectedType}`,
       );
     }
 
@@ -395,9 +485,13 @@ export class MediaController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   @ApiOperation({
-    summary: 'Get all media',
-    description: 'Retrieve media with optional filtering and pagination',
+    summary: 'Get all media (admin)',
+    description:
+      'Retrieve all media including pending/rejected (requires moderator or admin role)',
   })
   @ApiQuery({
     name: 'page',

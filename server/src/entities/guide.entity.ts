@@ -96,7 +96,7 @@ export class Guide {
     type: () => [Tag],
     description: 'Tags associated with this guide',
   })
-  @ManyToMany(() => Tag, { cascade: true })
+  @ManyToMany(() => Tag)
   @JoinTable({
     name: 'guide_tags',
     joinColumn: { name: 'guideId', referencedColumnName: 'id' },

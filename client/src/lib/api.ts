@@ -6,27 +6,43 @@ const defaultApiUrl = process.env.NODE_ENV === 'production'
 
 export const API_BASE_URL = resolvedApiUrl || defaultApiUrl
 
+// Debug logging helper - only logs in development
+const isDev = process.env.NODE_ENV === 'development'
+const debugLog = (...args: unknown[]) => {
+  if (isDev) {
+    console.log(...args)
+  }
+}
+
 
 class ApiClient {
   private baseURL: string
+  // SECURITY: Access token stored in memory only (not localStorage)
+  // This prevents XSS attacks from stealing tokens
+  // Refresh tokens are stored in httpOnly cookies (handled by server)
   private token: string | null = null
+
+  // SECURITY: Prevent race conditions in token refresh
+  // When multiple requests get 401 simultaneously, only one should refresh
+  private refreshPromise: Promise<any> | null = null
 
   constructor(baseURL: string) {
     this.baseURL = baseURL
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('accessToken')
-    }
+    // NOTE: Token is no longer loaded from localStorage on init
+    // It will be set via setToken() after authentication or silent refresh
   }
 
   setToken(token: string | null) {
+    // SECURITY: Token stored in memory only - not persisted to localStorage
     this.token = token
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('accessToken', token)
-      } else {
-        localStorage.removeItem('accessToken')
-      }
-    }
+  }
+
+  getToken(): string | null {
+    return this.token
+  }
+
+  hasToken(): boolean {
+    return this.token !== null
   }
 
   private async request<T>(
@@ -36,6 +52,9 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`
     const headers: Record<string, string> = {
       ...(typeof options.headers === 'object' && options.headers ? options.headers as Record<string, string> : {}),
+      // SECURITY: Custom header for CSRF protection
+      // This header can't be sent cross-origin without CORS preflight approval
+      'X-Requested-With': 'Fetch',
     }
 
     // Only set Content-Type if body is not FormData
@@ -47,23 +66,40 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include', // Important for cookies (refresh token)
-    })
+    // RELIABILITY: Add timeout to prevent hanging requests
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include', // Important for cookies (refresh token)
+        signal: controller.signal,
+      })
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      // Handle abort/timeout errors
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error(`Request timeout: ${endpoint} took longer than 30 seconds`)
+      }
+      throw fetchError
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     // Handle token expiration (401 Unauthorized)
     if (response.status === 401 && 
         endpoint !== '/auth/refresh' && 
         endpoint !== '/auth/login' &&
         endpoint !== '/auth/logout') {
-      console.log('[API] Token expired, attempting to refresh...')
+      debugLog('[API] Token expired, attempting to refresh...')
       try {
         // Try to refresh the token
         const refreshResult = await this.refreshToken()
         if (refreshResult && refreshResult.access_token) {
-          console.log('[API] Token refresh successful, retrying original request')
+          debugLog('[API] Token refresh successful, retrying original request')
           // Retry the original request with the new token
           return this.request<T>(endpoint, options)
         }
@@ -71,7 +107,6 @@ class ApiClient {
         console.error('[API] Token refresh failed:', refreshError)
         // If refresh fails, clear token and fall through to handle 401 gracefully
         this.setToken(null)
-        localStorage.removeItem('accessToken')
       }
       
       // If we reach here, authentication failed - provide user-friendly error
@@ -142,14 +177,23 @@ class ApiClient {
     try {
       text = await response.text()
       if (!text.trim()) {
+        // Empty response body is valid for some endpoints
         return undefined as T
       }
       return JSON.parse(text)
     } catch (jsonError) {
-      console.error('[API] JSON parse error for endpoint:', endpoint, 'Response text:', text)
+      // RELIABILITY: Don't silently swallow JSON parse errors
+      // This prevents downstream "Cannot read property of undefined" errors
+      console.error('[API] JSON parse error for endpoint:', endpoint, 'Response text:', text?.substring(0, 500))
       console.error('[API] JSON parse error details:', jsonError)
-      // If JSON parsing fails, return undefined for empty responses
-      return undefined as T
+
+      // Throw a proper error instead of returning undefined
+      // This lets callers handle the error appropriately
+      const parseError = new Error(`Invalid JSON response from ${endpoint}`)
+      ;(parseError as any).status = response.status
+      ;(parseError as any).responseText = text?.substring(0, 200) // Truncate for debugging
+      ;(parseError as any).isParseError = true
+      throw parseError
     }
   }
 
@@ -248,36 +292,55 @@ class ApiClient {
   }
 
   async refreshToken() {
+    // SECURITY: Prevent multiple concurrent refresh attempts (race condition fix)
+    // If a refresh is already in progress, wait for it instead of starting another
+    if (this.refreshPromise) {
+      debugLog('[API] Token refresh already in progress, waiting...')
+      return this.refreshPromise
+    }
+
+    this.refreshPromise = this._doRefreshToken()
+
     try {
-      console.log('[API] Attempting to refresh token')
+      return await this.refreshPromise
+    } finally {
+      // Clear the promise so future refreshes can proceed
+      this.refreshPromise = null
+    }
+  }
+
+  private async _doRefreshToken() {
+    try {
+      debugLog('[API] Attempting to refresh token')
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Requested-With': 'Fetch', // CSRF protection
         },
         credentials: 'include', // Important for cookies (refresh token)
       });
-      
+
       if (!response.ok) {
         // Only log as error for unexpected status codes (not 401, which is expected when no refresh token exists)
         if (response.status !== 401) {
           console.error('[API] Token refresh failed:', response.status, response.statusText)
         } else {
-          console.log('[API] No valid refresh token available (401)')
+          debugLog('[API] No valid refresh token available (401)')
         }
         throw new Error('Token refresh failed')
       }
-      
+
       const data = await response.json();
-      console.log('[API] Token refresh successful')
-      
+      debugLog('[API] Token refresh successful')
+
       // Update token
       this.setToken(data.access_token)
       return data
     } catch (error) {
       // Only log as error if it's not the expected "Token refresh failed" error from 401 response
       if (error instanceof Error && error.message === 'Token refresh failed') {
-        console.log('[API] Token refresh unavailable - user needs to log in')
+        debugLog('[API] Token refresh unavailable - user needs to log in')
       } else {
         console.error('[API] Error refreshing token:', error)
       }

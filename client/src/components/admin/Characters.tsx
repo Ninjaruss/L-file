@@ -81,11 +81,26 @@ export const CharacterList = () => (
           </Box>
         )}
       />
-      <ArrayField source="organizations" label="Organizations">
-        <SingleFieldList linkType={false}>
-          <ChipField source="name" size="small" />
-        </SingleFieldList>
-      </ArrayField>
+      <FunctionField
+        label="Organizations"
+        render={(record: any) => (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: '200px' }}>
+            {(record.organizations || []).map((org: any) => (
+              <Chip
+                key={org.id}
+                label={org.name}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  color: '#10b981',
+                  fontSize: '0.75rem',
+                  height: '24px'
+                }}
+              />
+            ))}
+          </Box>
+        )}
+      />
     </Datagrid>
   </List>
 )
