@@ -15,9 +15,8 @@ export const AdminAuthProvider: AuthProvider = {
     } catch (error) {
       // Ignore logout errors
     }
-    localStorage.removeItem('accessToken')
     api.setToken(null)
-    
+
     // Redirect to home page after logout
     window.location.href = '/'
     return Promise.resolve()
@@ -25,23 +24,34 @@ export const AdminAuthProvider: AuthProvider = {
 
   checkAuth: async () => {
     try {
-      const token = localStorage.getItem('accessToken')
+      // Check if we have a token in memory (secure in-memory storage)
+      let token = api.getToken()
+
+      if (!token) {
+        // No token in memory - try silent refresh via httpOnly cookie
+        try {
+          const refreshResult = await api.refreshToken()
+          if (refreshResult?.access_token) {
+            api.setToken(refreshResult.access_token)
+            token = refreshResult.access_token
+          }
+        } catch {
+          // Refresh failed - no valid session
+        }
+      }
+
       if (!token) {
         throw new Error('No access token')
       }
 
-      // Make sure the API client has the token
-      api.setToken(token)
-      
       const user = await api.getCurrentUser()
-      
+
       if (user.role !== 'admin' && user.role !== 'moderator') {
         throw new Error('Access denied. Admin or moderator role required.')
       }
 
       return Promise.resolve()
     } catch (error) {
-      localStorage.removeItem('accessToken')
       api.setToken(null)
       return Promise.reject(new Error('Not authenticated or insufficient permissions'))
     }
@@ -50,7 +60,6 @@ export const AdminAuthProvider: AuthProvider = {
   checkError: (error) => {
     const status = error.status
     if (status === 401 || status === 403) {
-      localStorage.removeItem('accessToken')
       api.setToken(null)
       return Promise.reject()
     }

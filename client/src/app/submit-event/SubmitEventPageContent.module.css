@@ -1,0 +1,7 @@
+.selectOption[data-selected] {
+  background-color: rgba(250, 176, 5, 0.19);
+}
+
+.selectOption[data-hovered] {
+  background-color: rgba(250, 176, 5, 0.08);
+}

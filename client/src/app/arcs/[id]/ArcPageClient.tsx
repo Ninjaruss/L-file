@@ -34,6 +34,9 @@ import ArcTimeline from '../../../components/ArcTimeline'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import MediaThumbnail from '../../../components/MediaThumbnail'
 import { ArcStructuredData } from '../../../components/StructuredData'
+import { AnnotationSection } from '../../../components/annotations'
+import { useAuth } from '../../../providers/AuthProvider'
+import { AnnotationOwnerType } from '../../../types'
 
 interface ArcBase {
   id: number
@@ -85,6 +88,7 @@ interface ArcPageClientProps {
 
 export default function ArcPageClient({ initialArc, initialEvents, initialGambles }: ArcPageClientProps) {
   const theme = useMantineTheme()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<string>('overview')
   const arcColor = getEntityThemeColor(theme, 'arc')
   const gambleColor = getEntityThemeColor(theme, 'gamble')
@@ -555,6 +559,16 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
           </Tabs.Panel>
         </Tabs>
       </Card>
+
+      {/* Annotations Section */}
+      <AnnotationSection
+        ownerType={AnnotationOwnerType.ARC}
+        ownerId={initialArc.id}
+        userProgress={user?.userProgress}
+        currentUserId={user?.id}
+        isAuthenticated={!!user}
+      />
+
     </motion.div>
     </Stack>
     </Container>

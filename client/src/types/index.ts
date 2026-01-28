@@ -171,6 +171,64 @@ export enum EventStatus {
   REJECTED = 'rejected',
 }
 
+export enum AnnotationStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
+export enum AnnotationOwnerType {
+  CHARACTER = 'character',
+  GAMBLE = 'gamble',
+  CHAPTER = 'chapter',
+  ARC = 'arc',
+}
+
+export interface Annotation {
+  id: number;
+  ownerType: AnnotationOwnerType;
+  ownerId: number;
+  title: string;
+  content: string;
+  sourceUrl: string | null;
+  chapterReference: number | null;
+  isSpoiler: boolean;
+  spoilerChapter: number | null;
+  status: AnnotationStatus;
+  rejectionReason: string | null;
+  authorId: number;
+  author: {
+    id: number;
+    username: string;
+    discordAvatar?: string | null;
+    profilePictureType?: string | null;
+    selectedCharacterMediaId?: number | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserContributions {
+  userId: number;
+  username: string;
+  submissions: {
+    guides: number;
+    media: number;
+    annotations: number;
+    quotes: number;
+    total: number;
+  };
+  edits: {
+    characters: number;
+    gambles: number;
+    arcs: number;
+    organizations: number;
+    events: number;
+    total: number;
+  };
+  totalContributions: number;
+}
+
 export interface Guide {
   id: number;
   title: string;

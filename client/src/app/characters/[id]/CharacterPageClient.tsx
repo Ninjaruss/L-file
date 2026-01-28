@@ -41,6 +41,9 @@ import ErrorBoundary from '../../../components/ErrorBoundary'
 import CharacterRelationships from '../../../components/CharacterRelationships'
 import CharacterOrganizationMemberships from '../../../components/CharacterOrganizationMemberships'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
+import { AnnotationSection } from '../../../components/annotations'
+import { useAuth } from '../../../providers/AuthProvider'
+import { AnnotationOwnerType } from '../../../types'
 
 interface Character {
   id: number
@@ -80,6 +83,7 @@ export default function CharacterPageClient({
   arcs
 }: CharacterPageClientProps) {
   const theme = useMantineTheme()
+  const { user } = useAuth()
 
   // FIX: Initialize with default value to prevent hydration mismatch
   // The hash is read in useEffect after hydration completes
@@ -670,6 +674,15 @@ export default function CharacterPageClient({
           </Tabs.Panel>
         </Tabs>
       </Card>
+
+      {/* Annotations Section */}
+      <AnnotationSection
+        ownerType={AnnotationOwnerType.CHARACTER}
+        ownerId={character.id}
+        userProgress={user?.userProgress}
+        currentUserId={user?.id}
+        isAuthenticated={!!user}
+      />
 
     </motion.div>
     </Stack>

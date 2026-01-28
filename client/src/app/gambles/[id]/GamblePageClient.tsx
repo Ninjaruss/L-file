@@ -31,6 +31,9 @@ import ErrorBoundary from '../../../components/ErrorBoundary'
 import { GambleStructuredData } from '../../../components/StructuredData'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import { api } from '../../../lib/api'
+import { AnnotationSection } from '../../../components/annotations'
+import { useAuth } from '../../../providers/AuthProvider'
+import { AnnotationOwnerType } from '../../../types'
 import {
   getEntityThemeColor,
   textColors,
@@ -94,6 +97,7 @@ interface TimelineArc {
 
 export default function GamblePageClient({ initialGamble }: GamblePageClientProps) {
   const theme = useMantineTheme()
+  const { user } = useAuth()
   const gambleColor = getEntityThemeColor(theme, 'gamble')
   const characterColor = getEntityThemeColor(theme, 'character')
   const [timelineEvents, setTimelineEvents] = useState<GambleTimelineEvent[]>([])
@@ -586,6 +590,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
           </Tabs.Panel>
         </Tabs>
       </Card>
+
+      {/* Annotations Section */}
+      <AnnotationSection
+        ownerType={AnnotationOwnerType.GAMBLE}
+        ownerId={initialGamble.id}
+        userProgress={user?.userProgress}
+        currentUserId={user?.id}
+        isAuthenticated={!!user}
+      />
+
     </motion.div>
     </Stack>
     </Container>

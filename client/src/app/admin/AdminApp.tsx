@@ -22,9 +22,10 @@ import { TagList, TagEdit, TagCreate } from '../../components/admin/Tags'
 import { OrganizationList, OrganizationEdit, OrganizationCreate } from '../../components/admin/Organizations'
 import { CharacterRelationshipList, CharacterRelationshipEdit, CharacterRelationshipCreate, CharacterRelationshipShow } from '../../components/admin/CharacterRelationships'
 import { CharacterOrganizationList, CharacterOrganizationEdit, CharacterOrganizationCreate, CharacterOrganizationShow } from '../../components/admin/CharacterOrganizations'
+import { AnnotationList, AnnotationEdit, AnnotationCreate, AnnotationShow } from '../../components/admin/Annotations'
 
 // Icons
-import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Link2, Building2 } from 'lucide-react'
+import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Link2, Building2, MessageSquare } from 'lucide-react'
 
 // Convert icons to components
 const UsersIcon = () => <Users />
@@ -39,6 +40,7 @@ const TagIcon = () => <Tag />
 const ShieldIcon = () => <Shield />
 const Link2Icon = () => <Link2 />
 const Building2Icon = () => <Building2 />
+const MessageSquareIcon = () => <MessageSquare />
 
 export default function AdminApp() {
   return (
@@ -112,6 +114,14 @@ export default function AdminApp() {
         create={QuoteCreate}
         show={QuoteShow}
         icon={QuoteIcon}
+      />
+      <Resource
+        name="annotations"
+        list={AnnotationList}
+        edit={AnnotationEdit}
+        create={AnnotationCreate}
+        show={AnnotationShow}
+        icon={MessageSquareIcon}
       />
       <Resource
         name="tags"

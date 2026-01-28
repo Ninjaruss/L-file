@@ -26,6 +26,9 @@ import { DonationsModule } from './modules/donations/donations.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { CharacterRelationshipsModule } from './modules/character-relationships/character-relationships.module';
 import { CharacterOrganizationsModule } from './modules/character-organizations/character-organizations.module';
+import { AnnotationsModule } from './modules/annotations/annotations.module';
+import { ContributionsModule } from './modules/contributions/contributions.module';
+import { EditLogModule } from './modules/edit-log/edit-log.module';
 import { AppController } from './app.controller';
 import { Guide } from './entities/guide.entity';
 import { Character } from './entities/character.entity';
@@ -34,6 +37,8 @@ import { Gamble } from './entities/gamble.entity';
 import { Arc } from './entities/arc.entity';
 import { Media } from './entities/media.entity';
 import { User } from './entities/user.entity';
+import { Annotation } from './entities/annotation.entity';
+import { EditLog } from './entities/edit-log.entity';
 import { Logger } from '@nestjs/common';
 
 @Module({
@@ -78,6 +83,8 @@ import { Logger } from '@nestjs/common';
       Arc,
       Media,
       User,
+      Annotation,
+      EditLog,
     ]),
 
     ArcsModule,
@@ -102,6 +109,9 @@ import { Logger } from '@nestjs/common';
     TasksModule,
     CharacterRelationshipsModule,
     CharacterOrganizationsModule,
+    AnnotationsModule,
+    ContributionsModule,
+    EditLogModule,
   ],
   controllers: [AppController],
 })

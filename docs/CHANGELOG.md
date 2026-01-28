@@ -1,5 +1,8 @@
 # Changelog and notes
 
+## 2026-01-27
+- Added annotations and contribution tracking (may not be complete due to previously losing untracked edits)
+
 ## 2026-01-20
 ### Code Cleanup & ESLint Fixes
 - **ESLint Configuration**: Updated `eslint.config.mjs` to exclude dev tools from linting
@@ -16,9 +19,6 @@
 - **Client Debug Logging**: Gated API debug console.logs behind `NODE_ENV=development` in `api.ts`
 - **Regex Fix**: Removed unnecessary escape characters in `create-media.dto.ts`
 
-### Build Status
-- Server: ✅ Builds successfully
-- Client: ✅ Builds successfully, no lint errors
 
 ## 2026-01-17
 ### Security Audit & Hardening

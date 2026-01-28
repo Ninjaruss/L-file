@@ -33,6 +33,9 @@ import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import type { Chapter as ChapterResource } from '../../../types'
+import { AnnotationSection } from '../../../components/annotations'
+import { useAuth } from '../../../providers/AuthProvider'
+import { AnnotationOwnerType } from '../../../types'
 
 interface Character {
   id: number
@@ -70,6 +73,7 @@ export default function ChapterPageClient({
   initialCharacters = []
 }: ChapterPageClientProps) {
   const theme = useMantineTheme()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<string>('overview')
 
   usePageView('chapter', initialChapter.id.toString(), true)
@@ -468,6 +472,16 @@ export default function ChapterPageClient({
                 </Tabs.Panel>
               </Tabs>
             </Card>
+
+            {/* Annotations Section */}
+            <AnnotationSection
+              ownerType={AnnotationOwnerType.CHAPTER}
+              ownerId={initialChapter.id}
+              userProgress={user?.userProgress}
+              currentUserId={user?.id}
+              isAuthenticated={!!user}
+            />
+
           </motion.div>
         </Stack>
       </Container>

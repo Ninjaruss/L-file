@@ -1539,6 +1539,171 @@ class ApiClient {
       recentTotalViewCount?: number
     }>>>(`/page-views/trending/by-type${queryString ? '?' + queryString : ''}`)
   }
+
+  // Annotation methods
+  async getAnnotationsForCharacter(characterId: number) {
+    return this.get<any[]>(`/annotations/character/${characterId}`)
+  }
+
+  async getAnnotationsForGamble(gambleId: number) {
+    return this.get<any[]>(`/annotations/gamble/${gambleId}`)
+  }
+
+  async getAnnotationsForChapter(chapterId: number) {
+    return this.get<any[]>(`/annotations/chapter/${chapterId}`)
+  }
+
+  async getAnnotationsForArc(arcId: number) {
+    return this.get<any[]>(`/annotations/arc/${arcId}`)
+  }
+
+  async getMyAnnotations() {
+    return this.get<any[]>('/annotations/my')
+  }
+
+  async createAnnotation(data: {
+    ownerType: 'character' | 'gamble' | 'chapter' | 'arc'
+    ownerId: number
+    title: string
+    content: string
+    sourceUrl?: string
+    chapterReference?: number
+    isSpoiler?: boolean
+    spoilerChapter?: number
+  }) {
+    return this.post<any>('/annotations', data)
+  }
+
+  async updateAnnotation(id: number, data: {
+    title?: string
+    content?: string
+    sourceUrl?: string
+    chapterReference?: number
+    isSpoiler?: boolean
+    spoilerChapter?: number
+  }) {
+    return this.patch<any>(`/annotations/${id}`, data)
+  }
+
+  async deleteAnnotation(id: number) {
+    return this.delete<void>(`/annotations/${id}`)
+  }
+
+  async getAnnotationsAdmin(params?: {
+    status?: 'pending' | 'approved' | 'rejected'
+    ownerType?: 'character' | 'gamble' | 'chapter' | 'arc'
+    authorId?: number
+    page?: number
+    limit?: number
+    sortOrder?: 'ASC' | 'DESC'
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      perPage: number
+      totalPages: number
+    }>(`/annotations${query ? `?${query}` : ''}`)
+  }
+
+  async getPendingAnnotations(params?: { page?: number; limit?: number }) {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString())
+        }
+      })
+    }
+    const query = searchParams.toString()
+    return this.get<{
+      data: any[]
+      total: number
+      page: number
+      perPage: number
+      totalPages: number
+    }>(`/annotations/pending${query ? `?${query}` : ''}`)
+  }
+
+  async getPendingAnnotationsCount() {
+    return this.get<{ count: number }>('/annotations/pending/count')
+  }
+
+  async getAnnotation(id: number) {
+    return this.get<any>(`/annotations/${id}`)
+  }
+
+  async approveAnnotation(id: number) {
+    return this.post<any>(`/annotations/${id}/approve`, {})
+  }
+
+  async rejectAnnotation(id: number, rejectionReason: string) {
+    return this.post<any>(`/annotations/${id}/reject`, { rejectionReason })
+  }
+
+  // Contribution methods
+  async getUserContributions(userId: number) {
+    return this.get<{
+      userId: number
+      username: string
+      submissions: {
+        guides: number
+        media: number
+        annotations: number
+        quotes: number
+        total: number
+      }
+      edits: {
+        characters: number
+        gambles: number
+        arcs: number
+        organizations: number
+        events: number
+        total: number
+      }
+      totalContributions: number
+    }>(`/contributions/user/${userId}`)
+  }
+
+  async getUserContributionCount(userId: number) {
+    return this.get<{ count: number }>(`/contributions/user/${userId}/count`)
+  }
+
+  async getUserContributionDetails(userId: number) {
+    return this.get<{
+      guides: Array<{
+        id: number
+        title: string
+        status: string
+        createdAt: string
+      }>
+      media: Array<{
+        id: number
+        description: string
+        url: string
+        ownerType: string
+        status: string
+        createdAt: string
+      }>
+      annotations: Array<{
+        id: number
+        title: string
+        ownerType: string
+        ownerId: number
+        status: string
+        createdAt: string
+      }>
+    }>(`/contributions/user/${userId}/details`)
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)
