@@ -31,8 +31,9 @@ import { textColors, getCardStyles, getEntityThemeColor } from '../../lib/mantin
 import AnnotationCard from './AnnotationCard'
 
 interface AnnotationSectionProps {
-  ownerType: AnnotationOwnerType
-  ownerId: number
+  ownerType?: AnnotationOwnerType
+  ownerId?: number
+  chapterReference?: number
   userProgress?: number
   currentUserId?: number
   isAuthenticated?: boolean
@@ -41,6 +42,7 @@ interface AnnotationSectionProps {
 export default function AnnotationSection({
   ownerType,
   ownerId,
+  chapterReference,
   userProgress = 999,
   currentUserId,
   isAuthenticated = false,
@@ -60,21 +62,26 @@ export default function AnnotationSection({
         setError(null)
 
         let result: Annotation[]
-        switch (ownerType) {
-          case AnnotationOwnerType.CHARACTER:
-            result = await api.getAnnotationsForCharacter(ownerId)
-            break
-          case AnnotationOwnerType.GAMBLE:
-            result = await api.getAnnotationsForGamble(ownerId)
-            break
-          case AnnotationOwnerType.CHAPTER:
-            result = await api.getAnnotationsForChapter(ownerId)
-            break
-          case AnnotationOwnerType.ARC:
-            result = await api.getAnnotationsForArc(ownerId)
-            break
-          default:
-            result = []
+
+        // Handle chapter annotations via chapterReference
+        if (chapterReference !== undefined) {
+          result = await api.getAnnotationsForChapter(chapterReference)
+        } else if (ownerType && ownerId !== undefined) {
+          switch (ownerType) {
+            case AnnotationOwnerType.CHARACTER:
+              result = await api.getAnnotationsForCharacter(ownerId)
+              break
+            case AnnotationOwnerType.GAMBLE:
+              result = await api.getAnnotationsForGamble(ownerId)
+              break
+            case AnnotationOwnerType.ARC:
+              result = await api.getAnnotationsForArc(ownerId)
+              break
+            default:
+              result = []
+          }
+        } else {
+          result = []
         }
 
         setAnnotations(result)
@@ -87,7 +94,7 @@ export default function AnnotationSection({
     }
 
     fetchAnnotations()
-  }, [ownerType, ownerId])
+  }, [ownerType, ownerId, chapterReference])
 
   const handleDelete = async (annotationId: number) => {
     if (!confirm('Are you sure you want to delete this annotation?')) {

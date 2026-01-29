@@ -94,19 +94,19 @@ export default function SubmitGuidePageContent() {
       return 'Title is required'
     }
     if (formData.title.trim().length < MIN_TITLE_LENGTH) {
-      return `Title must be at least ${MIN_TITLE_LENGTH} characters long`
+      return 'Please provide a more descriptive title'
     }
     if (!formData.description.trim()) {
       return 'Description is required'
     }
     if (formData.description.trim().length < MIN_DESCRIPTION_LENGTH) {
-      return `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters long`
+      return 'Please add more detail to your description'
     }
     if (!formData.content.trim()) {
       return 'Content is required'
     }
     if (formData.content.trim().length < MIN_CONTENT_LENGTH) {
-      return `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
+      return 'Your guide content needs more detail'
     }
     return null
   }
@@ -133,7 +133,7 @@ export default function SubmitGuidePageContent() {
         arcId: formData.arcId ?? undefined,
         gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined
       })
-      setSuccess('Guide submitted successfully! It is now pending moderator approval and will be reviewed before being published.')
+      setSuccess('Guide submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
       setFormData({
         title: '',
         description: '',
@@ -309,10 +309,10 @@ export default function SubmitGuidePageContent() {
                   required
                   error={
                     formData.title.length > 0 && formData.title.trim().length < MIN_TITLE_LENGTH
-                      ? `Title must be at least ${MIN_TITLE_LENGTH} characters long`
+                      ? 'Please provide a more descriptive title'
                       : undefined
                   }
-                  description="Choose a clear, descriptive title for your guide (minimum 5 characters)"
+                  description="Choose a clear, descriptive title for your guide"
                   styles={{
                     input: {
                       backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
@@ -340,10 +340,10 @@ export default function SubmitGuidePageContent() {
                   autosize
                   error={
                     formData.description.length > 0 && formData.description.trim().length < MIN_DESCRIPTION_LENGTH
-                      ? `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters long`
+                      ? 'Please add more detail to your description'
                       : undefined
                   }
-                  description={`Write a compelling description that summarizes your guide (${formData.description.length}/20+ characters)`}
+                  description="Write a compelling description that summarizes your guide"
                   styles={{
                     input: {
                       backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
@@ -420,10 +420,10 @@ export default function SubmitGuidePageContent() {
                         autosize
                         error={
                           formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH
-                            ? `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
+                            ? 'Your guide content needs more detail'
                             : undefined
                         }
-                        description={`Write your detailed guide content with entity embeds (${formData.content.length}/100+ characters)`}
+                        description="Write your detailed guide content with entity embeds"
                         ref={contentRef}
                         styles={{
                           input: {
@@ -743,19 +743,19 @@ export default function SubmitGuidePageContent() {
                         <Text size="xs" c="dimmed">• Enter a guide title</Text>
                       )}
                       {formData.title.trim() && formData.title.trim().length < MIN_TITLE_LENGTH && (
-                        <Text size="xs" c="dimmed">• Title needs {MIN_TITLE_LENGTH - formData.title.trim().length} more character{MIN_TITLE_LENGTH - formData.title.trim().length !== 1 ? 's' : ''}</Text>
+                        <Text size="xs" c="dimmed">• Add a more descriptive title</Text>
                       )}
                       {!formData.description.trim() && (
                         <Text size="xs" c="dimmed">• Enter a description</Text>
                       )}
                       {formData.description.trim() && formData.description.trim().length < MIN_DESCRIPTION_LENGTH && (
-                        <Text size="xs" c="dimmed">• Description needs {MIN_DESCRIPTION_LENGTH - formData.description.trim().length} more character{MIN_DESCRIPTION_LENGTH - formData.description.trim().length !== 1 ? 's' : ''}</Text>
+                        <Text size="xs" c="dimmed">• Add more detail to your description</Text>
                       )}
                       {!formData.content.trim() && (
                         <Text size="xs" c="dimmed">• Write your guide content</Text>
                       )}
                       {formData.content.trim() && formData.content.trim().length < MIN_CONTENT_LENGTH && (
-                        <Text size="xs" c="dimmed">• Content needs {MIN_CONTENT_LENGTH - formData.content.trim().length} more character{MIN_CONTENT_LENGTH - formData.content.trim().length !== 1 ? 's' : ''}</Text>
+                        <Text size="xs" c="dimmed">• Your guide content needs more detail</Text>
                       )}
                     </Stack>
                   </Stack>

@@ -80,15 +80,15 @@ export class AnnotationsController {
   @Get('chapter/:chapterId')
   @ApiOperation({
     summary: 'Get approved annotations for a chapter',
-    description: 'Retrieves all approved annotations for a specific chapter.',
+    description:
+      'Retrieves all approved annotations that reference a specific chapter.',
   })
   @ApiParam({ name: 'chapterId', description: 'Chapter ID' })
   @ApiOkResponse({ description: 'Annotations retrieved successfully' })
   async getAnnotationsForChapter(
     @Param('chapterId', ParseIntPipe) chapterId: number,
   ) {
-    return await this.annotationsService.findApprovedByOwner(
-      AnnotationOwnerType.CHAPTER,
+    return await this.annotationsService.findApprovedByChapterReference(
       chapterId,
     );
   }

@@ -1,7 +1,30 @@
 # Changelog and notes
 
+## TODO
+- Add submissions page or section to profile; user should see their submissions and their status
+- Update state for all pages when user logs in or out; guides for example keeps liked even though the user logged out
+- Media gallery preview on character (and probably other) details page does not show a preview properly (the image does load when shown in image viewer)
+- Profile counters for guides/media should be based on approved
+- Organization members should ; remove "active" label
+- For home page, media counter should not include volume covers
+
+
+## 2026-01-29
+### Annotation System Refactor
+- **Removed CHAPTER from AnnotationOwnerType**: Annotations can no longer be directly owned by chapters
+- **Chapter Annotations via Reference**: Annotations now appear on chapters based on the `chapterReference` field
+  - This allows annotations (for characters, gambles, arcs, etc.) to appear on specific chapters contextually
+  - Backend: New `findApprovedByChapterReference` service method
+  - Frontend: Updated `AnnotationSection` component to support `chapterReference` prop
+- **Updated Seeder**: Converted existing chapter-type annotations to arc-type with chapter references
+- **Validation**: Removed chapter validation from `validateOwnerExists` method
+- **Admin UI**: Removed chapter option from annotation forms and filters
+
+**Breaking Change**: Existing chapter-type annotations in production databases will need migration to arc/character/gamble types
+
 ## 2026-01-27
 - Added annotations and contribution tracking (may not be complete due to previously losing untracked edits)
+- Added sections for admin dashboard sidebar
 
 ## 2026-01-20
 ### Code Cleanup & ESLint Fixes

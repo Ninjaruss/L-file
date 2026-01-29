@@ -38,8 +38,10 @@ import {
   Upload
 } from 'lucide-react'
 import Link from 'next/link'
+import { BackToTop } from '../../components/BackToTop'
 import { api, API_BASE_URL } from '../../lib/api'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles } from '../../lib/mantine-theme'
+import { useAuth } from '../../providers/AuthProvider'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl } from '../../lib/video-utils'
 import styles from './media.module.css'
@@ -84,6 +86,7 @@ export default function MediaPageContent({
   initialOwnerId,
   initialSearch
 }: MediaPageContentProps) {
+  const { user } = useAuth()
   const theme = useMantineTheme()
   const accentMedia = getEntityThemeColor(theme, 'media')
 
@@ -98,6 +101,7 @@ export default function MediaPageContent({
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hoveredMediaId, setHoveredMediaId] = useState<number | null>(null)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
 
   // Intersection observer for infinite scroll
   const { ref: loadMoreRef, entry } = useIntersection({ threshold: 0.5 })
@@ -227,6 +231,24 @@ export default function MediaPageContent({
       setSelectedMedia(media[newIndex])
     }
   }, [currentIndex, media])
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const touchEnd = e.changedTouches[0].clientX
+    const diff = touchStart - touchEnd
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        handleNext()
+      } else {
+        handlePrevious()
+      }
+    }
+    setTouchStart(null)
+  }
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -470,17 +492,19 @@ export default function MediaPageContent({
                 >
                   {total.toLocaleString()} {totalLabel}
                 </Badge>
-                <Button
-                  component={Link}
-                  href="/submit-media"
-                  size="xs"
-                  radius="sm"
-                  variant="outline"
-                  color="grape"
-                  leftSection={<Upload size={14} />}
-                >
-                  Submit Media
-                </Button>
+                {user && (
+                  <Button
+                    component={Link}
+                    href="/submit-media"
+                    size="xs"
+                    radius="sm"
+                    variant="outline"
+                    color="grape"
+                    leftSection={<Upload size={14} />}
+                  >
+                    Submit Media
+                  </Button>
+                )}
               </Group>
             </Stack>
           </Stack>
@@ -899,7 +923,7 @@ export default function MediaPageContent({
         overlayProps={{ opacity: 0.9, color: '#000' }}
       >
         {selectedMedia && (
-          <Box style={{ position: 'relative' }}>
+          <Box style={{ position: 'relative' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <ActionIcon
               variant="subtle"
               size="lg"
@@ -1091,6 +1115,8 @@ export default function MediaPageContent({
           </Box>
         )}
       </Modal>
+
+      <BackToTop />
     </Box>
   )
 }

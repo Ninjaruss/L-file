@@ -13,7 +13,6 @@ import {
   Tabs,
   Text,
   Title,
-  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import {
@@ -361,21 +360,15 @@ export default function CharacterPageClient({
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<User size={16} />}>Overview</Tabs.Tab>
-            <Tooltip
-              label="No timeline events available for this character"
-              disabled={events.length > 0}
-              position="bottom"
-              withArrow
-            >
+            {events.length > 0 && (
               <Tabs.Tab
                 value="timeline"
                 leftSection={<Calendar size={16} />}
-                rightSection={events.length > 0 ? <Badge size="xs" variant="light" c={entityColors.character}>{events.length}</Badge> : null}
-                disabled={events.length === 0}
+                rightSection={<Badge size="xs" variant="light" c={entityColors.character}>{events.length}</Badge>}
               >
                 Timeline
               </Tabs.Tab>
-            </Tooltip>
+            )}
             <Tabs.Tab value="media" leftSection={<ImageIcon size={16} />}>Media</Tabs.Tab>
             <Tabs.Tab
               value="annotations"

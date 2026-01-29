@@ -185,7 +185,7 @@ export default function SubmitMediaPageContent() {
         description: formData.description.trim() || undefined
       })
 
-      setSuccess('Media submitted successfully! It will be reviewed by moderators before appearing on the site.')
+      setSuccess('Media submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
       setFormData({
         url: '',
         description: '',

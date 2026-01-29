@@ -291,7 +291,7 @@ export class BackblazeB2Service {
       throw new InternalServerErrorException('B2_BUCKET_NAME not configured');
     }
 
-    return `https://f000.backblazeb2.com/file/${bucketName}/${fileName}`;
+    return `https://f005.backblazeb2.com/file/${bucketName}/${fileName}`;
   }
 
   async deleteFile(fileName: string): Promise<void> {

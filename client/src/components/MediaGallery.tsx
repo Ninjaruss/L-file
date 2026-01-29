@@ -451,7 +451,7 @@ export default function MediaGallery({
                     isExternalUrl(thumbnail) ? (
                       <img
                         src={thumbnail}
-                        alt={mediaItem.description}
+                        alt={mediaItem.description || `Media submitted by ${mediaItem.submittedBy.username}`}
                         style={{
                           position: 'absolute',
                           top: 0,
@@ -465,7 +465,7 @@ export default function MediaGallery({
                     ) : (
                       <NextImage
                         src={thumbnail}
-                        alt={mediaItem.description}
+                        alt={mediaItem.description || `Media submitted by ${mediaItem.submittedBy.username}`}
                         fill
                         style={{ objectFit: 'cover' }}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
@@ -711,7 +711,7 @@ export default function MediaGallery({
                         src={selectedMedia.isUploaded
                           ? `${process.env.NEXT_PUBLIC_API_URL}/media/${selectedMedia.fileName}`
                           : selectedMedia.url}
-                        alt={selectedMedia.description}
+                        alt={selectedMedia.description || `Media submitted by ${selectedMedia.submittedBy.username}`}
                         style={{
                           maxWidth: imageZoomed ? 'none' : '100%',
                           maxHeight: imageZoomed ? 'none' : '80vh',

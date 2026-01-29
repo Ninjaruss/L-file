@@ -20,7 +20,9 @@ export class ContributionsController {
       'Retrieves a summary of all contributions made by a user, including guides, media, annotations, and edits.',
   })
   @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiOkResponse({ description: 'Contributions summary retrieved successfully' })
+  @ApiOkResponse({
+    description: 'Contributions summary retrieved successfully',
+  })
   @ApiNotFoundResponse({ description: 'User not found' })
   async getUserContributions(@Param('userId', ParseIntPipe) userId: number) {
     return await this.contributionsService.getUserContributions(userId);

@@ -485,8 +485,7 @@ export default function ChapterPageClient({
 
                 <Tabs.Panel value="annotations" pt={theme.spacing.md}>
                   <AnnotationSection
-                    ownerType={AnnotationOwnerType.CHAPTER}
-                    ownerId={initialChapter.id}
+                    chapterReference={initialChapter.id}
                     userProgress={user?.userProgress}
                     currentUserId={user?.id}
                     isAuthenticated={!!user}

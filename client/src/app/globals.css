@@ -27,17 +27,23 @@
   --usogui-purple: #7c3aed;
   --usogui-white: #ffffff;
 
-  /* Semantic Colors for Content Types - Synced with mantine-theme.ts */
-  --color-gamble: #ff5555;     /* 4.5:1 contrast - vibrant red */
-  --color-character: #4dabf7;  /* 4.7:1 contrast - bright blue */
-  --color-arc: #f97316;        /* 5.3:1 contrast - orange */
-  --color-event: #f39c12;      /* 5.2:1 contrast - amber */
-  --color-guide: #51cf66;      /* 4.9:1 contrast - bright green */
-  --color-media: #a855f7;      /* 4.5:1 contrast - saturated purple */
-  --color-quote: #20c997;      /* 4.6:1 contrast - vibrant teal */
-  --color-volume: #ff69b4;     /* 4.6:1 contrast - hot pink */
-  --color-chapter: #38bdf8;    /* 4.5:1 contrast - sky blue */
-  --color-organization: #c084fc; /* 4.6:1 contrast - luminous violet */
+  /* Semantic Colors for Content Types - 5 color groups for clarity
+     Blue: character, chapter
+     Red: gamble
+     Orange: arc, event
+     Green: guide, quote
+     Purple: media, organization, volume
+  */
+  --color-gamble: #ff5555;     /* Red group */
+  --color-character: #4dabf7;  /* Blue group */
+  --color-arc: #f97316;        /* Orange group */
+  --color-event: #f97316;      /* Orange group (shared with arc) */
+  --color-guide: #51cf66;      /* Green group */
+  --color-media: #a855f7;      /* Purple group */
+  --color-quote: #51cf66;      /* Green group (shared with guide) */
+  --color-volume: #a855f7;     /* Purple group (shared with media) */
+  --color-chapter: #4dabf7;    /* Blue group (shared with character) */
+  --color-organization: #a855f7; /* Purple group (shared with media) */
 
   /* Semantic state colors */
   --color-success: #388e3c;
@@ -90,8 +96,8 @@ body {
 .gambling-card:hover {
   border-color: var(--usogui-red);
   background-color: var(--bg-card-hover);
-  box-shadow: 0 20px 25px -5px var(--usogui-red-alpha-30), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(225, 29, 72, 0.2);
+  transform: translateY(-4px);
 }
 
 .spoiler-warning {

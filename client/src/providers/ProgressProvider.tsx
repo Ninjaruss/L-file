@@ -40,7 +40,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (user) {
         // Use logged-in user's progress as the primary source
         const serverProgress = user.userProgress || 1
-        const localProgress = typeof window !== 'undefined' 
+        const localProgress = typeof window !== 'undefined'
           ? parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
           : 1
         
@@ -98,7 +98,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (typeof window !== 'undefined') {
           const storedProgress = localStorage.getItem(STORAGE_KEY)
           if (storedProgress === null) {
-            // Initialize localStorage with default value if not set
+            // Initialize localStorage with default value (start at chapter 1 for new users)
             localStorage.setItem(STORAGE_KEY, '1')
             setUserProgress(1)
           } else {
@@ -111,7 +111,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           }
         } else {
-          // Server-side default
+          // Server-side default - start at chapter 1
           setUserProgress(1)
         }
       }
@@ -121,7 +121,6 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (typeof window !== 'undefined') {
         const storedProgress = localStorage.getItem(STORAGE_KEY)
         if (storedProgress === null) {
-          // Initialize localStorage with default if not set
           localStorage.setItem(STORAGE_KEY, '1')
           setUserProgress(1)
         } else {
@@ -168,7 +167,6 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (typeof window !== 'undefined') {
         const storedProgress = localStorage.getItem(STORAGE_KEY)
         if (storedProgress === null) {
-          // Initialize with default if somehow not set
           localStorage.setItem(STORAGE_KEY, '1')
           setUserProgress(1)
         } else {

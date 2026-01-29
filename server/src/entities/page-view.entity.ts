@@ -16,6 +16,7 @@ export enum PageType {
   VOLUME = 'volume',
   CHAPTER = 'chapter',
   QUOTE = 'quote',
+  ORGANIZATION = 'organization',
 }
 
 @Entity()

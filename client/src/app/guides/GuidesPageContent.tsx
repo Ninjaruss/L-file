@@ -449,17 +449,19 @@ export default function GuidesPageContent({
             )}
           </Stack>
 
-          <Button
-            component={Link}
-            href="/submit-guide"
-            size="md"
-            leftSection={<FileText size={16} />}
-            radius="md"
-            variant="gradient"
-            gradient={{ from: accentGuide, to: theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48' }}
-          >
-            Write Guide
-          </Button>
+          {user && (
+            <Button
+              component={Link}
+              href="/submit-guide"
+              size="md"
+              leftSection={<FileText size={16} />}
+              radius="md"
+              variant="gradient"
+              gradient={{ from: accentGuide, to: theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48' }}
+            >
+              Write Guide
+            </Button>
+          )}
         </Stack>
       </Box>
 

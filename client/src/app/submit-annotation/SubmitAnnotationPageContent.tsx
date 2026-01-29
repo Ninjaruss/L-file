@@ -35,7 +35,6 @@ const MIN_CONTENT_LENGTH = 10
 const OWNER_TYPE_OPTIONS = [
   { value: AnnotationOwnerType.CHARACTER, label: 'Character' },
   { value: AnnotationOwnerType.GAMBLE, label: 'Gamble' },
-  { value: AnnotationOwnerType.CHAPTER, label: 'Chapter' },
   { value: AnnotationOwnerType.ARC, label: 'Arc' }
 ]
 
@@ -120,7 +119,7 @@ export default function SubmitAnnotationPageContent() {
         isSpoiler: formData.isSpoiler,
         spoilerChapter: formData.isSpoiler ? formData.spoilerChapter as number : undefined
       })
-      setSuccess('Annotation submitted successfully! It is now pending moderator approval and will be reviewed before being published.')
+      setSuccess('Annotation submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
       setFormData({
         ownerType: '',
         ownerId: null,
@@ -211,8 +210,6 @@ export default function SubmitAnnotationPageContent() {
         return characters.map((character) => ({ value: character.id.toString(), label: character.name }))
       case AnnotationOwnerType.GAMBLE:
         return gambles.map((gamble) => ({ value: gamble.id.toString(), label: gamble.name }))
-      case AnnotationOwnerType.CHAPTER:
-        return chapters.map((chapter) => ({ value: chapter.id.toString(), label: `Chapter ${chapter.number}` }))
       case AnnotationOwnerType.ARC:
         return arcs.map((arc) => ({ value: arc.id.toString(), label: arc.name }))
       default:

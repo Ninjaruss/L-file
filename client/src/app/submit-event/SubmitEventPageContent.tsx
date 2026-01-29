@@ -116,7 +116,7 @@ export default function SubmitEventPageContent() {
         spoilerChapter: formData.spoilerChapter || undefined,
         characterIds: formData.characterIds.length ? formData.characterIds : undefined
       })
-      setSuccess('Event submitted successfully! It is now pending moderator approval and will be reviewed before being published.')
+      setSuccess('Event submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
       setFormData({
         title: '',
         description: '',

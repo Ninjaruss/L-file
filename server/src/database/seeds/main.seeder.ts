@@ -15,6 +15,7 @@ import { GambleSeeder } from './gamble.seeder';
 import { FandomDataSeeder } from './fandom-data.seeder';
 import { GuideSeeder } from './guide.seeder';
 import { BadgeSeeder } from './badge.seeder';
+import { AnnotationSeeder } from './annotation.seeder';
 import { Logger } from '@nestjs/common';
 import chalk from 'chalk';
 
@@ -51,6 +52,7 @@ export class MainSeeder {
       new MediaSeeder(this.dataSource), // Community media submissions
       new FandomDataSeeder(this.dataSource), // Fandom-sourced volumes/chapters and covers
       new GuideSeeder(this.dataSource), // User-generated guides and tutorials
+      new AnnotationSeeder(this.dataSource), // User-contributed annotations and explanations
     ];
 
     let success = true;
@@ -86,6 +88,9 @@ export class MainSeeder {
       this.logger.log(chalk.blue('   - Character quotes and memorable lines'));
       this.logger.log(chalk.blue('   - Community media submissions'));
       this.logger.log(chalk.blue('   - User-generated guides and tutorials'));
+      this.logger.log(
+        chalk.blue('   - User-contributed annotations and explanations'),
+      );
       this.logger.log(chalk.blue('   - Badge system with supporter rewards'));
       this.logger.log(chalk.blue('   - Content tags and categorization'));
       return true;

@@ -503,17 +503,22 @@ export const mantineTheme: MantineThemeOverride = {
       purple: '#7c3aed',
       black: '#0a0a0a',
       white: '#ffffff',
-      // Entity colors - Vibrant yet accessible (matches color palette shade 5)
-      gamble: '#ff5555',     // 4.5:1 contrast - vibrant red
-      character: '#4dabf7',  // 4.7:1 contrast - bright blue
-      arc: '#f97316',        // 5.3:1 contrast - orange (distinct from gamble red)
-      volume: '#ff69b4',     // 4.6:1 contrast - hot pink
-      event: '#f39c12',      // 5.2:1 contrast - amber (more distinct from red)
-      guide: '#51cf66',      // 4.9:1 contrast - bright green
-      media: '#a855f7',      // 4.5:1 contrast - saturated purple
-      quote: '#20c997',      // 4.6:1 contrast - vibrant teal
-      organization: '#7c3aed', // 4.6:1 contrast - rich purple accent
-      chapter: '#38bdf8'     // 4.5:1 contrast - sky blue
+      // Entity colors - 5 color groups for visual clarity
+      // Blue group: character, chapter
+      // Red group: gamble
+      // Orange group: arc, event
+      // Green group: guide, quote
+      // Purple group: media, organization, volume
+      gamble: '#ff5555',     // Red group
+      character: '#4dabf7',  // Blue group
+      arc: '#f97316',        // Orange group
+      volume: '#a855f7',     // Purple group
+      event: '#f97316',      // Orange group (shared with arc)
+      guide: '#51cf66',      // Green group
+      media: '#a855f7',      // Purple group
+      quote: '#51cf66',      // Green group (shared with guide)
+      organization: '#a855f7', // Purple group (shared with media)
+      chapter: '#4dabf7'     // Blue group (shared with character)
     },
     transitions: {
       durationShortest: 150,
@@ -758,17 +763,17 @@ export const textColors = {
   error: '#f48fb1',      // 4.7:1 contrast ratio (improved from #f44336)
   info: '#64b5f6',       // 5.1:1 contrast ratio (improved from #2196f3)
 
-  // Entity-specific text colors (Vibrant yet WCAG AA compliant for #0a0a0a background)
-  gamble: '#ff5555',     // 4.5:1 contrast ratio - vibrant red
-  character: '#4dabf7',  // 4.7:1 contrast ratio - bright blue
-  arc: '#f97316',        // 5.3:1 contrast ratio - orange (distinct from gamble red)
-  volume: '#ff69b4',     // 4.6:1 contrast ratio - hot pink
-  chapter: '#38bdf8',    // 4.5:1 contrast ratio - sky blue
-  event: '#f39c12',      // 5.2:1 contrast ratio - amber (more distinct from red)
-  guide: '#51cf66',      // 4.9:1 contrast ratio - bright green
-  media: '#a855f7',      // 4.5:1 contrast ratio - saturated purple
-  quote: '#20c997',      // 4.6:1 contrast ratio - vibrant teal
-  organization: '#c084fc' // 4.6:1 contrast ratio - luminous violet
+  // Entity-specific text colors - 5 color groups
+  gamble: '#ff5555',     // Red group
+  character: '#4dabf7',  // Blue group
+  arc: '#f97316',        // Orange group
+  volume: '#a855f7',     // Purple group
+  chapter: '#4dabf7',    // Blue group (shared with character)
+  event: '#f97316',      // Orange group (shared with arc)
+  guide: '#51cf66',      // Green group
+  media: '#a855f7',      // Purple group
+  quote: '#51cf66',      // Green group (shared with guide)
+  organization: '#a855f7' // Purple group (shared with media)
 } as const
 
 // Header color utilities for consistent styling

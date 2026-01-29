@@ -20,7 +20,6 @@ export enum AnnotationStatus {
 export enum AnnotationOwnerType {
   CHARACTER = 'character',
   GAMBLE = 'gamble',
-  CHAPTER = 'chapter',
   ARC = 'arc',
 }
 
@@ -43,7 +42,7 @@ export class Annotation {
   ownerType: AnnotationOwnerType;
 
   @ApiProperty({
-    description: 'ID of the character, gamble, chapter, or arc',
+    description: 'ID of the character, gamble, or arc',
     example: 1,
   })
   @Column({ type: 'int' })

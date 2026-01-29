@@ -1542,23 +1542,28 @@ class ApiClient {
 
   // Annotation methods
   async getAnnotationsForCharacter(characterId: number) {
-    return this.get<any[]>(`/annotations/character/${characterId}`)
+    const response = await this.get<{ data: any[] }>(`/annotations/character/${characterId}`)
+    return response.data
   }
 
   async getAnnotationsForGamble(gambleId: number) {
-    return this.get<any[]>(`/annotations/gamble/${gambleId}`)
+    const response = await this.get<{ data: any[] }>(`/annotations/gamble/${gambleId}`)
+    return response.data
   }
 
   async getAnnotationsForChapter(chapterId: number) {
-    return this.get<any[]>(`/annotations/chapter/${chapterId}`)
+    const response = await this.get<{ data: any[] }>(`/annotations/chapter/${chapterId}`)
+    return response.data
   }
 
   async getAnnotationsForArc(arcId: number) {
-    return this.get<any[]>(`/annotations/arc/${arcId}`)
+    const response = await this.get<{ data: any[] }>(`/annotations/arc/${arcId}`)
+    return response.data
   }
 
   async getMyAnnotations() {
-    return this.get<any[]>('/annotations/my')
+    const response = await this.get<{ data: any[] }>('/annotations/my')
+    return response.data
   }
 
   async createAnnotation(data: {

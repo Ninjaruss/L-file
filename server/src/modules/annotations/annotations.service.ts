@@ -165,6 +165,41 @@ export class AnnotationsService {
     });
   }
 
+  async findApprovedByChapterReference(
+    chapterReference: number,
+  ): Promise<Annotation[]> {
+    return await this.annotationRepository.find({
+      where: {
+        chapterReference,
+        status: AnnotationStatus.APPROVED,
+      },
+      relations: ['author'],
+      order: { createdAt: 'DESC' },
+      select: {
+        id: true,
+        ownerType: true,
+        ownerId: true,
+        title: true,
+        content: true,
+        sourceUrl: true,
+        chapterReference: true,
+        isSpoiler: true,
+        spoilerChapter: true,
+        status: true,
+        authorId: true,
+        createdAt: true,
+        updatedAt: true,
+        author: {
+          id: true,
+          username: true,
+          discordAvatar: true,
+          profilePictureType: true,
+          selectedCharacterMediaId: true,
+        },
+      },
+    });
+  }
+
   async findByAuthor(userId: number): Promise<Annotation[]> {
     return await this.annotationRepository.find({
       where: { authorId: userId },
@@ -295,9 +330,7 @@ export class AnnotationsService {
       currentUser.role !== UserRole.ADMIN &&
       currentUser.role !== UserRole.MODERATOR
     ) {
-      throw new ForbiddenException(
-        'You can only delete your own annotations',
-      );
+      throw new ForbiddenException('You can only delete your own annotations');
     }
 
     await this.annotationRepository.remove(annotation);
@@ -394,11 +427,6 @@ export class AnnotationsService {
         break;
       case AnnotationOwnerType.GAMBLE:
         exists = !!(await this.gambleRepository.findOne({
-          where: { id: ownerId },
-        }));
-        break;
-      case AnnotationOwnerType.CHAPTER:
-        exists = !!(await this.chapterRepository.findOne({
           where: { id: ownerId },
         }));
         break;

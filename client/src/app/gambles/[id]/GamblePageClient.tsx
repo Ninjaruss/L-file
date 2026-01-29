@@ -15,7 +15,6 @@ import {
   Tabs,
   Text,
   Title,
-  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import { Crown, Users, Trophy, Calendar, BookOpen, Image as ImageIcon, MessageSquare } from 'lucide-react'
@@ -360,21 +359,15 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
-            <Tooltip
-              label="No timeline events available for this gamble"
-              disabled={timelineEvents.length > 0 || !timelineLoading}
-              position="bottom"
-              withArrow
-            >
+            {(timelineEvents.length > 0 || timelineLoading) && (
               <Tabs.Tab
                 value="timeline"
                 leftSection={<Calendar size={16} />}
                 rightSection={timelineEvents.length > 0 ? <Badge size="xs" variant="light" c={gambleColor}>{timelineEvents.length}</Badge> : null}
-                disabled={timelineEvents.length === 0 && timelineLoading}
               >
                 Timeline
               </Tabs.Tab>
-            </Tooltip>
+            )}
             <Tabs.Tab value="media" leftSection={<ImageIcon size={16} />}>Media</Tabs.Tab>
             <Tabs.Tab value="annotations" leftSection={<MessageSquare size={16} />}>Annotations</Tabs.Tab>
           </Tabs.List>

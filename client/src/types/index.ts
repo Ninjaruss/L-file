@@ -180,7 +180,6 @@ export enum AnnotationStatus {
 export enum AnnotationOwnerType {
   CHARACTER = 'character',
   GAMBLE = 'gamble',
-  CHAPTER = 'chapter',
   ARC = 'arc',
 }
 

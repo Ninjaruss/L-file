@@ -11,7 +11,6 @@ import {
   Stack,
   Tabs,
   Title,
-  Tooltip,
   useMantineTheme
 } from '@mantine/core'
 import {
@@ -24,8 +23,9 @@ import {
   setTabAccentColors,
   backgroundStyles
 } from '../../../lib/mantine-theme'
-import { ArrowLeft, ArrowUp, BookOpen, Calendar, Image as ImageIcon, Layers, MessageSquare } from 'lucide-react'
+import { ArrowUp, BookOpen, Calendar, Image as ImageIcon, Layers, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
@@ -122,24 +122,11 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
         }}
       />
 
-      <Button
-        component={Link}
-        href="/arcs"
-        variant="subtle"
-        c={textColors.secondary}
-        leftSection={<ArrowLeft size={18} />}
-        mb={initialArc.parent ? 'sm' : 'lg'}
-        style={{
-          alignSelf: 'flex-start',
-          color: textColors.secondary,
-          '&:hover': {
-            color: textColors.primary,
-            backgroundColor: getAlphaColor(getEntityThemeColor(theme, 'arc'), 0.1)
-          }
-        }}
-      >
-        Back to Arcs
-      </Button>
+      {/* Breadcrumb Navigation */}
+      <BreadcrumbNav
+        items={createEntityBreadcrumbs('arc', initialArc.name)}
+        entityType="arc"
+      />
 
       {/* Parent Arc Link - shown if this is a sub-arc */}
       {initialArc.parent && (
@@ -347,21 +334,15 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
         >
           <Tabs.List>
             <Tabs.Tab value="overview" leftSection={<BookOpen size={16} />}>Overview</Tabs.Tab>
-            <Tooltip
-              label="No timeline events available for this arc"
-              disabled={initialEvents.length > 0}
-              position="bottom"
-              withArrow
-            >
+            {initialEvents.length > 0 && (
               <Tabs.Tab
                 value="timeline"
                 leftSection={<Calendar size={16} />}
-                rightSection={initialEvents.length > 0 ? <Badge size="xs" variant="light" c={arcColor}>{initialEvents.length}</Badge> : null}
-                disabled={initialEvents.length === 0}
+                rightSection={<Badge size="xs" variant="light" c={arcColor}>{initialEvents.length}</Badge>}
               >
                 Timeline
               </Tabs.Tab>
-            </Tooltip>
+            )}
             <Tabs.Tab value="media" leftSection={<ImageIcon size={16} />}>Media</Tabs.Tab>
             <Tabs.Tab value="annotations" leftSection={<MessageSquare size={16} />}>Annotations</Tabs.Tab>
           </Tabs.List>

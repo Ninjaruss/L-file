@@ -23,7 +23,7 @@ export class CreateAnnotationDto {
   ownerType: AnnotationOwnerType;
 
   @ApiProperty({
-    description: 'ID of the character, gamble, chapter, or arc',
+    description: 'ID of the character, gamble, or arc',
     example: 1,
   })
   @IsInt()
@@ -42,7 +42,8 @@ export class CreateAnnotationDto {
 
   @ApiProperty({
     description: 'Main content of the annotation in markdown format',
-    example: 'This scene references the traditional Japanese gambling practice of...',
+    example:
+      'This scene references the traditional Japanese gambling practice of...',
   })
   @IsString()
   @IsNotEmpty()

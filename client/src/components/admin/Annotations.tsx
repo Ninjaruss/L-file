@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   List,
   Datagrid,
@@ -32,6 +32,11 @@ import {
   Button as MuiButton,
   ButtonGroup,
   TextField as MuiTextField,
+  Grid,
+  Card,
+  CardContent,
+  Avatar,
+  CircularProgress,
 } from '@mui/material'
 import {
   Check,
@@ -39,6 +44,8 @@ import {
   MessageSquare,
   User,
   Calendar,
+  FileText,
+  AlertTriangle,
 } from 'lucide-react'
 import { api } from '../../lib/api'
 import ReactMarkdown from 'react-markdown'
@@ -92,7 +99,6 @@ const AnnotationOwnerTypeField = () => {
     switch(type) {
       case AnnotationOwnerType.CHARACTER: return { bg: 'rgba(76, 175, 80, 0.1)', color: '#4caf50' }
       case AnnotationOwnerType.GAMBLE: return { bg: 'rgba(244, 67, 54, 0.1)', color: '#f44336' }
-      case AnnotationOwnerType.CHAPTER: return { bg: 'rgba(33, 150, 243, 0.1)', color: '#2196f3' }
       case AnnotationOwnerType.ARC: return { bg: 'rgba(255, 152, 0, 0.1)', color: '#ff9800' }
       default: return { bg: 'rgba(158, 158, 158, 0.1)', color: '#9e9e9e' }
     }
@@ -133,6 +139,121 @@ const AnnotationAuthorField = () => {
   )
 }
 
+// Hook to fetch and cache entity names
+const useEntityName = (ownerType: string, ownerId: number) => {
+  const [entityName, setEntityName] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchEntityName = async () => {
+      try {
+        let result
+        switch(ownerType) {
+          case AnnotationOwnerType.CHARACTER:
+            const char = await api.getCharacter(ownerId)
+            result = char.name
+            break
+          case AnnotationOwnerType.ARC:
+            const arc = await api.getArc(ownerId)
+            result = arc.name
+            break
+          case AnnotationOwnerType.GAMBLE:
+            const gamble = await api.getGamble(ownerId)
+            result = gamble.name
+            break
+          default:
+            result = 'Unknown'
+        }
+        setEntityName(result)
+      } catch (error) {
+        console.error('Failed to fetch entity name:', error)
+        setEntityName('Unknown')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEntityName()
+  }, [ownerType, ownerId])
+
+  return { entityName, loading }
+}
+
+// Component to display entity name with loading state
+const EntityNameDisplay = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  const { entityName, loading } = useEntityName(record.ownerType, record.ownerId)
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <CircularProgress size={12} sx={{ color: 'text.secondary' }} />
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+          Loading...
+        </Typography>
+      </Box>
+    )
+  }
+
+  return (
+    <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>
+      {entityName}
+    </Typography>
+  )
+}
+
+// Entity Info Field combining type chip and entity name
+const EntityInfoField = () => {
+  const record = useRecordContext()
+  if (!record) return null
+
+  const getTypeColor = (type: string) => {
+    switch(type) {
+      case AnnotationOwnerType.CHARACTER: return { bg: 'rgba(76, 175, 80, 0.2)', color: '#4caf50' }
+      case AnnotationOwnerType.GAMBLE: return { bg: 'rgba(244, 67, 54, 0.2)', color: '#f44336' }
+      case AnnotationOwnerType.ARC: return { bg: 'rgba(255, 152, 0, 0.2)', color: '#ff9800' }
+      default: return { bg: 'rgba(158, 158, 158, 0.2)', color: '#9e9e9e' }
+    }
+  }
+
+  const colors = getTypeColor(record.ownerType)
+
+  return (
+    <Box sx={{ width: '200px' }}>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        p: 1,
+        borderRadius: 1,
+        backgroundColor: 'rgba(139, 92, 246, 0.05)',
+        border: '1px solid rgba(139, 92, 246, 0.2)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            size="small"
+            label={record.ownerType}
+            sx={{
+              backgroundColor: colors.bg,
+              color: colors.color,
+              fontWeight: 'bold',
+              textTransform: 'capitalize',
+              fontSize: '0.75rem'
+            }}
+          />
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+            #{record.ownerId}
+          </Typography>
+        </Box>
+        <Box sx={{ minHeight: '20px' }}>
+          <EntityNameDisplay />
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
 const AnnotationFilterToolbar = () => {
   const { filterValues, setFilters } = useListContext()
 
@@ -147,7 +268,6 @@ const AnnotationFilterToolbar = () => {
     { id: 'all', name: 'All Types', color: '#9e9e9e' },
     { id: AnnotationOwnerType.CHARACTER, name: 'Character', color: '#4caf50' },
     { id: AnnotationOwnerType.GAMBLE, name: 'Gamble', color: '#f44336' },
-    { id: AnnotationOwnerType.CHAPTER, name: 'Chapter', color: '#2196f3' },
     { id: AnnotationOwnerType.ARC, name: 'Arc', color: '#ff9800' }
   ]
 
@@ -481,9 +601,10 @@ export const AnnotationList = () => (
         }}
       />
 
-      <AnnotationOwnerTypeField />
-
-      <TextField source="ownerId" sortable sx={{ width: '80px', fontSize: '0.85rem' }} />
+      <FunctionField
+        label="Entity"
+        render={() => <EntityInfoField />}
+      />
 
       <Box sx={{ width: '110px', display: 'flex', justifyContent: 'center' }}>
         <AnnotationStatusField source="status" />
@@ -511,7 +632,6 @@ export const AnnotationEdit = () => (
         choices={[
           { id: AnnotationOwnerType.CHARACTER, name: 'Character' },
           { id: AnnotationOwnerType.GAMBLE, name: 'Gamble' },
-          { id: AnnotationOwnerType.CHAPTER, name: 'Chapter' },
           { id: AnnotationOwnerType.ARC, name: 'Arc' },
         ]}
         disabled
@@ -554,7 +674,6 @@ export const AnnotationCreate = () => (
         choices={[
           { id: AnnotationOwnerType.CHARACTER, name: 'Character' },
           { id: AnnotationOwnerType.GAMBLE, name: 'Gamble' },
-          { id: AnnotationOwnerType.CHAPTER, name: 'Chapter' },
           { id: AnnotationOwnerType.ARC, name: 'Arc' },
         ]}
         required
@@ -577,15 +696,23 @@ export const AnnotationCreate = () => (
   </Create>
 )
 
-// Show Component
-export const AnnotationShow = () => {
+// Show Component Content with enhanced layout
+const AnnotationShowContent = () => {
   const record = useRecordContext()
   const notify = useNotify()
   const refresh = useRefresh()
-  const redirect = useRedirect()
+
+  if (!record) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  const { entityName, loading: entityLoading } = useEntityName(record.ownerType, record.ownerId)
 
   const handleApprove = async () => {
-    if (!record) return
     try {
       await api.approveAnnotation(Number(record.id))
       notify('Annotation approved', { type: 'success' })
@@ -596,10 +723,8 @@ export const AnnotationShow = () => {
   }
 
   const handleReject = async () => {
-    if (!record) return
     const reason = prompt('Rejection reason:')
     if (!reason) return
-
     try {
       await api.rejectAnnotation(Number(record.id), reason)
       notify('Annotation rejected', { type: 'success' })
@@ -610,86 +735,331 @@ export const AnnotationShow = () => {
   }
 
   return (
-    <Show>
-      <SimpleShowLayout>
-        {/* Action Buttons */}
-        {record?.status === AnnotationStatus.PENDING && (
-          <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-            <MuiButton
-              variant="contained"
-              color="success"
-              onClick={handleApprove}
-              startIcon={<Check size={18} />}
-            >
-              Approve
-            </MuiButton>
-            <MuiButton
-              variant="contained"
-              color="error"
-              onClick={handleReject}
-              startIcon={<X size={18} />}
-            >
-              Reject
-            </MuiButton>
-          </Box>
-        )}
-
-        <TextField source="id" />
-        <TextField source="title" sx={{ fontSize: '1.2rem', fontWeight: 'bold' }} />
-
-        <FunctionField
-          label="Status"
-          render={(record: any) => (
-            <AnnotationStatusField source="status" />
-          )}
-        />
-
-        <FunctionField
-          label="Owner Type"
-          render={(record: any) => (
-            <AnnotationOwnerTypeField />
-          )}
-        />
-
-        <TextField source="ownerId" />
-
-        <FunctionField
-          label="Content"
-          render={(record: any) => (
+    <Box sx={{ maxWidth: '1200px', mx: 'auto', p: 3, backgroundColor: '#0a0a0a', minHeight: '100vh' }}>
+      {/* Header Card with Gradient */}
+      <Card elevation={0} sx={{
+        mb: 3,
+        backgroundColor: '#0a0a0a',
+        border: '2px solid #8b5cf6',
+        borderRadius: 2,
+        boxShadow: '0 0 30px rgba(139, 92, 246, 0.3)',
+        overflow: 'hidden'
+      }}>
+        <Box sx={{
+          background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+          p: 4
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <Box sx={{
-              p: 2,
-              backgroundColor: 'rgba(139, 92, 246, 0.05)',
-              borderRadius: 1,
-              border: '1px solid rgba(139, 92, 246, 0.2)'
+              p: 1.5,
+              borderRadius: 2,
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
             }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {record.content}
-              </ReactMarkdown>
+              <MessageSquare size={32} color="white" />
             </Box>
-          )}
-        />
-
-        <TextField source="sourceUrl" />
-        <TextField source="chapterReference" />
-        <BooleanField source="isSpoiler" />
-        <TextField source="spoilerChapter" />
-        <TextField source="rejectionReason" />
-
-        <FunctionField
-          label="Author"
-          render={(record: any) => (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <User size={16} />
-              <Typography>
-                {record.author?.username} (ID: {record.authorId})
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h4" sx={{
+                fontWeight: 'bold',
+                color: 'white',
+                mb: 0.5,
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}>
+                {record.title}
               </Typography>
             </Box>
-          )}
-        />
+            <Box sx={{ textAlign: 'right' }}>
+              <Box sx={{ mb: 1 }}>
+                <AnnotationStatusField source="status" />
+              </Box>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                ID: {record.id}
+              </Typography>
+            </Box>
+          </Box>
 
-        <DateField source="createdAt" showTime />
-        <DateField source="updatedAt" showTime />
-      </SimpleShowLayout>
-    </Show>
+          {/* Action Buttons */}
+          {record.status === AnnotationStatus.PENDING && (
+            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+              <MuiButton
+                variant="contained"
+                onClick={handleApprove}
+                startIcon={<Check size={18} />}
+                sx={{
+                  px: 3, py: 1.5, borderRadius: 2, fontWeight: 'bold',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                Approve
+              </MuiButton>
+              <MuiButton
+                variant="contained"
+                onClick={handleReject}
+                startIcon={<X size={18} />}
+                sx={{
+                  px: 3, py: 1.5, borderRadius: 2, fontWeight: 'bold',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(244, 67, 54, 0.3)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                Reject
+              </MuiButton>
+            </Box>
+          )}
+        </Box>
+      </Card>
+
+      <Grid container spacing={3}>
+        {/* Main Content - 8 columns */}
+        <Grid item xs={12} md={8}>
+          {/* Content Card */}
+          <Card elevation={0} sx={{
+            mb: 3,
+            backgroundColor: '#0a0a0a',
+            border: '1px solid rgba(139, 92, 246, 0.3)'
+          }}>
+            <Box sx={{
+              background: 'linear-gradient(135deg, #388e3c 0%, #2e7d32 100%)',
+              color: 'white',
+              p: 2
+            }}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 2 }}>
+                <FileText size={24} />
+                Annotation Content
+              </Typography>
+            </Box>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{
+                p: 3,
+                border: '2px solid rgba(139, 92, 246, 0.2)',
+                borderRadius: 2,
+                backgroundColor: '#0f0f0f',
+                minHeight: '200px'
+              }}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {record.content}
+                </ReactMarkdown>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Metadata Card (conditional - only if data exists) */}
+          {(record.sourceUrl || record.chapterReference) && (
+            <Card elevation={0} sx={{
+              mb: 3,
+              backgroundColor: '#0a0a0a',
+              border: '1px solid rgba(139, 92, 246, 0.3)'
+            }}>
+              <Box sx={{
+                background: 'linear-gradient(135deg, #f57c00 0%, #ef6c00 100%)',
+                color: 'white',
+                p: 2
+              }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  Additional Information
+                </Typography>
+              </Box>
+              <CardContent>
+                {record.sourceUrl && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ color: '#8b5cf6', mb: 0.5 }}>
+                      Source URL
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      fontFamily: 'monospace',
+                      wordBreak: 'break-all'
+                    }}>
+                      {record.sourceUrl}
+                    </Typography>
+                  </Box>
+                )}
+                {record.chapterReference && (
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: '#8b5cf6', mb: 0.5 }}>
+                      Chapter Reference
+                    </Typography>
+                    <Typography variant="body2">
+                      Chapter {record.chapterReference}
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
+
+        {/* Sidebar - 4 columns */}
+        <Grid item xs={12} md={4}>
+          {/* Owner Entity Card */}
+          <Card elevation={0} sx={{
+            mb: 3,
+            backgroundColor: '#0a0a0a',
+            border: '1px solid rgba(139, 92, 246, 0.3)'
+          }}>
+            <Box sx={{
+              background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+              color: 'white',
+              p: 2
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Owner Entity
+              </Typography>
+            </Box>
+            <CardContent>
+              <Box sx={{ mb: 2 }}>
+                <AnnotationOwnerTypeField />
+              </Box>
+              <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+                Entity ID: {record.ownerId}
+              </Typography>
+              {!entityLoading && entityName && (
+                <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
+                  {entityName}
+                </Typography>
+              )}
+              {entityLoading && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={16} />
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Loading entity...
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Author Card */}
+          <Card elevation={0} sx={{
+            mb: 3,
+            backgroundColor: '#0a0a0a',
+            border: '1px solid rgba(139, 92, 246, 0.3)'
+          }}>
+            <Box sx={{
+              background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+              color: 'white',
+              p: 2
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Author Information
+              </Typography>
+            </Box>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <User size={16} />
+                <ReferenceField source="authorId" reference="users" link="show">
+                  <FunctionField render={(user: any) => user?.username || 'Unknown'} />
+                </ReferenceField>
+              </Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Author ID: {record.authorId}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          {/* Status & Dates Card */}
+          <Card elevation={0} sx={{
+            mb: 3,
+            backgroundColor: '#0a0a0a',
+            border: '1px solid rgba(139, 92, 246, 0.3)'
+          }}>
+            <Box sx={{
+              background: 'linear-gradient(135deg, #f57c00 0%, #ef6c00 100%)',
+              color: 'white',
+              p: 2
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Status & Dates
+              </Typography>
+            </Box>
+            <CardContent>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: '#8b5cf6', mb: 0.5 }}>
+                  Status
+                </Typography>
+                <AnnotationStatusField source="status" />
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: '#8b5cf6', mb: 0.5 }}>
+                  Created
+                </Typography>
+                <DateField source="createdAt" showTime />
+              </Box>
+              <Box sx={{ mb: record.rejectionReason ? 2 : 0 }}>
+                <Typography variant="subtitle2" sx={{ color: '#8b5cf6', mb: 0.5 }}>
+                  Updated
+                </Typography>
+                <DateField source="updatedAt" showTime />
+              </Box>
+              {record.rejectionReason && (
+                <Box sx={{
+                  p: 2,
+                  backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                  border: '1px solid rgba(244, 67, 54, 0.3)',
+                  borderRadius: 1
+                }}>
+                  <Typography variant="subtitle2" sx={{ color: '#f44336', mb: 0.5, fontWeight: 'bold' }}>
+                    Rejection Reason
+                  </Typography>
+                  <Typography variant="body2">
+                    {record.rejectionReason}
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Spoiler Info Card (conditional) */}
+          {record.isSpoiler && (
+            <Card elevation={0} sx={{
+              mb: 3,
+              backgroundColor: '#0a0a0a',
+              border: '1px solid rgba(244, 67, 54, 0.3)'
+            }}>
+              <Box sx={{
+                background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+                color: 'white',
+                p: 2
+              }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AlertTriangle size={20} />
+                  Spoiler Warning
+                </Typography>
+              </Box>
+              <CardContent>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  This annotation contains spoilers
+                </Typography>
+                {record.spoilerChapter && (
+                  <Typography variant="body2" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                    Spoils up to Chapter {record.spoilerChapter}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
+      </Grid>
+    </Box>
   )
 }
+
+// Show Component wrapper
+export const AnnotationShow = () => (
+  <Show>
+    <AnnotationShowContent />
+  </Show>
+)
