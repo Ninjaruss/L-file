@@ -1475,7 +1475,7 @@ export const EventEdit = () => {
                     <Typography variant="h6" sx={{ color: '#1976d2', mb: 3, fontWeight: 'bold' }}>
                       Related Content
                     </Typography>
-                    <ReferenceArrayInput source="characterIds" reference="characters" label="Characters">
+                    <ReferenceArrayInput source="characterIds" reference="characters" label="Characters" perPage={1000}>
                       <AutocompleteArrayInput
                         optionText="name"
                         sx={{

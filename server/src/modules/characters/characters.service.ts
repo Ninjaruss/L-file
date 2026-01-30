@@ -238,9 +238,10 @@ export class CharactersService {
     const offset = (page - 1) * limit;
     const searchTerm = `%${character.name}%`;
 
-    // Build the base query - search both through relationships and text mentions
+    // Build the base query - search through relationships (direct and gamble participants) and text mentions
     const whereClause = `
       (ec."characterId" = $1
+       OR gp."characterId" = $1
        OR LOWER(e.title) LIKE LOWER($2)
        OR LOWER(e.description) LIKE LOWER($2))
     `;
@@ -255,6 +256,8 @@ export class CharactersService {
         SELECT DISTINCT e.id, e."chapterNumber", e."createdAt"
         FROM event e
         LEFT JOIN event_characters_character ec ON e.id = ec."eventId"
+        LEFT JOIN gamble g ON e."gambleId" = g.id
+        LEFT JOIN gamble_participants gp ON g.id = gp."gambleId"
         WHERE ${whereClause}
         ORDER BY e."chapterNumber" ASC, e."createdAt" DESC
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -263,6 +266,8 @@ export class CharactersService {
         SELECT COUNT(DISTINCT e.id) as count
         FROM event e
         LEFT JOIN event_characters_character ec ON e.id = ec."eventId"
+        LEFT JOIN gamble g ON e."gambleId" = g.id
+        LEFT JOIN gamble_participants gp ON g.id = gp."gambleId"
         WHERE ${whereClause}
       )
       SELECT e.*, u.username as author_name, a.name as arc_name, tc.count as total_count
