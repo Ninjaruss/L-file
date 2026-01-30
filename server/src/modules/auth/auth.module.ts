@@ -19,10 +19,13 @@ import { EmailModule } from '../email/email.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: config.get<string>('JWT_EXPIRES') || '7d' },
-      }),
+      useFactory: (config: ConfigService) => {
+        const jwtExpires = config.get('JWT_EXPIRES') || '7d';
+        return {
+          secret: config.get<string>('JWT_SECRET'),
+          signOptions: { expiresIn: jwtExpires },
+        };
+      },
     }),
     ConfigModule,
     EmailModule,
