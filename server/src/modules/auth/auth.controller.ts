@@ -9,7 +9,7 @@ import {
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request, Response, CookieOptions } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { PasswordResetRequestDto } from './dto/password-reset-request.dto';
 import { PasswordResetConfirmDto } from './dto/password-reset-confirm.dto';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -38,7 +39,47 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  /**
+   * Get cookie options for refresh token
+   * Sets proper domain for cross-subdomain cookie sharing (www.example.com and example.com)
+   */
+  private getRefreshTokenCookieOptions(): CookieOptions {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // In production, extract root domain for cross-subdomain cookies
+    // e.g., "www.l-file.com" -> ".l-file.com" (works for both www and non-www)
+    let domain: string | undefined;
+    if (isProduction) {
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      if (frontendUrl) {
+        try {
+          const url = new URL(frontendUrl);
+          const hostname = url.hostname;
+          // Extract root domain (e.g., "www.l-file.com" -> "l-file.com")
+          const parts = hostname.split('.');
+          if (parts.length >= 2) {
+            // Get last two parts (domain.tld)
+            domain = '.' + parts.slice(-2).join('.');
+          }
+        } catch (error) {
+          console.error('[AUTH] Failed to parse FRONTEND_URL for cookie domain:', error);
+        }
+      }
+    }
+
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      ...(domain && { domain }), // Only set domain if we have one
+    };
+  }
 
   @ApiOperation({
     summary: 'Register a new user account',
@@ -114,12 +155,7 @@ export class AuthController {
     // Set refresh token as httpOnly cookie
     try {
       if (payload.refresh_token) {
-        res.cookie('refreshToken', payload.refresh_token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        });
+        res.cookie('refreshToken', payload.refresh_token, this.getRefreshTokenCookieOptions());
       }
     } catch {
       // ignore if unable to set cookie
@@ -203,8 +239,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      // clear cookie
-      res.clearCookie('refreshToken');
+      // clear cookie (must use same domain as when cookie was set)
+      const cookieOptions = this.getRefreshTokenCookieOptions();
+      res.clearCookie('refreshToken', cookieOptions);
       // clear stored refresh token on user if present
       const user = req.user;
       if (user && user.id) {

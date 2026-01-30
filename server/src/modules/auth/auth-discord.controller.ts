@@ -7,7 +7,7 @@ import {
   Res,
   Body,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request, Response, CookieOptions } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { DiscordAuthGuard } from './guards/discord-auth.guard';
@@ -22,6 +22,43 @@ export class AuthDiscordController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Get cookie options for refresh token
+   * Sets proper domain for cross-subdomain cookie sharing (www.example.com and example.com)
+   */
+  private getRefreshTokenCookieOptions(): CookieOptions {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // In production, extract root domain for cross-subdomain cookies
+    // e.g., "www.l-file.com" -> ".l-file.com" (works for both www and non-www)
+    let domain: string | undefined;
+    if (isProduction) {
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      if (frontendUrl) {
+        try {
+          const url = new URL(frontendUrl);
+          const hostname = url.hostname;
+          // Extract root domain (e.g., "www.l-file.com" -> "l-file.com")
+          const parts = hostname.split('.');
+          if (parts.length >= 2) {
+            // Get last two parts (domain.tld)
+            domain = '.' + parts.slice(-2).join('.');
+          }
+        } catch (error) {
+          console.error('[AUTH] Failed to parse FRONTEND_URL for cookie domain:', error);
+        }
+      }
+    }
+
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      ...(domain && { domain }), // Only set domain if we have one
+    };
+  }
 
   @ApiOperation({
     summary: 'Login with Discord',
@@ -59,12 +96,7 @@ export class AuthDiscordController {
 
     // Set refresh token as httpOnly cookie before redirecting
     if (loginResult.refresh_token) {
-      res.cookie('refreshToken', loginResult.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+      res.cookie('refreshToken', loginResult.refresh_token, this.getRefreshTokenCookieOptions());
     }
 
     // Direct redirect to frontend callback with access token only (refresh token is now in cookie)
@@ -100,12 +132,7 @@ export class AuthDiscordController {
 
     // Set refresh token as httpOnly cookie
     if (loginResult.refresh_token) {
-      res.cookie('refreshToken', loginResult.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+      res.cookie('refreshToken', loginResult.refresh_token, this.getRefreshTokenCookieOptions());
     }
 
     return res.json(loginResult);
