@@ -11,6 +11,8 @@
 - Skipping for some seeders for production
 - Fixed counters on the home page to reflect approved content
 - Auth state sync on logout fixed
+- Parallel queries support to avoid rate limiting for normal users
+- Adjusted media form to have entity display as an option
 
 ## 2026-01-29
 ### Annotation System Refactor

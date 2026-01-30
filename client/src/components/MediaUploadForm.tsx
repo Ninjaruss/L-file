@@ -54,13 +54,12 @@ export default function MediaUploadForm({
 }: MediaUploadFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
-    type: 'image' as 'image' | 'video' | 'audio',
     description: '',
     ownerType: '' as 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | '',
     ownerId: null as number | null,
     chapterNumber: null as number | null,
     purpose: 'gallery' as 'gallery' | 'entity_display',
-    usageType: 'gallery_upload' as 'character_image' | 'guide_image' | 'gallery_upload',
+    usageType: 'gallery_upload' as 'character_image' | 'gallery_upload',
   })
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -123,12 +122,12 @@ export default function MediaUploadForm({
     }
 
     await onUpload(selectedFile, {
-      type: formData.type,
+      type: 'image',
       description: formData.description || undefined,
       ownerType: finalOwnerType,
       ownerId: formData.ownerId,
       chapterNumber: formData.chapterNumber || undefined,
-      purpose: formData.purpose || 'gallery', // Default to gallery
+      purpose: formData.usageType === 'character_image' ? 'entity_display' : 'gallery',
       usageType: formData.usageType,
     })
   }
@@ -235,7 +234,7 @@ export default function MediaUploadForm({
                     }}
                   >
                     <Group gap={6} align="center">
-                      {getFileIcon(formData.type)}
+                      {getFileIcon('image')}
                       <span>{selectedFile.name} ({formatFileSize(selectedFile.size)})</span>
                     </Group>
                   </Badge>
@@ -273,54 +272,11 @@ export default function MediaUploadForm({
           </Stack>
 
           <Select
-            label="Media Type"
-            value={formData.type}
-            onChange={(value) => value && handleInputChange('type', value)}
-            data={[
-              { value: 'image', label: 'Image' },
-              { value: 'video', label: 'Video (Coming Soon)', disabled: true },
-              { value: 'audio', label: 'Audio (Coming Soon)', disabled: true }
-            ]}
-            styles={{
-              input: {
-                backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                color: theme.colors.gray?.[0] ?? '#fff',
-                borderColor: 'rgba(255,255,255,0.06)',
-                '&:focus': {
-                  borderColor: '#a855f7',
-                  boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
-                }
-              },
-              dropdown: {
-                backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                borderColor: '#a855f7',
-                border: '1px solid #a855f7'
-              },
-              option: {
-                color: '#ffffff',
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: '#a855f7',
-                  color: '#000000'
-                },
-                '&[dataSelected="true"]': {
-                  backgroundColor: '#9333ea',
-                  color: '#ffffff'
-                }
-              },
-              label: {
-                color: '#a855f7',
-                fontWeight: 600
-              }
-            }}
-          />
-
-          <Select
             label="Usage Type"
             description={
               formData.usageType === 'character_image'
-                ? 'Character images require moderator or admin permissions'
-                : 'Determines upload permissions and content category'
+                ? 'Character images are for entity display and require moderator or admin permissions'
+                : 'Gallery uploads are shown in the community media gallery'
             }
             value={formData.usageType}
             onChange={(value) => value && handleInputChange('usageType', value)}
@@ -331,13 +287,8 @@ export default function MediaUploadForm({
                 disabled: false
               },
               {
-                value: 'guide_image',
-                label: 'Guide Image',
-                disabled: false
-              },
-              {
                 value: 'character_image',
-                label: 'Character Image (Moderator/Admin Only)',
+                label: 'Character Image (Entity Display - Moderator/Admin Only)',
                 disabled: userRole !== 'moderator' && userRole !== 'admin'
               }
             ]}

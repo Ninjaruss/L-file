@@ -129,8 +129,7 @@ export default function ProfilePageClient() {
   const [submissions, setSubmissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [customRoleSaved, setCustomRoleSaved] = useState(false)
-  const customRoleDebounceRef = useRef<number | null>(null)
+  const [savingCustomRole, setSavingCustomRole] = useState(false)
   const initialCustomRoleRef = useRef<string>('')
 
   const [quoteModalOpened, { open: openQuoteModal, close: closeQuoteModal }] = useDisclosure(false)
@@ -144,16 +143,20 @@ export default function ProfilePageClient() {
     userBadge.badge?.type === 'active_supporter'
   )
 
-  // Auto-save custom role with debounce
-  const autoSaveCustomRole = useCallback(async (role: string) => {
+  // Save custom role with confirmation
+  const saveCustomRole = useCallback(async () => {
     if (!hasActiveSupporterBadge) return
 
     try {
-      setSaving(true)
-      await api.patch('/users/profile/custom-role', { customRole: role })
+      setSavingCustomRole(true)
+      await api.patch('/users/profile/custom-role', { customRole: profileData.customRole })
       await refreshUser()
-      setCustomRoleSaved(true)
-      setTimeout(() => setCustomRoleSaved(false), 2000)
+      initialCustomRoleRef.current = profileData.customRole
+      notifications.show({
+        title: 'Success',
+        message: 'Custom role saved successfully',
+        color: 'green'
+      })
     } catch (error) {
       notifications.show({
         title: 'Error',
@@ -161,34 +164,9 @@ export default function ProfilePageClient() {
         color: 'red'
       })
     } finally {
-      setSaving(false)
+      setSavingCustomRole(false)
     }
-  }, [hasActiveSupporterBadge, refreshUser])
-
-  // Effect to auto-save custom role when it changes
-  useEffect(() => {
-    // Skip if not loaded yet or no supporter badge
-    if (loading || !hasActiveSupporterBadge) return
-
-    // Skip if the value hasn't changed from initial
-    if (profileData.customRole === initialCustomRoleRef.current) return
-
-    // Clear previous debounce timer
-    if (customRoleDebounceRef.current) {
-      window.clearTimeout(customRoleDebounceRef.current)
-    }
-
-    // Set new debounce timer
-    customRoleDebounceRef.current = window.setTimeout(() => {
-      autoSaveCustomRole(profileData.customRole)
-    }, 1000)
-
-    return () => {
-      if (customRoleDebounceRef.current) {
-        window.clearTimeout(customRoleDebounceRef.current)
-      }
-    }
-  }, [profileData.customRole, loading, hasActiveSupporterBadge, autoSaveCustomRole])
+  }, [hasActiveSupporterBadge, refreshUser, profileData.customRole])
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -722,7 +700,7 @@ export default function ProfilePageClient() {
                   ) : (
                     <>
                       <Text size="sm" c="dimmed">
-                        Customize how your role appears to other users (auto-saves)
+                        Customize how your role appears to other users
                       </Text>
                       <Stack gap="xs">
                         <TextInput
@@ -730,17 +708,33 @@ export default function ProfilePageClient() {
                           value={profileData.customRole}
                           onChange={(e) => {
                             setProfileData(prev => ({ ...prev, customRole: e.target.value }))
-                            setCustomRoleSaved(false)
                           }}
                           maxLength={50}
-                          rightSection={
-                            saving ? (
-                              <Loader size={16} />
-                            ) : customRoleSaved ? (
-                              <Text size="xs" c="green">Saved</Text>
-                            ) : null
-                          }
                         />
+                        <Group gap="xs">
+                          <Button
+                            onClick={saveCustomRole}
+                            loading={savingCustomRole}
+                            disabled={savingCustomRole || profileData.customRole === initialCustomRoleRef.current}
+                            size="sm"
+                            variant="filled"
+                            style={{ backgroundColor: getEntityThemeColor(theme, 'character') }}
+                          >
+                            Save Custom Role
+                          </Button>
+                          {profileData.customRole !== initialCustomRoleRef.current && (
+                            <Button
+                              onClick={() => {
+                                setProfileData(prev => ({ ...prev, customRole: initialCustomRoleRef.current }))
+                              }}
+                              size="sm"
+                              variant="subtle"
+                              color="gray"
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </Group>
                       </Stack>
                     </>
                   )}
