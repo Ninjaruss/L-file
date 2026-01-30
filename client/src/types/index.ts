@@ -250,10 +250,16 @@ export interface Guide {
 }
 
 export interface Media {
-  id: number;
+  id: string; // UUID
   url: string;
   type: string;
   description: string;
+  key?: string; // B2 object key
+  mimeType?: string;
+  fileSize?: number;
+  width?: number;
+  height?: number;
+  usageType?: 'character_image' | 'guide_image' | 'gallery_upload';
   character?: {
     id: number;
     name: string;

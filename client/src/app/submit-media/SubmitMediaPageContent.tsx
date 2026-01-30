@@ -176,6 +176,13 @@ export default function SubmitMediaPageContent() {
     try {
       const mediaType = getMediaType(formData.url)
 
+      // Check if trying to submit image URL
+      if (mediaType === 'image') {
+        setError('Image URLs are not allowed. Please use the "Upload File" tab to upload images directly (max 5MB). Only video and audio URLs are accepted via URL submission.')
+        setLoading(false)
+        return
+      }
+
       await api.submitMediaPolymorphic({
         url: formData.url.trim(),
         type: mediaType,
@@ -194,7 +201,13 @@ export default function SubmitMediaPageContent() {
         chapterNumber: null
       })
     } catch (submitError: unknown) {
-      setError(submitError instanceof Error ? submitError.message : 'Failed to submit media. Please try again.')
+      const errorMessage = submitError instanceof Error ? submitError.message : 'Failed to submit media. Please try again.'
+      // Enhance error message if it's about image URLs
+      if (errorMessage.includes('Image') || errorMessage.includes('image') || errorMessage.includes('/media/upload')) {
+        setError('Image URLs are not allowed. Please use the "Upload File" tab to upload images directly.')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setLoading(false)
     }
@@ -209,6 +222,7 @@ export default function SubmitMediaPageContent() {
       ownerId: number
       chapterNumber?: number
       purpose?: 'gallery' | 'entity_display'
+      usageType: 'character_image' | 'guide_image' | 'gallery_upload'
     }
   ) => {
     setError('')
@@ -217,7 +231,10 @@ export default function SubmitMediaPageContent() {
 
     try {
       await api.uploadMedia(file, uploadData)
-      setSuccess('Media uploaded successfully! It has been automatically approved.')
+      const approvalMessage = (user?.role === 'moderator' || user?.role === 'admin')
+        ? 'Media uploaded successfully! It has been automatically approved.'
+        : 'Media uploaded successfully! It is pending review and will be visible once approved.'
+      setSuccess(approvalMessage)
     } catch (uploadError: unknown) {
       setError(uploadError instanceof Error ? uploadError.message : 'Failed to upload media. Please try again.')
       throw uploadError
@@ -697,9 +714,10 @@ export default function SubmitMediaPageContent() {
                     >
                       <Text size="sm" c="#bfdbfe">
                         <strong style={{ color: '#4dabf7' }}>Direct Upload (Moderators/Admins)</strong>
-                        <br />• Files are automatically approved
+                        <br />• Moderator/admin uploads are automatically approved
+                        <br />• Regular user uploads require moderation
                         <br />• Uploaded to Backblaze B2 storage
-                        <br />• Supports JPEG, PNG, WebP, GIF (max 10MB)
+                        <br />• Supports JPEG, PNG, WebP, GIF (max 5MB)
                       </Text>
                     </Alert>
                     <MediaUploadForm
@@ -713,6 +731,7 @@ export default function SubmitMediaPageContent() {
                       loading={loading}
                       dataLoading={dataLoading}
                       error={error}
+                      userRole={(user?.role as 'user' | 'moderator' | 'admin') || 'user'}
                     />
                   </Stack>
                 )}

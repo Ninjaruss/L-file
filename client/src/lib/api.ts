@@ -717,12 +717,14 @@ class ApiClient {
     chapterNumber?: number
     purpose?: 'gallery' | 'entity_display'
     description?: string
+    usageType: 'character_image' | 'guide_image' | 'gallery_upload'
   }) {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('type', data.type)
     formData.append('ownerType', data.ownerType)
     formData.append('ownerId', data.ownerId.toString())
+    formData.append('usageType', data.usageType)
     if (data.description) formData.append('description', data.description)
     if (data.chapterNumber) formData.append('chapterNumber', data.chapterNumber.toString())
     if (data.purpose) formData.append('purpose', data.purpose)
@@ -1085,15 +1087,15 @@ class ApiClient {
     }>(`/media${query ? `?${query}` : ''}`)
   }
 
-  async getMediaItem(id: number) {
+  async getMediaItem(id: string) {
     return this.get<any>(`/media/${id}`)
   }
 
-  async updateMedia(id: number, data: any) {
+  async updateMedia(id: string, data: any) {
     return this.put<any>(`/media/${id}`, data)
   }
 
-  async deleteMedia(id: number) {
+  async deleteMedia(id: string) {
     return this.delete<any>(`/media/${id}`)
   }
 
@@ -1243,7 +1245,7 @@ class ApiClient {
     return { data: [] }
   }
 
-  async setMediaAsDefault(mediaId: number) {
+  async setMediaAsDefault(mediaId: string) {
     return this.put<any>(`/media/${mediaId}/set-default`, {})
   }
 

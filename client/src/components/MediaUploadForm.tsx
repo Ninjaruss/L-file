@@ -25,6 +25,7 @@ interface MediaUploadFormProps {
     ownerId: number
     chapterNumber?: number
     purpose?: 'gallery' | 'entity_display'
+    usageType: 'character_image' | 'guide_image' | 'gallery_upload'
   }) => Promise<void>
   characters: Array<{ id: number; name: string }>
   arcs: Array<{ id: number; name: string }>
@@ -35,19 +36,21 @@ interface MediaUploadFormProps {
   loading?: boolean
   dataLoading?: boolean
   error?: string
+  userRole?: 'user' | 'moderator' | 'admin'
 }
 
-export default function MediaUploadForm({ 
-  onUpload, 
-  characters, 
-  arcs, 
+export default function MediaUploadForm({
+  onUpload,
+  characters,
+  arcs,
   events,
   gambles,
   organizations,
   users,
-  loading = false, 
+  loading = false,
   dataLoading = false,
-  error 
+  error,
+  userRole = 'user'
 }: MediaUploadFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
@@ -57,6 +60,7 @@ export default function MediaUploadForm({
     ownerId: null as number | null,
     chapterNumber: null as number | null,
     purpose: 'gallery' as 'gallery' | 'entity_display',
+    usageType: 'gallery_upload' as 'character_image' | 'guide_image' | 'gallery_upload',
   })
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -69,8 +73,8 @@ export default function MediaUploadForm({
       return
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024
+    // Validate file size (5MB limit - backend enforces this)
+    const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
       return
     }
@@ -125,6 +129,7 @@ export default function MediaUploadForm({
       ownerId: formData.ownerId,
       chapterNumber: formData.chapterNumber || undefined,
       purpose: formData.purpose || 'gallery', // Default to gallery
+      usageType: formData.usageType,
     })
   }
 
@@ -260,7 +265,7 @@ export default function MediaUploadForm({
                   or click to browse files
                 </Text>
                 <Text size="xs" c="dimmed">
-                  Supported formats: JPEG, PNG, WebP, GIF • Max size: 10MB
+                  Supported formats: JPEG, PNG, WebP, GIF • Max size: 5MB
                 </Text>
               </Stack>
             )}
@@ -306,6 +311,69 @@ export default function MediaUploadForm({
               label: {
                 color: '#a855f7',
                 fontWeight: 600
+              }
+            }}
+          />
+
+          <Select
+            label="Usage Type"
+            description={
+              formData.usageType === 'character_image'
+                ? 'Character images require moderator or admin permissions'
+                : 'Determines upload permissions and content category'
+            }
+            value={formData.usageType}
+            onChange={(value) => value && handleInputChange('usageType', value)}
+            data={[
+              {
+                value: 'gallery_upload',
+                label: 'Gallery Upload',
+                disabled: false
+              },
+              {
+                value: 'guide_image',
+                label: 'Guide Image',
+                disabled: false
+              },
+              {
+                value: 'character_image',
+                label: 'Character Image (Moderator/Admin Only)',
+                disabled: userRole !== 'moderator' && userRole !== 'admin'
+              }
+            ]}
+            styles={{
+              input: {
+                backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
+                color: theme.colors.gray?.[0] ?? '#fff',
+                borderColor: 'rgba(255,255,255,0.06)',
+                '&:focus': {
+                  borderColor: '#a855f7',
+                  boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
+                }
+              },
+              dropdown: {
+                backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+                borderColor: '#a855f7',
+                border: '1px solid #a855f7'
+              },
+              option: {
+                color: '#ffffff',
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: '#a855f7',
+                  color: '#000000'
+                },
+                '&[dataSelected="true"]': {
+                  backgroundColor: '#9333ea',
+                  color: '#ffffff'
+                }
+              },
+              label: {
+                color: '#a855f7',
+                fontWeight: 600
+              },
+              description: {
+                color: theme.colors.gray?.[6] ?? '#888'
               }
             }}
           />
