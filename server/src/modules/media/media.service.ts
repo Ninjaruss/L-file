@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository, Not, In } from 'typeorm';
 import {
   Media,
   MediaStatus,
@@ -563,27 +563,35 @@ export class MediaService {
     const [data, total] = await query.getManyAndCount();
 
     // Add character information for media with ownerType 'character'
-    const enrichedData = await Promise.all(
-      data.map(async (media: any) => {
-        if (media.ownerType === MediaOwnerType.CHARACTER && media.ownerId) {
-          try {
-            const character = await this.characterRepo.findOne({
-              where: { id: media.ownerId },
-              select: ['id', 'name'],
-            });
-            if (character) {
-              return { ...media, character };
-            }
-          } catch (error) {
-            console.error(
-              `Failed to fetch character for media ${media.id}:`,
-              error,
-            );
-          }
-        }
-        return media;
-      }),
+    // Fix N+1 pattern: fetch all characters in a single query instead of one per media item
+    const characterMediaItems = data.filter(
+      (media: any) =>
+        media.ownerType === MediaOwnerType.CHARACTER && media.ownerId,
     );
+    const characterIds = characterMediaItems.map((media: any) => media.ownerId);
+
+    let charactersMap = new Map<number, any>();
+    if (characterIds.length > 0) {
+      try {
+        const characters = await this.characterRepo.find({
+          where: { id: In(characterIds) },
+          select: ['id', 'name'],
+        });
+        charactersMap = new Map(characters.map((c) => [c.id, c]));
+      } catch (error) {
+        console.error('Failed to fetch characters for media:', error);
+      }
+    }
+
+    const enrichedData = data.map((media: any) => {
+      if (media.ownerType === MediaOwnerType.CHARACTER && media.ownerId) {
+        const character = charactersMap.get(media.ownerId);
+        if (character) {
+          return { ...media, character };
+        }
+      }
+      return media;
+    });
 
     return {
       data: enrichedData,

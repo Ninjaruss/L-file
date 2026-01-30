@@ -16,6 +16,7 @@ import { Guide, GuideStatus } from '../../entities/guide.entity';
 import { GuideLike } from '../../entities/guide-like.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
+import { createQueryLimiter } from '../../utils/db-query-limiter';
 
 // Refresh token expiration duration (30 days)
 const REFRESH_TOKEN_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -563,27 +564,38 @@ export class UsersService {
     const eventRepo = this.repo.manager.getRepository('Event');
     const annotationRepo = this.repo.manager.getRepository('Annotation');
 
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     const [guides, media, events, annotations] = await Promise.all([
-      guideRepo.find({
-        where: { authorId: userId },
-        select: ['id', 'title', 'status', 'createdAt'],
-        order: { createdAt: 'DESC' },
-      }),
-      mediaRepo.find({
-        where: { submittedBy: { id: userId } },
-        select: ['id', 'fileName', 'status', 'createdAt', 'description'],
-        order: { createdAt: 'DESC' },
-      }),
-      eventRepo.find({
-        where: { createdBy: { id: userId } },
-        select: ['id', 'title', 'status', 'createdAt'],
-        order: { createdAt: 'DESC' },
-      }),
-      annotationRepo.find({
-        where: { user: { id: userId } },
-        select: ['id', 'content', 'status', 'createdAt'],
-        order: { createdAt: 'DESC' },
-      }),
+      limiter(() =>
+        guideRepo.find({
+          where: { authorId: userId },
+          select: ['id', 'title', 'status', 'createdAt'],
+          order: { createdAt: 'DESC' },
+        }),
+      ),
+      limiter(() =>
+        mediaRepo.find({
+          where: { submittedBy: { id: userId } },
+          select: ['id', 'fileName', 'status', 'createdAt', 'description'],
+          order: { createdAt: 'DESC' },
+        }),
+      ),
+      limiter(() =>
+        eventRepo.find({
+          where: { createdBy: { id: userId } },
+          select: ['id', 'title', 'status', 'createdAt'],
+          order: { createdAt: 'DESC' },
+        }),
+      ),
+      limiter(() =>
+        annotationRepo.find({
+          where: { author: { id: userId } },
+          select: ['id', 'content', 'status', 'createdAt'],
+          order: { createdAt: 'DESC' },
+        }),
+      ),
     ]);
 
     const submissions = [
@@ -619,7 +631,8 @@ export class UsersService {
 
     // Sort all by createdAt descending
     submissions.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return submissions;

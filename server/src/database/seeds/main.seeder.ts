@@ -61,10 +61,14 @@ export class MainSeeder {
 
     if (isProduction) {
       this.logger.log(
-        chalk.yellow('⚠️  Production mode detected - skipping test data seeders'),
+        chalk.yellow(
+          '⚠️  Production mode detected - skipping test data seeders',
+        ),
       );
       this.logger.log(
-        chalk.yellow('   Skipped: UserSeeder, EventSeeder, MediaSeeder, GuideSeeder, AnnotationSeeder'),
+        chalk.yellow(
+          '   Skipped: UserSeeder, EventSeeder, MediaSeeder, GuideSeeder, AnnotationSeeder',
+        ),
       );
     }
 
@@ -87,9 +91,7 @@ export class MainSeeder {
     if (success) {
       this.logger.log(chalk.green('✅ All seeders completed successfully!'));
       this.logger.log(
-        chalk.blue(
-          '📊 Database has been populated with content structure:',
-        ),
+        chalk.blue('📊 Database has been populated with content structure:'),
       );
       this.logger.log(chalk.blue('   - Complete Usogui content structure'));
       this.logger.log(chalk.blue('   - Character profiles and relationships'));
@@ -97,15 +99,19 @@ export class MainSeeder {
       this.logger.log(chalk.blue('   - Character quotes and memorable lines'));
       this.logger.log(chalk.blue('   - Badge system with supporter rewards'));
       this.logger.log(chalk.blue('   - Content tags and categorization'));
-      
+
       if (!isProduction) {
-        this.logger.log(chalk.blue('   - User accounts (admin, moderator, regular users)'));
+        this.logger.log(
+          chalk.blue('   - User accounts (admin, moderator, regular users)'),
+        );
         this.logger.log(chalk.blue('   - Story events and plot points'));
         this.logger.log(chalk.blue('   - Community media submissions'));
         this.logger.log(chalk.blue('   - User-generated guides and tutorials'));
-        this.logger.log(chalk.blue('   - User-contributed annotations and explanations'));
+        this.logger.log(
+          chalk.blue('   - User-contributed annotations and explanations'),
+        );
       }
-      
+
       return true;
     } else {
       this.logger.error(

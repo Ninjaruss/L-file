@@ -54,6 +54,7 @@
     "image-size": "^2.0.2",
     "inquirer": "8.2.6",
     "node-fetch": "2",
+    "p-limit": "^7.2.0",
     "passport": "^0.7.0",
     "passport-custom": "^1.1.1",
     "passport-discord": "^0.1.4",

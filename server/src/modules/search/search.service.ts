@@ -9,6 +9,7 @@ import { Gamble } from '../../entities/gamble.entity';
 import { Organization } from '../../entities/organization.entity';
 import { SearchQueryDto, SearchType } from './dto/search-query.dto';
 import { SearchResultDto, SearchResultItemDto } from './dto/search-result.dto';
+import { createQueryLimiter } from '../../utils/db-query-limiter';
 
 @Injectable()
 export class SearchService {
@@ -123,134 +124,149 @@ export class SearchService {
   async getSuggestions(query: string): Promise<string[]> {
     const suggestions: string[] = [];
 
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     // Get suggestions from all entity types in priority order: characters, organizations, arcs, gambles, events, chapters
     const [characters, organizations, arcs, gambles, events, chapters] =
       await Promise.all([
         // Characters
-        this.characterRepository
-          .createQueryBuilder('character')
-          .where('character.name ILIKE :query', { query: `%${query}%` })
-          .orderBy(
-            `CASE 
+        limiter(() =>
+          this.characterRepository
+            .createQueryBuilder('character')
+            .where('character.name ILIKE :query', { query: `%${query}%` })
+            .orderBy(
+              `CASE 
             WHEN character.name ILIKE :exactQuery THEN 1
             WHEN character.name ILIKE :startQuery THEN 2
             ELSE 3
           END`,
-            'ASC',
-          )
-          .addOrderBy('character.name', 'ASC')
-          .setParameters({
-            query: `%${query}%`,
-            exactQuery: query,
-            startQuery: `${query}%`,
-          })
-          .limit(2)
-          .getMany(),
+              'ASC',
+            )
+            .addOrderBy('character.name', 'ASC')
+            .setParameters({
+              query: `%${query}%`,
+              exactQuery: query,
+              startQuery: `${query}%`,
+            })
+            .limit(2)
+            .getMany(),
+        ),
 
         // Organizations
-        this.organizationRepository
-          .createQueryBuilder('organization')
-          .where('organization.name ILIKE :query', { query: `%${query}%` })
-          .orderBy(
-            `CASE 
+        limiter(() =>
+          this.organizationRepository
+            .createQueryBuilder('organization')
+            .where('organization.name ILIKE :query', { query: `%${query}%` })
+            .orderBy(
+              `CASE 
             WHEN organization.name ILIKE :exactQuery THEN 1
             WHEN organization.name ILIKE :startQuery THEN 2
             ELSE 3
           END`,
-            'ASC',
-          )
-          .addOrderBy('organization.name', 'ASC')
-          .setParameters({
-            query: `%${query}%`,
-            exactQuery: query,
-            startQuery: `${query}%`,
-          })
-          .limit(2)
-          .getMany(),
+              'ASC',
+            )
+            .addOrderBy('organization.name', 'ASC')
+            .setParameters({
+              query: `%${query}%`,
+              exactQuery: query,
+              startQuery: `${query}%`,
+            })
+            .limit(2)
+            .getMany(),
+        ),
 
         // Arcs
-        this.arcRepository
-          .createQueryBuilder('arc')
-          .where('arc.name ILIKE :query', { query: `%${query}%` })
-          .orderBy(
-            `CASE 
+        limiter(() =>
+          this.arcRepository
+            .createQueryBuilder('arc')
+            .where('arc.name ILIKE :query', { query: `%${query}%` })
+            .orderBy(
+              `CASE 
             WHEN arc.name ILIKE :exactQuery THEN 1
             WHEN arc.name ILIKE :startQuery THEN 2
             ELSE 3
           END`,
-            'ASC',
-          )
-          .addOrderBy('arc.name', 'ASC')
-          .setParameters({
-            query: `%${query}%`,
-            exactQuery: query,
-            startQuery: `${query}%`,
-          })
-          .limit(2)
-          .getMany(),
+              'ASC',
+            )
+            .addOrderBy('arc.name', 'ASC')
+            .setParameters({
+              query: `%${query}%`,
+              exactQuery: query,
+              startQuery: `${query}%`,
+            })
+            .limit(2)
+            .getMany(),
+        ),
 
         // Gambles
-        this.gambleRepository
-          .createQueryBuilder('gamble')
-          .where('gamble.name ILIKE :query', { query: `%${query}%` })
-          .orderBy(
-            `CASE 
+        limiter(() =>
+          this.gambleRepository
+            .createQueryBuilder('gamble')
+            .where('gamble.name ILIKE :query', { query: `%${query}%` })
+            .orderBy(
+              `CASE 
             WHEN gamble.name ILIKE :exactQuery THEN 1
             WHEN gamble.name ILIKE :startQuery THEN 2
             ELSE 3
           END`,
-            'ASC',
-          )
-          .addOrderBy('gamble.name', 'ASC')
-          .setParameters({
-            query: `%${query}%`,
-            exactQuery: query,
-            startQuery: `${query}%`,
-          })
-          .limit(1)
-          .getMany(),
+              'ASC',
+            )
+            .addOrderBy('gamble.name', 'ASC')
+            .setParameters({
+              query: `%${query}%`,
+              exactQuery: query,
+              startQuery: `${query}%`,
+            })
+            .limit(1)
+            .getMany(),
+        ),
 
         // Events
-        this.eventRepository
-          .createQueryBuilder('event')
-          .where('event.title ILIKE :query', { query: `%${query}%` })
-          .orderBy(
-            `CASE 
+        limiter(() =>
+          this.eventRepository
+            .createQueryBuilder('event')
+            .where('event.title ILIKE :query', { query: `%${query}%` })
+            .orderBy(
+              `CASE 
             WHEN event.title ILIKE :exactQuery THEN 1
             WHEN event.title ILIKE :startQuery THEN 2
             ELSE 3
           END`,
-            'ASC',
-          )
-          .addOrderBy('event.title', 'ASC')
-          .setParameters({
-            query: `%${query}%`,
-            exactQuery: query,
-            startQuery: `${query}%`,
-          })
-          .limit(1)
-          .getMany(),
+              'ASC',
+            )
+            .addOrderBy('event.title', 'ASC')
+            .setParameters({
+              query: `%${query}%`,
+              exactQuery: query,
+              startQuery: `${query}%`,
+            })
+            .limit(1)
+            .getMany(),
+        ),
 
         // Chapters
-        this.chapterRepository
-          .createQueryBuilder('chapter')
-          .where('chapter.title ILIKE :query', { query: `%${query}%` })
-          .orderBy(
-            `CASE 
+        limiter(() =>
+          this.chapterRepository
+            .createQueryBuilder('chapter')
+            .where('chapter.title ILIKE :query', { query: `%${query}%` })
+            .orderBy(
+              `CASE 
             WHEN chapter.title ILIKE :exactQuery THEN 1
             WHEN chapter.title ILIKE :startQuery THEN 2
             ELSE 3
           END`,
-            'ASC',
-          )
-          .addOrderBy('chapter.title', 'ASC')
-          .setParameters({
-            query: `%${query}%`,
-            exactQuery: query,
-            startQuery: `${query}%`,
-          })
-          .limit(1)
-          .getMany(),
+              'ASC',
+            )
+            .addOrderBy('chapter.title', 'ASC')
+            .setParameters({
+              query: `%${query}%`,
+              exactQuery: query,
+              startQuery: `${query}%`,
+            })
+            .limit(1)
+            .getMany(),
+        ),
       ]);
 
     // Add suggestions in priority order
@@ -270,6 +286,9 @@ export class SearchService {
   }
 
   async getContentTypes(): Promise<{ type: string; count: number }[]> {
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     const [
       chapterCount,
       characterCount,
@@ -278,12 +297,12 @@ export class SearchService {
       gambleCount,
       organizationCount,
     ] = await Promise.all([
-      this.chapterRepository.count(),
-      this.characterRepository.count(),
-      this.eventRepository.count(),
-      this.arcRepository.count(),
-      this.gambleRepository.count(),
-      this.organizationRepository.count(),
+      limiter(() => this.chapterRepository.count()),
+      limiter(() => this.characterRepository.count()),
+      limiter(() => this.eventRepository.count()),
+      limiter(() => this.arcRepository.count()),
+      limiter(() => this.gambleRepository.count()),
+      limiter(() => this.organizationRepository.count()),
     ]);
 
     return [
@@ -645,6 +664,9 @@ export class SearchService {
     // Get results from each type with prioritization: character -> organizations -> arcs -> gambles -> events -> chapters
     const resultsPerType = Math.ceil(limit / 6); // Distribute results across 6 types
 
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     const [
       characterResults,
       organizationResults,
@@ -653,12 +675,14 @@ export class SearchService {
       eventResults,
       chapterResults,
     ] = await Promise.all([
-      this.searchCharacters(query, 0, resultsPerType),
-      this.searchOrganizations(query, 0, resultsPerType),
-      this.searchArcs(query, 0, resultsPerType),
-      this.searchGambles(query, 0, resultsPerType),
-      this.searchEvents(query, userProgress, 0, resultsPerType),
-      this.searchChapters(query, userProgress, 0, resultsPerType),
+      limiter(() => this.searchCharacters(query, 0, resultsPerType)),
+      limiter(() => this.searchOrganizations(query, 0, resultsPerType)),
+      limiter(() => this.searchArcs(query, 0, resultsPerType)),
+      limiter(() => this.searchGambles(query, 0, resultsPerType)),
+      limiter(() => this.searchEvents(query, userProgress, 0, resultsPerType)),
+      limiter(() =>
+        this.searchChapters(query, userProgress, 0, resultsPerType),
+      ),
     ]);
 
     // Combine all results in priority order

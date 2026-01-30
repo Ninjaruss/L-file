@@ -17,9 +17,15 @@ import { Character } from './entities/character.entity';
 import { Event } from './entities/event.entity';
 import { Gamble } from './entities/gamble.entity';
 import { Arc } from './entities/arc.entity';
-import { Media, MediaOwnerType, MediaStatus, MediaPurpose } from './entities/media.entity';
+import {
+  Media,
+  MediaOwnerType,
+  MediaStatus,
+  MediaPurpose,
+} from './entities/media.entity';
 import { User } from './entities/user.entity';
 import { UsersService } from './modules/users/users.service';
+import { createQueryLimiter } from './utils/db-query-limiter';
 
 @ApiTags('app')
 @Controller()
@@ -138,6 +144,9 @@ export class AppController {
     );
 
     // Get basic stats
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     const [
       totalCharacters,
       totalArcs,
@@ -146,21 +155,25 @@ export class AppController {
       totalMedia,
       totalUsers,
     ] = await Promise.all([
-      this.characterRepository.count(),
-      this.arcRepository.count(),
-      this.eventRepository.count(),
-      this.guideRepository.count({
-        where: { status: GuideStatus.APPROVED },
-      }),
+      limiter(() => this.characterRepository.count()),
+      limiter(() => this.arcRepository.count()),
+      limiter(() => this.eventRepository.count()),
+      limiter(() =>
+        this.guideRepository.count({
+          where: { status: GuideStatus.APPROVED },
+        }),
+      ),
       // Count only approved gallery media (exclude volume covers and entity display images)
-      this.mediaRepository.count({
-        where: {
-          status: MediaStatus.APPROVED,
-          ownerType: Not(MediaOwnerType.VOLUME),
-          purpose: MediaPurpose.GALLERY,
-        },
-      }),
-      this.userRepository.count(),
+      limiter(() =>
+        this.mediaRepository.count({
+          where: {
+            status: MediaStatus.APPROVED,
+            ownerType: Not(MediaOwnerType.VOLUME),
+            purpose: MediaPurpose.GALLERY,
+          },
+        }),
+      ),
+      limiter(() => this.userRepository.count()),
     ]);
 
     return {

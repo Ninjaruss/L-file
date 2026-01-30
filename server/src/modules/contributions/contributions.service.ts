@@ -7,6 +7,7 @@ import { Annotation, AnnotationStatus } from '../../entities/annotation.entity';
 import { Quote } from '../../entities/quote.entity';
 import { User } from '../../entities/user.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
+import { createQueryLimiter } from '../../utils/db-query-limiter';
 
 @Injectable()
 export class ContributionsService {
@@ -49,23 +50,36 @@ export class ContributionsService {
       throw new NotFoundException('User not found');
     }
 
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     const [guidesCount, mediaCount, annotationsCount, quotesCount] =
       await Promise.all([
-        this.guideRepository.count({
-          where: { authorId: userId, status: GuideStatus.APPROVED },
-        }),
-        this.mediaRepository
-          .createQueryBuilder('media')
-          .where('media.submittedById = :userId', { userId })
-          .andWhere('media.status = :status', { status: MediaStatus.APPROVED })
-          .getCount(),
-        this.annotationRepository.count({
-          where: { authorId: userId, status: AnnotationStatus.APPROVED },
-        }),
-        this.quoteRepository
-          .createQueryBuilder('quote')
-          .where('quote.submittedById = :userId', { userId })
-          .getCount(),
+        limiter(() =>
+          this.guideRepository.count({
+            where: { authorId: userId, status: GuideStatus.APPROVED },
+          }),
+        ),
+        limiter(() =>
+          this.mediaRepository
+            .createQueryBuilder('media')
+            .where('media.submittedById = :userId', { userId })
+            .andWhere('media.status = :status', {
+              status: MediaStatus.APPROVED,
+            })
+            .getCount(),
+        ),
+        limiter(() =>
+          this.annotationRepository.count({
+            where: { authorId: userId, status: AnnotationStatus.APPROVED },
+          }),
+        ),
+        limiter(() =>
+          this.quoteRepository
+            .createQueryBuilder('quote')
+            .where('quote.submittedById = :userId', { userId })
+            .getCount(),
+        ),
       ]);
 
     const submissionsTotal =
@@ -134,33 +148,49 @@ export class ContributionsService {
       throw new NotFoundException('User not found');
     }
 
+    // Limit to 3 concurrent queries to prevent connection pool exhaustion
+    const limiter = createQueryLimiter(3);
+
     const [guides, media, annotations] = await Promise.all([
-      this.guideRepository.find({
-        where: { authorId: userId },
-        select: ['id', 'title', 'status', 'createdAt'],
-        order: { createdAt: 'DESC' },
-        take: 50,
-      }),
-      this.mediaRepository
-        .createQueryBuilder('media')
-        .select([
-          'media.id',
-          'media.description',
-          'media.url',
-          'media.ownerType',
-          'media.status',
-          'media.createdAt',
-        ])
-        .where('media.submittedById = :userId', { userId })
-        .orderBy('media.createdAt', 'DESC')
-        .take(50)
-        .getMany(),
-      this.annotationRepository.find({
-        where: { authorId: userId },
-        select: ['id', 'title', 'ownerType', 'ownerId', 'status', 'createdAt'],
-        order: { createdAt: 'DESC' },
-        take: 50,
-      }),
+      limiter(() =>
+        this.guideRepository.find({
+          where: { authorId: userId },
+          select: ['id', 'title', 'status', 'createdAt'],
+          order: { createdAt: 'DESC' },
+          take: 50,
+        }),
+      ),
+      limiter(() =>
+        this.mediaRepository
+          .createQueryBuilder('media')
+          .select([
+            'media.id',
+            'media.description',
+            'media.url',
+            'media.ownerType',
+            'media.status',
+            'media.createdAt',
+          ])
+          .where('media.submittedById = :userId', { userId })
+          .orderBy('media.createdAt', 'DESC')
+          .take(50)
+          .getMany(),
+      ),
+      limiter(() =>
+        this.annotationRepository.find({
+          where: { authorId: userId },
+          select: [
+            'id',
+            'title',
+            'ownerType',
+            'ownerId',
+            'status',
+            'createdAt',
+          ],
+          order: { createdAt: 'DESC' },
+          take: 50,
+        }),
+      ),
     ]);
 
     return {
