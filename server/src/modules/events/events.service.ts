@@ -33,7 +33,9 @@ export class EventsService {
     const query = this.repo
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
-      .leftJoinAndSelect('event.characters', 'characters');
+      .leftJoinAndSelect('event.characters', 'characters')
+      .leftJoinAndSelect('event.gamble', 'gamble')
+      .leftJoin('gamble.participants', 'gambleParticipants');
 
     if (filters.title) {
       query.andWhere('LOWER(event.title) LIKE LOWER(:title)', {
@@ -60,9 +62,12 @@ export class EventsService {
       });
     }
     if (filters.character) {
-      query.andWhere('LOWER(characters.name) LIKE LOWER(:character)', {
-        character: `%${filters.character}%`,
-      });
+      query.andWhere(
+        '(LOWER(characters.name) LIKE LOWER(:character) OR LOWER(gambleParticipants.name) LIKE LOWER(:character))',
+        {
+          character: `%${filters.character}%`,
+        },
+      );
     }
 
     // Spoiler protection: only show events user can safely view
@@ -104,6 +109,8 @@ export class EventsService {
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
       .leftJoinAndSelect('event.characters', 'characters')
+      .leftJoinAndSelect('event.gamble', 'gamble')
+      .leftJoin('gamble.participants', 'gambleParticipants')
       .where(
         '(event.spoilerChapter IS NULL OR event.spoilerChapter <= :userProgress)',
         { userProgress },
@@ -176,6 +183,8 @@ export class EventsService {
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
       .leftJoinAndSelect('event.characters', 'characters')
+      .leftJoinAndSelect('event.gamble', 'gamble')
+      .leftJoin('gamble.participants', 'gambleParticipants')
       .where('event.arcId = :arcId', { arcId });
 
     if (filters.title) {
@@ -197,9 +206,12 @@ export class EventsService {
       });
     }
     if (filters.character) {
-      query.andWhere('LOWER(characters.name) LIKE LOWER(:character)', {
-        character: `%${filters.character}%`,
-      });
+      query.andWhere(
+        '(LOWER(characters.name) LIKE LOWER(:character) OR LOWER(gambleParticipants.name) LIKE LOWER(:character))',
+        {
+          character: `%${filters.character}%`,
+        },
+      );
     }
 
     // Spoiler protection: only show events user can safely view
@@ -229,6 +241,8 @@ export class EventsService {
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
       .leftJoinAndSelect('event.characters', 'characters')
+      .leftJoinAndSelect('event.gamble', 'gamble')
+      .leftJoin('gamble.participants', 'gambleParticipants')
       .where('event.chapterNumber = :chapterNumber', { chapterNumber });
 
     if (filters.title) {
@@ -250,9 +264,12 @@ export class EventsService {
       });
     }
     if (filters.character) {
-      query.andWhere('LOWER(characters.name) LIKE LOWER(:character)', {
-        character: `%${filters.character}%`,
-      });
+      query.andWhere(
+        '(LOWER(characters.name) LIKE LOWER(:character) OR LOWER(gambleParticipants.name) LIKE LOWER(:character))',
+        {
+          character: `%${filters.character}%`,
+        },
+      );
     }
 
     // Spoiler protection: only show events user can safely view
@@ -455,7 +472,9 @@ export class EventsService {
     const eventsQuery = this.repo
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')
-      .leftJoinAndSelect('event.characters', 'characters');
+      .leftJoinAndSelect('event.characters', 'characters')
+      .leftJoinAndSelect('event.gamble', 'gamble')
+      .leftJoin('gamble.participants', 'gambleParticipants');
 
     if (userProgress !== undefined) {
       eventsQuery.andWhere(
