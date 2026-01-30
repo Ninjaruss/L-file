@@ -42,9 +42,15 @@ RUN yarn install --frozen-lockfile --production
 # =============================================================================
 FROM node:20-alpine AS runner
 
+# Build arguments for metadata
+ARG BUILD_DATE
+ARG VERSION=1.0.0
+
 # Add labels for container metadata
 LABEL maintainer="Usogui Fansite Team"
 LABEL description="NestJS backend API for Usogui Fansite"
+LABEL build_date=$BUILD_DATE
+LABEL version=$VERSION
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
@@ -69,6 +75,9 @@ USER nestjs
 
 # Expose the application port
 EXPOSE 3001
+
+# Set stop signal for graceful shutdown
+STOPSIGNAL SIGTERM
 
 # Health check for container orchestration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

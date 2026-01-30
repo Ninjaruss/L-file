@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
   PageViewsService,
@@ -50,14 +50,31 @@ export class AppController {
       properties: {
         status: { type: 'string', example: 'ok' },
         timestamp: { type: 'string', example: '2024-01-15T12:00:00.000Z' },
+        database: { type: 'string', example: 'connected' },
       },
     },
   })
-  healthCheck() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
+  @ApiResponse({
+    status: 503,
+    description: 'Service is unhealthy',
+  })
+  async healthCheck() {
+    try {
+      // Check database connectivity with simple query
+      await this.userRepository.query('SELECT 1');
+
+      return {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        database: 'connected',
+      };
+    } catch (error) {
+      throw new ServiceUnavailableException({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        database: 'disconnected',
+      });
+    }
   }
 
   @Get()

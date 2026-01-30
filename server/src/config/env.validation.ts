@@ -49,6 +49,10 @@ class EnvironmentVariables {
   @IsString()
   RESEND_API_KEY: string;
 
+  @IsString()
+  @IsOptional()
+  EMAIL_FROM_ADDRESS?: string;
+
   // Frontend URL for email links
   @IsUrl({
     require_tld: process.env.NODE_ENV === 'production',

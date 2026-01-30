@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 @Injectable()
 export class EmailService {
   private resend: Resend;
-  private readonly fromEmail = 'Usogui Fan Site <noreply@usoguifansite.com>';
+  private readonly fromEmail: string;
 
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get('RESEND_API_KEY');
@@ -15,6 +15,11 @@ export class EmailService {
     }
 
     this.resend = new Resend(apiKey);
+
+    // Make email from address configurable with fallback
+    this.fromEmail =
+      this.configService.get('EMAIL_FROM_ADDRESS') ||
+      'Usogui Fan Site <noreply@usoguifansite.com>';
   }
 
   private createEmailTemplate(content: string) {

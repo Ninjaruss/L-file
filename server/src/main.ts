@@ -18,6 +18,9 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  // Enable graceful shutdown - ensures connections close cleanly
+  app.enableShutdownHooks();
+
   // Set global prefix
   app.setGlobalPrefix('api');
 
