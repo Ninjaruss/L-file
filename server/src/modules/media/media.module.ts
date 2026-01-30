@@ -9,6 +9,7 @@ import { MediaController } from './media.controller';
 import { EmailModule } from '../email/email.module';
 import { UrlNormalizerService } from './services/url-normalizer.service';
 import { MediaUrlResolverService } from './services/media-url-resolver.service';
+import { FileValidationService } from './validators/file-validation.service';
 import { ServicesModule } from '../../services/services.module';
 
 @Module({
@@ -18,7 +19,12 @@ import { ServicesModule } from '../../services/services.module';
     EmailModule,
     ServicesModule,
   ],
-  providers: [MediaService, UrlNormalizerService, MediaUrlResolverService],
+  providers: [
+    MediaService,
+    UrlNormalizerService,
+    MediaUrlResolverService,
+    FileValidationService,
+  ],
   controllers: [MediaController],
   exports: [MediaService, MediaUrlResolverService],
 })

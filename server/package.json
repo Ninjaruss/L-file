@@ -51,6 +51,7 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.0.1",
     "helmet": "^8.1.0",
+    "image-size": "^2.0.2",
     "inquirer": "8.2.6",
     "node-fetch": "2",
     "passport": "^0.7.0",

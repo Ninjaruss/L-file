@@ -212,15 +212,15 @@ export class BackblazeB2Service {
     fileName: string,
     contentType: string,
     folder: 'characters' | 'arcs' | 'media' = 'media',
-  ): Promise<{ fileId: string; fileName: string; url: string }> {
+  ): Promise<{ fileId: string; fileName: string; url: string; key: string }> {
     if (!file || file.length === 0) {
       throw new BadRequestException('File is required');
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
     if (file.length > maxSize) {
-      throw new BadRequestException('File size exceeds 10MB limit');
+      throw new BadRequestException('File size exceeds 5MB limit');
     }
 
     // Validate content type
@@ -273,10 +273,23 @@ export class BackblazeB2Service {
         fileId: uploadResult.fileId,
         fileName: uploadResult.fileName,
         url: publicUrl,
+        key: uploadResult.fileName, // B2 object key is the full file name/path
       };
     } catch (error) {
       this.logger.error('Failed to upload file to B2', error);
       throw new InternalServerErrorException('Failed to upload file');
+    }
+  }
+
+  /**
+   * Safely delete file from B2, logging errors but not throwing
+   */
+  async safeDeleteFile(key: string): Promise<void> {
+    try {
+      await this.deleteFile(key);
+    } catch (error) {
+      this.logger.error(`Error during safe deletion of ${key} from B2`, error);
+      // Don't throw - allow cleanup to continue
     }
   }
 

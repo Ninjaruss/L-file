@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCharacterRelationships1735084800000
-  implements MigrationInterface
-{
+export class CreateCharacterRelationships1735084800000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create the relationship type enum
     await queryRunner.query(`

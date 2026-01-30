@@ -12,6 +12,7 @@ import {
   MediaType,
   MediaOwnerType,
   MediaPurpose,
+  MediaUsageType,
 } from '../../../entities/media.entity';
 import { Transform } from 'class-transformer';
 
@@ -78,6 +79,15 @@ export class UploadMediaDto {
   @IsOptional()
   @IsEnum(MediaPurpose)
   purpose?: MediaPurpose;
+
+  @ApiProperty({
+    description:
+      'Usage type determining upload permissions: CHARACTER_IMAGE (moderator/admin only), GUIDE_IMAGE and GALLERY_UPLOAD (all authenticated users)',
+    enum: MediaUsageType,
+    example: MediaUsageType.GALLERY_UPLOAD,
+  })
+  @IsEnum(MediaUsageType)
+  usageType: MediaUsageType;
 }
 
 export class UploadCharacterImageDto {

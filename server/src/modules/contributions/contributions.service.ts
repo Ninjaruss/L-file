@@ -113,7 +113,7 @@ export class ContributionsService {
       createdAt: Date;
     }>;
     media: Array<{
-      id: number;
+      id: string;
       description: string;
       url: string;
       ownerType: string;

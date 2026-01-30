@@ -14,6 +14,7 @@ import {
   MediaType,
   MediaOwnerType,
   MediaPurpose,
+  MediaUsageType,
 } from '../../entities/media.entity';
 import { User } from '../../entities/user.entity';
 import { Character } from '../../entities/character.entity';
@@ -21,6 +22,8 @@ import { CreateMediaDto } from './dto/create-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { UrlNormalizerService } from './services/url-normalizer.service';
 import { EmailService } from '../email/email.service';
+import { FileValidationService } from './validators/file-validation.service';
+import { UserRole } from '../../entities/user.entity';
 
 @Injectable()
 export class MediaService {
@@ -35,9 +38,17 @@ export class MediaService {
     private readonly characterRepo: Repository<Character>,
     private readonly urlNormalizer: UrlNormalizerService,
     private readonly emailService: EmailService,
+    private readonly fileValidationService: FileValidationService,
   ) {}
 
   async create(data: CreateMediaDto, user: User): Promise<Media> {
+    // Reject image URLs - images must be uploaded
+    if (data.type === MediaType.IMAGE) {
+      throw new BadRequestException(
+        'Image URLs are not allowed. Please upload images using the /media/upload endpoint.',
+      );
+    }
+
     // Validate purpose constraints
     this.validateMediaPurpose(data);
 
@@ -60,33 +71,51 @@ export class MediaService {
 
   async createUpload(
     data: UploadMediaDto,
-    file: Buffer,
-    originalFileName: string,
-    contentType: string,
+    file: Express.Multer.File,
     user: User,
     b2Service: any, // BackblazeB2Service - will import properly later
   ): Promise<Media> {
     // Validate purpose constraints
     this.validateMediaPurpose(data);
 
-    // Generate a unique filename
-    const timestamp = Date.now();
-    const fileExtension = originalFileName.split('.').pop();
-    const uniqueFileName = `${timestamp}_${originalFileName}`;
+    // Validate file with magic byte checks
+    const validationResult = await this.fileValidationService.validateFile(
+      file,
+      file.mimetype,
+    );
+
+    // Generate UUID-based filename with usageType folder
+    const crypto = await import('crypto');
+    const uuid = crypto.randomUUID();
+    const ext = this.fileValidationService.getExtensionFromMimeType(
+      validationResult.mimeType,
+    );
+    const uniqueFileName = `${uuid}.${ext}`;
+
+    // Determine status based on user role
+    const status =
+      user.role === UserRole.ADMIN || user.role === UserRole.MODERATOR
+        ? MediaStatus.APPROVED
+        : MediaStatus.PENDING;
 
     // Upload to B2 with proper error handling
-    let uploadResult: { url: string; fileName: string; fileId: string };
+    let uploadResult: {
+      url: string;
+      fileName: string;
+      fileId: string;
+      key: string;
+    };
     try {
       uploadResult = await b2Service.uploadFile(
-        file,
+        file.buffer,
         uniqueFileName,
-        contentType,
-        'media',
+        validationResult.mimeType,
+        data.usageType, // Use usageType as folder name
       );
     } catch (uploadError) {
       // Log the error for debugging but don't expose internal details
       this.logger.error(
-        `B2 upload failed for file: ${originalFileName}`,
+        `B2 upload failed for file: ${file.originalname}`,
         uploadError instanceof Error ? uploadError.stack : uploadError,
       );
       throw new InternalServerErrorException(
@@ -102,22 +131,44 @@ export class MediaService {
       );
     }
 
-    const media = this.mediaRepo.create({
-      url: uploadResult.url,
-      fileName: uploadResult.fileName,
-      b2FileId: uploadResult.fileId,
-      isUploaded: true,
-      type: data.type,
-      description: data.description,
-      ownerType: data.ownerType,
-      ownerId: data.ownerId,
-      chapterNumber: data.chapterNumber,
-      submittedBy: user,
-      status: MediaStatus.APPROVED, // Auto-approve uploads by moderators/admins
-      purpose: data.purpose || MediaPurpose.GALLERY,
-    });
+    // Create media record
+    let media: Media;
+    try {
+      media = this.mediaRepo.create({
+        url: uploadResult.url,
+        fileName: uploadResult.fileName,
+        b2FileId: uploadResult.fileId,
+        key: uploadResult.key,
+        mimeType: validationResult.mimeType,
+        fileSize: file.size,
+        width: validationResult.width,
+        height: validationResult.height,
+        isUploaded: true,
+        usageType: data.usageType,
+        type: data.type,
+        description: data.description,
+        ownerType: data.ownerType,
+        ownerId: data.ownerId,
+        chapterNumber: data.chapterNumber,
+        submittedBy: user,
+        status,
+        purpose: data.purpose || MediaPurpose.GALLERY,
+      });
 
-    return this.mediaRepo.save(media);
+      media = await this.mediaRepo.save(media);
+    } catch (dbError) {
+      // Rollback: delete from B2 if DB save fails
+      this.logger.error(
+        `DB save failed after B2 upload for ${uploadResult.key}, attempting rollback`,
+        dbError,
+      );
+      await b2Service.safeDeleteFile(uploadResult.key);
+      throw new InternalServerErrorException(
+        'Failed to save media record. Please try again.',
+      );
+    }
+
+    return media;
   }
 
   async findAll(
@@ -293,7 +344,7 @@ export class MediaService {
     return { data, total, page, perPage: limit, totalPages };
   }
 
-  async findOne(id: number): Promise<Media | null> {
+  async findOne(id: string): Promise<Media | null> {
     const media = await this.mediaRepo.findOne({
       where: { id },
       relations: ['submittedBy'],
@@ -312,7 +363,7 @@ export class MediaService {
     });
   }
 
-  async approveSubmission(id: number): Promise<Media> {
+  async approveSubmission(id: string): Promise<Media> {
     const media = await this.mediaRepo.findOne({
       where: { id },
       relations: ['submittedBy'],
@@ -338,7 +389,7 @@ export class MediaService {
     return savedMedia;
   }
 
-  async rejectSubmission(id: number, reason: string): Promise<Media> {
+  async rejectSubmission(id: string, reason: string): Promise<Media> {
     const media = await this.mediaRepo.findOne({
       where: { id },
       relations: ['submittedBy'],
@@ -368,7 +419,7 @@ export class MediaService {
   }
 
   async update(
-    id: number,
+    id: string,
     updateData: Partial<CreateMediaDto>,
   ): Promise<Media> {
     const media = await this.mediaRepo.findOne({
@@ -385,21 +436,21 @@ export class MediaService {
     return this.mediaRepo.save(media);
   }
 
-  async remove(id: number, b2Service?: any): Promise<void> {
+  async remove(id: string, b2Service?: any): Promise<void> {
     // Get the media record first to check if it's an uploaded file
     const media = await this.mediaRepo.findOne({
       where: { id },
     });
 
-    if (media && media.isUploaded && media.fileName && b2Service) {
-      // Delete from B2 storage
+    if (media && media.isUploaded && media.key && b2Service) {
+      // Delete from B2 storage using the key field
       try {
-        await b2Service.deleteFile(media.fileName);
+        await b2Service.safeDeleteFile(media.key);
       } catch (error) {
         // Log the error with sufficient detail for cleanup/investigation
         this.logger.error(
           `Failed to delete file from B2 storage. ` +
-            `Media ID: ${id}, fileName: ${media.fileName}. ` +
+            `Media ID: ${id}, key: ${media.key}. ` +
             `Orphaned file may require manual cleanup.`,
           error instanceof Error ? error.stack : String(error),
         );
@@ -412,7 +463,7 @@ export class MediaService {
   }
 
   async bulkApproveSubmissions(
-    ids: number[],
+    ids: string[],
   ): Promise<{ approved: number; failed: number; errors: string[] }> {
     const results = { approved: 0, failed: 0, errors: [] as string[] };
 
@@ -432,7 +483,7 @@ export class MediaService {
   }
 
   async bulkRejectSubmissions(
-    ids: number[],
+    ids: string[],
     reason: string,
   ): Promise<{ rejected: number; failed: number; errors: string[] }> {
     const results = { rejected: 0, failed: 0, errors: [] as string[] };
@@ -543,7 +594,7 @@ export class MediaService {
     };
   }
 
-  async findOnePublic(id: number): Promise<Media | null> {
+  async findOnePublic(id: string): Promise<Media | null> {
     return this.mediaRepo.findOne({
       where: {
         id,
@@ -794,7 +845,7 @@ export class MediaService {
    * Promote gallery media to entity display media
    */
   async setAsEntityDisplay(
-    mediaId: number,
+    mediaId: string,
     ownerType: MediaOwnerType,
     ownerId: number,
   ): Promise<Media> {
@@ -821,7 +872,7 @@ export class MediaService {
    * Update media relations to use polymorphic approach
    */
   async updateMediaRelations(
-    mediaId: number,
+    mediaId: string,
     ownerType: MediaOwnerType,
     ownerId: number,
     chapterNumber?: number,

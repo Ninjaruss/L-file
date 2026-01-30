@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddOrganizationToPageTypeEnum1738200000001
-  implements MigrationInterface
-{
+export class AddOrganizationToPageTypeEnum1738200000001 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add 'organization' to the page_view_pagetype_enum enum
     await queryRunner.query(`
@@ -15,6 +13,8 @@ export class AddOrganizationToPageTypeEnum1738200000001
     // This would require recreating the enum type, which is complex
     // For now, we'll leave the enum value in place on rollback
     // If needed, a more complex migration would be required
-    console.log('Cannot remove enum value in down migration - this is a PostgreSQL limitation');
+    console.log(
+      'Cannot remove enum value in down migration - this is a PostgreSQL limitation',
+    );
   }
 }

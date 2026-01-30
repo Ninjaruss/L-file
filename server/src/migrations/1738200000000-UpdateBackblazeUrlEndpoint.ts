@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateBackblazeUrlEndpoint1738200000000
-  implements MigrationInterface
-{
+export class UpdateBackblazeUrlEndpoint1738200000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Update media table URLs from f000 to f005
     await queryRunner.query(`

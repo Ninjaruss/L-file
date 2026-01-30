@@ -47,9 +47,10 @@ type TransformResult<T> =
  * return the canonical paginated shape `{ data, total, page, perPage, totalPages }`.
  */
 @Injectable()
-export class TransformResponseInterceptor<T>
-  implements NestInterceptor<T, TransformResult<T>>
-{
+export class TransformResponseInterceptor<T> implements NestInterceptor<
+  T,
+  TransformResult<T>
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,

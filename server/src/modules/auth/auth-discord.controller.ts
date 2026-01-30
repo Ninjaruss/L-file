@@ -78,7 +78,10 @@ export class AuthDiscordController {
     console.log('[DISCORD CALLBACK] Starting callback');
     // Generate JWT token for the authenticated user
     const loginResult = await this.authService.login(req.user as User);
-    console.log('[DISCORD CALLBACK] Login result generated for user:', (req.user as User)?.username);
+    console.log(
+      '[DISCORD CALLBACK] Login result generated for user:',
+      (req.user as User)?.username,
+    );
 
     // Pass BOTH tokens to frontend callback
     // Frontend will call /auth/set-cookie to store refresh token as httpOnly cookie
@@ -116,7 +119,11 @@ export class AuthDiscordController {
 
     // Set refresh token as httpOnly cookie
     if (loginResult.refresh_token) {
-      res.cookie('refreshToken', loginResult.refresh_token, this.getRefreshTokenCookieOptions());
+      res.cookie(
+        'refreshToken',
+        loginResult.refresh_token,
+        this.getRefreshTokenCookieOptions(),
+      );
     }
 
     return res.json(loginResult);
@@ -136,14 +143,20 @@ export class AuthDiscordController {
     @Body() body: { refreshToken: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('[SET COOKIE] Setting refresh token cookie from frontend request');
+    console.log(
+      '[SET COOKIE] Setting refresh token cookie from frontend request',
+    );
 
     if (!body.refreshToken) {
       throw new Error('No refresh token provided');
     }
 
     // Set the refresh token as httpOnly cookie
-    res.cookie('refreshToken', body.refreshToken, this.getRefreshTokenCookieOptions());
+    res.cookie(
+      'refreshToken',
+      body.refreshToken,
+      this.getRefreshTokenCookieOptions(),
+    );
     console.log('[SET COOKIE] Cookie set successfully');
 
     return { success: true };

@@ -1,13 +1,22 @@
 # Changelog and notes
 
 ## TODO
-- Add submissions page or section to profile; user should see their submissions and their status
-- Update state for all pages when user logs in or out; guides for example keeps liked even though the user logged out
+- Add submissions page or section to profile (and user detail page); user should see their submissions and their status (on their profile); others can see the approved submissions
+- Form submission should be more clear to the user than a small notification header at the top; also, remove tags from submit guide page
+- Update the colors of the update progress button and progress updated notification to better fit the theme and contrast of the site
+- For seeders, remove events, media, guides and temporary users as the site is now deployed
+- Update state for all pages when user logs in or out (guides for example keeps liked even though the user logged out)
 - Media gallery preview on character (and probably other) details page does not show a preview properly (the image does load when shown in image viewer)
 - Profile counters for guides/media should be based on approved
-- Organization members should ; remove "active" label
+- Organization members should show the character's image more clearly; also remove "active" label
 - For home page, media counter should not include volume covers
+- I'd like to optimize the load time for my website. I have successfully deployed the site on Vercel, Supabase, and Flyio. 
 
+
+## 2026-01-30
+- Site deployed on Flyio, Supabase, and Vercel! Some adjustments to secret keys (.env) and CORS stuff was needed before everything connected
+- Removal of external URL submissions except for videos/music
+- Media upload more streamlined to include additional data and better security practices
 
 ## 2026-01-29
 ### Annotation System Refactor

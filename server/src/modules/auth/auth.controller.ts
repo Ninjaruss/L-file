@@ -139,7 +139,11 @@ export class AuthController {
     // Set refresh token as httpOnly cookie
     try {
       if (payload.refresh_token) {
-        res.cookie('refreshToken', payload.refresh_token, this.getRefreshTokenCookieOptions());
+        res.cookie(
+          'refreshToken',
+          payload.refresh_token,
+          this.getRefreshTokenCookieOptions(),
+        );
       }
     } catch {
       // ignore if unable to set cookie
@@ -181,7 +185,10 @@ export class AuthController {
   })
   @Post('refresh')
   async refresh(@Req() req: AuthenticatedRequest) {
-    console.log('[AUTH REFRESH] All cookies received:', JSON.stringify(req.cookies));
+    console.log(
+      '[AUTH REFRESH] All cookies received:',
+      JSON.stringify(req.cookies),
+    );
     console.log('[AUTH REFRESH] Cookie header:', req.headers.cookie);
     console.log('[AUTH REFRESH] Origin:', req.headers.origin);
     console.log('[AUTH REFRESH] Referer:', req.headers.referer);

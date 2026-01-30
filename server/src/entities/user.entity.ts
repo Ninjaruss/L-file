@@ -134,10 +134,10 @@ export class User {
   @ApiPropertyOptional({
     description:
       'ID of the character media selected as profile picture (when type is CHARACTER_MEDIA)',
-    example: 1,
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @Column({ type: 'int', nullable: true })
-  selectedCharacterMediaId: number | null;
+  @Column({ type: 'uuid', nullable: true })
+  selectedCharacterMediaId: string | null;
 
   @ApiPropertyOptional({
     description:

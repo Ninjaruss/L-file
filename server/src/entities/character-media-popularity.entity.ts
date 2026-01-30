@@ -25,10 +25,10 @@ export class CharacterMediaPopularity {
 
   @ApiProperty({
     description: 'ID of the media being tracked',
-    example: 1,
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @Column({ type: 'int' })
-  mediaId: number;
+  @Column({ type: 'uuid' })
+  mediaId: string;
 
   @ApiProperty({
     description: 'ID of the character this media belongs to',

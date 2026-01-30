@@ -24,6 +24,7 @@ import {
   MediaType,
   MediaStatus,
   MediaPurpose,
+  MediaUsageType,
 } from '../../entities/media.entity';
 import { BackblazeB2Service } from '../../services/backblaze-b2.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -267,7 +268,7 @@ export class MediaController {
   })
   @ApiResponse({ status: 404, description: 'Media not found or not approved' })
   findOnePublic(@Param('id') id: string) {
-    return this.mediaService.findOnePublic(+id);
+    return this.mediaService.findOnePublic(id);
   }
 
   @Get('url-resolver')
@@ -362,7 +363,7 @@ export class MediaController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
-        fileSize: 50 * 1024 * 1024, // 50MB max file size
+        fileSize: 5 * 1024 * 1024, // 5MB max file size
         files: 1, // Only 1 file at a time
       },
     }),
@@ -370,7 +371,7 @@ export class MediaController {
   @ApiOperation({
     summary: 'Upload media file',
     description:
-      'Upload a media file directly to the server (requires authentication). Max file size: 50MB.',
+      'Upload a media file directly to the server (requires authentication). Max file size: 5MB. CHARACTER_IMAGE requires moderator/admin role.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -380,7 +381,13 @@ export class MediaController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Media file to upload (max 50MB)',
+          description: 'Media file to upload (max 5MB)',
+        },
+        usageType: {
+          type: 'string',
+          enum: Object.values(MediaUsageType),
+          description:
+            'Usage type: CHARACTER_IMAGE (mod/admin only), GUIDE_IMAGE or GALLERY_UPLOAD (all users)',
         },
         type: {
           type: 'string',
@@ -410,7 +417,7 @@ export class MediaController {
           description: 'Chapter number (optional)',
         },
       },
-      required: ['file', 'type', 'ownerType', 'ownerId'],
+      required: ['file', 'type', 'ownerType', 'ownerId', 'usageType'],
     },
   })
   @ApiResponse({
@@ -419,7 +426,11 @@ export class MediaController {
   })
   @ApiResponse({ status: 400, description: 'Invalid file or parameters' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 413, description: 'File too large (max 50MB)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - CHARACTER_IMAGE requires moderator/admin role',
+  })
+  @ApiResponse({ status: 413, description: 'File too large (max 5MB)' })
   async uploadMedia(
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadData: UploadMediaDto,
@@ -429,12 +440,13 @@ export class MediaController {
       throw new BadRequestException('File is required');
     }
 
-    // Defense-in-depth: Validate file size in service layer too
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-    if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(
-        `File size exceeds maximum allowed size of 50MB`,
-      );
+    // Role-based permission check for usageType
+    if (uploadData.usageType === MediaUsageType.CHARACTER_IMAGE) {
+      if (user.role !== UserRole.MODERATOR && user.role !== UserRole.ADMIN) {
+        throw new BadRequestException(
+          'CHARACTER_IMAGE uploads require moderator or admin role',
+        );
+      }
     }
 
     // Only allow image uploads for now
@@ -442,43 +454,10 @@ export class MediaController {
       throw new BadRequestException('Only image uploads are supported');
     }
 
-    // Validate file type - check both MIME and magic bytes
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-    ];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Only image files (JPEG, PNG, WebP, GIF) are allowed',
-      );
-    }
-
-    // SECURITY: Validate magic bytes to prevent MIME type spoofing attacks
-    const magicByteCheck = validateImageMagicBytes(file.buffer);
-    if (!magicByteCheck.valid) {
-      throw new BadRequestException(
-        'Invalid file content. The file does not appear to be a valid image.',
-      );
-    }
-
-    // Optionally warn if MIME type doesn't match detected type (but still allow)
-    if (
-      magicByteCheck.detectedType &&
-      magicByteCheck.detectedType !== file.mimetype
-    ) {
-      // Log mismatch for monitoring, but use the detected type
-      console.warn(
-        `[MEDIA UPLOAD] MIME type mismatch: claimed ${file.mimetype}, detected ${magicByteCheck.detectedType}`,
-      );
-    }
-
+    // File validation is now handled in the service layer via FileValidationService
     return this.mediaService.createUpload(
       uploadData,
-      file.buffer,
-      file.originalname,
-      file.mimetype,
+      file,
       user,
       this.b2Service,
     );
@@ -743,7 +722,7 @@ export class MediaController {
   })
   @ApiResponse({ status: 404, description: 'Media not found' })
   findOne(@Param('id') id: string) {
-    return this.mediaService.findOne(+id);
+    return this.mediaService.findOne(id);
   }
 
   @Put(':id')
@@ -822,7 +801,7 @@ export class MediaController {
     },
   })
   update(@Param('id') id: string, @Body() updateData: any) {
-    return this.mediaService.update(+id, updateData);
+    return this.mediaService.update(id, updateData);
   }
 
   @Patch(':id')
@@ -892,7 +871,7 @@ export class MediaController {
     },
   })
   patchUpdate(@Param('id') id: string, @Body() updateData: any) {
-    return this.mediaService.update(+id, updateData);
+    return this.mediaService.update(id, updateData);
   }
 
   @Delete(':id')
@@ -921,7 +900,7 @@ export class MediaController {
   @ApiResponse({ status: 404, description: 'Media not found' })
   @ApiParam({ name: 'id', description: 'Media ID', example: 1 })
   remove(@Param('id') id: string) {
-    return this.mediaService.remove(+id, this.b2Service);
+    return this.mediaService.remove(id, this.b2Service);
   }
 
   @Put(':id/approve')
@@ -978,7 +957,7 @@ export class MediaController {
   })
   @ApiParam({ name: 'id', description: 'Media ID', example: 1 })
   approveSubmission(@Param('id') id: string) {
-    return this.mediaService.approveSubmission(+id);
+    return this.mediaService.approveSubmission(id);
   }
 
   @Put(':id/reject')
@@ -1051,7 +1030,7 @@ export class MediaController {
     },
   })
   rejectSubmission(@Param('id') id: string, @Body('reason') reason: string) {
-    return this.mediaService.rejectSubmission(+id, reason);
+    return this.mediaService.rejectSubmission(id, reason);
   }
 
   @Post('bulk/approve')
@@ -1101,7 +1080,7 @@ export class MediaController {
     status: 403,
     description: 'Forbidden - requires moderator or admin role',
   })
-  bulkApproveSubmissions(@Body('ids') ids: number[]) {
+  bulkApproveSubmissions(@Body('ids') ids: string[]) {
     return this.mediaService.bulkApproveSubmissions(ids);
   }
 
@@ -1157,7 +1136,7 @@ export class MediaController {
     status: 403,
     description: 'Forbidden - requires moderator or admin role',
   })
-  bulkRejectSubmissions(@Body() body: { ids: number[]; reason: string }) {
+  bulkRejectSubmissions(@Body() body: { ids: string[]; reason: string }) {
     return this.mediaService.bulkRejectSubmissions(body.ids, body.reason);
   }
 
@@ -1532,7 +1511,7 @@ export class MediaController {
     },
   })
   async promoteToEntityDisplay(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: { ownerType: MediaOwnerType; ownerId: number },
   ) {
     return this.mediaService.setAsEntityDisplay(
@@ -1578,7 +1557,7 @@ export class MediaController {
     },
   })
   updateMediaRelations(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body()
     body: {
       ownerType: MediaOwnerType;

@@ -1,4 +1,9 @@
-import { Controller, Get, Query, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
   PageViewsService,

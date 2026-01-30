@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddArcParentRelationship1735300000000
-  implements MigrationInterface
-{
+export class AddArcParentRelationship1735300000000 implements MigrationInterface {
   name = 'AddArcParentRelationship1735300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

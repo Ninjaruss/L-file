@@ -21,9 +21,16 @@ export enum MediaStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
 }
+
 export enum MediaPurpose {
   GALLERY = 'gallery', // User-uploaded media for galleries
   ENTITY_DISPLAY = 'entity_display', // Official images for entity pages
+}
+
+export enum MediaUsageType {
+  CHARACTER_IMAGE = 'character_image',
+  GUIDE_IMAGE = 'guide_image',
+  GALLERY_UPLOAD = 'gallery_upload',
 }
 
 export enum MediaOwnerType {
@@ -45,8 +52,8 @@ export enum MediaOwnerType {
 @Index(['purpose'])
 export class Media {
   @ApiProperty({ description: 'Unique identifier of the media' })
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ApiPropertyOptional({
     description:
@@ -80,6 +87,49 @@ export class Media {
   })
   @Column({ type: 'boolean', default: false })
   isUploaded: boolean;
+
+  @ApiPropertyOptional({
+    description: 'B2 object key/path for uploaded files',
+    example: 'media/character_image/550e8400-e29b-41d4-a716-446655440000.jpg',
+  })
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  key: string;
+
+  @ApiPropertyOptional({
+    description: 'MIME type of the uploaded file',
+    example: 'image/jpeg',
+  })
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  mimeType: string;
+
+  @ApiPropertyOptional({
+    description: 'File size in bytes',
+    example: 1048576,
+  })
+  @Column({ type: 'int', nullable: true })
+  fileSize: number;
+
+  @ApiPropertyOptional({
+    description: 'Image width in pixels',
+    example: 1920,
+  })
+  @Column({ type: 'int', nullable: true })
+  width: number;
+
+  @ApiPropertyOptional({
+    description: 'Image height in pixels',
+    example: 1080,
+  })
+  @Column({ type: 'int', nullable: true })
+  height: number;
+
+  @ApiPropertyOptional({
+    description: 'Usage type determining upload permissions',
+    enum: MediaUsageType,
+    example: MediaUsageType.CHARACTER_IMAGE,
+  })
+  @Column({ type: 'enum', enum: MediaUsageType, nullable: true })
+  usageType: MediaUsageType;
 
   @ApiProperty({
     description: 'Type of entity this media belongs to',
