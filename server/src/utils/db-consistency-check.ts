@@ -164,21 +164,26 @@ export async function performDatabaseSafetyChecks(): Promise<void> {
     }
   }
 
-  // Run consistency check
-  const isConsistent = await checkDatabaseConsistency();
+  // Run consistency check only in development
+  // In production, TypeORM config files are compiled and the check would fail
+  if (process.env.NODE_ENV !== 'production') {
+    const isConsistent = await checkDatabaseConsistency();
 
-  // In development, warn but don't exit
-  if (!isConsistent && process.env.NODE_ENV !== 'development') {
-    console.error(
-      chalk.red('❌ Database configuration inconsistency detected.'),
-    );
-    console.error(
-      chalk.red('This could lead to unexpected behavior with migrations.'),
-    );
-
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
+    // In development, warn but don't exit
+    if (!isConsistent && process.env.NODE_ENV !== 'development') {
+      console.error(
+        chalk.red('❌ Database configuration inconsistency detected.'),
+      );
+      console.error(
+        chalk.red('This could lead to unexpected behavior with migrations.'),
+      );
     }
+  } else {
+    console.log(
+      chalk.blue(
+        '🔍 Skipping TypeORM config consistency check in production (config file is compiled)',
+      ),
+    );
   }
 
   console.log(chalk.green('✅ Database safety checks completed'));
