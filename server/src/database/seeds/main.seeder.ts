@@ -29,31 +29,44 @@ export class MainSeeder {
       chalk.blue('🌱 Starting comprehensive seeders execution...'),
     );
 
-    const seeders: Seeder[] = [
-      // Core data - must be seeded first
-      new UserSeeder(this.dataSource), // Users for content attribution
-      new BadgeSeeder(this.dataSource), // Badge system
+    const isProduction = process.env.NODE_ENV === 'production';
 
-      // Content structure
+    // Base seeders that are safe for production
+    const coreSeeders: Seeder[] = [
+      new BadgeSeeder(this.dataSource), // Badge system
       new ArcSeeder(this.dataSource), // Story arcs with chapter ranges
       new VolumeSeeder(this.dataSource), // Volume organization
       new ChapterSeeder(this.dataSource), // Individual chapters
-
-      // Characters and content
       new CharacterSeeder(this.dataSource), // Character profiles
       new OrganizationSeeder(this.dataSource), // Organizations and groups
       new CharacterOrganizationSeeder(this.dataSource), // Character-organization relationships with roles
       new TagSeeder(this.dataSource), // Content categorization tags
-
-      // Interactive content
-      new EventSeeder(this.dataSource), // Story events and plot points
       new QuoteSeeder(this.dataSource), // Character quotes
       new GambleSeeder(this.dataSource), // Gambling events and games
-      new MediaSeeder(this.dataSource), // Community media submissions
       new FandomDataSeeder(this.dataSource), // Fandom-sourced volumes/chapters and covers
-      new GuideSeeder(this.dataSource), // User-generated guides and tutorials
-      new AnnotationSeeder(this.dataSource), // User-contributed annotations and explanations
     ];
+
+    // Test data seeders (only for development/staging)
+    const testDataSeeders: Seeder[] = isProduction
+      ? []
+      : [
+          new UserSeeder(this.dataSource), // Test user accounts (admin, moderator, users)
+          new EventSeeder(this.dataSource), // Test story events
+          new MediaSeeder(this.dataSource), // Test community media
+          new GuideSeeder(this.dataSource), // Test user guides
+          new AnnotationSeeder(this.dataSource), // Test annotations
+        ];
+
+    const seeders = [...coreSeeders, ...testDataSeeders];
+
+    if (isProduction) {
+      this.logger.log(
+        chalk.yellow('⚠️  Production mode detected - skipping test data seeders'),
+      );
+      this.logger.log(
+        chalk.yellow('   Skipped: UserSeeder, EventSeeder, MediaSeeder, GuideSeeder, AnnotationSeeder'),
+      );
+    }
 
     let success = true;
 
@@ -75,24 +88,24 @@ export class MainSeeder {
       this.logger.log(chalk.green('✅ All seeders completed successfully!'));
       this.logger.log(
         chalk.blue(
-          '📊 Database has been populated with comprehensive test data including:',
+          '📊 Database has been populated with content structure:',
         ),
-      );
-      this.logger.log(
-        chalk.blue('   - User accounts (admin, moderator, regular users)'),
       );
       this.logger.log(chalk.blue('   - Complete Usogui content structure'));
       this.logger.log(chalk.blue('   - Character profiles and relationships'));
-      this.logger.log(chalk.blue('   - Story events and plot points'));
       this.logger.log(chalk.blue('   - Gambling events and tournaments'));
       this.logger.log(chalk.blue('   - Character quotes and memorable lines'));
-      this.logger.log(chalk.blue('   - Community media submissions'));
-      this.logger.log(chalk.blue('   - User-generated guides and tutorials'));
-      this.logger.log(
-        chalk.blue('   - User-contributed annotations and explanations'),
-      );
       this.logger.log(chalk.blue('   - Badge system with supporter rewards'));
       this.logger.log(chalk.blue('   - Content tags and categorization'));
+      
+      if (!isProduction) {
+        this.logger.log(chalk.blue('   - User accounts (admin, moderator, regular users)'));
+        this.logger.log(chalk.blue('   - Story events and plot points'));
+        this.logger.log(chalk.blue('   - Community media submissions'));
+        this.logger.log(chalk.blue('   - User-generated guides and tutorials'));
+        this.logger.log(chalk.blue('   - User-contributed annotations and explanations'));
+      }
+      
       return true;
     } else {
       this.logger.error(

@@ -210,6 +210,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null)
         // Clear the signal
         localStorage.removeItem('logout_signal')
+        // Reload the page to clear all cached state
+        window.location.reload()
       }
     }
 

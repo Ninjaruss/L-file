@@ -87,6 +87,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
 
   const [user] = useState<PublicUser>(initialUser)
   const [guides, setGuides] = useState<UserGuide[]>([])
+  const [submissions, setSubmissions] = useState<any[]>([])
   const [favoriteQuote, setFavoriteQuote] = useState<any>(null)
   const [favoriteGamble, setFavoriteGamble] = useState<any>(null)
   const [userStats, setUserStats] = useState<{
@@ -109,14 +110,20 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
       }
 
       try {
-        const guidesResponse = await api.getGuides({
-          limit: 100,
-          status: 'approved',
-          authorId: user.id
-        })
+        const [guidesResponse, submissionsResponse] = await Promise.all([
+          api.getGuides({
+            limit: 100,
+            status: 'approved',
+            authorId: user.id
+          }),
+          api.getPublicUserSubmissions(user.id)
+        ])
 
         const userGuides = guidesResponse.data ?? []
         setGuides(userGuides.slice(0, 10))
+
+        const submissionsData = submissionsResponse as any
+        setSubmissions(Array.isArray(submissionsData) ? submissionsData : submissionsData?.data || [])
 
         const aggregateLikes = userGuides.reduce((totalLikes, guide) => totalLikes + (guide.likeCount || 0), 0)
         const totalGuides = typeof guidesResponse.total === 'number' ? guidesResponse.total : userGuides.length
@@ -491,6 +498,94 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             )}
           </Stack>
         </Card>
+
+        {/* User Contributions Section */}
+        {submissions.length > 0 && (
+          <Card
+            className="gambling-card"
+            withBorder
+            radius="md"
+            shadow="lg"
+            p="xl"
+            style={{
+              background: `linear-gradient(135deg, ${getAlphaColor(accentColor, 0.14)}, ${getAlphaColor(accentColor, 0.04)}), ${cardBaseBackground}`,
+              border: `1px solid ${getAlphaColor(accentColor, 0.35)}`,
+              boxShadow: `0 16px 36px ${getAlphaColor(accentColor, 0.1)}`
+            }}
+          >
+            <Stack gap="lg">
+              <Group justify="space-between" align="center" wrap="wrap">
+                <Group gap="sm" align="center">
+                  <FileText size={24} color={guideColor} />
+                  <Title order={2} size="h3" c={headerColors.h2}>
+                    Contributions by {user.username}
+                  </Title>
+                  <Badge
+                    variant="light"
+                    size="lg"
+                    style={{
+                      background: getAlphaColor(guideColor, 0.2),
+                      border: `1px solid ${getAlphaColor(guideColor, 0.4)}`,
+                      color: guideColor
+                    }}
+                  >
+                    {submissions.length}
+                  </Badge>
+                </Group>
+              </Group>
+
+              <Stack gap="sm">
+                {submissions.map((submission: any) => {
+                  const typeLabel =
+                    submission.type === 'guide' ? 'Guide' :
+                    submission.type === 'media' ? 'Media' :
+                    submission.type === 'event' ? 'Event' : 'Annotation'
+
+                  const typeLinkPrefix =
+                    submission.type === 'guide' ? '/guides/' :
+                    submission.type === 'media' ? '/media' :
+                    submission.type === 'event' ? '/events/' :
+                    '/annotations'
+
+                  return (
+                    <Card
+                      key={`${submission.type}-${submission.id}`}
+                      withBorder
+                      radius="md"
+                      padding="md"
+                      shadow="sm"
+                      style={{
+                        background: getAlphaColor(guideColor, 0.12),
+                        border: `1px solid ${getAlphaColor(guideColor, 0.35)}`
+                      }}
+                    >
+                      <Group justify="space-between" wrap="nowrap">
+                        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                          <Text fw={500} size="sm" lineClamp={1} c={textColors.primary}>
+                            {submission.title}
+                          </Text>
+                          <Group gap="xs">
+                            <Badge size="xs" variant="outline">
+                              {typeLabel}
+                            </Badge>
+                            <Text size="xs" c="dimmed">
+                              {new Date(submission.createdAt).toLocaleDateString()}
+                            </Text>
+                          </Group>
+                        </Stack>
+                        {submission.type !== 'annotation' && (
+                          <Link href={`${typeLinkPrefix}${submission.id}`}>
+                            <Button size="xs" variant="subtle">View</Button>
+                          </Link>
+                        )}
+                      </Group>
+                    </Card>
+                  )
+                })}
+              </Stack>
+            </Stack>
+          </Card>
+        )}
 
         {/* User Guides Section */}
         {guides.length > 0 && (

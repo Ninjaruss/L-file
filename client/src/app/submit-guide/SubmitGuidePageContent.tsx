@@ -25,7 +25,8 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { setTabAccentColors } from '../../lib/mantine-theme'
-import { FileText, Send, Plus, BookOpen, Eye } from 'lucide-react'
+import { FileText, Send, Plus, BookOpen, Eye, Check } from 'lucide-react'
+import Link from 'next/link'
 import { useAuth } from '../../providers/AuthProvider'
 import { FormProgressIndicator, FormStep } from '../../components/FormProgressIndicator'
 import { api } from '../../lib/api'
@@ -44,12 +45,10 @@ export default function SubmitGuidePageContent() {
     title: '',
     description: '',
     content: '',
-    tags: [] as string[],
     characterIds: [] as number[],
     arcId: null as number | null,
     gambleIds: [] as number[]
   })
-  const [newTag, setNewTag] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -74,20 +73,6 @@ export default function SubmitGuidePageContent() {
     }))
   }
 
-  const addTag = () => {
-    const candidate = newTag.trim()
-    if (candidate && !formData.tags.includes(candidate)) {
-      setFormData((prev) => ({ ...prev, tags: [...prev.tags, candidate] }))
-      setNewTag('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove)
-    }))
-  }
 
   const validateForm = () => {
     if (!formData.title.trim()) {
@@ -128,7 +113,6 @@ export default function SubmitGuidePageContent() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         content: formData.content.trim(),
-        tags: formData.tags,
         characterIds: formData.characterIds.length ? formData.characterIds : undefined,
         arcId: formData.arcId ?? undefined,
         gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined
@@ -138,7 +122,6 @@ export default function SubmitGuidePageContent() {
         title: '',
         description: '',
         content: '',
-        tags: [],
         characterIds: [],
         arcId: null,
         gambleIds: []
@@ -155,12 +138,6 @@ export default function SubmitGuidePageContent() {
     }
   }
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      addTag()
-    }
-  }
 
   const handleInsertEmbed = (embedCode: string) => {
     const textarea = contentRef.current
@@ -271,17 +248,47 @@ export default function SubmitGuidePageContent() {
         )}
 
         {success && (
-          <Alert
-            variant="light"
+          <Card
+            shadow="lg"
+            padding="xl"
+            radius="md"
             mb="md"
             style={{
-              backgroundColor: 'rgba(81, 207, 102, 0.1)',
-              borderColor: 'rgba(81, 207, 102, 0.3)',
-              color: '#86efac'
+              backgroundColor: 'rgba(81, 207, 102, 0.15)',
+              borderColor: guideAccent,
+              border: `2px solid ${guideAccent}`
             }}
           >
-            <Text size="sm" c="#51cf66">{success}</Text>
-          </Alert>
+            <Stack gap="md" align="center">
+              <Check size={48} color={guideAccent} />
+              <Title order={3} c={guideAccent}>Guide Submitted Successfully!</Title>
+              <Text size="sm" ta="center" c="dimmed">
+                Your guide is now pending review. You&apos;ll be notified when it&apos;s approved. Track your submissions on your profile page.
+              </Text>
+              <Group>
+                <Button
+                  component={Link}
+                  href="/profile"
+                  variant="light"
+                  color="green"
+                >
+                  View Profile
+                </Button>
+                <Button
+                  onClick={() => setSuccess('')}
+                  variant="filled"
+                  styles={{
+                    root: {
+                      backgroundColor: guideAccent,
+                      color: '#000'
+                    }
+                  }}
+                >
+                  Submit Another
+                </Button>
+              </Group>
+            </Stack>
+          </Card>
         )}
 
         <FormProgressIndicator steps={progressSteps} accentColor={guideAccent} />
@@ -628,100 +635,6 @@ export default function SubmitGuidePageContent() {
                       />
                     </Grid.Col>
                   </Grid>
-                </Stack>
-              </Box>
-
-              <Box
-                style={{
-                  padding: rem(24),
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  borderRadius: rem(12),
-                  border: `1px solid ${guideAccent}33`
-                }}
-              >
-                <Stack gap="md">
-                  <Group gap="sm">
-                    <Plus size={20} color={guideAccent} />
-                    <Text fw={600} c={guideAccent}>
-                      Tags (Optional)
-                    </Text>
-                  </Group>
-
-                  <Group gap={8} wrap="wrap">
-                    {formData.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        styles={{
-                          root: {
-                            borderColor: guideAccent,
-                            color: guideAccent,
-                            backgroundColor: 'rgba(81, 207, 102, 0.1)'
-                          }
-                        }}
-                        rightSection={<CloseButton size="sm" onClick={() => removeTag(tag)} />}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {formData.tags.length === 0 && (
-                      <Text size="sm" c="dimmed">
-                        No tags added yet.
-                      </Text>
-                    )}
-                  </Group>
-
-                  <Group align="flex-end" gap="sm" wrap="nowrap">
-                    <TextInput
-                      label="Add a tag"
-                      placeholder="e.g., character-analysis, gambling, theory"
-                      description="Press Enter or click Add"
-                      value={newTag}
-                      onChange={(event) => setNewTag(event.currentTarget.value)}
-                      onKeyDown={handleKeyPress}
-                      style={{ flex: 1 }}
-                      styles={{
-                        input: {
-                          backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                          color: theme.colors.gray?.[0] ?? '#fff',
-                          borderColor: 'rgba(255,255,255,0.06)',
-                          '&:focus': {
-                            borderColor: guideAccent,
-                            boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                          }
-                        },
-                        label: {
-                          color: 'rgba(255, 255, 255, 0.7)',
-                          fontWeight: 500
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="filled"
-                      styles={{
-                        root: {
-                          backgroundColor: guideAccent,
-                          color: '#000',
-                          '&:hover': {
-                            backgroundColor: `${guideAccent}dd`
-                          },
-                          '&:disabled': {
-                            backgroundColor: 'rgba(81, 207, 102, 0.3)',
-                            color: 'rgba(255, 255, 255, 0.5)'
-                          }
-                        }
-                      }}
-                      leftSection={<Plus size={16} />}
-                      onClick={addTag}
-                      disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
-                    >
-                      Add Tag
-                    </Button>
-                  </Group>
-
-                  <Text size="xs" c="dimmed">
-                    Tags help others find your guide. Add keywords like character names, gamble types, or analysis focus areas.
-                  </Text>
                 </Stack>
               </Box>
 

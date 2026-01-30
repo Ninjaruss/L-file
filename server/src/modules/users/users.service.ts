@@ -204,11 +204,12 @@ export class UsersService {
       .andWhere('guide.status = :status', { status: GuideStatus.APPROVED })
       .getCount();
 
-    // Get media submitted count
+    // Get media submitted count (approved only)
     const mediaRepo = this.repo.manager.getRepository(Media);
     const mediaSubmitted = await mediaRepo
       .createQueryBuilder('media')
       .where('media.submittedBy = :userId', { userId: id })
+      .andWhere('media.status = :status', { status: MediaStatus.APPROVED })
       .getCount();
 
     // Get total likes received on user's guides
@@ -551,6 +552,85 @@ export class UsersService {
     const user = await this.findOne(userId);
     user.userProgress = userProgress;
     await this.repo.save(user);
+  }
+
+  /**
+   * Get all submissions (guides, media, events, annotations) for a user
+   */
+  async getUserSubmissions(userId: number) {
+    const guideRepo = this.repo.manager.getRepository(Guide);
+    const mediaRepo = this.repo.manager.getRepository(Media);
+    const eventRepo = this.repo.manager.getRepository('Event');
+    const annotationRepo = this.repo.manager.getRepository('Annotation');
+
+    const [guides, media, events, annotations] = await Promise.all([
+      guideRepo.find({
+        where: { authorId: userId },
+        select: ['id', 'title', 'status', 'createdAt'],
+        order: { createdAt: 'DESC' },
+      }),
+      mediaRepo.find({
+        where: { submittedBy: { id: userId } },
+        select: ['id', 'fileName', 'status', 'createdAt', 'description'],
+        order: { createdAt: 'DESC' },
+      }),
+      eventRepo.find({
+        where: { createdBy: { id: userId } },
+        select: ['id', 'title', 'status', 'createdAt'],
+        order: { createdAt: 'DESC' },
+      }),
+      annotationRepo.find({
+        where: { user: { id: userId } },
+        select: ['id', 'content', 'status', 'createdAt'],
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
+
+    const submissions = [
+      ...guides.map((g) => ({
+        id: g.id,
+        type: 'guide' as const,
+        title: g.title,
+        status: g.status,
+        createdAt: g.createdAt,
+      })),
+      ...media.map((m) => ({
+        id: m.id,
+        type: 'media' as const,
+        title: m.description || m.fileName || 'Untitled Media',
+        status: m.status,
+        createdAt: m.createdAt,
+      })),
+      ...events.map((e: any) => ({
+        id: e.id,
+        type: 'event' as const,
+        title: e.title,
+        status: e.status,
+        createdAt: e.createdAt,
+      })),
+      ...annotations.map((a: any) => ({
+        id: a.id,
+        type: 'annotation' as const,
+        title: a.content?.substring(0, 100) || 'Annotation',
+        status: a.status,
+        createdAt: a.createdAt,
+      })),
+    ];
+
+    // Sort all by createdAt descending
+    submissions.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return submissions;
+  }
+
+  /**
+   * Get approved submissions for public viewing
+   */
+  async getPublicUserSubmissions(userId: number) {
+    const allSubmissions = await this.getUserSubmissions(userId);
+    return allSubmissions.filter((s) => s.status === 'approved');
   }
 
   async getUserProfile(userId: number): Promise<User> {

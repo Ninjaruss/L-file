@@ -66,7 +66,11 @@ export const FloatingProgressIndicator: React.FC = () => {
   const progressPercentage = Math.round((userProgress / MAX_CHAPTER) * 100)
   const modalProgressPercentage = Math.round((tempProgress / MAX_CHAPTER) * 100)
 
-  // Solid red theme color for consistent branding
+  // Use white for the update button to distinguish from the red floating trigger
+  const updateButtonColor = '#ffffff'
+  const updateButtonTextColor = '#000000'
+  const successColor = palette.guide
+  // Keep red for the floating action button
   const solidRed = theme.colors.red[6]
 
   useEffect(() => {
@@ -478,14 +482,13 @@ export const FloatingProgressIndicator: React.FC = () => {
             </Button>
 
             <Button
-              variant={tempProgress !== userProgress ? 'gradient' : 'filled'}
-              gradient={{ from: palette.guide, to: palette.red }}
+              variant="filled"
               color={tempProgress === userProgress ? 'gray' : undefined}
               onClick={handleSave}
               disabled={isUpdating || tempProgress === userProgress}
               leftSection={
                 isUpdating ? (
-                  <Loader size="xs" color="white" />
+                  <Loader size="xs" color={updateButtonTextColor} />
                 ) : (
                   <Check size={14} />
                 )
@@ -495,7 +498,12 @@ export const FloatingProgressIndicator: React.FC = () => {
               radius="md"
               styles={{
                 root: {
-                  fontWeight: 600
+                  fontWeight: 600,
+                  backgroundColor: tempProgress !== userProgress ? updateButtonColor : undefined,
+                  color: tempProgress !== userProgress ? updateButtonTextColor : undefined,
+                  '&:hover': {
+                    backgroundColor: tempProgress !== userProgress ? '#f5f5f5' : undefined
+                  }
                 }
               }}
             >

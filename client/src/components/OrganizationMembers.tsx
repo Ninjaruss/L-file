@@ -140,8 +140,8 @@ export default function OrganizationMembers({
                 {/* Character thumbnail */}
                 <Box
                   style={{
-                    width: 48,
-                    height: 48,
+                    width: 80,
+                    height: 80,
                     borderRadius: theme.radius.md,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -152,8 +152,8 @@ export default function OrganizationMembers({
                     entityId={Number(charId)}
                     entityName={character.name}
                     allowCycling={false}
-                    maxWidth="48px"
-                    maxHeight="48px"
+                    maxWidth="80px"
+                    maxHeight="80px"
                   />
                 </Box>
 
@@ -176,11 +176,6 @@ export default function OrganizationMembers({
                         {character.name}
                       </Text>
                     </Link>
-                    {isCurrentMember && (
-                      <Badge size="xs" variant="outline" color="green">
-                        Active
-                      </Badge>
-                    )}
                   </Group>
 
                   {/* Role history */}

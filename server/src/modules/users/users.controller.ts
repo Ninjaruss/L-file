@@ -239,6 +239,20 @@ export class UsersController {
     };
   }
 
+  @Get(':id/submissions')
+  @ApiOperation({
+    summary: 'Get public user submissions',
+    description: 'Retrieve approved submissions for a specific user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of approved submissions',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getPublicUserSubmissions(@Param('id', ParseIntPipe) userId: number) {
+    return this.service.getPublicUserSubmissions(userId);
+  }
+
   // --- Password reset endpoints ---
   @Post('password-reset/request')
   @ApiOperation({
@@ -407,6 +421,24 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getCurrentUserProfile(@CurrentUser() user: User): Promise<User> {
     return this.service.getUserProfile(user.id);
+  }
+
+  @Get('my-submissions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get current user submissions',
+    description:
+      'Retrieve all submissions (guides, media, events, annotations) created by the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of user submissions with status',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMySubmissions(@CurrentUser() user: User) {
+    return this.service.getUserSubmissions(user.id);
   }
 
   @Patch('profile')

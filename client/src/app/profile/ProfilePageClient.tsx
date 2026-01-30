@@ -31,7 +31,10 @@ import {
   X,
   FileText,
   Quote,
-  Dices
+  Dices,
+  FileImage,
+  Calendar,
+  MessageSquare
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -123,6 +126,7 @@ export default function ProfilePageClient() {
   const [quotes, setQuotes] = useState<any[]>([])
   const [gambles, setGambles] = useState<any[]>([])
   const [userBadges, setUserBadges] = useState<any[]>([])
+  const [submissions, setSubmissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [customRoleSaved, setCustomRoleSaved] = useState(false)
@@ -250,11 +254,12 @@ export default function ProfilePageClient() {
       }
 
       // Then fetch other resources concurrently (with pagination limits for performance)
-      const [guidesResponse, quotesResponse, gamblesResponse, badgesResponse] = await Promise.allSettled([
+      const [guidesResponse, quotesResponse, gamblesResponse, badgesResponse, submissionsResponse] = await Promise.allSettled([
         api.get('/guides/my-guides'),
         api.get('/quotes?limit=100'),
         api.get('/gambles?limit=100'),
-        user?.id && typeof user.id === 'number' ? api.getUserBadges(user.id) : Promise.resolve([])
+        user?.id && typeof user.id === 'number' ? api.getUserBadges(user.id) : Promise.resolve([]),
+        api.getUserSubmissions()
       ])
 
       if (guidesResponse.status === 'fulfilled') {
@@ -289,6 +294,11 @@ export default function ProfilePageClient() {
       if (badgesResponse.status === 'fulfilled') {
         const badgesData = badgesResponse.value as any
         setUserBadges(Array.isArray(badgesData) ? badgesData : badgesData?.data || [])
+      }
+
+      if (submissionsResponse.status === 'fulfilled') {
+        const submissionsData = submissionsResponse.value as any
+        setSubmissions(Array.isArray(submissionsData) ? submissionsData : submissionsData?.data || [])
       }
     } catch (error) {
       console.error('Failed to load profile data:', error)
@@ -735,6 +745,70 @@ export default function ProfilePageClient() {
                     </>
                   )}
                 </Stack>
+              </Stack>
+            </Card>
+
+            {/* My Submissions Section */}
+            <Card shadow="sm" padding="md" radius="md">
+              <Stack gap="md">
+                <Text fw={600} size="lg">My Submissions</Text>
+
+                {submissions.length > 0 ? (
+                  <Stack gap="sm">
+                    {submissions.map((submission: any) => {
+                      const statusColor =
+                        submission.status === 'approved' ? 'green' :
+                        submission.status === 'pending' ? 'yellow' : 'red'
+
+                      const typeIcon =
+                        submission.type === 'guide' ? <FileText size={16} /> :
+                        submission.type === 'media' ? <FileImage size={16} /> :
+                        submission.type === 'event' ? <Calendar size={16} /> :
+                        <MessageSquare size={16} />
+
+                      const typeLinkPrefix =
+                        submission.type === 'guide' ? '/guides/' :
+                        submission.type === 'media' ? '/media' :
+                        submission.type === 'event' ? '/events/' :
+                        '/annotations'
+
+                      return (
+                        <Card key={`${submission.type}-${submission.id}`} padding="sm" radius="md" withBorder>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                              {typeIcon}
+                              <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                                <Text fw={500} size="sm" lineClamp={1}>
+                                  {submission.title}
+                                </Text>
+                                <Group gap="xs">
+                                  <Badge size="xs" variant="light" color={statusColor}>
+                                    {submission.status}
+                                  </Badge>
+                                  <Badge size="xs" variant="outline">
+                                    {submission.type}
+                                  </Badge>
+                                  <Text size="xs" c="dimmed">
+                                    {new Date(submission.createdAt).toLocaleDateString()}
+                                  </Text>
+                                </Group>
+                              </Stack>
+                            </Group>
+                            {submission.status === 'approved' && submission.type !== 'annotation' && (
+                              <Link href={`${typeLinkPrefix}${submission.id}`}>
+                                <Button size="xs" variant="subtle">View</Button>
+                              </Link>
+                            )}
+                          </Group>
+                        </Card>
+                      )
+                    })}
+                  </Stack>
+                ) : (
+                  <Alert icon={<FileText size={16} />} title="No submissions yet" variant="light">
+                    <Text>You haven&apos;t made any submissions yet. Start contributing to the community!</Text>
+                  </Alert>
+                )}
               </Stack>
             </Card>
 

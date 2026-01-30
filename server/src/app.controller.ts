@@ -11,13 +11,13 @@ import {
 } from './modules/page-views/page-views.service';
 import { PageType } from './entities/page-view.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import { Guide, GuideStatus } from './entities/guide.entity';
 import { Character } from './entities/character.entity';
 import { Event } from './entities/event.entity';
 import { Gamble } from './entities/gamble.entity';
 import { Arc } from './entities/arc.entity';
-import { Media } from './entities/media.entity';
+import { Media, MediaOwnerType, MediaStatus, MediaPurpose } from './entities/media.entity';
 import { User } from './entities/user.entity';
 import { UsersService } from './modules/users/users.service';
 
@@ -152,7 +152,14 @@ export class AppController {
       this.guideRepository.count({
         where: { status: GuideStatus.APPROVED },
       }),
-      this.mediaRepository.count(),
+      // Count only approved gallery media (exclude volume covers and entity display images)
+      this.mediaRepository.count({
+        where: {
+          status: MediaStatus.APPROVED,
+          ownerType: Not(MediaOwnerType.VOLUME),
+          purpose: MediaPurpose.GALLERY,
+        },
+      }),
       this.userRepository.count(),
     ]);
 

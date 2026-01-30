@@ -784,6 +784,14 @@ class ApiClient {
     }>('/users/profile/stats')
   }
 
+  async getUserSubmissions() {
+    return this.request('/users/my-submissions');
+  }
+
+  async getPublicUserSubmissions(userId: number) {
+    return this.request(`/users/${userId}/submissions`);
+  }
+
   async updateCustomRole(customRole: string | null) {
     return this.patch<{ message: string }>('/users/profile/custom-role', { customRole })
   }

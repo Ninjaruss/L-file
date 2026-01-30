@@ -190,7 +190,7 @@ function ImageWithRetry({
             left: fill ? 0 : undefined,
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
+            objectFit: 'cover',
             ...imgProps.style
           }}
         />
@@ -495,7 +495,7 @@ export default function MediaThumbnail({
               alt={media.description || mediaInfo.title || `${entityName} image`}
               fill
               style={{
-                objectFit: 'contain',
+                objectFit: 'cover',
                 objectPosition: 'center center',
                 margin: 0,
                 padding: 0,
@@ -525,7 +525,7 @@ export default function MediaThumbnail({
               alt={media.description || `${entityName} video thumbnail`}
               fill
               style={{
-                objectFit: 'contain',
+                objectFit: 'cover',
                 objectPosition: 'center center',
                 margin: 0,
                 padding: 0,
@@ -672,7 +672,7 @@ export default function MediaThumbnail({
             alt={media.description || `${entityName} image`}
             fill
             style={{
-              objectFit: 'contain',
+              objectFit: 'cover',
               objectPosition: 'center center',
               margin: 0,
               padding: 0,
@@ -711,7 +711,7 @@ export default function MediaThumbnail({
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
+            objectFit: 'cover',
             objectPosition: 'center'
           }}
           onError={() => {
