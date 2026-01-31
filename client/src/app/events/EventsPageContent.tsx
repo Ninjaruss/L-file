@@ -46,6 +46,13 @@ const eventTypeOptions = [
   { value: 'resolution', label: 'Resolution' }
 ]
 
+const eventStatusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: EventStatus.APPROVED, label: 'Approved' },
+  { value: EventStatus.PENDING, label: 'Pending' },
+  { value: EventStatus.REJECTED, label: 'Rejected' }
+]
+
 interface EventsPageContentProps {
   initialGroupedEvents: {
     arcs: Array<{ arc: Arc; events: Event[] }>
@@ -212,12 +219,14 @@ export default function EventsPageContent({
   }
 
   const updateUrl = useCallback(
-    (search: string, type: string, character: string) => {
+    (search: string, type: string, status: string, character: string) => {
       const params = new URLSearchParams(searchParams.toString())
       if (search) params.set('search', search)
       else params.delete('search')
       if (type) params.set('type', type)
       else params.delete('type')
+      if (status) params.set('status', status)
+      else params.delete('status')
       if (character) params.set('character', character)
       else params.delete('character')
       const qs = params.toString()
@@ -230,7 +239,8 @@ export default function EventsPageContent({
   const fetcher = useCallback(async (page = 1) => {
     // If there's a search term, return a flat list in noArc
     if (searchTerm) {
-      const params: Record<string, string | number> = { page: 1, limit: 100, title: searchTerm, status: EventStatus.APPROVED }
+      const params: Record<string, string | number> = { page: 1, limit: 100, title: searchTerm }
+      if (selectedStatus) params.status = selectedStatus
       if (selectedType) params.type = selectedType
       if (selectedCharacter) params.character = selectedCharacter
       const resAny = await api.getEvents(params)
@@ -238,15 +248,16 @@ export default function EventsPageContent({
   return { data: payload, total: resAny.total ?? (resAny.data ? resAny.data.length : 0), page: 1, perPage: 100, totalPages: 1 } as any
     }
 
-    const params: Record<string, string> = { status: EventStatus.APPROVED }
+    const params: Record<string, string> = {}
+    if (selectedStatus) params.status = selectedStatus
     if (selectedType) params.type = selectedType
     if (selectedCharacter) params.character = selectedCharacter
     const grouped = await api.getEventsGroupedByArc(params)
     const total = grouped.arcs.reduce((sum: number, g: any) => sum + (g.events?.length || 0), 0) + (grouped.noArc?.length || 0)
     return { data: grouped, total, page: 1, perPage: total || 1, totalPages: 1 } as any
-  }, [searchTerm, selectedType, selectedCharacter])
+  }, [searchTerm, selectedType, selectedStatus, selectedCharacter])
 
-  const { data: pageData, loading: pageLoading, error: pageError, refresh } = usePaged('events', 1, fetcher, { search: searchTerm, type: selectedType, character: selectedCharacter }, { ttlMs: 120_000, persist: true, maxEntries: 100 })
+  const { data: pageData, loading: pageLoading, error: pageError, refresh } = usePaged('events', 1, fetcher, { search: searchTerm, type: selectedType, status: selectedStatus, character: selectedCharacter }, { ttlMs: 120_000, persist: true, maxEntries: 100 })
 
   useEffect(() => {
     if (pageData) {
@@ -332,7 +343,7 @@ export default function EventsPageContent({
       if (searchDebounceRef.current) {
         clearTimeout(searchDebounceRef.current)
       }
-      updateUrl('', selectedType, selectedCharacter)
+      updateUrl('', selectedType, selectedStatus, selectedCharacter)
       refresh(true)
       return
     }
@@ -342,22 +353,29 @@ export default function EventsPageContent({
     }
 
     searchDebounceRef.current = window.setTimeout(() => {
-  updateUrl(value, selectedType, selectedCharacter)
+  updateUrl(value, selectedType, selectedStatus, selectedCharacter)
   refresh(true)
     }, 300)
   }
 
   const handleClearSearch = () => {
     setSearchTerm('')
-  updateUrl('', selectedType, selectedCharacter)
+  updateUrl('', selectedType, selectedStatus, selectedCharacter)
   refresh(true)
   }
 
   const handleTypeChange = (value: string | null) => {
     const newType = value || ''
     setSelectedType(newType)
-  updateUrl(searchTerm, newType, selectedCharacter)
+  updateUrl(searchTerm, newType, selectedStatus, selectedCharacter)
   refresh(true)
+  }
+
+  const handleStatusChange = (value: string | null) => {
+    const newStatus = value || ''
+    setSelectedStatus(newStatus)
+    updateUrl(searchTerm, selectedType, newStatus, selectedCharacter)
+    refresh(true)
   }
 
   // Hover modal handlers
@@ -599,6 +617,15 @@ export default function EventsPageContent({
             size="md"
             style={{ minWidth: rem(150) }}
           />
+          <Select
+            placeholder="All Statuses"
+            value={selectedStatus}
+            onChange={handleStatusChange}
+            data={eventStatusOptions}
+            clearable
+            size="md"
+            style={{ minWidth: rem(150) }}
+          />
         </Group>
 
         {/* Character Filter Badge */}
@@ -616,7 +643,7 @@ export default function EventsPageContent({
                   variant="transparent"
                   onClick={() => {
                     setSelectedCharacter('')
-                    updateUrl(searchTerm, selectedType, '')
+                    updateUrl(searchTerm, selectedType, selectedStatus, '')
                     refresh(true)
                   }}
                 >
@@ -645,15 +672,16 @@ export default function EventsPageContent({
               <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 Try adjusting your search terms or filters
               </Text>
-              {(hasSearchQuery || selectedType || selectedCharacter) && (
+              {(hasSearchQuery || selectedType || selectedStatus || selectedCharacter) && (
                 <Button
                   variant="outline"
                   style={{ color: getEntityThemeColor(theme, 'event') }}
                   onClick={() => {
                     setSearchTerm('')
                     setSelectedType('')
+                    setSelectedStatus('')
                     setSelectedCharacter('')
-                    updateUrl('', '', '')
+                    updateUrl('', '', '', '')
                     refresh(true)
                   }}
                 >

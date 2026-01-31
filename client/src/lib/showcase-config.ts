@@ -74,37 +74,21 @@ export const SHOWCASE_CONFIGURATIONS: ShowcaseConfiguration[] = [
     isActive: true
   },
   {
-    id: 'volume-37-single',
-    name: 'Volume 37 (Single)',
+    id: 'volume-2-single',
+    name: 'Volume 2 (Single)',
     volumes: [
       {
-        id: 37,
-        backgroundImage: '/assets/showcase/Usogui_Volume_37_background.png',
-        popoutImage: '/assets/showcase/Usogui_Volume_37_popout.png',
-        title: 'Usogui Volume 37',
-        description: 'The climactic battles intensify'
+        id: 2,
+        backgroundImage: '/assets/showcase/Usogui_Volume_2_background.png',
+        popoutImage: '/assets/showcase/Usogui_Volume_2_popout.png',
+        title: 'Usogui Volume 2',
+        description: 'The early adventures begin'
       }
     ],
     layout: 'single',
     animations: ANIMATION_PRESETS.dramatic,
-    isActive: false
+    isActive: true
   },
-  {
-    id: 'volume-38-single',
-    name: 'Volume 38 (Single)',
-    volumes: [
-      {
-        id: 38,
-        backgroundImage: '/assets/showcase/Usogui_Volume_38_background.png',
-        popoutImage: '/assets/showcase/Usogui_Volume_38_popout.png',
-        title: 'Usogui Volume 38',
-        description: 'The final confrontation'
-      }
-    ],
-    layout: 'single',
-    animations: ANIMATION_PRESETS.dramatic,
-    isActive: false
-  }
 ]
 
 // Utility functions for configuration management

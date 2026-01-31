@@ -225,6 +225,11 @@ export const Dashboard = () => {
                 filter={{ status: 'pending' }}
               />
               <QuickActionItem
+                text="Review pending annotations"
+                to="/annotations"
+                filter={{ status: 'pending' }}
+              />
+              <QuickActionItem
                 text="Add new character"
                 to="/characters/create"
                 icon={Plus}

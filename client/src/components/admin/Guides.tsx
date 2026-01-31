@@ -2784,11 +2784,12 @@ export const GuideEdit = () => {
                     <Typography variant="h6" sx={{ color: '#1976d2', mb: 2, fontWeight: 'bold' }}>
                       Author Settings
                     </Typography>
-                    <ReferenceInput 
-                      source="authorId" 
-                      reference="users" 
+                    <ReferenceInput
+                      source="authorId"
+                      reference="users"
                       label="Author"
                       fullWidth
+                      perPage={200}
                     >
                       <AutocompleteInput 
                         optionText="username" 
@@ -2820,10 +2821,11 @@ export const GuideEdit = () => {
                     </Typography>
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={4}>
-                        <ReferenceArrayInput 
-                          source="characterIds" 
-                          reference="characters" 
+                        <ReferenceArrayInput
+                          source="characterIds"
+                          reference="characters"
                           label="Characters"
+                          perPage={200}
                         >
                           <AutocompleteArrayInput 
                             optionText="name"
@@ -2836,10 +2838,11 @@ export const GuideEdit = () => {
                         </ReferenceArrayInput>
                       </Grid>
                       <Grid item xs={12} md={4}>
-                        <ReferenceInput 
-                          source="arcId" 
-                          reference="arcs" 
+                        <ReferenceInput
+                          source="arcId"
+                          reference="arcs"
                           label="Arc"
+                          perPage={200}
                         >
                           <AutocompleteInput 
                             optionText="name"
@@ -2852,10 +2855,11 @@ export const GuideEdit = () => {
                         </ReferenceInput>
                       </Grid>
                       <Grid item xs={12} md={4}>
-                        <ReferenceArrayInput 
-                          source="gambleIds" 
-                          reference="gambles" 
+                        <ReferenceArrayInput
+                          source="gambleIds"
+                          reference="gambles"
                           label="Gambles"
+                          perPage={200}
                         >
                           <AutocompleteArrayInput 
                             optionText="name"
@@ -2982,7 +2986,7 @@ export const GuideCreate = () => (
                   <Typography variant="h6" sx={{ color: '#1976d2', mb: 2, fontWeight: 'bold' }}>
                     Author & Status
                   </Typography>
-                  <ReferenceInput source="authorId" reference="users" label="Author">
+                  <ReferenceInput source="authorId" reference="users" label="Author" perPage={200}>
                     <AutocompleteInput optionText="username" />
                   </ReferenceInput>
                   <SelectInput source="status" choices={[
@@ -3004,13 +3008,13 @@ export const GuideCreate = () => (
                   <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
                     Related Content
                   </Typography>
-                  <ReferenceArrayInput source="characterIds" reference="characters" label="Characters">
+                  <ReferenceArrayInput source="characterIds" reference="characters" label="Characters" perPage={200}>
                     <AutocompleteArrayInput optionText="name" />
                   </ReferenceArrayInput>
-                  <ReferenceInput source="arcId" reference="arcs" label="Arc">
+                  <ReferenceInput source="arcId" reference="arcs" label="Arc" perPage={200}>
                     <AutocompleteInput optionText="name" />
                   </ReferenceInput>
-                  <ReferenceArrayInput source="gambleIds" reference="gambles" label="Gambles">
+                  <ReferenceArrayInput source="gambleIds" reference="gambles" label="Gambles" perPage={200}>
                     <AutocompleteArrayInput optionText="name" />
                   </ReferenceArrayInput>
                 </Box>

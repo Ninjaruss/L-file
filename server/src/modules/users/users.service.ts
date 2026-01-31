@@ -467,6 +467,15 @@ export class UsersService {
   ): Promise<User> {
     const user = await this.findOne(userId);
 
+    // Validate and update username if provided
+    if (updateProfileDto.username !== undefined) {
+      const existingUser = await this.findByUsername(updateProfileDto.username);
+      if (existingUser && existingUser.id !== userId) {
+        throw new ConflictException('Username already taken');
+      }
+      user.username = updateProfileDto.username;
+    }
+
     // Validate favorite quote exists if provided
     if (updateProfileDto.favoriteQuoteId !== undefined) {
       if (updateProfileDto.favoriteQuoteId === null) {

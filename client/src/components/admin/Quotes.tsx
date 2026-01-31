@@ -480,7 +480,7 @@ export const QuoteEdit = () => (
                     <Typography variant="h6" sx={{ color: '#4caf50', mb: 2, fontWeight: 'bold' }}>
                       Character
                     </Typography>
-                    <ReferenceInput source="characterId" reference="characters" label="Spoken By">
+                    <ReferenceInput source="characterId" reference="characters" label="Spoken By" perPage={200}>
                       <AutocompleteInput
                         optionText="name"
                         isRequired
@@ -655,7 +655,7 @@ export const QuoteCreate = () => (
                     <Typography variant="h6" sx={{ color: '#4caf50', mb: 2, fontWeight: 'bold' }}>
                       Character
                     </Typography>
-                    <ReferenceInput source="characterId" reference="characters" label="Spoken By">
+                    <ReferenceInput source="characterId" reference="characters" label="Spoken By" perPage={200}>
                       <AutocompleteInput optionText="name" isRequired />
                     </ReferenceInput>
                   </Box>

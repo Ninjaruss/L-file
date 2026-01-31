@@ -143,10 +143,12 @@ const AnnotationAuthorField = () => {
 const useEntityName = (ownerType: string, ownerId: number) => {
   const [entityName, setEntityName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isError, setIsError] = useState(false)
 
   useEffect(() => {
     const fetchEntityName = async () => {
       try {
+        setIsError(false)
         let result
         switch(ownerType) {
           case AnnotationOwnerType.CHARACTER:
@@ -167,7 +169,8 @@ const useEntityName = (ownerType: string, ownerId: number) => {
         setEntityName(result)
       } catch (error) {
         console.error('Failed to fetch entity name:', error)
-        setEntityName('Unknown')
+        setIsError(true)
+        setEntityName(null)
       } finally {
         setLoading(false)
       }
@@ -175,7 +178,7 @@ const useEntityName = (ownerType: string, ownerId: number) => {
     fetchEntityName()
   }, [ownerType, ownerId])
 
-  return { entityName, loading }
+  return { entityName, loading, isError }
 }
 
 // Component to display entity name with loading state
@@ -183,7 +186,7 @@ const EntityNameDisplay = () => {
   const record = useRecordContext()
   if (!record) return null
 
-  const { entityName, loading } = useEntityName(record.ownerType, record.ownerId)
+  const { entityName, loading, isError } = useEntityName(record.ownerType, record.ownerId)
 
   if (loading) {
     return (
@@ -193,6 +196,14 @@ const EntityNameDisplay = () => {
           Loading...
         </Typography>
       </Box>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem', color: '#f44336' }}>
+        Error loading entity
+      </Typography>
     )
   }
 
@@ -250,6 +261,163 @@ const EntityInfoField = () => {
           <EntityNameDisplay />
         </Box>
       </Box>
+    </Box>
+  )
+}
+
+const AnnotationApprovalToolbar = () => {
+  const { data, selectedIds, onSelect } = useListContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const [approving, setApproving] = useState(false)
+
+  const pendingItems = data ? data.filter((item: any) => item.status === AnnotationStatus.PENDING) : []
+  const pendingIds = pendingItems.map((item: any) => item.id)
+
+  const handleSelectAllPending = () => {
+    if (pendingIds.length > 0) {
+      onSelect(pendingIds)
+      notify(`Selected ${pendingIds.length} pending annotation(s)`, { type: 'info' })
+    }
+  }
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return
+    setApproving(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.approveAnnotation(Number(id))
+        successCount++
+      } catch {
+        errorCount++
+      }
+    }
+
+    setApproving(false)
+    refresh()
+
+    if (errorCount === 0) {
+      notify(`Successfully approved ${successCount} annotation(s)`, { type: 'success' })
+    } else {
+      notify(`Approved ${successCount} annotation(s), ${errorCount} failed`, { type: 'warning' })
+    }
+  }
+
+  const handleBulkReject = async () => {
+    if (selectedIds.length === 0) return
+    const reason = prompt('Rejection reason for all selected:')
+    if (!reason) return
+
+    let successCount = 0
+    let errorCount = 0
+
+    for (const id of selectedIds) {
+      try {
+        await api.rejectAnnotation(Number(id), reason)
+        successCount++
+      } catch {
+        errorCount++
+      }
+    }
+
+    refresh()
+
+    if (errorCount === 0) {
+      notify(`Successfully rejected ${successCount} annotation(s)`, { type: 'success' })
+    } else {
+      notify(`Rejected ${successCount} annotation(s), ${errorCount} failed`, { type: 'warning' })
+    }
+  }
+
+  return (
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      p: 2,
+      backgroundColor: 'rgba(10, 10, 10, 0.95)',
+      borderRadius: '8px 8px 0 0',
+      border: '1px solid rgba(139, 92, 246, 0.3)',
+      borderBottom: 'none',
+      mb: 0
+    }}>
+      <Chip
+        label={`${pendingIds.length} Pending`}
+        color="warning"
+        size="small"
+        sx={{ fontWeight: 'bold' }}
+      />
+
+      <MuiButton
+        variant="outlined"
+        size="small"
+        onClick={handleSelectAllPending}
+        disabled={pendingIds.length === 0}
+        startIcon={<Check size={16} />}
+        sx={{
+          borderColor: '#f57c00',
+          color: '#f57c00',
+          '&:hover': {
+            borderColor: '#ef6c00',
+            backgroundColor: 'rgba(245, 124, 0, 0.1)'
+          },
+          '&:disabled': {
+            borderColor: 'rgba(245, 124, 0, 0.3)',
+            color: 'rgba(245, 124, 0, 0.5)'
+          }
+        }}
+      >
+        Select All Pending
+      </MuiButton>
+
+      <Box sx={{ flex: 1 }} />
+
+      {selectedIds.length > 0 && (
+        <Typography variant="body2" sx={{ color: 'white', mr: 1 }}>
+          {selectedIds.length} selected
+        </Typography>
+      )}
+
+      <MuiButton
+        variant="contained"
+        size="small"
+        onClick={handleBulkApprove}
+        disabled={approving || selectedIds.length === 0}
+        startIcon={<Check size={16} />}
+        sx={{
+          backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
+          color: 'white',
+          '&:hover': { backgroundColor: '#388e3c' },
+          '&:disabled': {
+            backgroundColor: 'rgba(76, 175, 80, 0.3)',
+            color: 'rgba(255, 255, 255, 0.5)'
+          }
+        }}
+      >
+        {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+      </MuiButton>
+
+      <MuiButton
+        variant="contained"
+        size="small"
+        onClick={handleBulkReject}
+        disabled={selectedIds.length === 0}
+        startIcon={<X size={16} />}
+        sx={{
+          backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
+          color: 'white',
+          '&:hover': { backgroundColor: '#d32f2f' },
+          '&:disabled': {
+            backgroundColor: 'rgba(244, 67, 54, 0.3)',
+            color: 'rgba(255, 255, 255, 0.5)'
+          }
+        }}
+      >
+        Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+      </MuiButton>
     </Box>
   )
 }
@@ -551,6 +719,7 @@ export const AnnotationList = () => (
       }
     }}
   >
+    <AnnotationApprovalToolbar />
     <AnnotationFilterToolbar />
     <Datagrid
       rowClick="show"
@@ -624,75 +793,315 @@ export const AnnotationList = () => (
 // Edit Component
 export const AnnotationEdit = () => (
   <Edit>
-    <SimpleForm>
-      <TextInput source="id" disabled />
+    <Box sx={{
+      backgroundColor: '#0a0a0a',
+      minHeight: '100vh',
+      p: 3,
+      '& .RaEdit-main': {
+        backgroundColor: 'transparent'
+      }
+    }}>
+      <Card
+        elevation={0}
+        sx={{
+          maxWidth: '1000px',
+          mx: 'auto',
+          backgroundColor: '#0a0a0a',
+          border: '2px solid #8b5cf6',
+          borderRadius: 2,
+          boxShadow: '0 0 30px rgba(139, 92, 246, 0.2)'
+        }}
+      >
+        {/* Header */}
+        <Box sx={{
+          background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+          p: 3,
+          color: 'white'
+        }}>
+          <Typography variant="h4" sx={{
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}>
+            <MessageSquare size={32} />
+            Edit Annotation
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.9, mt: 1 }}>
+            Update annotation content and settings
+          </Typography>
+        </Box>
 
-      <SelectInput
-        source="ownerType"
-        choices={[
-          { id: AnnotationOwnerType.CHARACTER, name: 'Character' },
-          { id: AnnotationOwnerType.GAMBLE, name: 'Gamble' },
-          { id: AnnotationOwnerType.ARC, name: 'Arc' },
-        ]}
-        disabled
-      />
+        <CardContent sx={{ p: 4 }}>
+          <SimpleForm sx={{
+            '& .MuiTextField-root': {
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#0f0f0f',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                '&:hover': {
+                  borderColor: 'rgba(139, 92, 246, 0.5)'
+                },
+                '&.Mui-focused': {
+                  borderColor: '#8b5cf6'
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  border: 'none'
+                }
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&.Mui-focused': {
+                  color: '#8b5cf6'
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#ffffff'
+              }
+            },
+            '& .MuiFormControl-root': {
+              mb: 3
+            }
+          }}>
+            <Grid container spacing={3}>
+              {/* Entity Association */}
+              <Grid item xs={12}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  mb: 3
+                }}>
+                  <Typography variant="h6" sx={{ color: '#8b5cf6', mb: 2, fontWeight: 'bold' }}>
+                    Entity Association
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <SelectInput
+                      source="ownerType"
+                      choices={[
+                        { id: AnnotationOwnerType.CHARACTER, name: 'Character' },
+                        { id: AnnotationOwnerType.GAMBLE, name: 'Gamble' },
+                        { id: AnnotationOwnerType.ARC, name: 'Arc' },
+                      ]}
+                      disabled
+                      label="Entity Type"
+                    />
+                    <NumberInput source="ownerId" disabled label="Entity ID" />
+                  </Box>
+                </Box>
+              </Grid>
 
-      <NumberInput source="ownerId" disabled />
+              {/* Content */}
+              <Grid item xs={12}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  mb: 3
+                }}>
+                  <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
+                    Content
+                  </Typography>
+                  <TextInput source="title" fullWidth required label="Annotation Title" helperText="Enter a descriptive title" />
+                  <TextInput source="content" multiline fullWidth required rows={6} label="Content" helperText="Supports Markdown formatting" />
+                  <TextInput source="sourceUrl" fullWidth label="Source URL" helperText="Optional reference URL" />
+                  <NumberInput source="chapterReference" label="Chapter Reference" helperText="Related chapter number" />
+                </Box>
+              </Grid>
 
-      <TextInput source="title" fullWidth required />
+              {/* Spoiler Settings */}
+              <Grid item xs={12} md={6}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(244, 67, 54, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(244, 67, 54, 0.2)'
+                }}>
+                  <Typography variant="h6" sx={{ color: '#f44336', mb: 2, fontWeight: 'bold' }}>
+                    Spoiler Settings
+                  </Typography>
+                  <BooleanInput source="isSpoiler" label="Contains Spoilers" />
+                  <NumberInput source="spoilerChapter" label="Spoiler Chapter" helperText="Chapter up to which this spoils" />
+                </Box>
+              </Grid>
 
-      <TextInput source="content" multiline fullWidth required rows={6} />
-
-      <TextInput source="sourceUrl" fullWidth />
-
-      <NumberInput source="chapterReference" />
-
-      <BooleanInput source="isSpoiler" />
-
-      <NumberInput source="spoilerChapter" />
-
-      <SelectInput
-        source="status"
-        choices={[
-          { id: AnnotationStatus.PENDING, name: 'Pending' },
-          { id: AnnotationStatus.APPROVED, name: 'Approved' },
-          { id: AnnotationStatus.REJECTED, name: 'Rejected' },
-        ]}
-      />
-
-      <TextInput source="rejectionReason" multiline fullWidth rows={2} />
-    </SimpleForm>
+              {/* Status */}
+              <Grid item xs={12} md={6}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(245, 124, 0, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(245, 124, 0, 0.2)'
+                }}>
+                  <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
+                    Publication Status
+                  </Typography>
+                  <SelectInput
+                    source="status"
+                    choices={[
+                      { id: AnnotationStatus.PENDING, name: 'Pending' },
+                      { id: AnnotationStatus.APPROVED, name: 'Approved' },
+                      { id: AnnotationStatus.REJECTED, name: 'Rejected' },
+                    ]}
+                    fullWidth
+                  />
+                  <TextInput source="rejectionReason" multiline fullWidth rows={2} label="Rejection Reason" helperText="Required when rejecting" />
+                </Box>
+              </Grid>
+            </Grid>
+          </SimpleForm>
+        </CardContent>
+      </Card>
+    </Box>
   </Edit>
 )
 
 // Create Component
 export const AnnotationCreate = () => (
   <Create>
-    <SimpleForm>
-      <SelectInput
-        source="ownerType"
-        choices={[
-          { id: AnnotationOwnerType.CHARACTER, name: 'Character' },
-          { id: AnnotationOwnerType.GAMBLE, name: 'Gamble' },
-          { id: AnnotationOwnerType.ARC, name: 'Arc' },
-        ]}
-        required
-      />
+    <Box sx={{
+      backgroundColor: '#0a0a0a',
+      minHeight: '100vh',
+      p: 3,
+      '& .RaCreate-main': {
+        backgroundColor: 'transparent'
+      }
+    }}>
+      <Card
+        elevation={0}
+        sx={{
+          maxWidth: '1000px',
+          mx: 'auto',
+          backgroundColor: '#0a0a0a',
+          border: '2px solid #8b5cf6',
+          borderRadius: 2,
+          boxShadow: '0 0 30px rgba(139, 92, 246, 0.2)'
+        }}
+      >
+        {/* Header */}
+        <Box sx={{
+          background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+          p: 3,
+          color: 'white'
+        }}>
+          <Typography variant="h4" sx={{
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}>
+            <MessageSquare size={32} />
+            Create Annotation
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.9, mt: 1 }}>
+            Add a new annotation to a character, gamble, or arc
+          </Typography>
+        </Box>
 
-      <NumberInput source="ownerId" required />
+        <CardContent sx={{ p: 4 }}>
+          <SimpleForm sx={{
+            '& .MuiTextField-root': {
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#0f0f0f',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                '&:hover': {
+                  borderColor: 'rgba(139, 92, 246, 0.5)'
+                },
+                '&.Mui-focused': {
+                  borderColor: '#8b5cf6'
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  border: 'none'
+                }
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&.Mui-focused': {
+                  color: '#8b5cf6'
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#ffffff'
+              }
+            },
+            '& .MuiFormControl-root': {
+              mb: 3
+            }
+          }}>
+            <Grid container spacing={3}>
+              {/* Entity Association */}
+              <Grid item xs={12}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  mb: 3
+                }}>
+                  <Typography variant="h6" sx={{ color: '#8b5cf6', mb: 2, fontWeight: 'bold' }}>
+                    Entity Association
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <SelectInput
+                      source="ownerType"
+                      choices={[
+                        { id: AnnotationOwnerType.CHARACTER, name: 'Character' },
+                        { id: AnnotationOwnerType.GAMBLE, name: 'Gamble' },
+                        { id: AnnotationOwnerType.ARC, name: 'Arc' },
+                      ]}
+                      required
+                      label="Entity Type"
+                      helperText="What type of entity is this annotation for?"
+                    />
+                    <NumberInput source="ownerId" required label="Entity ID" helperText="ID of the entity" />
+                  </Box>
+                </Box>
+              </Grid>
 
-      <TextInput source="title" fullWidth required />
+              {/* Content */}
+              <Grid item xs={12}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  mb: 3
+                }}>
+                  <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
+                    Content
+                  </Typography>
+                  <TextInput source="title" fullWidth required label="Annotation Title" helperText="Enter a descriptive title" />
+                  <TextInput source="content" multiline fullWidth required rows={6} label="Content" helperText="Supports Markdown formatting" />
+                  <TextInput source="sourceUrl" fullWidth label="Source URL" helperText="Optional reference URL" />
+                  <NumberInput source="chapterReference" label="Chapter Reference" helperText="Related chapter number" />
+                </Box>
+              </Grid>
 
-      <TextInput source="content" multiline fullWidth required rows={6} />
-
-      <TextInput source="sourceUrl" fullWidth />
-
-      <NumberInput source="chapterReference" />
-
-      <BooleanInput source="isSpoiler" />
-
-      <NumberInput source="spoilerChapter" />
-    </SimpleForm>
+              {/* Spoiler Settings */}
+              <Grid item xs={12}>
+                <Box sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(244, 67, 54, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(244, 67, 54, 0.2)'
+                }}>
+                  <Typography variant="h6" sx={{ color: '#f44336', mb: 2, fontWeight: 'bold' }}>
+                    Spoiler Settings
+                  </Typography>
+                  <BooleanInput source="isSpoiler" label="Contains Spoilers" />
+                  <NumberInput source="spoilerChapter" label="Spoiler Chapter" helperText="Chapter up to which this spoils" />
+                </Box>
+              </Grid>
+            </Grid>
+          </SimpleForm>
+        </CardContent>
+      </Card>
+    </Box>
   </Create>
 )
 
@@ -710,7 +1119,7 @@ const AnnotationShowContent = () => {
     )
   }
 
-  const { entityName, loading: entityLoading } = useEntityName(record.ownerType, record.ownerId)
+  const { entityName, loading: entityLoading, isError: entityError } = useEntityName(record.ownerType, record.ownerId)
 
   const handleApprove = async () => {
     try {
@@ -929,6 +1338,11 @@ const AnnotationShowContent = () => {
               {!entityLoading && entityName && (
                 <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
                   {entityName}
+                </Typography>
+              )}
+              {!entityLoading && entityError && (
+                <Typography variant="body2" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                  Error loading entity
                 </Typography>
               )}
               {entityLoading && (

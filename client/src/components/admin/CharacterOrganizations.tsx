@@ -82,14 +82,14 @@ const MembershipField = () => {
 
 // Filters for the list
 const membershipFilters = [
-  <ReferenceInput key="character" source="characterId" reference="characters" label="Character" alwaysOn>
+  <ReferenceInput key="character" source="characterId" reference="characters" label="Character" alwaysOn perPage={200}>
     <AutocompleteInput
       optionText="name"
       filterToQuery={(searchText: string) => ({ name: searchText })}
       sx={{ minWidth: 200 }}
     />
   </ReferenceInput>,
-  <ReferenceInput key="organization" source="organizationId" reference="organizations" label="Organization">
+  <ReferenceInput key="organization" source="organizationId" reference="organizations" label="Organization" perPage={200}>
     <AutocompleteInput
       optionText="name"
       filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -215,7 +215,7 @@ export const CharacterOrganizationCreate = () => (
           Character & Organization
         </Typography>
 
-        <ReferenceInput source="characterId" reference="characters" label="Character">
+        <ReferenceInput source="characterId" reference="characters" label="Character" perPage={200}>
           <AutocompleteInput
             optionText="name"
             filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -224,7 +224,7 @@ export const CharacterOrganizationCreate = () => (
           />
         </ReferenceInput>
 
-        <ReferenceInput source="organizationId" reference="organizations" label="Organization">
+        <ReferenceInput source="organizationId" reference="organizations" label="Organization" perPage={200}>
           <AutocompleteInput
             optionText="name"
             filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -296,7 +296,7 @@ export const CharacterOrganizationEdit = () => (
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-          <ReferenceInput source="characterId" reference="characters" label="Character">
+          <ReferenceInput source="characterId" reference="characters" label="Character" perPage={200}>
             <AutocompleteInput
               optionText="name"
               filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -304,7 +304,7 @@ export const CharacterOrganizationEdit = () => (
             />
           </ReferenceInput>
           <ArrowRight size={20} />
-          <ReferenceInput source="organizationId" reference="organizations" label="Organization">
+          <ReferenceInput source="organizationId" reference="organizations" label="Organization" perPage={200}>
             <AutocompleteInput
               optionText="name"
               filterToQuery={(searchText: string) => ({ name: searchText })}

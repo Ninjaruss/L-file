@@ -14,6 +14,7 @@
 - Adjusted media form to have entity display as an option
 - Event filtering by character relationship instead of by text title
 - Media linking info added for contributions
+- Added volume 2 popout
 
 ## 2026-01-29
 ### Annotation System Refactor

@@ -2841,7 +2841,7 @@ const DynamicEntitySelector = () => {
 
   if (ownerType === 'character') {
     return (
-      <ReferenceInput source="ownerId" reference="characters" label="Character">
+      <ReferenceInput source="ownerId" reference="characters" label="Character" perPage={200}>
         <AutocompleteInput 
           optionText="name"
           fullWidth
@@ -2858,7 +2858,7 @@ const DynamicEntitySelector = () => {
 
   if (ownerType === 'arc') {
     return (
-      <ReferenceInput source="ownerId" reference="arcs" label="Arc">
+      <ReferenceInput source="ownerId" reference="arcs" label="Arc" perPage={200}>
         <AutocompleteInput 
           optionText="name"
           fullWidth
@@ -2875,7 +2875,7 @@ const DynamicEntitySelector = () => {
 
   if (ownerType === 'event') {
     return (
-      <ReferenceInput source="ownerId" reference="events" label="Event">
+      <ReferenceInput source="ownerId" reference="events" label="Event" perPage={200}>
         <AutocompleteInput 
           optionText="title"
           fullWidth
@@ -2892,7 +2892,7 @@ const DynamicEntitySelector = () => {
 
   if (ownerType === 'gamble') {
     return (
-      <ReferenceInput source="ownerId" reference="gambles" label="Gamble">
+      <ReferenceInput source="ownerId" reference="gambles" label="Gamble" perPage={200}>
         <AutocompleteInput 
           optionText="name"
           fullWidth
@@ -2909,7 +2909,7 @@ const DynamicEntitySelector = () => {
 
   if (ownerType === 'organization') {
     return (
-      <ReferenceInput source="ownerId" reference="organizations" label="Organization">
+      <ReferenceInput source="ownerId" reference="organizations" label="Organization" perPage={200}>
         <AutocompleteInput 
           optionText="name"
           fullWidth
@@ -2926,7 +2926,7 @@ const DynamicEntitySelector = () => {
 
   if (ownerType === 'user') {
     return (
-      <ReferenceInput source="ownerId" reference="users" label="User">
+      <ReferenceInput source="ownerId" reference="users" label="User" perPage={200}>
         <AutocompleteInput 
           optionText="username"
           fullWidth

@@ -531,6 +531,8 @@ export class MediaService {
         'media.ownerId',
         'media.chapterNumber',
         'media.purpose',
+        'media.isUploaded',
+        'media.fileName',
         'submittedBy.id',
         'submittedBy.username',
       ]);

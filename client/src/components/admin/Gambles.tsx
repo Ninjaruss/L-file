@@ -477,7 +477,7 @@ const GambleEditForm = () => {
       <FormTab label="Participants">
         <Box sx={{ maxWidth: 600, p: 3, backgroundColor: '#0a0a0a' }}>
           <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', mb: 2, fontWeight: 'bold' }}>Gamble Participants</Typography>
-          <ReferenceArrayInput source="participantIds" reference="characters">
+          <ReferenceArrayInput source="participantIds" reference="characters" perPage={200}>
             <AutocompleteArrayInput 
               optionText="name" 
               helperText="Characters who participated in this gamble"
@@ -669,7 +669,7 @@ export const GambleCreate = () => {
           <FormTab label="Participants">
             <Box sx={{ maxWidth: 600, p: 3, backgroundColor: '#0a0a0a' }}>
               <Typography variant="h6" gutterBottom sx={{ color: '#16a34a', mb: 2, fontWeight: 'bold' }}>Gamble Participants</Typography>
-              <ReferenceArrayInput source="participantIds" reference="characters">
+              <ReferenceArrayInput source="participantIds" reference="characters" perPage={200}>
                 <AutocompleteArrayInput 
                   optionText="name" 
                   helperText="Characters who participated in this gamble"

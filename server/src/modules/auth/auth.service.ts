@@ -29,7 +29,7 @@ export class AuthService {
 
   // --- Discord Authentication ---
   async validateDiscordUser(profile: any): Promise<User> {
-    const { id: discordId, username: discordUsername, avatar, email } = profile;
+    const { id: discordId, username: discordUsername, avatar, email, global_name: displayName } = profile;
 
     // Check if user already exists
     let user = await this.usersService.findByDiscordId(discordId);
@@ -44,11 +44,14 @@ export class AuthService {
       const adminDiscordId = this.configService.get<string>('ADMIN_DISCORD_ID');
       const isAdmin = adminDiscordId && discordId === adminDiscordId;
 
+      // Use Discord display name if available, fall back to username
+      const siteUsername = (displayName || discordUsername).replace('#', '_');
+
       user = await this.usersService.createDiscordUser({
         discordId,
         discordUsername,
         discordAvatar: avatarUrl,
-        username: discordUsername.replace('#', '_'), // Make username safe
+        username: siteUsername,
         email: email || null,
         role: isAdmin ? UserRole.ADMIN : UserRole.USER,
       });

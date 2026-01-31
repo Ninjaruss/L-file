@@ -1278,6 +1278,14 @@ const ContentInputWithPreview = () => {
   )
 }
 
+const validateEventForm = (values: any) => {
+  const errors: any = {}
+  if (values.spoilerChapter && values.chapterNumber && values.spoilerChapter < values.chapterNumber) {
+    errors.spoilerChapter = 'Spoiler chapter must be greater than or equal to the event chapter'
+  }
+  return errors
+}
+
 export const EventEdit = () => {
   const { permissions } = usePermissions()
 
@@ -1324,7 +1332,7 @@ export const EventEdit = () => {
           </Box>
 
           <CardContent sx={{ p: 4 }}>
-            <SimpleForm sx={{
+            <SimpleForm validate={validateEventForm} sx={{
               '& .MuiTextField-root': {
                 mb: 3,
                 '& .MuiOutlinedInput-root': {
@@ -1441,7 +1449,7 @@ export const EventEdit = () => {
                     <Typography variant="h6" sx={{ color: '#10b981', mb: 2, fontWeight: 'bold' }}>
                       Story Context
                     </Typography>
-                    <ReferenceInput source="arcId" reference="arcs" label="Arc">
+                    <ReferenceInput source="arcId" reference="arcs" label="Arc" perPage={200}>
                       <AutocompleteInput
                         optionText="name"
                         sx={{
@@ -1451,7 +1459,7 @@ export const EventEdit = () => {
                         }}
                       />
                     </ReferenceInput>
-                    <ReferenceInput source="gambleId" reference="gambles" label="Associated Gamble">
+                    <ReferenceInput source="gambleId" reference="gambles" label="Associated Gamble" perPage={200}>
                       <AutocompleteInput
                         optionText="name"
                         sx={{
@@ -1475,7 +1483,17 @@ export const EventEdit = () => {
                     <Typography variant="h6" sx={{ color: '#1976d2', mb: 3, fontWeight: 'bold' }}>
                       Related Content
                     </Typography>
-                    <ReferenceArrayInput source="characterIds" reference="characters" label="Characters" perPage={1000}>
+                    <ReferenceArrayInput source="characterIds" reference="characters" label="Characters" perPage={200}>
+                      <AutocompleteArrayInput
+                        optionText="name"
+                        sx={{
+                          '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
+                            backgroundColor: '#0f0f0f'
+                          }
+                        }}
+                      />
+                    </ReferenceArrayInput>
+                    <ReferenceArrayInput source="tagIds" reference="tags" label="Tags" perPage={200}>
                       <AutocompleteArrayInput
                         optionText="name"
                         sx={{
@@ -1506,7 +1524,7 @@ export const EventCreate = () => (
         backgroundColor: 'transparent'
       }
     }}>
-      <TabbedForm sx={{
+      <TabbedForm validate={validateEventForm} sx={{
         backgroundColor: '#0a0a0a',
         '& .RaTabbedForm-content': {
           backgroundColor: '#0a0a0a',
@@ -1630,7 +1648,7 @@ export const EventCreate = () => (
         <FormTab label="Context & Relations">
           <Box sx={{ maxWidth: 600, p: 3, backgroundColor: '#0a0a0a' }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#16a34a', mb: 2, fontWeight: 'bold' }}>Story Context</Typography>
-            <ReferenceInput source="arcId" reference="arcs" label="Arc" sx={{ mb: 3 }}>
+            <ReferenceInput source="arcId" reference="arcs" label="Arc" perPage={200} sx={{ mb: 3 }}>
               <AutocompleteInput
                 optionText="name"
                 helperText="Which story arc does this event belong to?"
@@ -1642,7 +1660,7 @@ export const EventCreate = () => (
               />
             </ReferenceInput>
 
-            <ReferenceInput source="gambleId" reference="gambles" label="Associated Gamble" sx={{ mb: 3 }}>
+            <ReferenceInput source="gambleId" reference="gambles" label="Associated Gamble" perPage={200} sx={{ mb: 3 }}>
               <AutocompleteInput
                 optionText="name"
                 helperText="Link to a specific gamble if relevant"
@@ -1656,7 +1674,7 @@ export const EventCreate = () => (
 
             <Typography variant="subtitle1" gutterBottom sx={{ mt: 3, mb: 1, color: '#ffffff', fontWeight: 'bold' }}>Participants & Tags</Typography>
             <Box sx={{ mb: 3 }}>
-              <ReferenceArrayInput source="characterIds" reference="characters" label="Characters">
+              <ReferenceArrayInput source="characterIds" reference="characters" label="Characters" perPage={200}>
                 <AutocompleteArrayInput
                   optionText="name"
                   helperText="Characters involved in this event"
@@ -1669,7 +1687,7 @@ export const EventCreate = () => (
               </ReferenceArrayInput>
             </Box>
 
-            <ReferenceArrayInput source="tagIds" reference="tags" label="Tags">
+            <ReferenceArrayInput source="tagIds" reference="tags" label="Tags" perPage={200}>
               <AutocompleteArrayInput
                 optionText="name"
                 helperText="Relevant tags for categorization"

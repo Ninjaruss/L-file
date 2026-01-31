@@ -443,6 +443,22 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     return membershipCleaned
   }
 
+  if (resource === 'users') {
+    const allowedFields = [
+      'username', 'email', 'role', 'isEmailVerified',
+      'favoriteQuoteId', 'favoriteGambleId', 'customRole'
+    ]
+
+    const userCleaned: Record<string, unknown> = {}
+    allowedFields.forEach(field => {
+      if (cleaned[field] !== undefined) {
+        userCleaned[field] = cleaned[field]
+      }
+    })
+
+    return userCleaned
+  }
+
   // For all other resources, remove the id field as it should never be sent in update requests
   delete cleaned.id
   delete cleaned.createdAt

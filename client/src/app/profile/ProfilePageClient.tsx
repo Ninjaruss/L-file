@@ -28,6 +28,7 @@ import {
   User,
   BookOpen,
   Edit,
+  Check,
   X,
   FileText,
   Quote,
@@ -135,6 +136,9 @@ export default function ProfilePageClient() {
   const [quoteModalOpened, { open: openQuoteModal, close: closeQuoteModal }] = useDisclosure(false)
   const [gambleModalOpened, { open: openGambleModal, close: closeGambleModal }] = useDisclosure(false)
   const [profilePictureSelectorOpened, { open: openProfilePictureSelector, close: closeProfilePictureSelector }] = useDisclosure(false)
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [usernameInput, setUsernameInput] = useState('')
+  const [savingUsername, setSavingUsername] = useState(false)
 
   const isAuthenticated = !!user
 
@@ -287,6 +291,34 @@ export default function ProfilePageClient() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveUsername = async () => {
+    const trimmed = usernameInput.trim()
+    if (!trimmed || trimmed === user?.username) {
+      setEditingUsername(false)
+      return
+    }
+    if (trimmed.length < 3 || trimmed.length > 30) {
+      notifications.show({ title: 'Invalid username', message: 'Username must be between 3 and 30 characters', color: 'red' })
+      return
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+      notifications.show({ title: 'Invalid username', message: 'Username can only contain letters, numbers, underscores, and hyphens', color: 'red' })
+      return
+    }
+    setSavingUsername(true)
+    try {
+      await api.patch('/users/profile', { username: trimmed })
+      await refreshUser()
+      setEditingUsername(false)
+      notifications.show({ title: 'Username updated', message: 'Your username has been changed successfully', color: 'green' })
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Failed to update username'
+      notifications.show({ title: 'Error', message: msg, color: 'red' })
+    } finally {
+      setSavingUsername(false)
     }
   }
 
@@ -520,7 +552,58 @@ export default function ProfilePageClient() {
               </Box>
               <Stack gap="sm">
                 <Group align="center" gap="md">
-                  <Title order={2}>{user?.username}</Title>
+                  {editingUsername ? (
+                    <Group gap="xs">
+                      <TextInput
+                        value={usernameInput}
+                        onChange={(e) => setUsernameInput(e.currentTarget.value)}
+                        size="md"
+                        styles={{ input: { fontWeight: 700, fontSize: '1.5rem' } }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveUsername()
+                          } else if (e.key === 'Escape') {
+                            setEditingUsername(false)
+                          }
+                        }}
+                        disabled={savingUsername}
+                        autoFocus
+                      />
+                      <ActionIcon
+                        variant="subtle"
+                        color="green"
+                        onClick={handleSaveUsername}
+                        loading={savingUsername}
+                        aria-label="Save username"
+                      >
+                        <Check size={16} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        onClick={() => setEditingUsername(false)}
+                        disabled={savingUsername}
+                        aria-label="Cancel editing"
+                      >
+                        <X size={16} />
+                      </ActionIcon>
+                    </Group>
+                  ) : (
+                    <Group gap="xs">
+                      <Title order={2}>{user?.username}</Title>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        onClick={() => {
+                          setUsernameInput(user?.username || '')
+                          setEditingUsername(true)
+                        }}
+                        aria-label="Edit username"
+                      >
+                        <Edit size={14} />
+                      </ActionIcon>
+                    </Group>
+                  )}
                   <Badge variant="light" color={
                     user?.role === 'admin' ? 'red' :
                     user?.role === 'moderator' ? 'orange' : 'blue'

@@ -127,14 +127,14 @@ const RelationshipDirectionField = () => {
 
 // Filters for the list
 const relationshipFilters = [
-  <ReferenceInput key="source" source="sourceCharacterId" reference="characters" label="Character A" alwaysOn>
+  <ReferenceInput key="source" source="sourceCharacterId" reference="characters" label="Character A" alwaysOn perPage={200}>
     <AutocompleteInput
       optionText="name"
       filterToQuery={(searchText: string) => ({ name: searchText })}
       sx={{ minWidth: 200 }}
     />
   </ReferenceInput>,
-  <ReferenceInput key="target" source="targetCharacterId" reference="characters" label="Character B">
+  <ReferenceInput key="target" source="targetCharacterId" reference="characters" label="Character B" perPage={200}>
     <AutocompleteInput
       optionText="name"
       filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -259,7 +259,7 @@ export const CharacterRelationshipCreate = () => (
           Characters
         </Typography>
 
-        <ReferenceInput source="sourceCharacterId" reference="characters" label="Character A">
+        <ReferenceInput source="sourceCharacterId" reference="characters" label="Character A" perPage={200}>
           <AutocompleteInput
             optionText="name"
             filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -268,7 +268,7 @@ export const CharacterRelationshipCreate = () => (
           />
         </ReferenceInput>
 
-        <ReferenceInput source="targetCharacterId" reference="characters" label="Character B">
+        <ReferenceInput source="targetCharacterId" reference="characters" label="Character B" perPage={200}>
           <AutocompleteInput
             optionText="name"
             filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -364,7 +364,7 @@ export const CharacterRelationshipEdit = () => (
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-          <ReferenceInput source="sourceCharacterId" reference="characters" label="Character A">
+          <ReferenceInput source="sourceCharacterId" reference="characters" label="Character A" perPage={200}>
             <AutocompleteInput
               optionText="name"
               filterToQuery={(searchText: string) => ({ name: searchText })}
@@ -372,7 +372,7 @@ export const CharacterRelationshipEdit = () => (
             />
           </ReferenceInput>
           <ArrowRight size={20} />
-          <ReferenceInput source="targetCharacterId" reference="characters" label="Character B">
+          <ReferenceInput source="targetCharacterId" reference="characters" label="Character B" perPage={200}>
             <AutocompleteInput
               optionText="name"
               filterToQuery={(searchText: string) => ({ name: searchText })}
