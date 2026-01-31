@@ -140,10 +140,10 @@ export class EmailService {
         html: this.createEmailTemplate(content),
       });
     } catch (error) {
+      // Log the error but don't throw - callers should handle email failures gracefully
       console.error('Failed to send media rejection notification:', error);
-      throw new BadRequestException(
-        'Failed to send media rejection notification',
-      );
+      // Re-throw so callers can decide how to handle it (they should catch it)
+      throw error;
     }
   }
 }

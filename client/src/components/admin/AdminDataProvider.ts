@@ -862,6 +862,16 @@ export const AdminDataProvider: DataProvider = {
         item.authorId = (data as any).authorId
       }
 
+      // For users, fetch badges to match the list view's expected format
+      if (resource === 'users') {
+        try {
+          const badges = await api.get<any>(`/users/${params.id}/badges/all`)
+          item.userBadges = Array.isArray(badges) ? badges : []
+        } catch {
+          item.userBadges = []
+        }
+      }
+
       return { data: item as any }
     } catch (error: unknown) {
       console.error(`Error in update for ${resource}:`, error)

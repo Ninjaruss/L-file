@@ -104,7 +104,8 @@ export const Dashboard = () => {
   const { total: guidesCount } = useGetList('guides', { pagination: { page: 1, perPage: 1 } })
   const { total: mediaCount } = useGetList('media', { pagination: { page: 1, perPage: 1 } })
   const { total: quotesCount } = useGetList('quotes', { pagination: { page: 1, perPage: 1 } })
-  const { total: usersCount } = useGetList('users', { pagination: { page: 1, perPage: 1 } })
+  // Only fetch users count for admins (the endpoint is admin-only)
+  const { total: usersCount } = useGetList('users', { pagination: { page: 1, perPage: 1 } }, { enabled: permissions === 'admin' })
 
   return (
     <Box sx={{ p: 3 }}>

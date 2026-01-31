@@ -15,6 +15,9 @@
 - Event filtering by character relationship instead of by text title
 - Media linking info added for contributions
 - Added volume 2 popout
+- Moderators can now access dashboard properly without getting kicked out
+- Users list should now update properly
+- Gallery for character media should now show without black screen
 
 ## 2026-01-29
 ### Annotation System Refactor

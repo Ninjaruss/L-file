@@ -685,7 +685,7 @@ export default function MediaGallery({
             <Box
               style={{
                 position: 'relative',
-                minHeight: imageZoomed ? '80vh' : '60vh',
+                height: imageZoomed ? '80vh' : '60vh',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -720,9 +720,8 @@ export default function MediaGallery({
                           objectFit: imageZoomed ? 'none' : 'contain',
                           transition: 'transform 300ms ease'
                         }}
-                        onError={(event) => {
-                          const target = event.target as HTMLImageElement
-                          target.style.display = 'none'
+                        onError={() => {
+                          // Show fallback instead of hiding - handled by parent component state
                         }}
                       />
                     </Box>
@@ -742,6 +741,7 @@ export default function MediaGallery({
                     {canEmbedVideo(selectedMedia.url) ? (
                       <Box
                         style={{
+                          position: 'relative',
                           width: '100%',
                           aspectRatio: '16 / 9',
                           minHeight: rem(400),
@@ -843,15 +843,17 @@ export default function MediaGallery({
                             {(styles) => (
                               <iframe
                                 src={getEmbedUrl(selectedMedia.url)!}
-                                width="100%"
-                                height="100%"
                                 frameBorder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                                 allowFullScreen
                                 title={selectedMedia.description}
                                 style={{
                                   ...styles,
-                                  minHeight: rem(400),
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
                                   borderRadius: rem(8)
                                 }}
                               />
