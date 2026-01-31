@@ -100,7 +100,7 @@ export default function CharactersPageContent({
   const [uploading, setUploading] = useState(false)
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
   const [imageDisplayName, setImageDisplayName] = useState('')
-  const { isModeratorOrAdmin } = useAuth()
+  const { canEditContent } = useAuth()
   const { userProgress } = useProgress()
   const { settings: spoilerSettings } = useSpoilerSettings()
 
@@ -654,7 +654,7 @@ export default function CharactersPageContent({
                             fontWeight: 700,
                             zIndex: 10,
                             backdropFilter: 'blur(4px)',
-                            maxWidth: isModeratorOrAdmin ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
+                            maxWidth: canEditContent ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
                           }}
                         >
                           Ch. {character.firstAppearanceChapter}
@@ -662,7 +662,7 @@ export default function CharactersPageContent({
                       )}
 
                       {/* Edit Button at Top Right */}
-                      {isModeratorOrAdmin && (
+                      {canEditContent && (
                         <ActionIcon
                           size="xs"
                           variant="filled"

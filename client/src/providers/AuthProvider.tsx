@@ -47,7 +47,9 @@ interface AuthContextType {
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   updateUserField: (field: keyof User, value: any) => void
-  isModeratorOrAdmin: boolean
+  isModeratorOrAdmin: boolean // For moderation tasks (comments, bans)
+  isEditor: boolean // Editor role specifically
+  canEditContent: boolean // Can edit official content (Admin, Moderator, Editor)
   // Legacy methods (keep for compatibility)
   login: (username: string, password: string) => Promise<void>
   register: (username: string, email: string, password: string) => Promise<void>
@@ -534,6 +536,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser,
     updateUserField,
     isModeratorOrAdmin: user?.role === 'admin' || user?.role === 'moderator',
+    isEditor: user?.role === 'editor',
+    canEditContent: user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'editor',
     // Legacy methods
     login,
     register,

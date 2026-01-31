@@ -739,16 +739,19 @@ const RoleSelectInput = () => {
 
   const isAdmin = permissions === 'admin'
   const isModerator = permissions === 'moderator'
+  const isEditor = permissions === 'editor'
 
-  // Moderators cannot promote to admin
-  const availableChoices = isModerator
+  // Moderators and Editors cannot promote to admin
+  const availableChoices = isModerator || isEditor
     ? [
         { id: 'user', name: 'User' },
         { id: 'moderator', name: 'Moderator' },
+        { id: 'editor', name: 'Editor' },
       ]
     : [
         { id: 'user', name: 'User' },
         { id: 'moderator', name: 'Moderator' },
+        { id: 'editor', name: 'Editor' },
         { id: 'admin', name: 'Admin' },
       ]
 

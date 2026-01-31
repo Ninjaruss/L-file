@@ -185,7 +185,7 @@ export class ChaptersController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Create chapter',
     description: 'Create a new chapter (requires moderator or admin role)',
@@ -203,7 +203,7 @@ export class ChaptersController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Update chapter',
     description:

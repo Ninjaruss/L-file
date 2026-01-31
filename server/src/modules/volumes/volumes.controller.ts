@@ -224,7 +224,7 @@ export class VolumesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth()
   @ApiOperation({
@@ -255,7 +255,7 @@ export class VolumesController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update volume',

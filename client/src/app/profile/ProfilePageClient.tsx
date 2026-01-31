@@ -42,6 +42,7 @@ import { motion } from 'motion/react'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
 import { GuideStatus } from '../../types'
+import { invalidatePagedCache } from '../../lib/cache-utils'
 import UserProfileImage from '../../components/UserProfileImage'
 import QuoteSelectionPopup from '../../components/QuoteSelectionPopup'
 import GambleSelectionPopup from '../../components/GambleSelectionPopup'
@@ -312,6 +313,7 @@ export default function ProfilePageClient() {
     try {
       await api.patch('/users/profile', { username: trimmed })
       await refreshUser()
+      invalidatePagedCache('users') // Clear users list cache
       setEditingUsername(false)
       notifications.show({ title: 'Username updated', message: 'Your username has been changed successfully', color: 'green' })
     } catch (err: any) {
@@ -364,10 +366,11 @@ export default function ProfilePageClient() {
         updateData.selectedCharacterMediaId = mediaId
       }
       await api.patch('/users/profile', updateData)
-      
+
       // Refresh user data to update the profile picture display
       await refreshUser()
-      
+      invalidatePagedCache('users') // Clear users list cache
+
       notifications.show({
         title: 'Success',
         message: 'Profile picture updated successfully',

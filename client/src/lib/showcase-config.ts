@@ -93,7 +93,17 @@ export const SHOWCASE_CONFIGURATIONS: ShowcaseConfiguration[] = [
 
 // Utility functions for configuration management
 export function getActiveConfiguration(): ShowcaseConfiguration {
-  return SHOWCASE_CONFIGURATIONS.find(config => config.isActive) || SHOWCASE_CONFIGURATIONS[0]
+  // Get all active configurations
+  const activeConfigs = SHOWCASE_CONFIGURATIONS.filter(config => config.isActive)
+
+  // If no active configs, return the first one
+  if (activeConfigs.length === 0) {
+    return SHOWCASE_CONFIGURATIONS[0]
+  }
+
+  // Randomly select from active configurations
+  const randomIndex = Math.floor(Math.random() * activeConfigs.length)
+  return activeConfigs[randomIndex]
 }
 
 export function getConfigurationById(id: string): ShowcaseConfiguration | undefined {

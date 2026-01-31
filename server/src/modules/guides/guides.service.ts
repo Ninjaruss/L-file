@@ -60,6 +60,11 @@ export class GuidesService {
 
       // Handle tags if provided - batch fetch existing and batch insert new (N+1 fix)
       if (tagNames && tagNames.length > 0) {
+        // Validate max 5 tags per guide
+        if (tagNames.length > 5) {
+          throw new BadRequestException('A guide can have a maximum of 5 tags');
+        }
+
         const existingTags = await tagRepo.find({
           where: { name: In(tagNames) },
         });
@@ -587,6 +592,11 @@ export class GuidesService {
       // Handle tags if provided - optimized batch query
       if (tagNames !== undefined) {
         if (tagNames.length > 0) {
+          // Validate max 5 tags per guide
+          if (tagNames.length > 5) {
+            throw new BadRequestException('A guide can have a maximum of 5 tags');
+          }
+
           // Batch fetch all existing tags in a single query
           const existingTags = await tagRepo
             .createQueryBuilder('tag')

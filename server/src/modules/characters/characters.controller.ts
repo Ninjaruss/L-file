@@ -237,7 +237,7 @@ export class CharactersController {
     status: 403,
     description: 'Forbidden - requires moderator or admin role',
   })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   create(@Body() data: CreateCharacterDto) {
     return this.service.create(data);
   }
@@ -286,7 +286,7 @@ export class CharactersController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @ApiResponse({ status: 404, description: 'Character not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   async update(@Param('id') id: number, @Body() data: UpdateCharacterDto) {
     const result = await this.service.update(id, data);
     if (!result) {

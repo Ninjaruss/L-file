@@ -38,7 +38,7 @@ export class GamblesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Create a new gamble',
     description:
@@ -393,7 +393,7 @@ export class GamblesController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @ApiResponse({ status: 404, description: 'Gamble not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) data: UpdateGambleDto,

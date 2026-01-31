@@ -46,8 +46,8 @@ export const AdminAuthProvider: AuthProvider = {
 
       const user = await api.getCurrentUser()
 
-      if (user.role !== 'admin' && user.role !== 'moderator') {
-        throw new Error('Access denied. Admin or moderator role required.')
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'editor') {
+        throw new Error('Access denied. Admin, moderator, or editor role required.')
       }
 
       return Promise.resolve()

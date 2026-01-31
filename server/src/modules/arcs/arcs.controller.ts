@@ -277,7 +277,7 @@ export class ArcsController {
     status: 403,
     description: 'Forbidden - requires moderator or admin role',
   })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   create(@Body() createArcDto: CreateArcDto) {
     return this.service.create(createArcDto);
@@ -322,7 +322,7 @@ export class ArcsController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @ApiResponse({ status: 404, description: 'Arc not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async update(@Param('id') id: number, @Body() data: UpdateArcDto) {
     const result = await this.service.update(id, data);

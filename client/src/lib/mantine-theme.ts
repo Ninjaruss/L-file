@@ -347,6 +347,14 @@ export const mantineTheme: MantineThemeOverride = {
           color: '#ffffff',
           '&:hover': {
             backgroundColor: 'rgba(225, 29, 72, 0.1)'
+          },
+          '&[data-combobox-selected]': {
+            backgroundColor: 'rgba(225, 29, 72, 0.2)',
+            color: '#ffffff'
+          },
+          '&[data-selected]': {
+            backgroundColor: 'rgba(225, 29, 72, 0.2)',
+            color: '#ffffff'
           }
         }
       }),

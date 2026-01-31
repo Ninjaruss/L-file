@@ -1,5 +1,6 @@
 import { DataProvider, HttpError } from 'react-admin'
 import { api } from '../../lib/api'
+import { invalidatePagedCache } from '../../lib/cache-utils'
 
 // Function to clean update data by removing read-only fields and relationship objects
 const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
@@ -870,6 +871,8 @@ export const AdminDataProvider: DataProvider = {
         } catch {
           item.userBadges = []
         }
+        // Invalidate users list cache so changes appear immediately
+        invalidatePagedCache('users')
       }
 
       return { data: item as any }

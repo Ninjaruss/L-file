@@ -146,7 +146,7 @@ export class TagsController {
     status: 403,
     description: 'Forbidden - requires moderator or admin role',
   })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   create(@Body() data: CreateTagDto): Promise<Tag> {
     return this.service.create(data);
   }
@@ -183,7 +183,7 @@ export class TagsController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @ApiResponse({ status: 404, description: 'Tag not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   update(@Param('id') id: number, @Body() data: UpdateTagDto) {
     return this.service.update(id, data);
   }
@@ -212,7 +212,7 @@ export class TagsController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @ApiResponse({ status: 404, description: 'Tag not found' })
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   remove(@Param('id') id: number) {
     return this.service.remove(id);
   }

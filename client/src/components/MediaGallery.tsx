@@ -381,7 +381,7 @@ export default function MediaGallery({
   }
 
   return (
-    <Box>
+    <Box style={{ background: 'transparent' }}>
       {showTitle && (
         <Text
           size={compactMode ? 'lg' : 'xl'}
@@ -442,7 +442,8 @@ export default function MediaGallery({
                 boxShadow: isHovered
                   ? '0 20px 30px -15px rgba(225, 29, 72, 0.45)'
                   : '0 10px 20px -18px rgba(0, 0, 0, 0.65)',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                backgroundColor: theme.colors.dark?.[6] ?? '#373A40'
               }}
             >
               <Box style={{ position: 'relative' }}>

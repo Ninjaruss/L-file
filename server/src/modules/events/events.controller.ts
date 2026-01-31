@@ -335,11 +335,11 @@ export class EventsController {
 
   @Put(':id/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Approve an event',
-    description: 'Approve an event (requires admin/moderator role)',
+    description: 'Approve an event (requires admin/moderator/editor role)',
   })
   @ApiParam({ name: 'id', description: 'Event ID', type: 'number' })
   async approve(@Param('id', ParseIntPipe) id: number) {

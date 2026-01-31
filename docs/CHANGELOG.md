@@ -2,6 +2,12 @@
 
 ## TODO
 
+## 2026-01-31
+- Users list cache refreshes when changes are made to a user's profile
+- Showcase now rotates properly
+- Editor role added
+- Tag system validation to enforce 5 tags max per guide
+
 ## 2026-01-30
 - Site deployed on Flyio, Supabase, and Vercel! Some adjustments to secret keys (.env) and CORS stuff was needed before everything connected
 - Removal of external URL submissions except for videos/music
@@ -17,7 +23,6 @@
 - Added volume 2 popout
 - Moderators can now access dashboard properly without getting kicked out
 - Users list should now update properly
-- Gallery for character media should now show without black screen
 
 ## 2026-01-29
 ### Annotation System Refactor

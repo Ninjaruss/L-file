@@ -121,7 +121,7 @@ export default function ArcsPageContent({
     isTouchDevice
   } = useHoverModal<Arc>()
 
-  const isModeratorOrAdmin = user?.role === 'moderator' || user?.role === 'admin'
+  const canEditContent = user?.role === 'moderator' || user?.role === 'admin'
 
   // Load all arcs once on mount (with hierarchy - parent arcs include children)
   const loadAllArcs = useCallback(async () => {
@@ -570,14 +570,14 @@ export default function ArcsPageContent({
                                 fontWeight: 700,
                                 zIndex: 10,
                                 backdropFilter: 'blur(4px)',
-                                maxWidth: isModeratorOrAdmin ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
+                                maxWidth: canEditContent ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
                               }}
                             >
                               {formatChapterRange(arc)}
                             </Badge>
                           )}
 
-                          {isModeratorOrAdmin && (
+                          {canEditContent && (
                             <ActionIcon
                               size="xs"
                               variant="filled"
