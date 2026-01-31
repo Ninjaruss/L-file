@@ -126,7 +126,9 @@ const BadgeAwardModal = ({ open, onClose, userId, username }: {
       await create('badges/award', { data: badgeData });
 
       notify('Badge awarded successfully!', { type: 'success' });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'users'
+      });
       refresh();
       onClose();
       setBadgeId('');
@@ -493,7 +495,9 @@ const UserBadgesField = () => {
       }
 
       notify(`Badge "${badgeName}" removed successfully`, { type: 'success' });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'users'
+      });
       refresh();
     } catch (error) {
       console.error('Error removing badge:', error);

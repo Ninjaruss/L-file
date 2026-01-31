@@ -3,14 +3,15 @@
 ## TODO
 
 ## 2026-01-31
-- Users list cache refreshes when changes are made to a user's profile (improved with react-query integration)
+- Users list cache refreshes when changes are made to a user's profile (improved with react-query predicate-based invalidation)
 - Showcase now rotates properly
 - Editor role added
 - Tag system validation to enforce 5 tags max per guide
-- Guide submission form now includes tags input with creatable tag support
-- Volume showcase sizing balanced - single layout now just slightly bigger than dual layout, both scale properly
+- Guide submission form now includes TagsInput component with max 5 tags limit
+- Volume showcase sizing significantly reduced to prevent overlap with search bar (overflow: clip)
 - Media gallery preview system improved to properly display YouTube thumbnails, uploaded images, and external direct image URLs
-- React-query cache invalidation added for proper users list refresh after badge awards/removals
+- React-query cache invalidation improved with predicate-based queries for all user-related data
+- Fixed React hydration error #300 on home page by making showcase selection client-side only
 
 ## 2026-01-30
 - Site deployed on Flyio, Supabase, and Vercel! Some adjustments to secret keys (.env) and CORS stuff was needed before everything connected

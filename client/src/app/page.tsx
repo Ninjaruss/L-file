@@ -6,7 +6,7 @@ import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image } 
 import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
-import { getActiveConfiguration } from '../lib/showcase-config'
+import { getActiveConfiguration, SHOWCASE_CONFIGURATIONS } from '../lib/showcase-config'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { LazySection } from '../components/LazySection'
 import { useLandingData } from '../hooks/useLandingData'
@@ -14,11 +14,18 @@ import { motion } from 'motion/react'
 import Script from 'next/script'
 import { FAQ } from '@/components/FAQ'
 import { textColors } from '../lib/mantine-theme'
+import { useState, useEffect } from 'react'
 
 export default function HomePage() {
   const theme = useMantineTheme()
   const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
-  const showcaseConfig = getActiveConfiguration()
+
+  // Fix hydration mismatch by selecting showcase client-side only
+  const [showcaseConfig, setShowcaseConfig] = useState(SHOWCASE_CONFIGURATIONS[0])
+
+  useEffect(() => {
+    setShowcaseConfig(getActiveConfiguration())
+  }, [])
 
 
 
@@ -103,7 +110,7 @@ export default function HomePage() {
         </Box>
 
         {/* Featured Volume Covers Section */}
-        <LazySection minHeight={400} delay={100}>
+        <LazySection minHeight={360} delay={100}>
           <DynamicVolumeShowcase
             volumes={showcaseConfig.volumes}
             layout={showcaseConfig.layout}
