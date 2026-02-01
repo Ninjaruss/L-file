@@ -33,6 +33,7 @@ import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 import { ScrollToTop } from '../../components/ScrollToTop'
 import TimelineSpoilerWrapper from '../../components/TimelineSpoilerWrapper'
+import { useHoverModal } from '../../hooks/useHoverModal'
 
 interface QuoteData {
   id: number
@@ -93,10 +94,19 @@ export default function QuotesPageContent({
   const [total, setTotal] = useState(initialTotal)
   const [characterName, setCharacterName] = useState<string | null>(initialCharacterName)
   const [characterId, setCharacterId] = useState<string | undefined>(initialCharacterId)
-  const [hoveredQuote, setHoveredQuote] = useState<QuoteData | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+
+  // Hover modal
+  const {
+    hoveredItem: hoveredQuote,
+    hoverPosition: hoverModalPosition,
+    handleMouseEnter: handleQuoteMouseEnter,
+    handleMouseLeave: handleQuoteMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave,
+    handleTap: handleQuoteTap,
+    closeModal,
+    isTouchDevice
+  } = useHoverModal<QuoteData>()
 
   // Use the quote accent color from the theme
   const accentQuote = theme.other?.usogui?.quote ?? theme.colors.violet?.[5] ?? '#7048e8'
@@ -165,73 +175,6 @@ export default function QuotesPageContent({
       router.push(queryString ? `/quotes?${queryString}` : '/quotes')
     }
   }, [debouncedSearch, searchInput, searchQuery, searchParams, router])
-
-  // Function to update modal position based on hovered element (following arcs pattern)
-  const updateModalPosition = useCallback((quote?: QuoteData) => {
-    const currentQuote = quote || hoveredQuote
-    if (hoveredElementRef.current && currentQuote) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300
-      const modalHeight = 180
-      const navbarHeight = 60
-      const buffer = 10
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredQuote])
-
-  // Hover handlers following the arcs pattern
-  const handleCardMouseEnter = (quote: QuoteData, element: HTMLElement) => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    setHoveredQuote(quote)
-    hoveredElementRef.current = element
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      updateModalPosition(quote)
-    }, 500)
-  }
-
-  const handleCardMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-    setHoveredQuote(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredQuote(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
-  }
 
   // Search and page handlers
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -456,8 +399,20 @@ export default function QuotesPageContent({
                       overflow: 'hidden',
                       backgroundColor: cardBgColor,
                     }}
-                    onMouseEnter={(e) => handleCardMouseEnter(quote, e.currentTarget)}
-                    onMouseLeave={handleCardMouseLeave}
+                    onClick={(e) => {
+                      // On touch devices, tap toggles the preview modal
+                      if (isTouchDevice) {
+                        handleQuoteTap(quote, e)
+                      }
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isTouchDevice) return // Skip hover on touch devices
+                      handleQuoteMouseEnter(quote, e)
+                    }}
+                    onMouseLeave={() => {
+                      if (isTouchDevice) return // Skip hover on touch devices
+                      handleQuoteMouseLeave()
+                    }}
                   >
                     <Stack gap="xs" h="100%" justify="space-between">
                       {/* Header */}
@@ -548,6 +503,21 @@ export default function QuotesPageContent({
                           {quote.chapter && `Ch. ${quote.chapter}`}
                         </Text>
                       )}
+
+                      {/* Touch device hint */}
+                      {isTouchDevice && hoveredQuote?.id !== quote.id && (
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          ta="center"
+                          style={{
+                            fontSize: rem(10),
+                            opacity: 0.7
+                          }}
+                        >
+                          Tap to preview
+                        </Text>
+                      )}
                     </Stack>
                   </Card>
                   </motion.div>
@@ -589,33 +559,67 @@ export default function QuotesPageContent({
       {/* Hover Modal */}
       <AnimatePresence>
         {hoveredQuote && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y,
-              zIndex: 1001, // Higher than navbar
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
+          <>
+            {/* Backdrop for touch devices */}
+            {isTouchDevice && (
+              <Box
+                onClick={closeModal}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 1000,
+                  backgroundColor: 'transparent'
+                }}
+              />
+            )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
               style={{
-                backgroundColor: cardBgColor,
-                border: `2px solid ${accentQuote}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
+                position: 'fixed',
+                left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
+                top: hoverModalPosition.y,
+                zIndex: 1001, // Higher than navbar
+                pointerEvents: 'auto'
               }}
+              onMouseEnter={handleModalMouseEnter}
+              onMouseLeave={handleModalMouseLeave}
             >
+              <Paper
+                shadow="xl"
+                radius="lg"
+                p="md"
+                style={{
+                  backgroundColor: cardBgColor,
+                  border: `2px solid ${accentQuote}`,
+                  backdropFilter: 'blur(10px)',
+                  width: rem(300),
+                  maxWidth: '90vw',
+                  position: 'relative'
+                }}
+              >
+                {/* Close button for touch devices */}
+                {isTouchDevice && (
+                  <ActionIcon
+                    onClick={closeModal}
+                    size="xs"
+                    variant="subtle"
+                    color="gray"
+                    style={{
+                      position: 'absolute',
+                      top: rem(8),
+                      right: rem(8),
+                      zIndex: 10
+                    }}
+                  >
+                    <X size={14} />
+                  </ActionIcon>
+                )}
               <Stack gap="sm">
                 {/* Quote Speaker */}
                 <Title
@@ -710,8 +714,9 @@ export default function QuotesPageContent({
                   </Text>
                 )}
               </Stack>
-            </Paper>
-          </motion.div>
+              </Paper>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

@@ -34,6 +34,7 @@ import AuthorProfileImage from '../../components/AuthorProfileImage'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 import { ScrollToTop } from '../../components/ScrollToTop'
+import { useHoverModal } from '../../hooks/useHoverModal'
 
 type GuideEntity = {
   id: number
@@ -140,11 +141,18 @@ export default function GuidesPageContent({
     }
   }, [searchParams]) // Only depend on searchParams to avoid infinite loops
 
-  // Hover modal state
-  const [hoveredGuide, setHoveredGuide] = useState<Guide | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Hover modal
+  const {
+    hoveredItem: hoveredGuide,
+    hoverPosition: hoverModalPosition,
+    handleMouseEnter: handleGuideMouseEnter,
+    handleMouseLeave: handleGuideMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave,
+    handleTap: handleGuideTap,
+    closeModal,
+    isTouchDevice
+  } = useHoverModal<Guide>()
 
   const fetcher = useCallback(async (page: number) => {
     const params: any = { page, limit: 12, status: 'approved' }
@@ -301,110 +309,6 @@ export default function GuidesPageContent({
     } finally {
       setLiking(null)
     }
-  }
-
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((guide?: Guide) => {
-    const currentGuide = guide || hoveredGuide
-    if (hoveredElementRef.current && currentGuide) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredGuide])
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredGuide && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredGuide, updateModalPosition])
-
-  // Hover modal handlers
-  const handleGuideMouseEnter = (guide: Guide, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredGuide(guide)
-      updateModalPosition(guide) // Pass guide directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleGuideMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredGuide(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredGuide(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
   }
 
   const accentGuide = theme.other?.usogui?.guide ?? theme.colors.green?.[5] ?? '#4ade80'
@@ -615,8 +519,25 @@ export default function GuidesPageContent({
                       shadow="sm"
                       className="hoverable-card hoverable-card-guide"
                       style={getPlayingCardStyles(theme, accentGuide)}
-                      onMouseEnter={(e) => handleGuideMouseEnter(guide, e)}
-                      onMouseLeave={() => handleGuideMouseLeave()}
+                      onClick={(e) => {
+                        // On touch devices, first tap shows preview, second tap navigates
+                        if (isTouchDevice) {
+                          // If modal is not showing for this guide, prevent navigation and show modal
+                          if (hoveredGuide?.id !== guide.id) {
+                            e.preventDefault()
+                            handleGuideTap(guide, e)
+                          }
+                          // If modal is already showing, allow navigation (second tap)
+                        }
+                      }}
+                      onMouseEnter={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
+                        handleGuideMouseEnter(guide, e)
+                      }}
+                      onMouseLeave={() => {
+                        if (isTouchDevice) return // Skip hover on touch devices
+                        handleGuideMouseLeave()
+                      }}
                     >
                       {/* Author Badge at Top Left */}
                       <Group
@@ -791,6 +712,21 @@ export default function GuidesPageContent({
                             </Button>
                           </Group>
                         </Box>
+
+                        {/* Touch device hint */}
+                        {isTouchDevice && hoveredGuide?.id !== guide.id && (
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            ta="center"
+                            style={{
+                              fontSize: rem(10),
+                              opacity: 0.7
+                            }}
+                          >
+                            Tap to preview
+                          </Text>
+                        )}
                       </Stack>
                     </Card>
                   </motion.div>
@@ -838,33 +774,67 @@ export default function GuidesPageContent({
       {/* Hover Modal */}
       <AnimatePresence>
         {hoveredGuide && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
+          <>
+            {/* Backdrop for touch devices */}
+            {isTouchDevice && (
+              <Box
+                onClick={closeModal}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 1000,
+                  backgroundColor: 'transparent'
+                }}
+              />
+            )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
               style={{
-                backgroundColor: backgroundStyles.modal,
-                border: `2px solid ${accentGuide}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
+                position: 'fixed',
+                left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
+                top: hoverModalPosition.y, // Use calculated position directly
+                zIndex: 1001, // Higher than navbar (which is 1000)
+                pointerEvents: 'auto'
               }}
+              onMouseEnter={handleModalMouseEnter}
+              onMouseLeave={handleModalMouseLeave}
             >
+              <Paper
+                shadow="xl"
+                radius="lg"
+                p="md"
+                style={{
+                  backgroundColor: backgroundStyles.modal,
+                  border: `2px solid ${accentGuide}`,
+                  backdropFilter: 'blur(10px)',
+                  width: rem(300),
+                  maxWidth: '90vw',
+                  position: 'relative'
+                }}
+              >
+                {/* Close button for touch devices */}
+                {isTouchDevice && (
+                  <ActionIcon
+                    onClick={closeModal}
+                    size="xs"
+                    variant="subtle"
+                    color="gray"
+                    style={{
+                      position: 'absolute',
+                      top: rem(8),
+                      right: rem(8),
+                      zIndex: 10
+                    }}
+                  >
+                    <X size={14} />
+                  </ActionIcon>
+                )}
               <Stack gap="sm">
                 {/* Guide Title */}
                 <Title
@@ -972,8 +942,9 @@ export default function GuidesPageContent({
                   <Text size="sm">{new Date(hoveredGuide.createdAt).toLocaleDateString()}</Text>
                 </Group>
               </Stack>
-            </Paper>
-          </motion.div>
+              </Paper>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

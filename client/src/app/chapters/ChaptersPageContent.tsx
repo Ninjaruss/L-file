@@ -26,6 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
+import { useHoverModal } from '../../hooks/useHoverModal'
 
 interface Chapter {
   id: number
@@ -71,11 +72,18 @@ export default function ChaptersPageContent({
   // Client-side pagination
   const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
-  // Hover modal state
-  const [hoveredChapter, setHoveredChapter] = useState<Chapter | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Hover modal
+  const {
+    hoveredItem: hoveredChapter,
+    hoverPosition: hoverModalPosition,
+    handleMouseEnter: handleChapterMouseEnter,
+    handleMouseLeave: handleChapterMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave,
+    handleTap: handleChapterTap,
+    closeModal,
+    isTouchDevice
+  } = useHoverModal<Chapter>()
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
@@ -143,70 +151,6 @@ export default function ChaptersPageContent({
     setSearchQuery(urlSearch)
   }, [searchParams])
 
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((chapter?: Chapter) => {
-    const currentChapter = chapter || hoveredChapter
-    if (hoveredElementRef.current && currentChapter) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredChapter])
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredChapter && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredChapter, updateModalPosition])
-
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const newSearch = event.target.value
     setSearchQuery(newSearch)
@@ -234,46 +178,6 @@ export default function ChaptersPageContent({
     setCurrentPage(page) // Update local state immediately
     // No API calls needed - everything is client-side now!
   }, [])
-
-  // Hover modal handlers
-  const handleChapterMouseEnter = (chapter: Chapter, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredChapter(chapter)
-      updateModalPosition(chapter) // Pass chapter directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleChapterMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredChapter(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredChapter(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
-  }
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
@@ -440,12 +344,25 @@ export default function ChaptersPageContent({
                         minHeight: rem(88),
                         justifyContent: 'center'
                       }}
+                      onClick={(e) => {
+                        // On touch devices, first tap shows preview, second tap navigates
+                        if (isTouchDevice) {
+                          // If modal is not showing for this chapter, prevent navigation and show modal
+                          if (hoveredChapter?.id !== chapter.id) {
+                            e.preventDefault()
+                            handleChapterTap(chapter, e)
+                          }
+                          // If modal is already showing, allow navigation (second tap)
+                        }
+                      }}
                       onMouseEnter={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.2)'
                         handleChapterMouseEnter(chapter, e)
                       }}
                       onMouseLeave={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
                         e.currentTarget.style.transform = 'translateY(0)'
                         e.currentTarget.style.boxShadow = theme.shadows.xs
                         handleChapterMouseLeave()
@@ -475,6 +392,21 @@ export default function ChaptersPageContent({
                       >
                         {chapter.title || `Ch. ${chapter.number}`}
                       </Text>
+
+                      {/* Touch device hint */}
+                      {isTouchDevice && hoveredChapter?.id !== chapter.id && (
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          ta="center"
+                          style={{
+                            fontSize: rem(9),
+                            opacity: 0.7
+                          }}
+                        >
+                          Tap to preview
+                        </Text>
+                      )}
 
                       {chapter.volume && (
                         <Badge
@@ -535,33 +467,67 @@ export default function ChaptersPageContent({
       {/* Hover Modal */}
       <AnimatePresence>
         {hoveredChapter && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
+          <>
+            {/* Backdrop for touch devices */}
+            {isTouchDevice && (
+              <Box
+                onClick={closeModal}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 1000,
+                  backgroundColor: 'transparent'
+                }}
+              />
+            )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
               style={{
-                backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                border: `2px solid ${accentChapter}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
+                position: 'fixed',
+                left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
+                top: hoverModalPosition.y, // Use calculated position directly
+                zIndex: 1001, // Higher than navbar (which is 1000)
+                pointerEvents: 'auto'
               }}
+              onMouseEnter={handleModalMouseEnter}
+              onMouseLeave={handleModalMouseLeave}
             >
+              <Paper
+                shadow="xl"
+                radius="lg"
+                p="md"
+                style={{
+                  backgroundColor: theme.colors.dark?.[7] ?? theme.white,
+                  border: `2px solid ${accentChapter}`,
+                  backdropFilter: 'blur(10px)',
+                  width: rem(300),
+                  maxWidth: '90vw',
+                  position: 'relative'
+                }}
+              >
+                {/* Close button for touch devices */}
+                {isTouchDevice && (
+                  <ActionIcon
+                    onClick={closeModal}
+                    size="xs"
+                    variant="subtle"
+                    color="gray"
+                    style={{
+                      position: 'absolute',
+                      top: rem(8),
+                      right: rem(8),
+                      zIndex: 10
+                    }}
+                  >
+                    <X size={14} />
+                  </ActionIcon>
+                )}
               <Stack gap="sm">
                 {/* Chapter Title */}
                 <Title
@@ -615,8 +581,9 @@ export default function ChaptersPageContent({
                   </Text>
                 )}
               </Stack>
-            </Paper>
-          </motion.div>
+              </Paper>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.div>

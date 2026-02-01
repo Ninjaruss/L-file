@@ -117,6 +117,7 @@ export default function ArcsPageContent({
     handleMouseLeave: handleArcMouseLeave,
     handleModalMouseEnter,
     handleModalMouseLeave,
+    handleTap: handleArcTap,
     closeModal,
     isTouchDevice
   } = useHoverModal<Arc>()
@@ -542,7 +543,27 @@ export default function ArcsPageContent({
                           shadow="sm"
                           className="hoverable-card hoverable-card-arc"
                           style={getPlayingCardStyles(theme, accentArc)}
+                          onClick={(e) => {
+                            // On touch devices, first tap shows preview, second tap navigates
+                            if (isTouchDevice) {
+                              const isSpoilered = shouldHideSpoiler(
+                                arc.startChapter,
+                                userProgress,
+                                spoilerSettings
+                              )
+                              const hasBeenRevealed = revealedArcs.has(arc.id)
+                              if (!isSpoilered || hasBeenRevealed) {
+                                // If modal is not showing for this arc, prevent navigation and show modal
+                                if (hoveredArc?.id !== arc.id) {
+                                  e.preventDefault()
+                                  handleArcTap(arc, e)
+                                }
+                                // If modal is already showing, allow navigation (second tap)
+                              }
+                            }
+                          }}
                           onMouseEnter={(e) => {
+                            if (isTouchDevice) return // Skip hover on touch devices
                             currentlyHoveredRef.current = { arc, element: e.currentTarget as HTMLElement }
                             const isSpoilered = shouldHideSpoiler(arc.startChapter, userProgress, spoilerSettings)
                             const hasBeenRevealed = revealedArcs.has(arc.id)
@@ -551,6 +572,7 @@ export default function ArcsPageContent({
                             }
                           }}
                           onMouseLeave={() => {
+                            if (isTouchDevice) return // Skip hover on touch devices
                             currentlyHoveredRef.current = null
                             handleArcMouseLeave()
                           }}
@@ -630,9 +652,11 @@ export default function ArcsPageContent({
                               backgroundColor: 'transparent',
                               minHeight: rem(40),
                               display: 'flex',
+                              flexDirection: 'column',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              gap: rem(4)
                             }}
                           >
                             <Text
@@ -653,6 +677,20 @@ export default function ArcsPageContent({
                             >
                               {arc.name}
                             </Text>
+                            {/* Touch device hint */}
+                            {isTouchDevice && hoveredArc?.id !== arc.id && (
+                              <Text
+                                size="xs"
+                                c="dimmed"
+                                ta="center"
+                                style={{
+                                  fontSize: rem(10),
+                                  opacity: 0.7
+                                }}
+                              >
+                                Tap to preview
+                              </Text>
+                            )}
                           </Box>
                         </Card>
                       </Box>

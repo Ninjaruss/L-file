@@ -82,6 +82,7 @@ export default function VolumesPageContent({
     handleMouseLeave: handleVolumeMouseLeave,
     handleModalMouseEnter,
     handleModalMouseLeave,
+    handleTap: handleVolumeTap,
     closeModal,
     isTouchDevice
   } = useHoverModal<Volume>()
@@ -338,12 +339,25 @@ export default function VolumesPageContent({
                       radius="lg"
                       shadow="sm"
                       style={getPlayingCardStyles(theme, accentVolume)}
+                      onClick={(e) => {
+                        // On touch devices, first tap shows preview, second tap navigates
+                        if (isTouchDevice) {
+                          // If modal is not showing for this volume, prevent navigation and show modal
+                          if (hoveredVolume?.id !== volume.id) {
+                            e.preventDefault()
+                            handleVolumeTap(volume, e)
+                          }
+                          // If modal is already showing, allow navigation (second tap)
+                        }
+                      }}
                       onMouseEnter={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
                         handleVolumeMouseEnter(volume, e)
                       }}
                       onMouseLeave={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
                         e.currentTarget.style.transform = 'translateY(0)'
                         e.currentTarget.style.boxShadow = theme.shadows.sm
                         handleVolumeMouseLeave()
@@ -398,9 +412,11 @@ export default function VolumesPageContent({
                           backgroundColor: 'transparent',
                           minHeight: rem(40),
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          gap: rem(4)
                         }}
                       >
                         <Text
@@ -421,6 +437,20 @@ export default function VolumesPageContent({
                         >
                           {volume.title || `Volume ${volume.number}`}
                         </Text>
+                        {/* Touch device hint */}
+                        {isTouchDevice && hoveredVolume?.id !== volume.id && (
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            ta="center"
+                            style={{
+                              fontSize: rem(10),
+                              opacity: 0.7
+                            }}
+                          >
+                            Tap to preview
+                          </Text>
+                        )}
                       </Box>
                     </Card>
                   </motion.div>

@@ -29,6 +29,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
 import MediaThumbnail from '../../components/MediaThumbnail'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
+import { useHoverModal } from '../../hooks/useHoverModal'
 
 interface Organization {
   id: number
@@ -68,11 +69,18 @@ export default function OrganizationsPageContent({
   // Client-side pagination
   const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
-  // Hover modal state
-  const [hoveredOrganization, setHoveredOrganization] = useState<Organization | null>(null)
-  const [hoverModalPosition, setHoverModalPosition] = useState<{ x: number; y: number } | null>(null)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const hoveredElementRef = useRef<HTMLElement | null>(null)
+  // Hover modal
+  const {
+    hoveredItem: hoveredOrganization,
+    hoverPosition: hoverModalPosition,
+    handleMouseEnter: handleOrganizationMouseEnter,
+    handleMouseLeave: handleOrganizationMouseLeave,
+    handleModalMouseEnter,
+    handleModalMouseLeave,
+    handleTap: handleOrganizationTap,
+    closeModal,
+    isTouchDevice
+  } = useHoverModal<Organization>()
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
@@ -133,70 +141,6 @@ export default function OrganizationsPageContent({
     setSearchQuery(urlSearch)
   }, [searchParams])
 
-  // Function to update modal position based on hovered element
-  const updateModalPosition = useCallback((organization?: Organization) => {
-    const currentOrganization = organization || hoveredOrganization
-    if (hoveredElementRef.current && currentOrganization) {
-      const rect = hoveredElementRef.current.getBoundingClientRect()
-      const modalWidth = 300 // rem(300) from the modal width
-      const modalHeight = 180 // Approximate modal height
-      const navbarHeight = 60 // Height of the sticky navbar
-      const buffer = 10 // Additional buffer space
-
-      let x = rect.left + rect.width / 2
-      let y = rect.top - modalHeight - buffer
-
-      // Check if modal would overlap with navbar
-      if (y < navbarHeight + buffer) {
-        // Position below the card instead
-        y = rect.bottom + buffer
-      }
-
-      // Ensure modal doesn't go off-screen horizontally
-      const modalLeftEdge = x - modalWidth / 2
-      const modalRightEdge = x + modalWidth / 2
-
-      if (modalLeftEdge < buffer) {
-        x = modalWidth / 2 + buffer
-      } else if (modalRightEdge > window.innerWidth - buffer) {
-        x = window.innerWidth - modalWidth / 2 - buffer
-      }
-
-      setHoverModalPosition({ x, y })
-    }
-  }, [hoveredOrganization])
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        window.clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Add scroll and resize listeners to update modal position
-  useEffect(() => {
-    if (hoveredOrganization && hoveredElementRef.current) {
-      const handleScroll = () => {
-        updateModalPosition()
-      }
-
-      const handleResize = () => {
-        updateModalPosition()
-      }
-
-      window.addEventListener('scroll', handleScroll)
-      document.addEventListener('scroll', handleScroll)
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-        document.removeEventListener('scroll', handleScroll)
-        window.removeEventListener('resize', handleResize)
-      }
-    }
-  }, [hoveredOrganization, updateModalPosition])
-
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const newSearch = event.target.value
     setSearchQuery(newSearch)
@@ -224,46 +168,6 @@ export default function OrganizationsPageContent({
     setCurrentPage(page) // Update local state immediately
     // No API calls needed - everything is client-side now!
   }, [])
-
-  // Hover modal handlers
-  const handleOrganizationMouseEnter = (organization: Organization, event: React.MouseEvent) => {
-    const element = event.currentTarget as HTMLElement
-    hoveredElementRef.current = element
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredOrganization(organization)
-      updateModalPosition(organization) // Pass organization directly to ensure position calculation works immediately
-    }, 500) // 500ms delay before showing
-  }
-
-  const handleOrganizationMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Small delay before hiding to allow moving to modal
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setHoveredOrganization(null)
-      setHoverModalPosition(null)
-      hoveredElementRef.current = null
-    }, 200)
-  }
-
-  const handleModalMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-  }
-
-  const handleModalMouseLeave = () => {
-    setHoveredOrganization(null)
-    setHoverModalPosition(null)
-    hoveredElementRef.current = null
-  }
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
@@ -424,12 +328,25 @@ export default function OrganizationsPageContent({
                         width: '100%',
                         height: '100%'
                       }}
+                      onClick={(e) => {
+                        // On touch devices, first tap shows preview, second tap navigates
+                        if (isTouchDevice) {
+                          // If modal is not showing for this organization, prevent navigation and show modal
+                          if (hoveredOrganization?.id !== organization.id) {
+                            e.preventDefault()
+                            handleOrganizationTap(organization, e)
+                          }
+                          // If modal is already showing, allow navigation (second tap)
+                        }
+                      }}
                       onMouseEnter={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.25)'
                         handleOrganizationMouseEnter(organization, e)
                       }}
                       onMouseLeave={(e) => {
+                        if (isTouchDevice) return // Skip hover on touch devices
                         e.currentTarget.style.transform = 'translateY(0)'
                         e.currentTarget.style.boxShadow = theme.shadows.sm
                         handleOrganizationMouseLeave()
@@ -483,9 +400,11 @@ export default function OrganizationsPageContent({
                           backgroundColor: 'transparent',
                           minHeight: rem(40),
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          gap: rem(4)
                         }}
                       >
                         <Text
@@ -506,6 +425,20 @@ export default function OrganizationsPageContent({
                         >
                           {organization.name}
                         </Text>
+                        {/* Touch device hint */}
+                        {isTouchDevice && hoveredOrganization?.id !== organization.id && (
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            ta="center"
+                            style={{
+                              fontSize: rem(10),
+                              opacity: 0.7
+                            }}
+                          >
+                            Tap to preview
+                          </Text>
+                        )}
                       </Box>
                     </Card>
                   </motion.div>
@@ -551,33 +484,67 @@ export default function OrganizationsPageContent({
       {/* Hover Modal */}
       <AnimatePresence>
         {hoveredOrganization && hoverModalPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-              top: hoverModalPosition.y, // Use calculated position directly
-              zIndex: 1001, // Higher than navbar (which is 1000)
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={handleModalMouseEnter}
-            onMouseLeave={handleModalMouseLeave}
-          >
-            <Paper
-              shadow="xl"
-              radius="lg"
-              p="md"
+          <>
+            {/* Backdrop for touch devices */}
+            {isTouchDevice && (
+              <Box
+                onClick={closeModal}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 1000,
+                  backgroundColor: 'transparent'
+                }}
+              />
+            )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
               style={{
-                backgroundColor: theme.colors.dark?.[7] ?? theme.white,
-                border: `2px solid ${accentOrganization}`,
-                backdropFilter: 'blur(10px)',
-                width: rem(300),
-                maxWidth: '90vw'
+                position: 'fixed',
+                left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
+                top: hoverModalPosition.y, // Use calculated position directly
+                zIndex: 1001, // Higher than navbar (which is 1000)
+                pointerEvents: 'auto'
               }}
+              onMouseEnter={handleModalMouseEnter}
+              onMouseLeave={handleModalMouseLeave}
             >
+              <Paper
+                shadow="xl"
+                radius="lg"
+                p="md"
+                style={{
+                  backgroundColor: theme.colors.dark?.[7] ?? theme.white,
+                  border: `2px solid ${accentOrganization}`,
+                  backdropFilter: 'blur(10px)',
+                  width: rem(300),
+                  maxWidth: '90vw',
+                  position: 'relative'
+                }}
+              >
+                {/* Close button for touch devices */}
+                {isTouchDevice && (
+                  <ActionIcon
+                    onClick={closeModal}
+                    size="xs"
+                    variant="subtle"
+                    color="gray"
+                    style={{
+                      position: 'absolute',
+                      top: rem(8),
+                      right: rem(8),
+                      zIndex: 10
+                    }}
+                  >
+                    <X size={14} />
+                  </ActionIcon>
+                )}
               <Stack gap="sm">
                 {/* Organization Name */}
                 <Title
@@ -623,8 +590,9 @@ export default function OrganizationsPageContent({
                   </Text>
                 )}
               </Stack>
-            </Paper>
-          </motion.div>
+              </Paper>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.div>
