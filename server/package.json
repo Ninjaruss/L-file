@@ -21,11 +21,14 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "db:generate": "node scripts/migration-helper.js generate",
     "db:migrate": "node scripts/migration-helper.js run",
+    "db:migrate:dry-run": "node scripts/migration-helper.js dry-run",
+    "db:migrate:check": "node scripts/migration-helper.js check",
     "db:revert": "yarn typeorm migration:revert -d ./typeorm.config.ts",
     "db:backup": "node scripts/migration-helper.js backup",
     "db:seed": "ts-node src/database/seed.ts",
     "db:check": "ts-node -r tsconfig-paths/register src/utils/db-consistency-check.ts",
-    "db:reset": "cross-env ENABLE_SCHEMA_SYNC=true NODE_ENV=development ts-node src/database/reset-db.ts"
+    "db:reset": "cross-env ENABLE_SCHEMA_SYNC=true NODE_ENV=development ts-node src/database/reset-db.ts",
+    "db:status": "yarn typeorm migration:show -d ./typeorm.config.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

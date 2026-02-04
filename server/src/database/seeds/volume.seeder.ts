@@ -28,28 +28,26 @@ export class VolumeSeeder implements Seeder {
       // Add more volumes as needed
     ];
 
-    // Create volumes
-    for (const volumeData of initialVolumes) {
-      const existingVolume = await volumeRepository.findOne({
-        where: {
-          number: volumeData.number,
-        },
-      });
+    const existingNumbers = new Set(
+      (
+        await volumeRepository
+          .createQueryBuilder('v')
+          .select('v.number')
+          .getMany()
+      ).map((v) => v.number),
+    );
 
-      if (!existingVolume) {
-        const volume = volumeRepository.create({
-          number: volumeData.number,
-          description: volumeData.description,
-          startChapter: volumeData.startChapter,
-          endChapter: volumeData.endChapter,
-        });
-        await volumeRepository.save(volume);
-        console.log(`Created volume ${volumeData.number}: ${volumeData.title}`);
-      } else {
-        console.log(`Volume ${volumeData.number} already exists, skipping...`);
-      }
+    const newVolumes = initialVolumes.filter(
+      (volume) => !existingNumbers.has(volume.number),
+    );
+
+    if (newVolumes.length === 0) {
+      console.log('All volumes already exist, skipping...');
+      return;
     }
 
-    console.log('Volume seeding completed successfully');
+    console.log(`Inserting ${newVolumes.length} new volumes...`);
+    await volumeRepository.save(newVolumes);
+    console.log(`Successfully inserted ${newVolumes.length} volumes`);
   }
 }

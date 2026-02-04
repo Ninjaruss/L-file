@@ -15,6 +15,14 @@ async function runSeed() {
   const configService = new ConfigService();
   const dbConfig = getDatabaseConfig(configService) as any;
 
+  // Optimize database config for seeding performance
+  dbConfig.logging = false; // Disable query logging for better performance
+  dbConfig.extra = {
+    ...dbConfig.extra,
+    max: 20, // Increase connection pool for parallel operations
+    statement_timeout: 300000, // 5 minute timeout for long-running queries
+  };
+
   // Create a new data source
   const dataSource = new DataSource(dbConfig);
 

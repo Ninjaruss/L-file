@@ -83,14 +83,21 @@ export class TagSeeder implements Seeder {
       },
     ];
 
-    for (const tagData of tags) {
-      const existingTag = await tagRepository.findOne({
-        where: { name: tagData.name },
-      });
+    const existingNames = new Set(
+      (
+        await tagRepository.createQueryBuilder('t').select('t.name').getMany()
+      ).map((t) => t.name),
+    );
 
-      if (!existingTag) {
-        await tagRepository.save(tagData);
-      }
+    const newTags = tags.filter((tag) => !existingNames.has(tag.name));
+
+    if (newTags.length === 0) {
+      console.log('All tags already exist, skipping...');
+      return;
     }
+
+    console.log(`Inserting ${newTags.length} new tags...`);
+    await tagRepository.save(newTags);
+    console.log(`Successfully inserted ${newTags.length} tags`);
   }
 }

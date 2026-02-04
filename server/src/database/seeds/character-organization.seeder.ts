@@ -621,9 +621,17 @@ export class CharacterOrganizationSeeder implements Seeder {
     const characterRepository = this.dataSource.getRepository(Character);
     const organizationRepository = this.dataSource.getRepository(Organization);
 
-    // Build lookup maps for faster access
-    const characters = await characterRepository.find();
-    const organizations = await organizationRepository.find();
+    console.log('Loading characters and organizations...');
+
+    // Build lookup maps for faster access - using select to reduce memory
+    const characters = await characterRepository
+      .createQueryBuilder('c')
+      .select(['c.id', 'c.name'])
+      .getMany();
+    const organizations = await organizationRepository
+      .createQueryBuilder('o')
+      .select(['o.id', 'o.name'])
+      .getMany();
 
     const characterMap = new Map<string, Character>();
     for (const character of characters) {
@@ -635,7 +643,21 @@ export class CharacterOrganizationSeeder implements Seeder {
       organizationMap.set(organization.name, organization);
     }
 
-    // Create character-organization memberships
+    // Get all existing memberships in a single query
+    console.log('Checking existing memberships...');
+    const existingMemberships = await characterOrgRepository
+      .createQueryBuilder('co')
+      .select(['co.characterId', 'co.organizationId', 'co.role'])
+      .getMany();
+
+    const existingSet = new Set(
+      existingMemberships.map(
+        (m) => `${m.characterId}-${m.organizationId}-${m.role}`,
+      ),
+    );
+
+    // Build new memberships array
+    const newMemberships: any[] = [];
     for (const membership of memberships) {
       const character = characterMap.get(membership.characterName);
       const organization = organizationMap.get(membership.organizationName);
@@ -650,17 +672,9 @@ export class CharacterOrganizationSeeder implements Seeder {
         continue;
       }
 
-      // Check if this membership already exists
-      const existingMembership = await characterOrgRepository.findOne({
-        where: {
-          characterId: character.id,
-          organizationId: organization.id,
-          role: membership.role,
-        },
-      });
-
-      if (!existingMembership) {
-        await characterOrgRepository.save({
+      const key = `${character.id}-${organization.id}-${membership.role}`;
+      if (!existingSet.has(key)) {
+        newMemberships.push({
           characterId: character.id,
           organizationId: organization.id,
           role: membership.role,
@@ -669,5 +683,26 @@ export class CharacterOrganizationSeeder implements Seeder {
         });
       }
     }
+
+    if (newMemberships.length === 0) {
+      console.log('All memberships already exist, skipping...');
+      return;
+    }
+
+    console.log(
+      `Inserting ${newMemberships.length} new memberships in batches...`,
+    );
+
+    // Batch insert
+    const batchSize = 500;
+    for (let i = 0; i < newMemberships.length; i += batchSize) {
+      const batch = newMemberships.slice(i, i + batchSize);
+      await characterOrgRepository.save(batch, { chunk: 100 });
+      console.log(
+        `Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(newMemberships.length / batchSize)}`,
+      );
+    }
+
+    console.log(`Successfully inserted ${newMemberships.length} memberships`);
   }
 }

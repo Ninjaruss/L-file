@@ -267,40 +267,41 @@ export class ArcSeeder implements Seeder {
     // First pass: Create major arcs
     const arcMap = new Map<string, Arc>();
 
-    for (const arcData of majorArcs) {
-      let arc = await arcRepository.findOne({
-        where: { name: arcData.name },
-      });
+    // Get all existing arcs in a single query
+    const existingArcs = await arcRepository.find();
+    const existingArcNames = new Set(existingArcs.map((a) => a.name));
+    existingArcs.forEach((arc) => arcMap.set(arc.name, arc));
 
-      if (!arc) {
-        arc = arcRepository.create({
+    // First pass: Create major arcs (batch insert)
+    const newMajorArcs = majorArcs
+      .filter((arc) => !existingArcNames.has(arc.name))
+      .map((arcData) =>
+        arcRepository.create({
           name: arcData.name,
           order: arcData.order,
           description: arcData.description,
           startChapter: arcData.startChapter,
           endChapter: arcData.endChapter,
           parentId: null,
-        });
-        arc = await arcRepository.save(arc);
-      }
+        }),
+      );
 
-      arcMap.set(arc.name, arc);
+    if (newMajorArcs.length > 0) {
+      console.log(`Creating ${newMajorArcs.length} new major arcs...`);
+      const savedArcs = await arcRepository.save(newMajorArcs);
+      savedArcs.forEach((arc) => arcMap.set(arc.name, arc));
     }
 
-    // Second pass: Create sub-arcs with parent references
-    for (const subArcData of subArcs) {
-      const existingArc = await arcRepository.findOne({
-        where: { name: subArcData.name },
-      });
-
-      if (!existingArc) {
+    // Second pass: Create sub-arcs with parent references (batch insert)
+    const newSubArcs = subArcs
+      .filter((arc) => !existingArcNames.has(arc.name))
+      .map((subArcData) => {
         const parentArc = arcMap.get(subArcData.parentName);
         if (!parentArc) {
           console.warn(`Parent arc not found: ${subArcData.parentName}`);
-          continue;
+          return null;
         }
-
-        const arc = arcRepository.create({
+        return arcRepository.create({
           name: subArcData.name,
           order: subArcData.order,
           description: subArcData.description,
@@ -308,8 +309,16 @@ export class ArcSeeder implements Seeder {
           endChapter: subArcData.endChapter,
           parentId: parentArc.id,
         });
-        await arcRepository.save(arc);
-      }
+      })
+      .filter((arc) => arc !== null);
+
+    if (newSubArcs.length > 0) {
+      console.log(`Creating ${newSubArcs.length} new sub-arcs...`);
+      await arcRepository.save(newSubArcs);
     }
+
+    console.log(
+      `Arc seeding completed. Major arcs: ${majorArcs.length}, Sub-arcs: ${subArcs.length}`,
+    );
   }
 }

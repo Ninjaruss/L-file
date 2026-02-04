@@ -103,4 +103,97 @@ export abstract class BaseSeeder {
    * Actual seeding logic to be implemented by child classes
    */
   protected abstract seedData(queryRunner: any): Promise<void>;
+
+  /**
+   * Batch upsert helper - inserts records in batches using ON CONFLICT DO NOTHING
+   * This is much faster than individual inserts with existence checks
+   */
+  protected async batchUpsert<T>(
+    repository: any,
+    records: Partial<T>[],
+    conflictColumns: string[],
+    batchSize: number = 500,
+  ): Promise<void> {
+    if (records.length === 0) return;
+
+    const tableName = repository.metadata.tableName;
+    const columns = repository.metadata.columns
+      .filter((col: any) => col.databaseName !== 'id')
+      .map((col: any) => col.databaseName);
+
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+
+      // Build values array
+      const values = batch.map((record: any) =>
+        columns.map((col: string) => {
+          const jsName = repository.metadata.columns.find(
+            (c: any) => c.databaseName === col,
+          )?.propertyName;
+          return jsName ? record[jsName] : null;
+        }),
+      );
+
+      // Build placeholders
+      const placeholders = values
+        .map(
+          (_, idx) =>
+            `(${columns.map((_, colIdx) => `$${idx * columns.length + colIdx + 1}`).join(', ')})`,
+        )
+        .join(', ');
+
+      const flatValues = values.flat();
+
+      const query = `
+        INSERT INTO "${tableName}" (${columns.map((c) => `"${c}"`).join(', ')})
+        VALUES ${placeholders}
+        ON CONFLICT (${conflictColumns.map((c) => `"${c}"`).join(', ')}) DO NOTHING
+      `;
+
+      await this.dataSource.query(query, flatValues);
+      this.logger.log(
+        `Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(records.length / batchSize)}`,
+      );
+    }
+  }
+
+  /**
+   * Batch insert helper without conflict checking - for new records only
+   * Even faster than upsert when you know records don't exist
+   */
+  protected async batchInsert<T>(
+    repository: any,
+    records: Partial<T>[],
+    batchSize: number = 500,
+  ): Promise<void> {
+    if (records.length === 0) return;
+
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      await repository.save(batch, { chunk: Math.min(batchSize, 100) });
+      this.logger.log(
+        `Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(records.length / batchSize)}`,
+      );
+    }
+  }
+
+  /**
+   * Get existing records by a field to avoid redundant queries
+   */
+  protected async getExistingByField<T>(
+    repository: any,
+    field: string,
+    values: any[],
+  ): Promise<Map<any, T>> {
+    const existing = await repository
+      .createQueryBuilder()
+      .where(`${field} IN (:...values)`, { values })
+      .getMany();
+
+    const map = new Map<any, T>();
+    for (const item of existing) {
+      map.set(item[field], item);
+    }
+    return map;
+  }
 }

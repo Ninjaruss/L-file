@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
+@Index(['number'], { unique: true })
 export class Chapter {
   @ApiProperty({ description: 'Unique identifier of the chapter' })
   @PrimaryGeneratedColumn()

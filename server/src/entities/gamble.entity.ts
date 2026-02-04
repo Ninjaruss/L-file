@@ -6,11 +6,13 @@ import {
   UpdateDateColumn,
   ManyToMany,
   JoinTable,
+  Index,
 } from 'typeorm';
 import { Character } from './character.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
+@Index(['name'])
 export class Gamble {
   @ApiProperty({ description: 'Unique identifier of the gamble' })
   @PrimaryGeneratedColumn()

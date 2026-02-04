@@ -117,19 +117,112 @@ function generateMigration(name) {
   }
 }
 
-// Run migrations
-function runMigrations() {
-  console.log(chalk.blue('🚀 Running migrations...'));
-  
+// Validate database connection
+function validateConnection() {
+  console.log(chalk.blue('🔍 Validating database connection...'));
+
   try {
-    execSync('yarn typeorm migration:run', {
+    const { execSync } = require('child_process');
+    const dbName = process.env.DATABASE_NAME;
+    const dbUser = process.env.DATABASE_USERNAME;
+    const dbHost = process.env.DATABASE_HOST || 'localhost';
+
+    if (!dbName || !dbUser) {
+      throw new Error('Database credentials not found in environment variables');
+    }
+
+    // Test connection with a simple query
+    execSync(`psql -h ${dbHost} -U ${dbUser} -d ${dbName} -c "SELECT 1" > /dev/null 2>&1`);
+    console.log(chalk.green('✅ Database connection validated'));
+    return true;
+  } catch (error) {
+    console.error(chalk.red('❌ Database connection failed'));
+    return false;
+  }
+}
+
+// Check pending migrations
+function checkPendingMigrations() {
+  console.log(chalk.blue('📋 Checking pending migrations...'));
+
+  try {
+    const output = execSync('yarn typeorm migration:show', {
+      encoding: 'utf-8',
+    });
+
+    console.log(output);
+
+    // Check if there are pending migrations
+    if (output.includes('[X]') || output.includes('pending')) {
+      return true;
+    }
+
+    console.log(chalk.yellow('⚠️ No pending migrations found'));
+    return false;
+  } catch (error) {
+    console.error(chalk.red('❌ Failed to check migrations:'), error);
+    return false;
+  }
+}
+
+// Dry run to show what will be executed (requires TypeORM 0.3+)
+function dryRunMigrations() {
+  console.log(chalk.blue('🔍 Performing dry run (showing SQL that would be executed)...'));
+  console.log(chalk.yellow('Note: This will show pending migrations without executing them\n'));
+
+  try {
+    execSync('yarn typeorm migration:show', {
       stdio: 'inherit',
     });
-    
+
+    return true;
+  } catch (error) {
+    console.error(chalk.red('❌ Dry run failed:'), error);
+    return false;
+  }
+}
+
+// Run migrations with optimized settings
+function runMigrations(dryRun = false) {
+  if (dryRun) {
+    return dryRunMigrations();
+  }
+
+  console.log(chalk.blue('🚀 Running migrations...'));
+
+  // Validate connection first
+  if (!validateConnection()) {
+    console.error(chalk.red('❌ Cannot proceed without valid database connection'));
+    return false;
+  }
+
+  // Check if there are pending migrations
+  if (!checkPendingMigrations()) {
+    console.log(chalk.yellow('⚠️ No migrations to run'));
+    return true;
+  }
+
+  try {
+    // Set environment variables for optimized migration
+    process.env.TYPEORM_LOGGING = 'false'; // Disable query logging during migration
+
+    execSync('yarn typeorm migration:run -d ./typeorm.config.ts', {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PGSTATEMENT_TIMEOUT: '300000', // 5 minute timeout
+      }
+    });
+
     console.log(chalk.green('✅ Migrations completed successfully'));
+    console.log(chalk.blue('💡 Tip: Run "yarn db:seed" to populate with data'));
     return true;
   } catch (error) {
     console.error(chalk.red('❌ Migration run failed:'), error);
+    console.log(chalk.yellow('\n💡 Troubleshooting tips:'));
+    console.log(chalk.yellow('  1. Check your database is running: yarn db:check'));
+    console.log(chalk.yellow('  2. Restore from backup if needed'));
+    console.log(chalk.yellow('  3. Revert last migration: yarn db:revert'));
     return false;
   }
 }
@@ -163,9 +256,22 @@ async function main() {
       
     case 'run':
       await runSafetyChecks();
-      const runSuccess = runMigrations();
+      const runSuccess = runMigrations(false);
       rl.close();
       process.exit(runSuccess ? 0 : 1);
+      break;
+
+    case 'dry-run':
+      console.log(chalk.blue('Running in DRY RUN mode - no changes will be made'));
+      const dryRunSuccess = runMigrations(true);
+      rl.close();
+      process.exit(dryRunSuccess ? 0 : 1);
+      break;
+
+    case 'check':
+      const checkSuccess = checkPendingMigrations();
+      rl.close();
+      process.exit(checkSuccess ? 0 : 1);
       break;
       
     case 'backup':
@@ -179,6 +285,8 @@ async function main() {
       console.log(chalk.blue('Available commands:'));
       console.log('  generate <name>  - Generate a new migration');
       console.log('  run              - Run pending migrations');
+      console.log('  dry-run          - Show pending migrations without executing');
+      console.log('  check            - Check for pending migrations');
       console.log('  backup           - Backup the database');
       rl.close();
       process.exit(1);

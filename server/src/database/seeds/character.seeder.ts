@@ -567,14 +567,40 @@ export class CharacterSeeder implements Seeder {
   async run(): Promise<void> {
     const characterRepository = this.dataSource.getRepository(Character);
 
-    for (const characterData of characters) {
-      const existingCharacter = await characterRepository.findOne({
-        where: { name: characterData.name },
-      });
+    // Get all existing character names in a single query
+    const existingNames = new Set(
+      (
+        await characterRepository
+          .createQueryBuilder('c')
+          .select('c.name')
+          .getMany()
+      ).map((c) => c.name),
+    );
 
-      if (!existingCharacter) {
-        await characterRepository.save(characterData);
-      }
+    // Filter out characters that already exist
+    const newCharacters = characters.filter(
+      (char) => !existingNames.has(char.name),
+    );
+
+    if (newCharacters.length === 0) {
+      console.log('All characters already exist, skipping...');
+      return;
     }
+
+    console.log(
+      `Inserting ${newCharacters.length} new characters in batches...`,
+    );
+
+    // Batch insert - 500 records at a time
+    const batchSize = 500;
+    for (let i = 0; i < newCharacters.length; i += batchSize) {
+      const batch = newCharacters.slice(i, i + batchSize);
+      await characterRepository.save(batch, { chunk: 100 });
+      console.log(
+        `Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(newCharacters.length / batchSize)}`,
+      );
+    }
+
+    console.log(`Successfully inserted ${newCharacters.length} characters`);
   }
 }

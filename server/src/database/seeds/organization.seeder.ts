@@ -47,14 +47,28 @@ export class OrganizationSeeder implements Seeder {
   async run(): Promise<void> {
     const organizationRepository = this.dataSource.getRepository(Organization);
 
-    for (const organizationData of organizations) {
-      const existingOrganization = await organizationRepository.findOne({
-        where: { name: organizationData.name },
-      });
+    const existingNames = new Set(
+      (
+        await organizationRepository
+          .createQueryBuilder('o')
+          .select('o.name')
+          .getMany()
+      ).map((o) => o.name),
+    );
 
-      if (!existingOrganization) {
-        await organizationRepository.save(organizationData);
-      }
+    const newOrganizations = organizations.filter(
+      (org) => !existingNames.has(org.name),
+    );
+
+    if (newOrganizations.length === 0) {
+      console.log('All organizations already exist, skipping...');
+      return;
     }
+
+    console.log(`Inserting ${newOrganizations.length} new organizations...`);
+    await organizationRepository.save(newOrganizations);
+    console.log(
+      `Successfully inserted ${newOrganizations.length} organizations`,
+    );
   }
 }

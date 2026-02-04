@@ -72,18 +72,32 @@ export class EventSeeder implements Seeder {
       },
     ];
 
-    for (const eventData of events) {
-      const existingEvent = await eventRepository.findOne({
-        where: { title: eventData.title },
-      });
+    const existingTitles = new Set(
+      (
+        await eventRepository
+          .createQueryBuilder('e')
+          .select('e.title')
+          .getMany()
+      ).map((e) => e.title),
+    );
 
-      if (!existingEvent) {
-        const event = eventRepository.create(eventData);
-        if (eventData.characters.length > 0) {
-          event.characters = eventData.characters;
-        }
-        await eventRepository.save(event);
-      }
+    const newEvents = events.filter(
+      (event) => !existingTitles.has(event.title),
+    );
+
+    if (newEvents.length === 0) {
+      console.log('All events already exist, skipping...');
+      return;
     }
+
+    console.log(`Inserting ${newEvents.length} new events...`);
+    for (const eventData of newEvents) {
+      const event = eventRepository.create(eventData);
+      if (eventData.characters.length > 0) {
+        event.characters = eventData.characters;
+      }
+      await eventRepository.save(event);
+    }
+    console.log(`Successfully inserted ${newEvents.length} events`);
   }
 }

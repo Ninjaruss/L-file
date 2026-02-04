@@ -69,32 +69,62 @@ export class FandomDataSeeder implements Seeder {
       }>
     >('volumes.json');
 
-    // Upsert volumes
+    // Get existing volumes in a single query
+    const existingVolumes = await volumeRepo.createQueryBuilder('v').getMany();
+    const volumeMap = new Map(existingVolumes.map((v) => [v.number, v]));
+
+    // Separate new vs existing volumes
+    const newVolumes: any[] = [];
+    const volumesToUpdate: any[] = [];
+
     for (const v of volumes) {
-      let vol = await volumeRepo.findOne({ where: { number: v.number } });
-      if (!vol) {
-        vol = (await volumeRepo.save(
-          volumeRepo.create({
-            number: v.number,
-            startChapter: v.startChapter,
-            endChapter: v.endChapter || v.startChapter,
-            description: v.description || null,
-          } as any),
-        )) as any;
-        console.log(`Created volume ${v.number}`);
+      const existing = volumeMap.get(v.number);
+      if (!existing) {
+        newVolumes.push({
+          number: v.number,
+          startChapter: v.startChapter,
+          endChapter: v.endChapter || v.startChapter,
+          description: v.description || null,
+        });
       } else {
-        // Optionally update
         let updated = false;
-        if (vol.startChapter !== v.startChapter) {
-          vol.startChapter = v.startChapter;
+        if (existing.startChapter !== v.startChapter) {
+          existing.startChapter = v.startChapter;
           updated = true;
         }
-        if (v.endChapter && vol.endChapter !== v.endChapter) {
-          vol.endChapter = v.endChapter;
+        if (v.endChapter && existing.endChapter !== v.endChapter) {
+          existing.endChapter = v.endChapter;
           updated = true;
         }
-        if (updated) await volumeRepo.save(vol);
+        if (updated) {
+          volumesToUpdate.push(existing);
+        }
+        // Add to map for later cover processing
+        volumeMap.set(v.number, existing);
       }
+    }
+
+    // Batch insert new volumes
+    if (newVolumes.length > 0) {
+      console.log(`Creating ${newVolumes.length} new volumes...`);
+      const savedVolumes = await volumeRepo.save(newVolumes);
+      // Update map with new volumes
+      for (const vol of savedVolumes) {
+        volumeMap.set(vol.number, vol);
+      }
+    }
+
+    // Batch update existing volumes
+    if (volumesToUpdate.length > 0) {
+      console.log(`Updating ${volumesToUpdate.length} volumes...`);
+      await volumeRepo.save(volumesToUpdate);
+    }
+
+    // Process covers for all volumes
+    console.log('Processing volume covers...');
+    for (const v of volumes) {
+      const vol = volumeMap.get(v.number);
+      if (!vol) continue;
 
       // Attach a cover image. Prefer a local cached file under client/public/assets/volume-covers named like 'volume-01.jpg'.
       try {
@@ -177,19 +207,39 @@ export class FandomDataSeeder implements Seeder {
       }
     }
 
-    // Upsert chapters
-    for (const c of chapters) {
-      const exists = await chapterRepo.findOne({ where: { number: c.number } });
-      if (!exists) {
-        await chapterRepo.save(
-          chapterRepo.create({
-            number: c.number,
-            title: c.title || null,
-            summary: c.summary || null,
-          } as any),
+    // Batch insert chapters
+    console.log('Processing chapters...');
+    const existingChapterNumbers = new Set(
+      (
+        await chapterRepo.createQueryBuilder('c').select('c.number').getMany()
+      ).map((c) => c.number),
+    );
+
+    const newChaptersData = chapters.filter(
+      (c) => !existingChapterNumbers.has(c.number),
+    );
+
+    if (newChaptersData.length > 0) {
+      console.log(
+        `Creating ${newChaptersData.length} new chapters in batches...`,
+      );
+      const batchSize = 500;
+      for (let i = 0; i < newChaptersData.length; i += batchSize) {
+        const batch = newChaptersData.slice(i, i + batchSize);
+        const entitiesToSave = batch.map((c) => {
+          const entity = new Chapter();
+          entity.number = c.number;
+          if (c.title) entity.title = c.title;
+          if (c.summary) entity.summary = c.summary;
+          return entity;
+        });
+        await chapterRepo.save(entitiesToSave);
+        console.log(
+          `Inserted chapter batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(newChaptersData.length / batchSize)}`,
         );
-        console.log(`Created chapter ${c.number}`);
       }
+    } else {
+      console.log('All chapters already exist');
     }
 
     console.log('Fandom data seeding complete');

@@ -135,26 +135,28 @@ export class QuoteSeeder implements Seeder {
       },
     ];
 
-    for (const quoteData of initialQuotes) {
-      const existingQuote = await quoteRepository.findOne({
-        where: {
-          text: quoteData.text,
-          character: { id: quoteData.character.id },
-        },
-      });
+    // Get existing quotes in a single query
+    const existingQuotes = await quoteRepository
+      .createQueryBuilder('q')
+      .select(['q.text', 'q.characterId'])
+      .getMany();
 
-      if (!existingQuote) {
-        await quoteRepository.save(quoteData);
-        console.log(
-          `✅ Added quote: "${quoteData.text.substring(0, 50)}..." by ${quoteData.character.name}`,
-        );
-      } else {
-        console.log(
-          `⏭️  Quote already exists: "${quoteData.text.substring(0, 50)}..."`,
-        );
-      }
+    const existingSet = new Set(
+      existingQuotes.map((q: any) => `${q.text}-${q.characterId}`),
+    );
+
+    // Filter out quotes that already exist
+    const newQuotes = initialQuotes.filter(
+      (quote) => !existingSet.has(`${quote.text}-${quote.character.id}`),
+    );
+
+    if (newQuotes.length === 0) {
+      console.log('All quotes already exist, skipping...');
+      return;
     }
 
-    console.log('✅ Quote seeding completed');
+    console.log(`Inserting ${newQuotes.length} new quotes...`);
+    await quoteRepository.save(newQuotes);
+    console.log(`✅ Successfully inserted ${newQuotes.length} quotes`);
   }
 }

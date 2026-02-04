@@ -122,14 +122,28 @@ export class GambleSeeder implements Seeder {
   async run(): Promise<void> {
     const gambleRepository = this.dataSource.getRepository(Gamble);
 
-    for (const gambleData of gambles) {
-      const existingGamble = await gambleRepository.findOne({
-        where: { name: gambleData.name },
-      });
+    // Get all existing gamble names in a single query
+    const existingNames = new Set(
+      (
+        await gambleRepository
+          .createQueryBuilder('g')
+          .select('g.name')
+          .getMany()
+      ).map((g) => g.name),
+    );
 
-      if (!existingGamble) {
-        await gambleRepository.save(gambleData);
-      }
+    // Filter out gambles that already exist
+    const newGambles = gambles.filter(
+      (gamble) => !existingNames.has(gamble.name),
+    );
+
+    if (newGambles.length === 0) {
+      console.log('All gambles already exist, skipping...');
+      return;
     }
+
+    console.log(`Inserting ${newGambles.length} new gambles...`);
+    await gambleRepository.save(newGambles);
+    console.log(`Successfully inserted ${newGambles.length} gambles`);
   }
 }

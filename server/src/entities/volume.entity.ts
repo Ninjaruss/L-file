@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
+@Index(['number'], { unique: true })
 export class Volume {
   @ApiProperty({ description: 'Unique identifier of the volume' })
   @PrimaryGeneratedColumn()

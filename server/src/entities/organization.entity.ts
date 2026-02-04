@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { CharacterOrganization } from './character-organization.entity';
 import {
   ApiProperty,
@@ -7,6 +13,7 @@ import {
 } from '@nestjs/swagger';
 
 @Entity()
+@Index(['name'])
 export class Organization {
   @ApiProperty({ description: 'Unique identifier of the organization' })
   @PrimaryGeneratedColumn()

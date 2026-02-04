@@ -24,12 +24,21 @@ export default new DataSource({
   migrationsRun: process.env.RUN_MIGRATIONS === 'true',
   // Only enable synchronize in development or test environments and when ENABLE_SCHEMA_SYNC is true
   synchronize: (isDevelopment || isTest) && process.env.ENABLE_SCHEMA_SYNC === 'true',
-  // Ensure schema sync is never run if migrations exist - additional safety
+  // Run all migrations in a single transaction for safety
   migrationsTransactionMode: 'all',
   // SSL configuration for Supabase and other cloud PostgreSQL providers
   ssl:
     process.env.DATABASE_SSL === 'true'
       ? { rejectUnauthorized: false }
       : false,
-  logging: isDevelopment ? ['query', 'error'] : ['error'],
+  // Disable query logging during migrations for better performance
+  logging: process.env.TYPEORM_LOGGING === 'false' ? false : (isDevelopment ? ['query', 'error'] : ['error']),
+  // Connection pool settings optimized for migrations
+  extra: {
+    max: 10,
+    min: 2,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    statement_timeout: parseInt(process.env.PGSTATEMENT_TIMEOUT || '300000'), // 5 minute default
+  },
 });
