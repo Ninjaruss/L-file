@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Alert,
   Badge,
@@ -11,10 +11,12 @@ import {
   Divider,
   Group,
   Loader,
+  Menu,
   SegmentedControl,
   SimpleGrid,
   Skeleton,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Title,
@@ -22,7 +24,7 @@ import {
   ActionIcon,
   Center
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
 import {
@@ -35,6 +37,11 @@ import {
   Quote,
   Dices,
   AlertTriangle,
+  Search,
+  Plus,
+  FileImage,
+  Calendar,
+  MessageSquare,
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -135,13 +142,16 @@ export default function ProfilePageClient() {
   const [savingCustomRole, setSavingCustomRole] = useState(false)
   const initialCustomRoleRef = useRef<string>('')
 
-  // Submission filters and pagination
-  const [submissionTypeFilter, setSubmissionTypeFilter] = useState('all')
-  const [submissionStatusFilter, setSubmissionStatusFilter] = useState('all')
-  const [submissionsVisible, setSubmissionsVisible] = useState(10)
-  // Guide filters and pagination
-  const [guideStatusFilter, setGuideStatusFilter] = useState('all')
-  const [guidesVisible, setGuidesVisible] = useState(6)
+  // Unified content tab and filters
+  type ContentTab = 'guides' | 'media' | 'events' | 'annotations'
+  const [activeContentTab, setActiveContentTab] = useState<ContentTab>('guides')
+  const [contentFilters, setContentFilters] = useState<Record<ContentTab, { status: string; search: string; visible: number }>>({
+    guides: { status: 'all', search: '', visible: 6 },
+    media: { status: 'all', search: '', visible: 10 },
+    events: { status: 'all', search: '', visible: 10 },
+    annotations: { status: 'all', search: '', visible: 10 },
+  })
+  const [debouncedSearch] = useDebouncedValue(contentFilters[activeContentTab].search, 300)
 
   const [quoteModalOpened, { open: openQuoteModal, close: closeQuoteModal }] = useDisclosure(false)
   const [gambleModalOpened, { open: openGambleModal, close: closeGambleModal }] = useDisclosure(false)
@@ -156,6 +166,60 @@ export default function ProfilePageClient() {
   const hasActiveSupporterBadge = userBadges.some(userBadge =>
     userBadge.badge?.type === 'active_supporter'
   )
+
+  // Content counts for tab badges
+  const contentCounts = useMemo(() => ({
+    guides: userGuides.length,
+    media: submissions.filter(s => s.type === 'media').length,
+    events: submissions.filter(s => s.type === 'event').length,
+    annotations: submissions.filter(s => s.type === 'annotation').length,
+  }), [userGuides, submissions])
+
+  // Helper to update filter for a specific tab
+  const updateContentFilter = useCallback((tab: ContentTab, key: 'status' | 'search' | 'visible', value: string | number) => {
+    setContentFilters(prev => ({
+      ...prev,
+      [tab]: { ...prev[tab], [key]: value }
+    }))
+  }, [])
+
+  // Reset visible count when filter changes
+  const handleStatusFilterChange = useCallback((tab: ContentTab, status: string) => {
+    setContentFilters(prev => ({
+      ...prev,
+      [tab]: { ...prev[tab], status, visible: tab === 'guides' ? 6 : 10 }
+    }))
+  }, [])
+
+  // Filtered and visible content for current tab
+  const getFilteredContent = useCallback((tab: ContentTab) => {
+    const { status, visible } = contentFilters[tab]
+    const searchTerm = debouncedSearch.toLowerCase()
+
+    let items: any[] = tab === 'guides'
+      ? userGuides
+      : submissions.filter(s => s.type === tab)
+
+    // Status filter
+    if (status !== 'all') {
+      items = items.filter(item => item.status === status)
+    }
+
+    // Search filter
+    if (searchTerm) {
+      items = items.filter(item =>
+        item.title?.toLowerCase().includes(searchTerm) ||
+        item.description?.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    return {
+      filtered: items,
+      visible: items.slice(0, visible),
+      hasMore: items.length > visible,
+      remaining: items.length - visible
+    }
+  }, [contentFilters, debouncedSearch, userGuides, submissions])
 
   // Save custom role with confirmation
   const saveCustomRole = useCallback(async () => {
@@ -837,196 +901,444 @@ export default function ProfilePageClient() {
               </Stack>
             </Card>
 
-            {/* My Submissions Section */}
-            <Card shadow="sm" padding="md" radius="md">
-              <Stack gap="md">
-                <Text fw={600} size="lg">My Submissions</Text>
-
-                {submissions.length > 0 ? (
-                  <>
-                    <Group gap="sm" wrap="wrap">
-                      <SegmentedControl
-                        size="xs"
-                        value={submissionTypeFilter}
-                        onChange={(v) => { setSubmissionTypeFilter(v); setSubmissionsVisible(10) }}
-                        data={[
-                          { label: 'All', value: 'all' },
-                          { label: 'Guides', value: 'guide' },
-                          { label: 'Media', value: 'media' },
-                          { label: 'Events', value: 'event' },
-                          { label: 'Annotations', value: 'annotation' },
-                        ]}
-                      />
-                      <SegmentedControl
-                        size="xs"
-                        value={submissionStatusFilter}
-                        onChange={(v) => { setSubmissionStatusFilter(v); setSubmissionsVisible(10) }}
-                        data={[
-                          { label: 'All', value: 'all' },
-                          { label: 'Pending', value: 'pending' },
-                          { label: 'Approved', value: 'approved' },
-                          { label: 'Rejected', value: 'rejected' },
-                        ]}
-                      />
-                    </Group>
-
-                    {(() => {
-                      const filtered = submissions.filter((s: any) => {
-                        if (submissionTypeFilter !== 'all' && s.type !== submissionTypeFilter) return false
-                        if (submissionStatusFilter !== 'all' && s.status !== submissionStatusFilter) return false
-                        return true
-                      })
-                      const visible = filtered.slice(0, submissionsVisible)
-                      const hasMore = filtered.length > submissionsVisible
-
-                      if (filtered.length === 0) {
-                        return (
-                          <Text size="sm" c="dimmed" ta="center" py="md">
-                            No submissions match these filters.
-                          </Text>
-                        )
-                      }
-
-                      return (
-                        <Stack gap="sm">
-                          {visible.map((submission: any) => (
-                            <SubmissionCard
-                              key={`${submission.type}-${submission.id}`}
-                              submission={submission as SubmissionItem}
-                              isOwnerView
-                              onDeleteMedia={async (id) => {
-                                try {
-                                  await api.deleteMedia(id)
-                                  setSubmissions(prev => prev.filter(s => !(s.type === 'media' && s.id === id)))
-                                  notifications.show({ title: 'Media deleted', message: 'You can resubmit a new version.', color: 'green' })
-                                } catch {
-                                  notifications.show({ title: 'Error', message: 'Failed to delete media.', color: 'red' })
-                                }
-                              }}
-                            />
-                          ))}
-                          {hasMore && (
-                            <Button
-                              variant="subtle"
-                              fullWidth
-                              onClick={() => setSubmissionsVisible(v => v + 10)}
-                            >
-                              Show more ({filtered.length - submissionsVisible} remaining)
-                            </Button>
-                          )}
-                        </Stack>
-                      )
-                    })()}
-                  </>
-                ) : (
-                  <Alert icon={<FileText size={16} />} title="No submissions yet" variant="light">
-                    <Text>You haven&apos;t made any submissions yet. Start contributing to the community!</Text>
-                  </Alert>
-                )}
-              </Stack>
-            </Card>
-
-            {/* My Guides Section */}
-            <Card shadow="sm" padding="md" radius="md">
-              <Stack gap="md">
+            {/* My Content Section - Unified Guides, Media, Events, Annotations */}
+            <Card shadow="md" padding="lg" radius="md" withBorder>
+              <Stack gap="lg">
+                {/* Header with Create Menu */}
                 <Group justify="space-between" wrap="wrap">
-                  <Text fw={600} size="lg">My Guides</Text>
-                  <Button component={Link} href="/submit-guide" leftSection={<FileText size={16} />}>
-                    Create New Guide
-                  </Button>
+                  <Group gap="sm">
+                    <BookOpen size={20} color={getEntityThemeColor(theme, 'guide')} />
+                    <Text fw={600} size="lg">My Content</Text>
+                  </Group>
+                  <Menu shadow="md" width={200}>
+                    <Menu.Target>
+                      <Button
+                        leftSection={<Plus size={16} />}
+                        variant="light"
+                        color="teal"
+                        radius="md"
+                      >
+                        Create New
+                      </Button>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item component={Link} href="/submit-guide" leftSection={<FileText size={14} />}>
+                        New Guide
+                      </Menu.Item>
+                      <Menu.Item component={Link} href="/submit-media" leftSection={<FileImage size={14} />}>
+                        New Media
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
                 </Group>
 
-                {userGuides.length > 0 ? (
-                  <>
-                    <SegmentedControl
-                      size="xs"
-                      value={guideStatusFilter}
-                      onChange={(v) => { setGuideStatusFilter(v); setGuidesVisible(6) }}
-                      data={[
-                        { label: 'All', value: 'all' },
-                        { label: 'Pending', value: 'pending' },
-                        { label: 'Approved', value: 'approved' },
-                        { label: 'Rejected', value: 'rejected' },
-                      ]}
-                    />
+                {/* Tabs with Counters */}
+                <Tabs
+                  value={activeContentTab}
+                  onChange={(value) => value && setActiveContentTab(value as ContentTab)}
+                  variant="outline"
+                  keepMounted={false}
+                  styles={{
+                    tab: {
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        backgroundColor: 'var(--mantine-color-dark-6)',
+                      },
+                      '&[data-active]': {
+                        borderColor: getEntityThemeColor(theme, 'guide'),
+                        color: getEntityThemeColor(theme, 'guide'),
+                      },
+                    },
+                  }}
+                >
+                  <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap', gap: '4px' }}>
+                    <Tabs.Tab
+                      value="guides"
+                      leftSection={<FileText size={16} />}
+                      rightSection={contentCounts.guides > 0 ? (
+                        <Badge size="xs" variant="light" color="teal" circle>{contentCounts.guides}</Badge>
+                      ) : null}
+                    >
+                      Guides
+                    </Tabs.Tab>
+                    <Tabs.Tab
+                      value="media"
+                      leftSection={<FileImage size={16} />}
+                      rightSection={contentCounts.media > 0 ? (
+                        <Badge size="xs" variant="light" color="violet" circle>{contentCounts.media}</Badge>
+                      ) : null}
+                    >
+                      Media
+                    </Tabs.Tab>
+                    <Tabs.Tab
+                      value="events"
+                      leftSection={<Calendar size={16} />}
+                      rightSection={contentCounts.events > 0 ? (
+                        <Badge size="xs" variant="light" color="orange" circle>{contentCounts.events}</Badge>
+                      ) : null}
+                    >
+                      Events
+                    </Tabs.Tab>
+                    <Tabs.Tab
+                      value="annotations"
+                      leftSection={<MessageSquare size={16} />}
+                      rightSection={contentCounts.annotations > 0 ? (
+                        <Badge size="xs" variant="light" color="blue" circle>{contentCounts.annotations}</Badge>
+                      ) : null}
+                    >
+                      Annotations
+                    </Tabs.Tab>
+                  </Tabs.List>
 
+                  {/* Guides Panel */}
+                  <Tabs.Panel value="guides" pt="md">
                     {(() => {
-                      const filtered = userGuides.filter((g) => {
-                        if (guideStatusFilter !== 'all' && g.status !== guideStatusFilter) return false
-                        return true
-                      })
-                      const visible = filtered.slice(0, guidesVisible)
-                      const hasMore = filtered.length > guidesVisible
-
-                      if (filtered.length === 0) {
-                        return (
-                          <Text size="sm" c="dimmed" ta="center" py="md">
-                            No guides match this filter.
-                          </Text>
-                        )
-                      }
+                      const { filtered, visible, hasMore, remaining } = getFilteredContent('guides')
+                      const totalGuides = userGuides.length
 
                       return (
                         <Stack gap="md">
-                          <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
-                            {visible.map((guide) => {
-                              const isRejected = guide.status === GuideStatus.REJECTED
-                              const statusColor =
-                                guide.status === GuideStatus.APPROVED ? 'green' :
-                                guide.status === GuideStatus.PENDING ? 'yellow' : 'red'
+                          {/* Filter Bar */}
+                          <Group gap="sm" wrap="wrap" p="xs" style={{ backgroundColor: 'var(--mantine-color-dark-7)', borderRadius: 'var(--mantine-radius-md)' }}>
+                            <TextInput
+                              placeholder="Search guides..."
+                              leftSection={<Search size={16} />}
+                              value={contentFilters.guides.search}
+                              onChange={(e) => updateContentFilter('guides', 'search', e.target.value)}
+                              rightSection={contentFilters.guides.search && (
+                                <ActionIcon
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => updateContentFilter('guides', 'search', '')}
+                                >
+                                  <X size={14} />
+                                </ActionIcon>
+                              )}
+                              radius="md"
+                              style={{ flex: '1 1 200px', minWidth: '150px' }}
+                            />
+                            <SegmentedControl
+                              size="xs"
+                              radius="md"
+                              value={contentFilters.guides.status}
+                              onChange={(v) => handleStatusFilterChange('guides', v)}
+                              data={[
+                                { label: 'All', value: 'all' },
+                                { label: 'Pending', value: 'pending' },
+                                { label: 'Approved', value: 'approved' },
+                                { label: 'Rejected', value: 'rejected' },
+                              ]}
+                            />
+                          </Group>
 
-                              return (
-                                <Card key={guide.id} shadow="sm" padding="md" radius="md" withBorder>
-                                  <Stack gap="sm">
-                                    <Group justify="space-between">
-                                      <Text fw={600} size="md" lineClamp={2} style={{ flex: 1 }}>{guide.title}</Text>
-                                      <Badge variant="light" color={statusColor} size="sm">
-                                        {guide.status}
-                                      </Badge>
-                                    </Group>
-                                    {guide.description && (
-                                      <Text size="sm" c="dimmed" lineClamp={3}>
-                                        {guide.description}
-                                      </Text>
-                                    )}
-                                    {isRejected && (guide as any).rejectionReason && (
-                                      <Alert icon={<AlertTriangle size={14} />} color="red" variant="light" p="xs" radius="sm">
-                                        <Text size="xs">{(guide as any).rejectionReason}</Text>
-                                      </Alert>
-                                    )}
-                                    <Group justify="space-between" mt="auto">
-                                      <Text size="xs" c="dimmed">
-                                        Updated {new Date(guide.updatedAt).toLocaleDateString()}
-                                      </Text>
-                                      <Link href={`/guides/${guide.id}`}>
-                                        <Button size="xs" variant="subtle" leftSection={<Edit size={14} />}>
-                                          {isRejected ? 'Edit & Resubmit' : 'View'}
-                                        </Button>
-                                      </Link>
-                                    </Group>
-                                  </Stack>
-                                </Card>
-                              )
-                            })}
-                          </SimpleGrid>
-                          {hasMore && (
-                            <Button
-                              variant="subtle"
-                              fullWidth
-                              onClick={() => setGuidesVisible(v => v + 6)}
-                            >
-                              Show more ({filtered.length - guidesVisible} remaining)
-                            </Button>
+                          {/* Content */}
+                          {totalGuides === 0 ? (
+                            <Alert icon={<BookOpen size={16} />} title="No guides yet" variant="light">
+                              <Text>You haven&apos;t created any guides yet. Start sharing your knowledge with the community!</Text>
+                            </Alert>
+                          ) : filtered.length === 0 ? (
+                            <Text size="sm" c="dimmed" ta="center" py="md">
+                              No guides match your search or filter.
+                            </Text>
+                          ) : (
+                            <>
+                              <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
+                                {visible.map((guide: UserGuide) => {
+                                  const isRejected = guide.status === GuideStatus.REJECTED
+                                  const statusColor =
+                                    guide.status === GuideStatus.APPROVED ? 'green' :
+                                    guide.status === GuideStatus.PENDING ? 'yellow' : 'red'
+
+                                  return (
+                                    <Card key={guide.id} shadow="sm" padding="md" radius="md" withBorder>
+                                      <Stack gap="sm">
+                                        <Group justify="space-between">
+                                          <Text fw={600} size="md" lineClamp={2} style={{ flex: 1 }}>{guide.title}</Text>
+                                          <Badge variant="light" color={statusColor} size="sm">
+                                            {guide.status}
+                                          </Badge>
+                                        </Group>
+                                        {guide.description && (
+                                          <Text size="sm" c="dimmed" lineClamp={3}>
+                                            {guide.description}
+                                          </Text>
+                                        )}
+                                        {isRejected && (guide as any).rejectionReason && (
+                                          <Alert icon={<AlertTriangle size={14} />} color="red" variant="light" p="xs" radius="sm">
+                                            <Text size="xs">{(guide as any).rejectionReason}</Text>
+                                          </Alert>
+                                        )}
+                                        <Group justify="space-between" mt="auto">
+                                          <Text size="xs" c="dimmed">
+                                            Updated {new Date(guide.updatedAt).toLocaleDateString()}
+                                          </Text>
+                                          <Link href={`/guides/${guide.id}`}>
+                                            <Button size="xs" variant="subtle" leftSection={<Edit size={14} />}>
+                                              {isRejected ? 'Edit & Resubmit' : 'View'}
+                                            </Button>
+                                          </Link>
+                                        </Group>
+                                      </Stack>
+                                    </Card>
+                                  )
+                                })}
+                              </SimpleGrid>
+                              {hasMore && (
+                                <Button
+                                  variant="subtle"
+                                  fullWidth
+                                  onClick={() => updateContentFilter('guides', 'visible', contentFilters.guides.visible + 6)}
+                                >
+                                  Show more ({remaining} remaining)
+                                </Button>
+                              )}
+                            </>
                           )}
                         </Stack>
                       )
                     })()}
-                  </>
-                ) : (
-                  <Alert icon={<BookOpen size={16} />} title="No guides yet" variant="light">
-                    <Text>You haven&apos;t created any guides yet. Start sharing your knowledge with the community!</Text>
-                  </Alert>
-                )}
+                  </Tabs.Panel>
+
+                  {/* Media Panel */}
+                  <Tabs.Panel value="media" pt="md">
+                    {(() => {
+                      const { filtered, visible, hasMore, remaining } = getFilteredContent('media')
+                      const totalMedia = submissions.filter(s => s.type === 'media').length
+
+                      return (
+                        <Stack gap="md">
+                          {/* Filter Bar */}
+                          <Group gap="sm" wrap="wrap" p="xs" style={{ backgroundColor: 'var(--mantine-color-dark-7)', borderRadius: 'var(--mantine-radius-md)' }}>
+                            <TextInput
+                              placeholder="Search media..."
+                              leftSection={<Search size={16} />}
+                              value={contentFilters.media.search}
+                              onChange={(e) => updateContentFilter('media', 'search', e.target.value)}
+                              rightSection={contentFilters.media.search && (
+                                <ActionIcon
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => updateContentFilter('media', 'search', '')}
+                                >
+                                  <X size={14} />
+                                </ActionIcon>
+                              )}
+                              radius="md"
+                              style={{ flex: '1 1 200px', minWidth: '150px' }}
+                            />
+                            <SegmentedControl
+                              size="xs"
+                              radius="md"
+                              value={contentFilters.media.status}
+                              onChange={(v) => handleStatusFilterChange('media', v)}
+                              data={[
+                                { label: 'All', value: 'all' },
+                                { label: 'Pending', value: 'pending' },
+                                { label: 'Approved', value: 'approved' },
+                                { label: 'Rejected', value: 'rejected' },
+                              ]}
+                            />
+                          </Group>
+
+                          {/* Content */}
+                          {totalMedia === 0 ? (
+                            <Alert icon={<FileImage size={16} />} title="No media submitted" variant="light">
+                              <Text>You haven&apos;t submitted any media yet. Share fan art, screenshots, or other media!</Text>
+                            </Alert>
+                          ) : filtered.length === 0 ? (
+                            <Text size="sm" c="dimmed" ta="center" py="md">
+                              No media matches your search or filter.
+                            </Text>
+                          ) : (
+                            <>
+                              <Stack gap="sm">
+                                {visible.map((submission: any) => (
+                                  <SubmissionCard
+                                    key={`media-${submission.id}`}
+                                    submission={submission as SubmissionItem}
+                                    isOwnerView
+                                    onDeleteMedia={async (id) => {
+                                      try {
+                                        await api.deleteMedia(id)
+                                        setSubmissions(prev => prev.filter(s => !(s.type === 'media' && s.id === id)))
+                                        notifications.show({ title: 'Media deleted', message: 'You can resubmit a new version.', color: 'green' })
+                                      } catch {
+                                        notifications.show({ title: 'Error', message: 'Failed to delete media.', color: 'red' })
+                                      }
+                                    }}
+                                  />
+                                ))}
+                              </Stack>
+                              {hasMore && (
+                                <Button
+                                  variant="subtle"
+                                  fullWidth
+                                  onClick={() => updateContentFilter('media', 'visible', contentFilters.media.visible + 10)}
+                                >
+                                  Show more ({remaining} remaining)
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </Stack>
+                      )
+                    })()}
+                  </Tabs.Panel>
+
+                  {/* Events Panel */}
+                  <Tabs.Panel value="events" pt="md">
+                    {(() => {
+                      const { filtered, visible, hasMore, remaining } = getFilteredContent('events')
+                      const totalEvents = submissions.filter(s => s.type === 'event').length
+
+                      return (
+                        <Stack gap="md">
+                          {/* Filter Bar */}
+                          <Group gap="sm" wrap="wrap" p="xs" style={{ backgroundColor: 'var(--mantine-color-dark-7)', borderRadius: 'var(--mantine-radius-md)' }}>
+                            <TextInput
+                              placeholder="Search events..."
+                              leftSection={<Search size={16} />}
+                              value={contentFilters.events.search}
+                              onChange={(e) => updateContentFilter('events', 'search', e.target.value)}
+                              rightSection={contentFilters.events.search && (
+                                <ActionIcon
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => updateContentFilter('events', 'search', '')}
+                                >
+                                  <X size={14} />
+                                </ActionIcon>
+                              )}
+                              radius="md"
+                              style={{ flex: '1 1 200px', minWidth: '150px' }}
+                            />
+                            <SegmentedControl
+                              size="xs"
+                              radius="md"
+                              value={contentFilters.events.status}
+                              onChange={(v) => handleStatusFilterChange('events', v)}
+                              data={[
+                                { label: 'All', value: 'all' },
+                                { label: 'Pending', value: 'pending' },
+                                { label: 'Approved', value: 'approved' },
+                                { label: 'Rejected', value: 'rejected' },
+                              ]}
+                            />
+                          </Group>
+
+                          {/* Content */}
+                          {totalEvents === 0 ? (
+                            <Alert icon={<Calendar size={16} />} title="No events submitted" variant="light">
+                              <Text>You haven&apos;t submitted any events yet. Help document story events on character, arc, or gamble pages!</Text>
+                            </Alert>
+                          ) : filtered.length === 0 ? (
+                            <Text size="sm" c="dimmed" ta="center" py="md">
+                              No events match your search or filter.
+                            </Text>
+                          ) : (
+                            <>
+                              <Stack gap="sm">
+                                {visible.map((submission: any) => (
+                                  <SubmissionCard
+                                    key={`event-${submission.id}`}
+                                    submission={submission as SubmissionItem}
+                                    isOwnerView
+                                  />
+                                ))}
+                              </Stack>
+                              {hasMore && (
+                                <Button
+                                  variant="subtle"
+                                  fullWidth
+                                  onClick={() => updateContentFilter('events', 'visible', contentFilters.events.visible + 10)}
+                                >
+                                  Show more ({remaining} remaining)
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </Stack>
+                      )
+                    })()}
+                  </Tabs.Panel>
+
+                  {/* Annotations Panel */}
+                  <Tabs.Panel value="annotations" pt="md">
+                    {(() => {
+                      const { filtered, visible, hasMore, remaining } = getFilteredContent('annotations')
+                      const totalAnnotations = submissions.filter(s => s.type === 'annotation').length
+
+                      return (
+                        <Stack gap="md">
+                          {/* Filter Bar */}
+                          <Group gap="sm" wrap="wrap" p="xs" style={{ backgroundColor: 'var(--mantine-color-dark-7)', borderRadius: 'var(--mantine-radius-md)' }}>
+                            <TextInput
+                              placeholder="Search annotations..."
+                              leftSection={<Search size={16} />}
+                              value={contentFilters.annotations.search}
+                              onChange={(e) => updateContentFilter('annotations', 'search', e.target.value)}
+                              rightSection={contentFilters.annotations.search && (
+                                <ActionIcon
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => updateContentFilter('annotations', 'search', '')}
+                                >
+                                  <X size={14} />
+                                </ActionIcon>
+                              )}
+                              radius="md"
+                              style={{ flex: '1 1 200px', minWidth: '150px' }}
+                            />
+                            <SegmentedControl
+                              size="xs"
+                              radius="md"
+                              value={contentFilters.annotations.status}
+                              onChange={(v) => handleStatusFilterChange('annotations', v)}
+                              data={[
+                                { label: 'All', value: 'all' },
+                                { label: 'Pending', value: 'pending' },
+                                { label: 'Approved', value: 'approved' },
+                                { label: 'Rejected', value: 'rejected' },
+                              ]}
+                            />
+                          </Group>
+
+                          {/* Content */}
+                          {totalAnnotations === 0 ? (
+                            <Alert icon={<MessageSquare size={16} />} title="No annotations yet" variant="light">
+                              <Text>You haven&apos;t added any annotations yet. Add annotations to characters, gambles, or arcs!</Text>
+                            </Alert>
+                          ) : filtered.length === 0 ? (
+                            <Text size="sm" c="dimmed" ta="center" py="md">
+                              No annotations match your search or filter.
+                            </Text>
+                          ) : (
+                            <>
+                              <Stack gap="sm">
+                                {visible.map((submission: any) => (
+                                  <SubmissionCard
+                                    key={`annotation-${submission.id}`}
+                                    submission={submission as SubmissionItem}
+                                    isOwnerView
+                                  />
+                                ))}
+                              </Stack>
+                              {hasMore && (
+                                <Button
+                                  variant="subtle"
+                                  fullWidth
+                                  onClick={() => updateContentFilter('annotations', 'visible', contentFilters.annotations.visible + 10)}
+                                >
+                                  Show more ({remaining} remaining)
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </Stack>
+                      )
+                    })()}
+                  </Tabs.Panel>
+                </Tabs>
               </Stack>
             </Card>
           </Stack>
