@@ -201,3 +201,5 @@ export default async function CharacterDetailPage({ params }: { params: Promise<
     </Container>
   )
 }
+
+export const dynamic = 'force-dynamic'

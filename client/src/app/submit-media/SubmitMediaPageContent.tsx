@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Alert,
   Box,
@@ -68,6 +69,10 @@ interface SubmitMediaFormState {
 export default function SubmitMediaPageContent() {
   const { user, loading: authLoading } = useAuth()
   const theme = useMantineTheme()
+  const searchParams = useSearchParams()
+  const editMediaId = searchParams.get('edit')
+  const isEditMode = Boolean(editMediaId)
+
   const [formData, setFormData] = useState<SubmitMediaFormState>({
     url: '',
     description: '',
@@ -75,6 +80,7 @@ export default function SubmitMediaPageContent() {
     ownerId: null,
     chapterNumber: null
   })
+  const [existingMedia, setExistingMedia] = useState<any>(null)
   const [characters, setCharacters] = useState<Character[]>([])
   const [arcs, setArcs] = useState<Arc[]>([])
   const [events, setEvents] = useState<Event[]>([])
@@ -91,6 +97,36 @@ export default function SubmitMediaPageContent() {
   useEffect(() => {
     setTabAccentColors('media')
   }, [])
+
+  // Fetch existing media data when in edit mode
+  useEffect(() => {
+    if (isEditMode && editMediaId) {
+      const fetchMediaData = async () => {
+        try {
+          const media = await api.getMyMediaSubmission(editMediaId)
+          setExistingMedia(media)
+
+          // Pre-populate form with existing data
+          setFormData({
+            url: media.url || '',
+            description: media.description || '',
+            ownerType: media.ownerType || '',
+            ownerId: media.ownerId || null,
+            chapterNumber: media.chapterNumber || null
+          })
+
+          // Set active tab based on media type
+          if (media.isUploaded) {
+            setActiveTab('upload')
+          }
+        } catch (fetchError) {
+          console.error('Failed to fetch media data:', fetchError)
+          setError('Failed to load media data for editing.')
+        }
+      }
+      fetchMediaData()
+    }
+  }, [isEditMode, editMediaId])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -214,7 +250,7 @@ export default function SubmitMediaPageContent() {
   }
 
   const handleUpload = async (
-    file: File,
+    file: File | null,
     uploadData: {
       type: MediaType
       description?: string
@@ -230,11 +266,38 @@ export default function SubmitMediaPageContent() {
     setLoading(true)
 
     try {
-      await api.uploadMedia(file, uploadData)
-      const approvalMessage = (user?.role === 'moderator' || user?.role === 'admin')
-        ? 'Media uploaded successfully! It has been automatically approved.'
-        : 'Media uploaded successfully! It is pending review and will be visible once approved.'
-      setSuccess(approvalMessage)
+      if (isEditMode && editMediaId) {
+        // Edit mode: update existing media
+        const formData = new FormData()
+
+        // Add file if provided (optional in edit mode)
+        if (file) {
+          formData.append('file', file)
+        }
+
+        // Add metadata fields
+        if (uploadData.description) {
+          formData.append('description', uploadData.description)
+        }
+        formData.append('ownerType', uploadData.ownerType)
+        formData.append('ownerId', uploadData.ownerId.toString())
+        if (uploadData.chapterNumber) {
+          formData.append('chapterNumber', uploadData.chapterNumber.toString())
+        }
+
+        await api.updateOwnMedia(editMediaId, formData)
+        setSuccess('Media updated successfully! Your submission is pending review.')
+      } else {
+        // Create mode: upload new media
+        if (!file) {
+          throw new Error('File is required')
+        }
+        await api.uploadMedia(file, uploadData)
+        const approvalMessage = (user?.role === 'moderator' || user?.role === 'admin')
+          ? 'Media uploaded successfully! It has been automatically approved.'
+          : 'Media uploaded successfully! It is pending review and will be visible once approved.'
+        setSuccess(approvalMessage)
+      }
     } catch (uploadError: unknown) {
       setError(uploadError instanceof Error ? uploadError.message : 'Failed to upload media. Please try again.')
       throw uploadError
@@ -377,9 +440,12 @@ export default function SubmitMediaPageContent() {
             <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
               <Upload size={32} color="#a855f7" />
             </ThemeIcon>
-            <Title order={1}>Submit Media</Title>
+            <Title order={1}>{isEditMode ? 'Edit Media Submission' : 'Submit Media'}</Title>
             <Text size="lg" c="dimmed">
-              Share fanart, videos, audio, or other media from YouTube, TikTok, Instagram, Pixiv, DeviantArt, Imgur, SoundCloud, and more
+              {isEditMode
+                ? 'Update your media submission details and optionally replace the file'
+                : 'Share fanart, videos, audio, or other media from YouTube, TikTok, Instagram, Pixiv, DeviantArt, Imgur, SoundCloud, and more'
+              }
             </Text>
           </Stack>
 
@@ -695,7 +761,7 @@ export default function SubmitMediaPageContent() {
                           }
                         }}
                       >
-                        {loading ? 'Submitting...' : 'Submit Media'}
+                        {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Media' : 'Submit Media')}
                       </Button>
                     </Stack>
                   </form>
@@ -732,6 +798,8 @@ export default function SubmitMediaPageContent() {
                       dataLoading={dataLoading}
                       error={error}
                       userRole={(user?.role as 'user' | 'moderator' | 'admin') || 'user'}
+                      isEditMode={isEditMode}
+                      existingMedia={existingMedia}
                     />
                   </Stack>
                 )}

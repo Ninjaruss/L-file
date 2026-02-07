@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import {
   Alert,
   Badge,
@@ -18,7 +18,7 @@ import {
 import { Upload, Image, Video, FileText, X } from 'lucide-react'
 
 interface MediaUploadFormProps {
-  onUpload: (file: File, data: {
+  onUpload: (file: File | null, data: {
     type: 'image' | 'video' | 'audio'
     description?: string
     ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
@@ -37,6 +37,8 @@ interface MediaUploadFormProps {
   dataLoading?: boolean
   error?: string
   userRole?: 'user' | 'moderator' | 'admin'
+  isEditMode?: boolean
+  existingMedia?: any
 }
 
 export default function MediaUploadForm({
@@ -50,7 +52,9 @@ export default function MediaUploadForm({
   loading = false,
   dataLoading = false,
   error,
-  userRole = 'user'
+  userRole = 'user',
+  isEditMode = false,
+  existingMedia = null
 }: MediaUploadFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
@@ -64,6 +68,20 @@ export default function MediaUploadForm({
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const theme = useMantineTheme()
+
+  // Pre-populate form in edit mode
+  useEffect(() => {
+    if (isEditMode && existingMedia) {
+      setFormData({
+        description: existingMedia.description || '',
+        ownerType: existingMedia.ownerType || '',
+        ownerId: existingMedia.ownerId || null,
+        chapterNumber: existingMedia.chapterNumber || null,
+        purpose: existingMedia.purpose || 'gallery',
+        usageType: existingMedia.usageType || 'gallery_upload',
+      })
+    }
+  }, [isEditMode, existingMedia])
 
   const handleFileSelect = (file: File) => {
     // Validate file type
@@ -108,8 +126,10 @@ export default function MediaUploadForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedFile) return
-    
+
+    // In create mode, file is required. In edit mode, file is optional
+    if (!isEditMode && !selectedFile) return
+
     // Validate required fields
     if (!formData.ownerType || !formData.ownerId) {
       throw new Error('Please select an owner type and owner ID')
@@ -483,7 +503,7 @@ export default function MediaUploadForm({
             type="submit"
             size="lg"
             fullWidth
-            disabled={!selectedFile || loading || !formData.ownerType || !formData.ownerId}
+            disabled={(!isEditMode && !selectedFile) || loading || !formData.ownerType || !formData.ownerId}
             leftSection={!loading ? <Upload size={18} /> : undefined}
             loading={loading}
             styles={{
@@ -500,7 +520,7 @@ export default function MediaUploadForm({
               }
             }}
           >
-            {loading ? 'Uploading...' : 'Upload Media'}
+            {loading ? (isEditMode ? 'Updating...' : 'Uploading...') : (isEditMode ? 'Update Media' : 'Upload Media')}
           </Button>
         </Stack>
       </form>

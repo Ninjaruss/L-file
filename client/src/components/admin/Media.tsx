@@ -569,11 +569,11 @@ const MediaFilterToolbar = () => {
 
     // Remove existing owner type filters
     delete newFilters.ownerType
-    delete newFilters.excludeChaptersVolumes
+    delete newFilters.excludeVolumes
 
     if (type === 'general') {
-      // Mark that we want to exclude chapters and volumes
-      newFilters.excludeChaptersVolumes = 'true'
+      // Mark that we want to exclude volumes only
+      newFilters.excludeVolumes = 'true'
     } else if (type === 'volumes') {
       // Show only volume media
       newFilters.ownerType = 'volume'
@@ -644,7 +644,7 @@ const MediaFilterToolbar = () => {
   const currentStatus = filterValues?.status || 'all'
   const currentMediaType = (() => {
     if (filterValues?.ownerType === 'volume') return 'volumes'
-    if (filterValues?.excludeChaptersVolumes === 'true') return 'general'
+    if (filterValues?.excludeVolumes === 'true') return 'general'
     return 'general' // Default to general
   })()
   const hasEntityFilters = selectedEntities.characters.length > 0 ||
@@ -1841,15 +1841,15 @@ const FilteredDatagrid = () => {
   const filteredData = useMemo(() => {
     if (!data) return []
 
-    // Apply client-side filtering for excludeChaptersVolumes
-    if (filterValues?.excludeChaptersVolumes === 'true') {
+    // Apply client-side filtering for excludeVolumes
+    if (filterValues?.excludeVolumes === 'true') {
       return data.filter((item: any) =>
-        item.ownerType !== 'chapter' && item.ownerType !== 'volume'
+        item.ownerType !== 'volume'
       )
     }
 
     return data
-  }, [data, filterValues?.excludeChaptersVolumes])
+  }, [data, filterValues?.excludeVolumes])
 
   if (isLoading) return null
 
@@ -1970,7 +1970,7 @@ const FilteredDatagrid = () => {
 export const MediaList = () => (
   <List
     perPage={25}
-    filter={{ excludeChaptersVolumes: 'true' }}
+    filter={{ excludeVolumes: 'true' }}
     filterDefaultValues={{ status: 'pending' }}
     sx={{
       '& .RaList-content': {

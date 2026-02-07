@@ -35,7 +35,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Upload
+  Upload,
+  ImageOff
 } from 'lucide-react'
 import Link from 'next/link'
 import { BackToTop } from '../../components/BackToTop'
@@ -98,6 +99,7 @@ export default function MediaPageContent({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [imageDimensions, setImageDimensions] = useState<Record<number, { width: number; height: number }>>({})
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hoveredMediaId, setHoveredMediaId] = useState<number | null>(null)
@@ -749,21 +751,39 @@ export default function MediaPageContent({
                             {/* Image container - no AspectRatio for true masonry */}
                             {thumbnail ? (
                               <Box style={{ position: 'relative', width: '100%' }}>
-                                <img
-                                  src={thumbnail}
-                                  alt={item.description || 'Media item'}
-                                  loading="lazy"
-                                  style={{
-                                    width: '100%',
-                                    height: 'auto',
-                                    display: 'block'
-                                  }}
-                                  onLoad={(e) => handleImageLoad(item.id, e)}
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement
-                                    target.style.display = 'none'
-                                  }}
-                                />
+                                {!failedImages.has(item.id) ? (
+                                  <img
+                                    src={thumbnail}
+                                    alt={item.description || 'Media item'}
+                                    loading="lazy"
+                                    style={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      display: 'block'
+                                    }}
+                                    onLoad={(e) => handleImageLoad(item.id, e)}
+                                    onError={() => {
+                                      setFailedImages(prev => new Set(prev).add(item.id))
+                                    }}
+                                  />
+                                ) : (
+                                  <Box
+                                    style={{
+                                      width: '100%',
+                                      minHeight: 150,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      backgroundColor: theme.colors.dark[6],
+                                      borderRadius: 8
+                                    }}
+                                  >
+                                    <Stack align="center" gap="xs">
+                                      <ImageOff size={32} color={theme.colors.dark[3]} />
+                                      <Text size="xs" c="dimmed">Image unavailable</Text>
+                                    </Stack>
+                                  </Box>
+                                )}
 
                                 {/* Video play overlay */}
                                 {item.type === 'video' && (

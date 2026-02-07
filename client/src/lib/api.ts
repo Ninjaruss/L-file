@@ -1108,6 +1108,18 @@ class ApiClient {
     return this.delete<any>(`/media/${id}`)
   }
 
+  async getMyMediaSubmission(id: string) {
+    return this.get<any>(`/media/${id}`)
+  }
+
+  async updateOwnMedia(id: string, formData: FormData) {
+    return this.patch<any>(`/media/my-submissions/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  }
+
   async getApprovedMedia(params?: {
     page?: number
     limit?: number

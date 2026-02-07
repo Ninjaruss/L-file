@@ -32,7 +32,8 @@ import {
   ZoomIn,
   ChevronLeft,
   ChevronRight,
-  Maximize2
+  Maximize2,
+  ImageOff
 } from 'lucide-react'
 import NextImage from 'next/image'
 import { api } from '../lib/api'
@@ -644,16 +645,26 @@ export default function MediaGallery({
                         justifyContent: 'center',
                         color: theme.colors.gray[5],
                         width: '100%',
-                        height: rem(150),
-                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        minHeight: rem(150),
+                        backgroundColor: theme.colors.dark[6],
+                        borderRadius: 8,
                         flexDirection: 'column',
                         gap: rem(8)
                       }}
                     >
-                      {getMediaTypeIcon(mediaItem.type)}
-                      <Text size="xs" c="dimmed" ta="center">
-                        {failedImageIds.has(mediaItem.id) ? 'Failed to load' : 'Click to view'}
-                      </Text>
+                      <Stack align="center" gap="xs">
+                        {failedImageIds.has(mediaItem.id) ? (
+                          <>
+                            <ImageOff size={32} color={theme.colors.dark[3]} />
+                            <Text size="xs" c="dimmed">Image unavailable</Text>
+                          </>
+                        ) : (
+                          <>
+                            {getMediaTypeIcon(mediaItem.type)}
+                            <Text size="xs" c="dimmed" ta="center">Click to view</Text>
+                          </>
+                        )}
+                      </Stack>
                     </Box>
                   )
                 })()}

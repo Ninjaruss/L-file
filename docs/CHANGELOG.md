@@ -1,8 +1,13 @@
 # Changelog and notes
 
 ## TODO
-- For media admin page, general filter should show everything except volumes
 
+## 2026-02-07
+- Media gallery image display update
+- Users should now be able to edit their media and replace files
+- Admin dashboard media page now filters out volumes for general filter
+- Character backstory should now refresh properly
+- Granular seeder skip config added
 
 ## 2026-02-04
 ### Backblaze B2 Upload Retry Logic
