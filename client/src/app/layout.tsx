@@ -8,7 +8,7 @@ import { ColorSchemeScript } from '@mantine/core'
 export const metadata: Metadata = {
   title: {
     template: '%s | L-File - Usogui Database',
-    default: 'L-File - The Ultimate Usogui Database'
+    default: 'L-File - Usogui Database'
   },
   description: 'The complete fan-made database for Usogui (Lie Eater) manga. Explore characters, story arcs, gambling mechanics, guides, and community content.',
   keywords: ['Usogui', 'Lie Eater', 'manga', 'Baku Madarame', 'gambling', 'database', 'characters', 'arcs', 'gambles', 'fansite'],
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'L-File - The Ultimate Usogui Database',
+    title: 'L-File - Usogui Database',
     description: 'The complete fan-made database for Usogui (Lie Eater) manga. Explore characters, story arcs, gambling mechanics, guides, and community content.',
     url: 'https://l-file.com',
     siteName: 'L-File',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'L-File - The Ultimate Usogui Database',
+    title: 'L-File - Usogui Database',
     description: 'The complete fan-made database for Usogui (Lie Eater) manga.',
     creator: '@lfile',
   },

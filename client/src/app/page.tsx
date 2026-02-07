@@ -100,7 +100,7 @@ export default function HomePage() {
             Welcome to the L-File
           </Title>
           <Text size="xl" c="dimmed" style={{ marginBottom: '2rem' }}>
-            The ultimate database for the gambling manga masterpiece - Usogui (Lie Eater)
+            A fan-built database dedicated to Usogui (Lie Eater)
           </Text>
 
           <Box style={{ maxWidth: 600, margin: '0 auto 2.5rem auto' }}>
@@ -248,7 +248,7 @@ export default function HomePage() {
               </Title>
             </Group>
             <Text size="xl" style={{ opacity: 0.9, marginBottom: '1.5rem', fontWeight: 'normal' }} c="#ffffff">
-              Connect with fellow Usogui fans, discuss theories, share insights, and stay updated on the latest content
+              Discuss gambles, character analysis, and ongoing reads with other Usogui fans — and help shape the database.
             </Text>
 
             <Button

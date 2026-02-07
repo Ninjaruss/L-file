@@ -14,15 +14,14 @@ const faqData: FAQItem[] = [
   {
     question: 'What is L-file?',
     answer:
-      "L-file is an unofficial fan database for the manga series 'Usogui' (Lie Eater) by Sako Toshio. We provide comprehensive information about characters, story arcs, gambling games, and more to help fans explore and understand this complex series."
+      "L-file is an unofficial fan-made database for the manga Usogui (Lie Eater) by Sako Toshio. It collects information about characters, story arcs, gambles, and related details to help readers explore and understand this complex series."
   },
   {
     question: 'Where can I read Usogui?',
     answer: (
       <>
         <Text component="p" size="sm" style={{ marginBottom: '1rem' }}>
-          We understand the desire to read this incredible series! Unfortunately, there is <b>no official English license or release for Usogui</b>. This means no official digital chapters on apps like Viz Manga or Manga Plus, and no official physical volumes in English.
-          For this reason, the primary way the international community has accessed Usogui has been through fan translations. The most complete and well-regarded fan translation was done by Team Duwang.
+          At this time, Usogui does not have an official English digital or print release.
         </Text>
 
         <Box
@@ -36,10 +35,10 @@ const faqData: FAQItem[] = [
           }}
         >
           <Text size="sm" style={{ marginBottom: '0.5rem' }}>
-            The best way to support Sako-sensei is to purchase the official Japanese volumes if you are able. This shows the publisher there is international interest and could one day help motivate an official English release.
+            The best way to support Sako Toshio is by purchasing the official Japanese volumes if possible, which helps show international interest in the series.
           </Text>
           <Text size="sm">
-            Another way to support Sako-sensei is by reading his most recent work that is available officially in English:
+            Sako’s newer work Genikasuri (Pocketeer) is officially available in English on Manga Plus.
           </Text>
           <Anchor
             component="a"
@@ -75,38 +74,41 @@ const faqData: FAQItem[] = [
             </Group>
           </Anchor>
         </Box>
-
-        <Text component="p" size="sm">
-          This fan site is not affiliated with any scanlation group. We provide this information for educational and informational purposes only. We encourage all fans to support the official release should it ever become available in their region.
-        </Text>
       </>
     )
   },
   {
     question: 'Is this website officially affiliated with the creators?',
     answer:
-      'No, L-file is an independent fan project and is not officially affiliated with Sako Toshio, Shueisha, or any official Usogui publishers. This is a fan-made resource created by and for the Usogui community.'
+      'No. L-file is an independent fan project and is not affiliated with Sako Toshio, Shueisha, or any official publishers. It is created by fans for the Usogui community.'
   },
   {
     question: 'Can I contribute content to L-file?',
     answer: (
       <>
-        Yes! Registered users can contribute guides and submit fanart/videos through media submissions.
-        You can{' '}
+        Yes! Registered users can submit guides, media, and other contributions.{' '}
         <Anchor component={Link} href="/login" color="red.5">
-          login via Discord
+          Login via Discord
         </Anchor>{' '}
-        to start contributing. All submissions are moderated to maintain quality and accuracy. If you would like to help with data entry, please join the
-        <Anchor component="a" href="https://discord.gg/JXeRhV2qpY" color="red.5" target="_blank" rel="noopener noreferrer">
-          {' '}Discord
-        </Anchor>{' '}community.
+        to get started. All submissions are moderated for quality and accuracy.
+
+        {' '}If you’d like to help with database entries or get more involved, join the{' '}
+        <Anchor
+          component="a"
+          href="https://discord.gg/JXeRhV2qpY"
+          color="red.5"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Discord community
+        </Anchor>.
       </>
     )
   },
   {
     question: 'Does this website contain spoilers?',
     answer:
-      'Yes, L-file contains detailed information about the entire Usogui series, including major plot points, character developments, and story outcomes. Although chapter progress can be set to hide spoilers, we recommend completing the manga before browsing if you want to avoid spoilers.'
+      'Yes. L-file includes information from across the entire series, including major plot developments. You can set chapter progress to hide spoilers, but readers who want a blind experience should finish the manga first.'
   },
   {
     question: 'How do I track my reading progress?',
@@ -116,7 +118,9 @@ const faqData: FAQItem[] = [
         <Anchor component={Link} href="/login" color="red.5">
           logging in with Discord
         </Anchor>
-        , you can mark chapters as read using the chapter button on the bottom right of the screen. Your progress is saved and synced across devices when you're logged in. Chapter progress is also tracked locally, so you can keep track even without an account!
+        , you can mark chapters as read using the chapter button on the bottom right of the screen.
+
+        {' '}Your progress syncs across devices while logged in. Even without an account, progress is saved locally on your device.
       </>
     )
   }

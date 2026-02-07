@@ -98,6 +98,9 @@ export function AboutPageContent() {
 
   const mutedTextColor = hexToRgba(mutedHex, 0.9)
 
+  const user = 'ninjarussyt'
+  const domain = 'gmail.com'
+
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
@@ -106,9 +109,6 @@ export function AboutPageContent() {
           <Title order={2} mb="sm" c={whiteHex}>
             About L-File
           </Title>
-          <Text size="lg" c={hexToRgba(whiteHex, 0.65)}>
-            Comprehensive fan-made archive and community hub for the world of Usogui
-          </Text>
         </Box>
 
         <Grid gutter="xl">
@@ -128,10 +128,10 @@ export function AboutPageContent() {
                       </Title>
                     </Group>
                     <Text size="md" c={hexToRgba(whiteHex, 0.85)}>
-                      L-File is a passion project that takes considerable time and effort to maintain.
-                      Your support helps cover hosting costs and development time, allowing us to keep
-                      this resource free and ad-free for the entire Usogui community.
+                      L-File is an independent fan project built in spare time by someone who genuinely loves Usogui.
+                      Support helps cover hosting and development costs, keeping the site free and ad-free for the community.
                     </Text>
+
                     <Group gap="sm" mt="sm">
                       <Button
                         component="a"
@@ -194,19 +194,17 @@ export function AboutPageContent() {
                   About
                 </Title>
                 <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
-                  L-File is a comprehensive fan-made database and community hub dedicated to the manga series Usogui (The Lie Eater).
-                  This project aims to provide fans with detailed information about characters, story arcs, gambles, events, and guides
-                  to help navigate the complex world of Usogui.
+                  L-File is a fan-made database and community hub dedicated to <i>Usogui (The Lie Eater)</i>.
+                  It organizes information about characters, story arcs, gambles, and events to help readers explore the series’ complex world.
                 </Text>
+
                 <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
-                  Our mission is to create the most complete and accurate resource for Usogui fans worldwide, featuring character
-                  profiles, detailed gamble explanations, chapter guides, and community-contributed content. Whether you&apos;re a new reader
-                  trying to understand the intricate gambling strategies or a long-time fan looking to dive deeper into character
-                  relationships, L-File is here to enhance your Usogui experience.
+                  Usogui is dense, strategic, and detail-heavy, and existing resources can be difficult to navigate.
+                  L-File exists to present information in a clearer, more structured way while preserving the depth that makes the series special.
                 </Text>
+
                 <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
-                  This is a non-profit, fan-created project built with love for the Usogui community. All content is created by fans,
-                  for fans, and we encourage community participation through guide submissions and media contributions.
+                  This is a non-profit fan project. Content is created by fans, for fans, and community contributions help the database continue to grow over time.
                 </Text>
               </Stack>
             </Card>
@@ -220,7 +218,7 @@ export function AboutPageContent() {
                   Supporters
                 </Title>
                 <Text size="md" c={hexToRgba(whiteHex, 0.8)}>
-                  A huge thank you to everyone who has supported L-File through contributions, feedback, and by spreading the word!
+                  Thank you to everyone who has supported L-File through contributions, feedback, and sharing the project with other readers.
                 </Text>
                 <Text size="sm" c={hexToRgba(whiteHex, 0.6)}>
                   Ko-fi supporters automatically receive special badges on their profiles. Your support helps keep this project running!
@@ -236,8 +234,9 @@ export function AboutPageContent() {
                   Contact
                 </Title>
                 <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
-                  Have questions, suggestions, or want to get involved? Here&apos;s how you can reach out:
+                  Questions, suggestions, or interested in contributing? You can reach out here:
                 </Text>
+
                 <Grid gutter="md">
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Stack gap="sm">
@@ -245,8 +244,8 @@ export function AboutPageContent() {
                         <Mail size={20} />
                         <Text size="md" c={whiteHex}>
                           Email{' '}
-                          <Anchor href="mailto:contact@l-file.com" underline="hover">
-                            contact@l-file.com
+                          <Anchor href={`mailto:${user}@${domain}`}>
+                            {user}@{domain}
                           </Anchor>
                         </Text>
                       </Group>
