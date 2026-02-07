@@ -21,6 +21,7 @@ import { User } from '../../entities/user.entity';
 import { Character } from '../../entities/character.entity';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
+import { UpdateOwnMediaDto } from './dto/update-own-media.dto';
 import { UrlNormalizerService } from './services/url-normalizer.service';
 import { EmailService } from '../email/email.service';
 import { FileValidationService } from './validators/file-validation.service';
@@ -428,6 +429,116 @@ export class MediaService {
     }
 
     return savedMedia;
+  }
+
+  async updateOwnSubmission(
+    id: number,
+    updateData: UpdateOwnMediaDto,
+    file: Express.Multer.File | undefined,
+    user: User,
+    b2Service: any,
+  ): Promise<Media> {
+    const media = await this.mediaRepo.findOne({
+      where: { id },
+      relations: ['submittedBy'],
+    });
+
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+
+    if (media.submittedBy.id !== user.id) {
+      throw new ForbiddenException('You can only edit your own submissions');
+    }
+
+    // Only allow editing pending or rejected submissions
+    if (media.status === MediaStatus.APPROVED) {
+      throw new ForbiddenException('Cannot edit approved submissions');
+    }
+
+    // Update metadata fields if provided
+    if (updateData.description !== undefined) {
+      media.description = updateData.description;
+    }
+    if (updateData.ownerType !== undefined) {
+      media.ownerType = updateData.ownerType;
+    }
+    if (updateData.ownerId !== undefined) {
+      media.ownerId = updateData.ownerId;
+    }
+    if (updateData.chapterNumber !== undefined) {
+      media.chapterNumber = updateData.chapterNumber;
+    }
+
+    // Handle file replacement if a new file is provided
+    if (file) {
+      // Validate file with magic byte checks
+      const validationResult = await this.fileValidationService.validateFile(
+        file,
+        file.mimetype,
+      );
+
+      // Generate UUID-based filename
+      const crypto = await import('crypto');
+      const uuid = crypto.randomUUID();
+      const ext = this.fileValidationService.getExtensionFromMimeType(
+        validationResult.mimeType,
+      );
+      const uniqueFileName = `${uuid}.${ext}`;
+
+      // Determine usage type based on purpose
+      const usageType = media.purpose === MediaPurpose.ENTITY_DISPLAY
+        ? (media.ownerType === MediaOwnerType.CHARACTER ? MediaUsageType.CHARACTER_IMAGE : MediaUsageType.GENERAL)
+        : MediaUsageType.GENERAL;
+
+      try {
+        // Upload new file to B2
+        const uploadResult = await b2Service.uploadFile(
+          file.buffer,
+          uniqueFileName,
+          validationResult.mimeType,
+          usageType,
+        );
+
+        // Delete old file from B2 if it exists
+        if (media.isUploaded && media.key) {
+          try {
+            await b2Service.safeDeleteFile(media.key);
+          } catch (deleteError) {
+            this.logger.warn(
+              `Failed to delete old file ${media.key}: ${deleteError.message}`,
+            );
+            // Continue even if old file deletion fails
+          }
+        }
+
+        // Update media with new file info
+        media.fileName = uploadResult.fileName;
+        media.b2FileId = uploadResult.fileId;
+        media.key = uploadResult.key;
+        media.url = uploadResult.url;
+        media.mimeType = validationResult.mimeType;
+        media.fileSize = file.size;
+        media.width = validationResult.width;
+        media.height = validationResult.height;
+        media.type = MediaType.IMAGE;
+        media.isUploaded = true;
+        media.usageType = usageType;
+      } catch (uploadError) {
+        this.logger.error(
+          `Failed to upload replacement file: ${uploadError.message}`,
+        );
+        throw new InternalServerErrorException(
+          'Failed to upload replacement file',
+        );
+      }
+    }
+
+    // Reset status to pending and clear rejection reason when resubmitting
+    media.status = MediaStatus.PENDING;
+    media.rejectionReason = null;
+
+    return this.mediaRepo.save(media);
   }
 
   async update(

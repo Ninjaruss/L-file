@@ -31,6 +31,13 @@ export class MainSeeder {
 
     const isProduction = process.env.NODE_ENV === 'production';
 
+    // Granular skip controls via environment variables
+    const skipUsers = process.env.SKIP_USER_SEEDER === 'true';
+    const skipEvents = process.env.SKIP_EVENT_SEEDER === 'true';
+    const skipMedia = process.env.SKIP_MEDIA_SEEDER === 'true';
+    const skipGuides = process.env.SKIP_GUIDE_SEEDER === 'true';
+    const skipAnnotations = process.env.SKIP_ANNOTATION_SEEDER === 'true';
+
     // Base seeders that are safe for production
     const coreSeeders: Seeder[] = [
       new BadgeSeeder(this.dataSource), // Badge system
@@ -46,23 +53,24 @@ export class MainSeeder {
       new FandomDataSeeder(this.dataSource), // Fandom-sourced volumes/chapters and covers
     ];
 
-    // Test data seeders (only for development/staging)
-    const testDataSeeders: Seeder[] = isProduction
-      ? []
-      : [
-          new UserSeeder(this.dataSource), // Test user accounts (admin, moderator, users)
-          new EventSeeder(this.dataSource), // Test story events
-          new MediaSeeder(this.dataSource), // Test community media
-          new GuideSeeder(this.dataSource), // Test user guides
-          new AnnotationSeeder(this.dataSource), // Test annotations
-        ];
+    // Build test data seeders array conditionally
+    const testDataSeeders: Seeder[] = [];
+
+    if (!isProduction) {
+      if (!skipUsers) testDataSeeders.push(new UserSeeder(this.dataSource));
+      if (!skipEvents) testDataSeeders.push(new EventSeeder(this.dataSource));
+      if (!skipMedia) testDataSeeders.push(new MediaSeeder(this.dataSource));
+      if (!skipGuides) testDataSeeders.push(new GuideSeeder(this.dataSource));
+      if (!skipAnnotations) testDataSeeders.push(new AnnotationSeeder(this.dataSource));
+    }
 
     const seeders = [...coreSeeders, ...testDataSeeders];
 
+    // Log which seeders are being skipped
     if (isProduction) {
       this.logger.log(
         chalk.yellow(
-          '⚠️  Production mode detected - skipping test data seeders',
+          '⚠️  Production mode detected - skipping all test data seeders',
         ),
       );
       this.logger.log(
@@ -70,6 +78,13 @@ export class MainSeeder {
           '   Skipped: UserSeeder, EventSeeder, MediaSeeder, GuideSeeder, AnnotationSeeder',
         ),
       );
+    } else if (skipUsers || skipEvents || skipMedia || skipGuides || skipAnnotations) {
+      this.logger.log(chalk.yellow('⚠️  Skipping seeders based on environment variables:'));
+      if (skipUsers) this.logger.log(chalk.yellow('   - UserSeeder (SKIP_USER_SEEDER=true)'));
+      if (skipEvents) this.logger.log(chalk.yellow('   - EventSeeder (SKIP_EVENT_SEEDER=true)'));
+      if (skipMedia) this.logger.log(chalk.yellow('   - MediaSeeder (SKIP_MEDIA_SEEDER=true)'));
+      if (skipGuides) this.logger.log(chalk.yellow('   - GuideSeeder (SKIP_GUIDE_SEEDER=true)'));
+      if (skipAnnotations) this.logger.log(chalk.yellow('   - AnnotationSeeder (SKIP_ANNOTATION_SEEDER=true)'));
     }
 
     let success = true;

@@ -13,12 +13,16 @@ import {
   UploadedFile,
   BadRequestException,
   ParseIntPipe,
+  Req,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { MediaUrlResolverService } from './services/media-url-resolver.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
+import { UpdateOwnMediaDto } from './dto/update-own-media.dto';
 import {
   MediaOwnerType,
   MediaType,
@@ -457,6 +461,85 @@ export class MediaController {
     // File validation is now handled in the service layer via FileValidationService
     return this.mediaService.createUpload(
       uploadData,
+      file,
+      user,
+      this.b2Service,
+    );
+  }
+
+  @Patch('my-submissions/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB max file size
+        files: 1,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Update own media submission',
+    description:
+      'Allows users to update their own pending or rejected media submissions. Can update metadata and optionally replace the file.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Media ID',
+    type: 'number',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        description: {
+          type: 'string',
+          description: 'Media description',
+          maxLength: 500,
+        },
+        ownerType: {
+          type: 'string',
+          enum: Object.values(MediaOwnerType),
+          description: 'Type of entity this media belongs to',
+        },
+        ownerId: {
+          type: 'number',
+          description: 'ID of the entity this media belongs to',
+        },
+        chapterNumber: {
+          type: 'number',
+          description: 'Chapter number',
+        },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Optional replacement image file',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Media updated successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Cannot edit approved submissions or not owner',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Media not found',
+  })
+  async updateOwnSubmission(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateData: UpdateOwnMediaDto,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @CurrentUser() user: User,
+  ) {
+    return this.mediaService.updateOwnSubmission(
+      id,
+      updateData,
       file,
       user,
       this.b2Service,
