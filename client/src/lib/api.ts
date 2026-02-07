@@ -1113,10 +1113,9 @@ class ApiClient {
   }
 
   async updateOwnMedia(id: string, formData: FormData) {
-    return this.patch<any>(`/media/my-submissions/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    return this.request<any>(`/media/my-submissions/${id}`, {
+      method: 'PATCH',
+      body: formData,
     })
   }
 

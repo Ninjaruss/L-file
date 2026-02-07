@@ -16,10 +16,10 @@ import { CharacterStructuredData } from '../../../components/StructuredData'
 import type { Arc, Event, Gamble, Guide, Quote } from '../../../types'
 import { GuideStatus } from '../../../types'
 import { Metadata } from 'next'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { API_BASE_URL } from '../../../lib/api'
 
-const CharacterPageClient = dynamic(() => import('./CharacterPageClient'), {
+const CharacterPageClient = nextDynamic(() => import('./CharacterPageClient'), {
   loading: () => <Box py="md">Loading...</Box>
 })
 

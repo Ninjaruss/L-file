@@ -313,6 +313,13 @@ export default function MediaPageContent({
     return null
   }
 
+  const getMediaDisplayUrl = (mediaItem: MediaItem) => {
+    if (mediaItem.isUploaded && mediaItem.fileName) {
+      return `${API_BASE_URL}/media/${mediaItem.fileName}`
+    }
+    return mediaItem.url
+  }
+
   const getMediaTypeIcon = (type: string) => {
     switch (type) {
       case 'image':
@@ -1005,7 +1012,7 @@ export default function MediaPageContent({
               <Box style={{ maxHeight: '70vh', overflow: 'hidden' }}>
                 {selectedMedia.type === 'image' ? (
                   <Image
-                    src={selectedMedia.url}
+                    src={getMediaDisplayUrl(selectedMedia)}
                     alt={selectedMedia.description || 'Media preview'}
                     fit="contain"
                     fallbackSrc="/images/placeholder-media.png"
