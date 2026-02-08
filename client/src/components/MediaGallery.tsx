@@ -333,10 +333,9 @@ export default function MediaGallery({
   const getMediaThumbnail = (mediaItem: MediaItem) => {
 
     if (mediaItem.type === 'image') {
-      // For uploaded images, use the API endpoint
+      // For uploaded images, use the url field directly (contains full B2 URL)
       if (mediaItem.isUploaded) {
-        const thumbnailUrl = `${API_BASE_URL}/media/${mediaItem.fileName}`
-        return thumbnailUrl
+        return mediaItem.url
       }
 
       // For external images, we need to handle different services
@@ -512,10 +511,9 @@ export default function MediaGallery({
                   // Get display URL - use thumbnail if available, otherwise try direct media URL
                   let displayUrl = thumbnail
                   if (!displayUrl) {
-                    // For items without thumbnail, try the direct URL (works for direct image links)
-                    displayUrl = mediaItem.isUploaded
-                      ? `${API_BASE_URL}/media/${mediaItem.fileName}`
-                      : (mediaItem.type === 'image' ? mediaItem.url : null)
+                    // For items without thumbnail, use the url field directly
+                    // (contains full B2 URL for uploads, external URL for submissions)
+                    displayUrl = mediaItem.type === 'image' ? mediaItem.url : null
                   }
 
                   return displayUrl && !failedImageIds.has(mediaItem.id) ? (
@@ -747,9 +745,7 @@ export default function MediaGallery({
               <Box style={{ maxHeight: '70vh', overflow: 'hidden' }}>
                 {selectedMedia.type === 'image' ? (
                   <NextImage
-                    src={selectedMedia.isUploaded
-                      ? `${API_BASE_URL}/media/${selectedMedia.fileName}`
-                      : selectedMedia.url}
+                    src={selectedMedia.url}
                     alt={selectedMedia.description || 'Media preview'}
                     width={1200}
                     height={800}

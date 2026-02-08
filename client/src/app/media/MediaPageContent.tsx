@@ -296,9 +296,9 @@ export default function MediaPageContent({
 
   const getMediaThumbnail = (mediaItem: MediaItem) => {
     if (mediaItem.type === 'image') {
-      return mediaItem.isUploaded && mediaItem.fileName
-        ? `${API_BASE_URL}/media/${mediaItem.fileName}`
-        : mediaItem.url
+      // Use the url field directly - it contains the full B2 URL for uploads
+      // or the external URL for submissions
+      return mediaItem.url
     }
 
     if (mediaItem.type === 'video') {
@@ -314,9 +314,8 @@ export default function MediaPageContent({
   }
 
   const getMediaDisplayUrl = (mediaItem: MediaItem) => {
-    if (mediaItem.isUploaded && mediaItem.fileName) {
-      return `${API_BASE_URL}/media/${mediaItem.fileName}`
-    }
+    // The url field always contains the correct URL for display
+    // (full B2 URL for uploads, external URL for submissions)
     return mediaItem.url
   }
 
