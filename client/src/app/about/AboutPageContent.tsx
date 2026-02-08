@@ -146,7 +146,7 @@ export function AboutPageContent() {
                       </Button>
                       <Button
                         component="a"
-                        href="https://github.com/ninjaruss"
+                        href="https://github.com/Ninjaruss/usogui-fansite"
                         target="_blank"
                         rel="noopener noreferrer"
                         size="lg"
