@@ -114,14 +114,14 @@ export class Media {
     example: 1920,
   })
   @Column({ type: 'int', nullable: true })
-  width: number;
+  width: number | null;
 
   @ApiPropertyOptional({
     description: 'Image height in pixels',
     example: 1080,
   })
   @Column({ type: 'int', nullable: true })
-  height: number;
+  height: number | null;
 
   @ApiPropertyOptional({
     description: 'Usage type determining upload permissions',
@@ -195,7 +195,7 @@ export class Media {
     example: 'Image contains inappropriate content',
   })
   @Column({ type: 'varchar', nullable: true, length: 500 })
-  rejectionReason: string;
+  rejectionReason: string | null;
 
   @ApiProperty({ description: 'When this media was created' })
   @CreateDateColumn()

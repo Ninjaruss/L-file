@@ -285,13 +285,17 @@ export const mantineTheme: MantineThemeOverride = {
           backgroundColor: 'rgba(255, 255, 255, 0.06)',
           border: `1px solid rgba(255, 255, 255, 0.15)`,
           color: '#ffffff',
-          transition: 'border-color 150ms ease, box-shadow 150ms ease',
+          transition: 'border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderColor: 'rgba(225, 29, 72, 0.4)'
+          },
           '&:focus': {
             borderColor: '#e11d48',
             boxShadow: `0 0 0 ${rem(2)} rgba(225, 29, 72, 0.2)`
           },
           '&::placeholder': {
-            color: 'rgba(255, 255, 255, 0.5)'
+            color: 'rgba(255, 255, 255, 0.65)' // Increased from 0.5 for better visibility
           }
         },
         label: {
@@ -329,6 +333,11 @@ export const mantineTheme: MantineThemeOverride = {
           backgroundColor: 'rgba(255, 255, 255, 0.06)',
           border: `1px solid rgba(255, 255, 255, 0.15)`,
           color: '#ffffff',
+          transition: 'border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderColor: 'rgba(225, 29, 72, 0.4)'
+          },
           '&:focus': {
             borderColor: '#e11d48',
             boxShadow: `0 0 0 ${rem(2)} rgba(225, 29, 72, 0.2)`

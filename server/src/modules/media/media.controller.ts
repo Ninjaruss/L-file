@@ -13,6 +13,7 @@ import {
   UploadedFile,
   BadRequestException,
   ParseIntPipe,
+  ParseUUIDPipe,
   Req,
   ForbiddenException,
   NotFoundException,
@@ -532,7 +533,7 @@ export class MediaController {
     description: 'Media not found',
   })
   async updateOwnSubmission(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateData: UpdateOwnMediaDto,
     @UploadedFile() file: Express.Multer.File | undefined,
     @CurrentUser() user: User,

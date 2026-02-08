@@ -432,7 +432,7 @@ export class MediaService {
   }
 
   async updateOwnSubmission(
-    id: number,
+    id: string,
     updateData: UpdateOwnMediaDto,
     file: Express.Multer.File | undefined,
     user: User,
@@ -447,7 +447,7 @@ export class MediaService {
       throw new NotFoundException('Media not found');
     }
 
-    if (media.submittedBy.id !== user.id) {
+    if (!media.submittedBy || media.submittedBy.id !== user.id) {
       throw new ForbiddenException('You can only edit your own submissions');
     }
 
@@ -488,8 +488,8 @@ export class MediaService {
 
       // Determine usage type based on purpose
       const usageType = media.purpose === MediaPurpose.ENTITY_DISPLAY
-        ? (media.ownerType === MediaOwnerType.CHARACTER ? MediaUsageType.CHARACTER_IMAGE : MediaUsageType.GENERAL)
-        : MediaUsageType.GENERAL;
+        ? (media.ownerType === MediaOwnerType.CHARACTER ? MediaUsageType.CHARACTER_IMAGE : MediaUsageType.GALLERY_UPLOAD)
+        : MediaUsageType.GALLERY_UPLOAD;
 
       try {
         // Upload new file to B2
@@ -519,8 +519,8 @@ export class MediaService {
         media.url = uploadResult.url;
         media.mimeType = validationResult.mimeType;
         media.fileSize = file.size;
-        media.width = validationResult.width;
-        media.height = validationResult.height;
+        media.width = validationResult.width ?? null;
+        media.height = validationResult.height ?? null;
         media.type = MediaType.IMAGE;
         media.isUploaded = true;
         media.usageType = usageType;
