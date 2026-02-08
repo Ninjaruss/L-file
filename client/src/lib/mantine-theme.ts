@@ -354,16 +354,33 @@ export const mantineTheme: MantineThemeOverride = {
         },
         option: {
           color: '#ffffff',
-          '&:hover': {
-            backgroundColor: 'rgba(225, 29, 72, 0.1)'
+          backgroundColor: 'transparent',
+          padding: `${rem(8)} ${rem(12)}`,
+
+          // Hover and keyboard navigation (active state)
+          '&:hover, &[data-combobox-active="true"]': {
+            backgroundColor: 'rgba(225, 29, 72, 0.15)',
+            color: '#ffffff'
           },
-          '&[data-combobox-selected]': {
+
+          // Selected option (currently chosen value)
+          '&[data-combobox-selected="true"], &[data-selected="true"]': {
+            backgroundColor: 'rgba(225, 29, 72, 0.25)',
+            color: '#ffffff',
+            fontWeight: 600
+          },
+
+          // Keyboard focus for accessibility
+          '&[aria-selected="true"]': {
             backgroundColor: 'rgba(225, 29, 72, 0.2)',
             color: '#ffffff'
           },
-          '&[data-selected]': {
-            backgroundColor: 'rgba(225, 29, 72, 0.2)',
-            color: '#ffffff'
+
+          // Disabled state
+          '&[data-disabled="true"]': {
+            color: 'rgba(255, 255, 255, 0.3)',
+            cursor: 'not-allowed',
+            backgroundColor: 'transparent'
           }
         }
       }),
