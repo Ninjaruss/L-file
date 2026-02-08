@@ -1,4 +1,4 @@
-import { Box, Container, Divider, Paper, Stack, Text, Title } from '@mantine/core'
+import { Anchor, Box, Container, Divider, Paper, Stack, Text, Title } from '@mantine/core'
 import { Shield, AlertTriangle, Copyright, ExternalLink } from 'lucide-react'
 import { Metadata } from 'next'
 
@@ -21,6 +21,9 @@ export const metadata: Metadata = {
 }
 
 export default function DisclaimerPage() {
+  const user = 'ninjarussyt'
+  const domain = 'gmail.com'
+  
   return (
     <Container size="md" py="xl">
       <Stack align="center" gap="xs" mb="xl">
@@ -123,13 +126,18 @@ export default function DisclaimerPage() {
             <Title order={3}>Contact &amp; Takedown Requests</Title>
             <Text c="#ffffff">
               If you are a copyright holder and believe that content on this website infringes upon
-              your rights, please contact us immediately at{' '}
-              <Text span c="red" fw={600}>
-                ninjarussyt@gmail.com
-              </Text>{' '}
-              with a detailed description of the alleged infringement. We will investigate all
-              legitimate claims promptly and remove infringing content when appropriate.
+              your rights, please contact us immediately with a detailed description of the alleged infringement. 
+              We will investigate all legitimate claims promptly and remove infringing content when appropriate.
             </Text>
+            
+            <Text size="md" c="#ffffff">
+              {' '}
+              <Anchor href={`mailto:${user}@${domain}`}>
+                {user}@{domain}
+              </Anchor>
+              {' '}
+            </Text>
+
             <Text c="#ffffff">
               For general inquiries, feedback, or concerns about this disclaimer, please use the same
               contact information.
