@@ -383,13 +383,13 @@ export default function SubmitEventPageContent() {
                 <FormSection title="Event Classification" description="Categorize and link to related content" icon={<BookOpen size={20} color={eventAccent} />} accentColor={eventAccent}>
                   <Stack gap="md">
                     <Select label="Event Type" placeholder="Select event type" value={formData.type} onChange={(value) => handleInputChange('type', value || '')} data={EVENT_TYPE_OPTIONS} clearable styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' } }} classNames={{ option: styles.selectOption }} />
-                    <Select label="Story Arc" placeholder="Select arc" value={formData.arcId?.toString() || null} onChange={(value) => handleInputChange('arcId', value ? parseInt(value) : null)} data={arcOptions} clearable searchable styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' } }} classNames={{ option: styles.selectOption }} />
-                    <Select label="Related Gamble" placeholder="Select gamble" value={formData.gambleId?.toString() || null} onChange={(value) => handleInputChange('gambleId', value ? parseInt(value) : null)} data={gambleOptions} clearable searchable styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' } }} classNames={{ option: styles.selectOption }} />
+                    <Select label="Story Arc" placeholder="Select arc" value={formData.arcId?.toString() || null} onChange={(value) => handleInputChange('arcId', value ? parseInt(value) : null)} data={arcOptions} clearable searchable nothingFoundMessage="No arcs found" styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' } }} classNames={{ option: styles.selectOption }} />
+                    <Select label="Related Gamble" placeholder="Select gamble" value={formData.gambleId?.toString() || null} onChange={(value) => handleInputChange('gambleId', value ? parseInt(value) : null)} data={gambleOptions} clearable searchable nothingFoundMessage="No gambles found" styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' } }} classNames={{ option: styles.selectOption }} />
                   </Stack>
                 </FormSection>
 
                 <FormSection title="Characters Involved" description="Select characters who appear in this event" icon={<Users size={20} color={eventAccent} />} accentColor={eventAccent}>
-                  <MultiSelect label="Characters" placeholder="Select characters" value={formData.characterIds.map(String)} onChange={(values) => handleInputChange('characterIds', values.map((v) => parseInt(v)))} data={characterOptions} searchable clearable styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' }, pill: { backgroundColor: `${eventAccent}30`, color: eventAccent } }} classNames={{ option: styles.selectOption }} />
+                  <MultiSelect label="Characters" placeholder="Select characters" value={formData.characterIds.map(String)} onChange={(values) => handleInputChange('characterIds', values.map((v) => parseInt(v)))} data={characterOptions} searchable clearable nothingFoundMessage="No characters found" styles={{ input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' }, label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 }, dropdown: { backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' }, pill: { backgroundColor: `${eventAccent}30`, color: eventAccent } }} classNames={{ option: styles.selectOption }} />
                 </FormSection>
 
                 <FormSection title="Spoiler Settings" description="Mark if this event contains story spoilers" icon={<AlertTriangle size={20} color={eventAccent} />} accentColor={eventAccent}>
@@ -459,6 +459,7 @@ export default function SubmitEventPageContent() {
                 data={arcOptions}
                 clearable
                 searchable
+                nothingFoundMessage="No arcs found"
                 styles={{
                   input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' },
                   label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 },
@@ -474,6 +475,7 @@ export default function SubmitEventPageContent() {
                 data={gambleOptions}
                 clearable
                 searchable
+                nothingFoundMessage="No gambles found"
                 styles={{
                   input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' },
                   label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 },
