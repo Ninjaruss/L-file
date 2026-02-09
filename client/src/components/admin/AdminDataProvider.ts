@@ -865,7 +865,7 @@ export const AdminDataProvider: DataProvider = {
       const cleanedData = cleanUpdateData(resource, params.data)
 
       // Use PATCH for resources that support it, PUT for others
-      const usePatch = ['quotes', 'guides', 'media'].includes(resource)
+      const usePatch = ['quotes', 'guides', 'media', 'annotations'].includes(resource)
       const response = usePatch
         ? await api.patch<unknown>(`/${resource}/${params.id}`, cleanedData)
         : await api.put<unknown>(`/${resource}/${params.id}`, cleanedData)
@@ -917,7 +917,7 @@ export const AdminDataProvider: DataProvider = {
       const cleanedData = cleanUpdateData(resource, params.data)
 
       // Use PATCH for resources that support it, PUT for others
-      const usePatch = ['quotes', 'guides'].includes(resource)
+      const usePatch = ['quotes', 'guides', 'media', 'annotations'].includes(resource)
       await Promise.all(
         params.ids.map((id) =>
           usePatch

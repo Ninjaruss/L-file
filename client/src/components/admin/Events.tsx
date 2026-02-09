@@ -1714,16 +1714,6 @@ export const EventEdit = () => {
                         }}
                       />
                     </ReferenceArrayInput>
-                    <ReferenceArrayInput source="tagIds" reference="tags" label="Tags" perPage={200}>
-                      <AutocompleteArrayInput
-                        optionText="name"
-                        sx={{
-                          '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
-                            backgroundColor: '#0f0f0f'
-                          }
-                        }}
-                      />
-                    </ReferenceArrayInput>
                   </Box>
                 </Grid>
               </Grid>
@@ -1907,18 +1897,6 @@ export const EventCreate = () => (
                 />
               </ReferenceArrayInput>
             </Box>
-
-            <ReferenceArrayInput source="tagIds" reference="tags" label="Tags" perPage={200}>
-              <AutocompleteArrayInput
-                optionText="name"
-                helperText="Relevant tags for categorization"
-                sx={{
-                  '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
-                    backgroundColor: '#0f0f0f'
-                  }
-                }}
-              />
-            </ReferenceArrayInput>
           </Box>
         </FormTab>
       </TabbedForm>
