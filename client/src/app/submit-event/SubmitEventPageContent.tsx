@@ -323,9 +323,15 @@ export default function SubmitEventPageContent() {
     )
   }
 
-  const characterOptions = characters.map((character) => ({ value: character.id.toString(), label: character.name }))
-  const arcOptions = arcs.map((arc) => ({ value: arc.id.toString(), label: arc.name }))
-  const gambleOptions = gambles.map((gamble) => ({ value: gamble.id.toString(), label: gamble.name }))
+  const characterOptions = characters
+    .filter((character) => character.id != null && character.name)
+    .map((character) => ({ value: String(character.id), label: character.name }))
+  const arcOptions = arcs
+    .filter((arc) => arc.id != null && arc.name)
+    .map((arc) => ({ value: String(arc.id), label: arc.name }))
+  const gambleOptions = gambles
+    .filter((gamble) => gamble.id != null && gamble.name)
+    .map((gamble) => ({ value: String(gamble.id), label: gamble.name }))
 
   // Edit mode renders the original single-event form
   if (isEditMode) {
