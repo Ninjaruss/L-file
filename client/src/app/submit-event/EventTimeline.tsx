@@ -74,8 +74,10 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
         }
 
         // API returns { data: Event[] }, extract the array
-        const eventsData = Array.isArray(fetchedEvents) ? fetchedEvents : (fetchedEvents?.data ?? [])
-        setEvents(Array.isArray(eventsData) ? eventsData : [])
+        const response = fetchedEvents as unknown as { data: Event[] } | Event[]
+        const eventsData = Array.isArray(response) ? response : (response?.data ?? [])
+        console.log('[EventTimeline] Extracted events:', eventsData, 'count:', eventsData.length)
+        setEvents(eventsData)
       } catch (error) {
         console.error('Error fetching events:', error)
         setEvents([])
