@@ -122,12 +122,7 @@ export default function SubmissionCard({
   const link = getSubmissionLink(submission)
   const editLink = getEditLink(submission)
   const isRejected = submission.status === 'rejected'
-  const canEdit = isOwnerView && editLink && (
-    submission.type === 'guide' ||
-    submission.type === 'annotation' ||
-    submission.type === 'event' ||
-    (submission.type === 'media' && (submission.status === 'pending' || submission.status === 'rejected'))
-  )
+  const canEdit = isOwnerView && editLink
   const canDelete = isOwnerView && submission.type === 'media' && isRejected && onDeleteMedia
 
   // Determine if the entire card should be clickable

@@ -1042,47 +1042,23 @@ export default function ProfilePageClient() {
                             </Text>
                           ) : (
                             <>
-                              <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
-                                {visible.map((guide: UserGuide) => {
-                                  const isRejected = guide.status === GuideStatus.REJECTED
-                                  const statusColor =
-                                    guide.status === GuideStatus.APPROVED ? 'green' :
-                                    guide.status === GuideStatus.PENDING ? 'yellow' : 'red'
-
-                                  return (
-                                    <Card key={guide.id} shadow="sm" padding="md" radius="md" withBorder>
-                                      <Stack gap="sm">
-                                        <Group justify="space-between">
-                                          <Text fw={600} size="md" lineClamp={2} style={{ flex: 1 }}>{guide.title}</Text>
-                                          <Badge variant="light" color={statusColor} size="sm">
-                                            {guide.status}
-                                          </Badge>
-                                        </Group>
-                                        {guide.description && (
-                                          <Text size="sm" c="dimmed" lineClamp={3}>
-                                            {guide.description}
-                                          </Text>
-                                        )}
-                                        {isRejected && (guide as any).rejectionReason && (
-                                          <Alert icon={<AlertTriangle size={14} />} color="red" variant="light" p="xs" radius="sm">
-                                            <Text size="xs">{(guide as any).rejectionReason}</Text>
-                                          </Alert>
-                                        )}
-                                        <Group justify="space-between" mt="auto">
-                                          <Text size="xs" c="dimmed">
-                                            Updated {new Date(guide.updatedAt).toLocaleDateString()}
-                                          </Text>
-                                          <Link href={`/guides/${guide.id}`}>
-                                            <Button size="xs" variant="subtle" leftSection={<Edit size={14} />}>
-                                              {isRejected ? 'Edit & Resubmit' : 'View'}
-                                            </Button>
-                                          </Link>
-                                        </Group>
-                                      </Stack>
-                                    </Card>
-                                  )
-                                })}
-                              </SimpleGrid>
+                              <Stack gap="sm">
+                                {visible.map((guide: UserGuide) => (
+                                  <SubmissionCard
+                                    key={`guide-${guide.id}`}
+                                    submission={{
+                                      id: guide.id,
+                                      type: 'guide',
+                                      title: guide.title,
+                                      description: guide.description,
+                                      status: guide.status,
+                                      rejectionReason: (guide as any).rejectionReason,
+                                      createdAt: guide.createdAt,
+                                    } as SubmissionItem}
+                                    isOwnerView
+                                  />
+                                ))}
+                              </Stack>
                               {hasMore && (
                                 <Button
                                   variant="subtle"
