@@ -928,9 +928,43 @@ export default function ProfilePageClient() {
                       <Menu.Item component={Link} href="/submit-media" leftSection={<FileImage size={14} />}>
                         New Media
                       </Menu.Item>
+                      <Menu.Item component={Link} href="/submit-event" leftSection={<Calendar size={14} />}>
+                        New Event
+                      </Menu.Item>
+                      <Menu.Item component={Link} href="/submit-annotation" leftSection={<MessageSquare size={14} />}>
+                        New Annotation
+                      </Menu.Item>
                     </Menu.Dropdown>
                   </Menu>
                 </Group>
+
+                {/* Quick Stats */}
+                <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+                  <Card withBorder padding="xs" radius="md">
+                    <Text size="xs" c="dimmed">Total Approved</Text>
+                    <Text size="lg" fw={700} c="green">
+                      {submissions.filter(s => s.status === 'approved').length}
+                    </Text>
+                  </Card>
+                  <Card withBorder padding="xs" radius="md">
+                    <Text size="xs" c="dimmed">Pending Review</Text>
+                    <Text size="lg" fw={700} c="yellow">
+                      {submissions.filter(s => s.status === 'pending').length}
+                    </Text>
+                  </Card>
+                  <Card withBorder padding="xs" radius="md">
+                    <Text size="xs" c="dimmed">Needs Resubmit</Text>
+                    <Text size="lg" fw={700} c="red">
+                      {submissions.filter(s => s.status === 'rejected').length}
+                    </Text>
+                  </Card>
+                  <Card withBorder padding="xs" radius="md">
+                    <Text size="xs" c="dimmed">Total Submissions</Text>
+                    <Text size="lg" fw={700}>
+                      {submissions.length}
+                    </Text>
+                  </Card>
+                </SimpleGrid>
 
                 {/* Tabs with Counters */}
                 <Tabs
@@ -1056,6 +1090,15 @@ export default function ProfilePageClient() {
                                       createdAt: guide.createdAt,
                                     } as SubmissionItem}
                                     isOwnerView
+                                    onDelete={async (id) => {
+                                      try {
+                                        await api.deleteGuide(id as number)
+                                        setSubmissions(prev => prev.filter(s => !(s.type === 'guide' && s.id === id)))
+                                        notifications.show({ title: 'Guide deleted', message: 'Your guide has been removed.', color: 'green' })
+                                      } catch {
+                                        notifications.show({ title: 'Error', message: 'Failed to delete guide.', color: 'red' })
+                                      }
+                                    }}
                                   />
                                 ))}
                               </Stack>
@@ -1133,9 +1176,9 @@ export default function ProfilePageClient() {
                                     key={`media-${submission.id}`}
                                     submission={submission as SubmissionItem}
                                     isOwnerView
-                                    onDeleteMedia={async (id) => {
+                                    onDelete={async (id) => {
                                       try {
-                                        await api.deleteMedia(id)
+                                        await api.deleteMedia(id as string)
                                         setSubmissions(prev => prev.filter(s => !(s.type === 'media' && s.id === id)))
                                         notifications.show({ title: 'Media deleted', message: 'You can resubmit a new version.', color: 'green' })
                                       } catch {
@@ -1219,6 +1262,15 @@ export default function ProfilePageClient() {
                                     key={`event-${submission.id}`}
                                     submission={submission as SubmissionItem}
                                     isOwnerView
+                                    onDelete={async (id) => {
+                                      try {
+                                        await api.deleteEvent(id as number)
+                                        setSubmissions(prev => prev.filter(s => !(s.type === 'event' && s.id === id)))
+                                        notifications.show({ title: 'Event deleted', message: 'Your event has been removed.', color: 'green' })
+                                      } catch {
+                                        notifications.show({ title: 'Error', message: 'Failed to delete event.', color: 'red' })
+                                      }
+                                    }}
                                   />
                                 ))}
                               </Stack>
@@ -1296,6 +1348,15 @@ export default function ProfilePageClient() {
                                     key={`annotation-${submission.id}`}
                                     submission={submission as SubmissionItem}
                                     isOwnerView
+                                    onDelete={async (id) => {
+                                      try {
+                                        await api.deleteAnnotation(id as number)
+                                        setSubmissions(prev => prev.filter(s => !(s.type === 'annotation' && s.id === id)))
+                                        notifications.show({ title: 'Annotation deleted', message: 'Your annotation has been removed.', color: 'green' })
+                                      } catch {
+                                        notifications.show({ title: 'Error', message: 'Failed to delete annotation.', color: 'red' })
+                                      }
+                                    }}
                                   />
                                 ))}
                               </Stack>

@@ -36,7 +36,9 @@ import {
   Info,
   FileText,
   Zap,
-  ChevronDown
+  ChevronDown,
+  Calendar,
+  MessageSquare
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -273,7 +275,9 @@ const Navigation: React.FC = () => {
     ],
     submit: [
       { label: 'Submit Guide', href: '/submit-guide', icon: <BookOpen size={16} /> },
-      { label: 'Submit Media', href: '/submit-media', icon: <Image size={16} /> }
+      { label: 'Submit Media', href: '/submit-media', icon: <Image size={16} /> },
+      { label: 'Submit Event', href: '/submit-event', icon: <Calendar size={16} /> },
+      { label: 'Submit Annotation', href: '/submit-annotation', icon: <MessageSquare size={16} /> }
     ]
   }
 
@@ -631,6 +635,33 @@ const Navigation: React.FC = () => {
               ))}
                 </Menu.Dropdown>
           </Menu>
+
+          {/* Profile Link - For authenticated users */}
+          {user && (
+            <Button
+              component={Link}
+              href="/profile"
+              variant="subtle"
+              color="gray"
+              leftSection={<User size={16} />}
+              size="sm"
+              style={{
+                backgroundColor: isActivePath('/profile') ? (rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)') : 'transparent',
+                color: isActivePath('/profile') ? accentColor : theme.colors.gray[0],
+                fontWeight: 500
+              }}
+              styles={{
+                root: {
+                  ...menuHoverStyles,
+                  '&:hover': {
+                    backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
+                  }
+                }
+              }}
+            >
+              My Submissions
+            </Button>
+          )}
         </Group>
 
         {/* Right Side - Search + Profile */}

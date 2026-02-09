@@ -28,6 +28,7 @@ import { FormProgressIndicator, FormStep } from '../../components/FormProgressIn
 import { FormSection } from '../../components/FormSection'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
+import SubmissionGuidelines from '../../components/SubmissionGuidelines'
 
 const MIN_TITLE_LENGTH = 3
 const MIN_DESCRIPTION_LENGTH = 10
@@ -255,6 +256,8 @@ export default function SubmitEventPageContent() {
               : 'Document key moments, decisions, and revelations from the Usogui story'}
           </Text>
         </Stack>
+
+        <SubmissionGuidelines type="event" />
 
         {error && (
           <Alert

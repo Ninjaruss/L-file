@@ -105,8 +105,8 @@ interface SubmissionCardProps {
   submission: SubmissionItem
   /** Whether this is the owner's view (shows edit/delete actions) */
   isOwnerView?: boolean
-  /** Called when user wants to delete a media submission */
-  onDeleteMedia?: (id: string) => void
+  /** Called when user wants to delete a submission (any type) */
+  onDelete?: (id: string | number) => void
   /** Card styling overrides */
   cardStyle?: React.CSSProperties
 }
@@ -114,7 +114,7 @@ interface SubmissionCardProps {
 export default function SubmissionCard({
   submission,
   isOwnerView = false,
-  onDeleteMedia,
+  onDelete,
   cardStyle,
 }: SubmissionCardProps) {
   const statusColor = STATUS_COLORS[submission.status] || 'gray'
@@ -123,7 +123,7 @@ export default function SubmissionCard({
   const editLink = getEditLink(submission)
   const isRejected = submission.status === 'rejected'
   const canEdit = isOwnerView && editLink
-  const canDelete = isOwnerView && submission.type === 'media' && isRejected && onDeleteMedia
+  const canDelete = isOwnerView && (submission.status === 'rejected' || submission.status === 'pending') && onDelete
 
   // Determine if the entire card should be clickable
   const isCardClickable = submission.status === 'approved' && submission.type !== 'annotation' && link !== '#'
@@ -201,7 +201,7 @@ export default function SubmissionCard({
                 onClick={(e) => {
                   e.stopPropagation()
                   e.preventDefault()
-                  onDeleteMedia!(submission.id as string)
+                  onDelete!(submission.id)
                 }}
               >
                 Delete

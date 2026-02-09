@@ -26,6 +26,7 @@ import { FormProgressIndicator, FormStep } from '../../components/FormProgressIn
 import { FormSection } from '../../components/FormSection'
 import { api } from '../../lib/api'
 import { AnnotationOwnerType } from '../../types'
+import SubmissionGuidelines from '../../components/SubmissionGuidelines'
 import { motion } from 'motion/react'
 import { useSearchParams } from 'next/navigation'
 
@@ -231,6 +232,8 @@ export default function SubmitAnnotationPageContent() {
             Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs
           </Text>
         </Stack>
+
+        <SubmissionGuidelines type="annotation" />
 
         {error && (
           <Alert

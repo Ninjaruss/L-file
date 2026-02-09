@@ -35,6 +35,8 @@ import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import EntityEmbedHelperWithSearch from '../../components/EntityEmbedHelperWithSearch'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
+import SubmissionGuidelines from '../../components/SubmissionGuidelines'
+import SubmissionSuccess from '../../components/SubmissionSuccess'
 
 const MIN_TITLE_LENGTH = 5
 const MIN_DESCRIPTION_LENGTH = 20
@@ -71,7 +73,7 @@ export default function SubmitGuidePageContent() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
   const [characters, setCharacters] = useState<Array<{ id: number; name: string }>>([])
   const [arcs, setArcs] = useState<Array<{ id: number; name: string }>>([])
   const [gambles, setGambles] = useState<Array<{ id: number; name: string }>>([])
@@ -120,7 +122,7 @@ export default function SubmitGuidePageContent() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
-    setSuccess('')
+    setShowSuccess(false)
 
     const validationError = validateForm()
     if (validationError) {
@@ -143,12 +145,7 @@ export default function SubmitGuidePageContent() {
       if (isEditMode && editGuideId) {
         // Edit mode: update existing guide
         await api.updateGuide(Number(editGuideId), guideData)
-        const wasRejected = existingGuide?.status === 'rejected'
-        setSuccess(
-          wasRejected
-            ? 'Guide resubmitted! It is now pending review again. Track your submissions on your profile page.'
-            : 'Guide updated successfully! Track your submissions on your profile page.'
-        )
+        setShowSuccess(true)
       } else {
         // Create mode: submit new guide
         await api.createGuide({
@@ -160,7 +157,7 @@ export default function SubmitGuidePageContent() {
           gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined,
           tags: formData.tags.length ? formData.tags : undefined
         })
-        setSuccess('Guide submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
+        setShowSuccess(true)
         setFormData({
           title: '',
           description: '',
@@ -310,6 +307,8 @@ export default function SubmitGuidePageContent() {
           </Text>
         </Stack>
 
+        <SubmissionGuidelines type="guide" />
+
         {isEditMode && existingGuide?.status === 'rejected' && existingGuide?.rejectionReason && (
           <Alert
             variant="light"
@@ -339,48 +338,24 @@ export default function SubmitGuidePageContent() {
           </Alert>
         )}
 
-        {success && (
-          <Card
-            shadow="lg"
-            padding="xl"
-            radius="md"
-            mb="md"
-            style={{
-              backgroundColor: 'rgba(81, 207, 102, 0.15)',
-              borderColor: guideAccent,
-              border: `2px solid ${guideAccent}`
+        {showSuccess && (
+          <SubmissionSuccess
+            type="guide"
+            isEdit={isEditMode}
+            onSubmitAnother={() => {
+              setShowSuccess(false)
+              setFormData({
+                title: '',
+                description: '',
+                content: '',
+                characterIds: [],
+                arcId: null,
+                gambleIds: [],
+                tags: []
+              })
+              window.scrollTo({ top: 0, behavior: 'smooth' })
             }}
-          >
-            <Stack gap="md" align="center">
-              <Check size={48} color={guideAccent} />
-              <Title order={3} c={guideAccent}>Guide Submitted Successfully!</Title>
-              <Text size="sm" ta="center" c="dimmed">
-                Your guide is now pending review. You&apos;ll be notified when it&apos;s approved. Track your submissions on your profile page.
-              </Text>
-              <Group>
-                <Button
-                  component={Link}
-                  href="/profile"
-                  variant="light"
-                  color="green"
-                >
-                  View Profile
-                </Button>
-                <Button
-                  onClick={() => setSuccess('')}
-                  variant="filled"
-                  styles={{
-                    root: {
-                      backgroundColor: guideAccent,
-                      color: '#000'
-                    }
-                  }}
-                >
-                  Submit Another
-                </Button>
-              </Group>
-            </Stack>
-          </Card>
+          />
         )}
 
         <FormProgressIndicator steps={progressSteps} accentColor={guideAccent} />

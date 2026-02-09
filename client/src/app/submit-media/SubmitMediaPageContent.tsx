@@ -28,6 +28,7 @@ import { FormProgressIndicator, FormStep } from '../../components/FormProgressIn
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import MediaUploadForm from '../../components/MediaUploadForm'
+import SubmissionGuidelines from '../../components/SubmissionGuidelines'
 
 type MediaOwnerType = 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
 
@@ -448,6 +449,8 @@ export default function SubmitMediaPageContent() {
               }
             </Text>
           </Stack>
+
+          <SubmissionGuidelines type="media" />
 
           {error && (
             <Alert
