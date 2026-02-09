@@ -7,7 +7,6 @@
 - Backstory field fix
 - Tags reduced to 3
 - Events form design updated to show relevant linked events for easier check for existing events
-- 
 
 ## 2026-02-07
 - Media gallery image display update

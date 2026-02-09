@@ -547,6 +547,8 @@ export default function SubmitEventPageContent() {
             <EventTimeline
               arcId={deferredArcId}
               gambleId={deferredGambleId}
+              arcName={arcs.find(a => a.id === deferredArcId)?.name}
+              gambleName={gambles.find(g => g.id === deferredGambleId)?.name}
               accentColor={eventAccent}
             />
           </Box>

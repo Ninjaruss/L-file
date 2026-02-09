@@ -22,11 +22,15 @@ interface Event {
   chapterNumber: number
   type?: string
   description?: string
+  arcId?: number
+  arc?: { id: number; name: string }
 }
 
 interface EventTimelineProps {
   arcId: number | null
   gambleId: number | null
+  arcName?: string
+  gambleName?: string
   accentColor: string
 }
 
@@ -46,11 +50,11 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
   resolution: '#ef4444'
 }
 
-export default function EventTimeline({ arcId, gambleId, accentColor }: EventTimelineProps) {
+export default function EventTimeline({ arcId, gambleId, arcName, gambleName, accentColor }: EventTimelineProps) {
   const theme = useMantineTheme()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(false)
-  const [source, setSource] = useState<'arc' | 'gamble' | null>(null)
+  const [source, setSource] = useState<'arc' | 'gamble' | 'both' | null>(null)
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -62,21 +66,31 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
 
       setLoading(true)
       try {
-        let fetchedEvents: Event[] = []
+        let eventsData: Event[] = []
 
-        if (gambleId) {
-          // Prioritize gamble if both are selected
-          fetchedEvents = await api.getEventsByGamble(gambleId, { status: 'approved' })
+        // Helper to extract array from API response (returns { data: Event[] })
+        const extractEvents = (response: unknown): Event[] => {
+          if (Array.isArray(response)) return response
+          const wrapped = response as { data?: Event[] }
+          return Array.isArray(wrapped?.data) ? wrapped.data : []
+        }
+
+        if (gambleId && arcId) {
+          // Intersection: fetch by gamble, filter by arc
+          const gambleResponse = await api.getEventsByGamble(gambleId, { status: 'approved' })
+          const allEvents = extractEvents(gambleResponse)
+          eventsData = allEvents.filter(e => e.arc?.id === arcId || e.arcId === arcId)
+          setSource('both')
+        } else if (gambleId) {
+          const response = await api.getEventsByGamble(gambleId, { status: 'approved' })
+          eventsData = extractEvents(response)
           setSource('gamble')
         } else if (arcId) {
-          fetchedEvents = await api.getEventsByArc(arcId, { status: 'approved' })
+          const response = await api.getEventsByArc(arcId, { status: 'approved' })
+          eventsData = extractEvents(response)
           setSource('arc')
         }
 
-        // API returns { data: Event[] }, extract the array
-        const response = fetchedEvents as unknown as { data: Event[] } | Event[]
-        const eventsData = Array.isArray(response) ? response : (response?.data ?? [])
-        console.log('[EventTimeline] Extracted events:', eventsData, 'count:', eventsData.length)
         setEvents(eventsData)
       } catch (error) {
         console.error('Error fetching events:', error)
@@ -151,10 +165,12 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
       <Stack gap="md">
         <Box>
           <Title order={4} c={accentColor} mb="xs">
-            {source === 'gamble' ? (
-              <><Dices size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Gamble Events</>
+            {source === 'both' ? (
+              <><Dices size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />{gambleName} × {arcName}</>
+            ) : source === 'gamble' ? (
+              <><Dices size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />{gambleName || 'Gamble Events'}</>
             ) : (
-              <><BookOpen size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />Arc Events</>
+              <><BookOpen size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />{arcName || 'Arc Events'}</>
             )}
           </Title>
           <Text size="xs" c="dimmed">
@@ -164,7 +180,9 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
 
         {sortedEvents.length === 0 ? (
           <Text c="dimmed" ta="center" py="md" size="sm">
-            No events found for this {source}. Be the first to add one!
+            {source === 'both'
+              ? 'No events found matching both selections. Be the first to add one!'
+              : `No events found for this ${source}. Be the first to add one!`}
           </Text>
         ) : (
           <Timeline
