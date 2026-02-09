@@ -265,6 +265,7 @@ export default function GamblesPageContent({
   }, [router, sortBy])
 
   const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
     const params = new URLSearchParams()
     if (searchQuery) params.set('search', searchQuery)
     if (characterFilter) params.set('character', characterFilter)

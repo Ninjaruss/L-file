@@ -677,6 +677,10 @@ class ApiClient {
     return this.get<any>(`/guides/${id}`)
   }
 
+  async getMyGuideSubmission(id: number) {
+    return this.get<any>(`/guides/${id}`)
+  }
+
   async createGuide(data: {
     title: string
     description: string

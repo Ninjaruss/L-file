@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { Suspense } from 'react'
+import { Loader, Center } from '@mantine/core'
 import SubmitGuidePageContent from './SubmitGuidePageContent'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,5 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function SubmitGuidePage() {
-  return <SubmitGuidePageContent />
+  return (
+    <Suspense fallback={<Center py="xl"><Loader size="lg" /></Center>}>
+      <SubmitGuidePageContent />
+    </Suspense>
+  )
 }

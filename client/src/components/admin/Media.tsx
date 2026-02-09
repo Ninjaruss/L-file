@@ -1970,8 +1970,7 @@ const FilteredDatagrid = () => {
 export const MediaList = () => (
   <List
     perPage={25}
-    filter={{ excludeVolumes: 'true' }}
-    filterDefaultValues={{ status: 'pending' }}
+    filterDefaultValues={{ excludeVolumes: 'true', status: 'pending' }}
     sx={{
       '& .RaList-content': {
         '& > *:not(:last-child)': {

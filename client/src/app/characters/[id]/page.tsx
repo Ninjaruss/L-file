@@ -28,6 +28,7 @@ interface Character {
   name: string
   alternateNames: string[] | null
   description: string | null
+  backstory?: string | null
   firstAppearanceChapter: number | null
   imageFileName?: string | null
   imageDisplayName?: string | null

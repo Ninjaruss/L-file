@@ -28,6 +28,7 @@ import {
 import { setTabAccentColors } from '../../lib/mantine-theme'
 import { FileText, Send, Plus, BookOpen, Eye, Check } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../providers/AuthProvider'
 import { FormProgressIndicator, FormStep } from '../../components/FormProgressIndicator'
 import { api } from '../../lib/api'
@@ -39,9 +40,26 @@ const MIN_TITLE_LENGTH = 5
 const MIN_DESCRIPTION_LENGTH = 20
 const MIN_CONTENT_LENGTH = 100
 
+interface ExistingGuide {
+  id: number
+  title: string
+  description: string
+  content: string
+  characterIds?: number[]
+  arcId?: number | null
+  gambleIds?: number[]
+  tags?: Array<{ id: number; name: string }>
+  status?: string
+  rejectionReason?: string | null
+}
+
 export default function SubmitGuidePageContent() {
   const theme = useMantineTheme()
   const { user, loading: authLoading } = useAuth()
+  const searchParams = useSearchParams()
+  const editGuideId = searchParams.get('edit')
+  const isEditMode = Boolean(editGuideId)
+  const [existingGuide, setExistingGuide] = useState<ExistingGuide | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -112,31 +130,53 @@ export default function SubmitGuidePageContent() {
 
     setLoading(true)
     try {
-      await api.createGuide({
+      const guideData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         content: formData.content.trim(),
         characterIds: formData.characterIds.length ? formData.characterIds : undefined,
         arcId: formData.arcId ?? undefined,
         gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined,
-        tags: formData.tags.length ? formData.tags : undefined
-      })
-      setSuccess('Guide submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
-      setFormData({
-        title: '',
-        description: '',
-        content: '',
-        characterIds: [],
-        arcId: null,
-        gambleIds: [],
-        tags: []
-      })
-      setActiveTab('write')
+        tagNames: formData.tags.length ? formData.tags : undefined
+      }
+
+      if (isEditMode && editGuideId) {
+        // Edit mode: update existing guide
+        await api.updateGuide(Number(editGuideId), guideData)
+        const wasRejected = existingGuide?.status === 'rejected'
+        setSuccess(
+          wasRejected
+            ? 'Guide resubmitted! It is now pending review again. Track your submissions on your profile page.'
+            : 'Guide updated successfully! Track your submissions on your profile page.'
+        )
+      } else {
+        // Create mode: submit new guide
+        await api.createGuide({
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          content: formData.content.trim(),
+          characterIds: formData.characterIds.length ? formData.characterIds : undefined,
+          arcId: formData.arcId ?? undefined,
+          gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined,
+          tags: formData.tags.length ? formData.tags : undefined
+        })
+        setSuccess('Guide submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
+        setFormData({
+          title: '',
+          description: '',
+          content: '',
+          characterIds: [],
+          arcId: null,
+          gambleIds: [],
+          tags: []
+        })
+        setActiveTab('write')
+      }
     } catch (submissionError: unknown) {
       if (submissionError instanceof Error) {
         setError(submissionError.message)
       } else {
-        setError('Failed to submit guide. Please try again.')
+        setError(isEditMode ? 'Failed to update guide. Please try again.' : 'Failed to submit guide. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -187,6 +227,32 @@ export default function SubmitGuidePageContent() {
     loadData()
   }, [])
 
+  // Fetch existing guide data when in edit mode
+  useEffect(() => {
+    if (isEditMode && editGuideId) {
+      const fetchGuideData = async () => {
+        try {
+          const guide = await api.getMyGuideSubmission(Number(editGuideId))
+          setExistingGuide(guide)
+          // Populate form with existing data
+          setFormData({
+            title: guide.title || '',
+            description: guide.description || '',
+            content: guide.content || '',
+            characterIds: guide.characterIds || [],
+            arcId: guide.arcId ?? null,
+            gambleIds: guide.gambleIds || [],
+            tags: guide.tags?.map((t: { name: string }) => t.name) || []
+          })
+        } catch (fetchError) {
+          console.error('Error loading guide data:', fetchError)
+          setError('Failed to load guide data for editing. You may not have permission to edit this guide.')
+        }
+      }
+      fetchGuideData()
+    }
+  }, [isEditMode, editGuideId])
+
   if (authLoading || loadingData) {
     return (
       <Container size="md" py="xl">
@@ -235,11 +301,29 @@ export default function SubmitGuidePageContent() {
           <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(81, 207, 102, 0.15)', color: guideAccent }}>
             <FileText size={32} color={guideAccent} />
           </ThemeIcon>
-          <Title order={1}>Write a Guide</Title>
+          <Title order={1}>{isEditMode ? 'Edit Guide' : 'Write a Guide'}</Title>
           <Text size="lg" c="dimmed">
-            Share your knowledge and insights about Usogui with the community
+            {isEditMode
+              ? 'Update your guide and resubmit for review'
+              : 'Share your knowledge and insights about Usogui with the community'
+            }
           </Text>
         </Stack>
+
+        {isEditMode && existingGuide?.status === 'rejected' && existingGuide?.rejectionReason && (
+          <Alert
+            variant="light"
+            mb="md"
+            style={{
+              backgroundColor: 'rgba(245, 124, 0, 0.1)',
+              borderColor: 'rgba(245, 124, 0, 0.3)',
+              color: '#ffb74d'
+            }}
+          >
+            <Text size="sm" c="#ffb74d" fw={600} mb={4}>Rejection Reason:</Text>
+            <Text size="sm" c="#ffb74d">{existingGuide.rejectionReason}</Text>
+          </Alert>
+        )}
 
         {error && (
           <Alert
@@ -750,7 +834,7 @@ export default function SubmitGuidePageContent() {
                   }
                 }}
               >
-                {loading ? 'Submitting...' : 'Submit Guide'}
+                {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update & Resubmit' : 'Submit Guide')}
               </Button>
             </Stack>
           </form>
