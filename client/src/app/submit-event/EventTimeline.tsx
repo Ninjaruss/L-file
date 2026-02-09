@@ -73,7 +73,7 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
           setSource('arc')
         }
 
-        setEvents(fetchedEvents || [])
+        setEvents(Array.isArray(fetchedEvents) ? fetchedEvents : [])
       } catch (error) {
         console.error('Error fetching events:', error)
         setEvents([])
@@ -85,10 +85,10 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
     fetchEvents()
   }, [arcId, gambleId])
 
-  const sortedEvents = useMemo(() =>
-    [...events].sort((a, b) => a.chapterNumber - b.chapterNumber),
-    [events]
-  )
+  const sortedEvents = useMemo(() => {
+    const eventsArray = Array.isArray(events) ? events : []
+    return [...eventsArray].sort((a, b) => a.chapterNumber - b.chapterNumber)
+  }, [events])
 
   if (!arcId && !gambleId) {
     return (
