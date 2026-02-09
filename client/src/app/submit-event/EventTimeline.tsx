@@ -73,6 +73,7 @@ export default function EventTimeline({ arcId, gambleId, accentColor }: EventTim
           setSource('arc')
         }
 
+        console.log('[EventTimeline] API response:', fetchedEvents, 'isArray:', Array.isArray(fetchedEvents), 'type:', typeof fetchedEvents)
         setEvents(Array.isArray(fetchedEvents) ? fetchedEvents : [])
       } catch (error) {
         console.error('Error fetching events:', error)
