@@ -458,8 +458,6 @@ export default function SubmitEventPageContent() {
                 onChange={(value) => setSharedArcId(value ? parseInt(value) : null)}
                 data={arcOptions}
                 clearable
-                searchable
-                nothingFoundMessage="No arcs found"
                 styles={{
                   input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' },
                   label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 },
@@ -474,8 +472,6 @@ export default function SubmitEventPageContent() {
                 onChange={(value) => setSharedGambleId(value ? parseInt(value) : null)}
                 data={gambleOptions}
                 clearable
-                searchable
-                nothingFoundMessage="No gambles found"
                 styles={{
                   input: { backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b', color: theme.colors.gray?.[0] ?? '#fff', borderColor: 'rgba(255,255,255,0.06)' },
                   label: { color: 'rgba(255,255,255,0.7)', fontWeight: 500 },
