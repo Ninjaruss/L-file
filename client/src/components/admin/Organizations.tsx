@@ -15,11 +15,13 @@ import {
   SingleFieldList,
   ChipField,
   SearchInput,
-  BulkDeleteButton
+  BulkDeleteButton,
+  WithRecord
 } from 'react-admin'
 import { Typography, Box, Card, CardContent, Grid } from '@mui/material'
 import { Edit3, Plus, Users, Building2 } from 'lucide-react'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
+import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { EditToolbar } from './EditToolbar'
 
 const organizationFilters = [
@@ -234,6 +236,15 @@ export const OrganizationShow = () => (
               </Datagrid>
             </ReferenceManyField>
           </Box>
+        </Tab>
+        <Tab label="Media">
+          <WithRecord render={(record) => (
+            <EntityDisplayMediaSection
+              ownerType="organization"
+              ownerId={record.id}
+              accentColor="#7c3aed"
+            />
+          )} />
         </Tab>
       </TabbedShowLayout>
     </Box>

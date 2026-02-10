@@ -19,10 +19,12 @@ import {
   AutocompleteInput,
   useGetList,
   SearchInput,
-  BulkDeleteButton
+  BulkDeleteButton,
+  WithRecord
 } from 'react-admin'
 import { Typography, Chip, Box, Card, CardContent, Grid, Tooltip } from '@mui/material'
 import { Edit3, Plus, BookOpen, Layers, GitBranch } from 'lucide-react'
+import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
@@ -537,6 +539,15 @@ export const ArcShow = () => (
               </Datagrid>
             </ReferenceManyField>
           </Box>
+        </Tab>
+        <Tab label="Media">
+          <WithRecord render={(record) => (
+            <EntityDisplayMediaSection
+              ownerType="arc"
+              ownerId={record.id}
+              accentColor="#ff9800"
+            />
+          )} />
         </Tab>
       </TabbedShowLayout>
     </Box>

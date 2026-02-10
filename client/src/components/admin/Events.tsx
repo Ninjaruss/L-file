@@ -76,6 +76,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { api } from '../../lib/api'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
+import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 // Note: Removed EntityEmbedHelperWithSearch import to avoid Mantine/MUI conflicts
 
 const EVENT_TYPE_CHOICES = [
@@ -1341,6 +1342,13 @@ const EventShowContent = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Entity Display Media */}
+      <EntityDisplayMediaSection
+        ownerType="event"
+        ownerId={record.id}
+        accentColor="#e11d48"
+      />
     </Box>
   )
 }

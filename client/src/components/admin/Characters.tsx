@@ -27,6 +27,7 @@ import {
 } from 'react-admin'
 import { Box, Card, CardContent, Typography, Grid, Chip, Button as MuiButton, Divider } from '@mui/material'
 import { Edit3, Plus, Users, ArrowRight, Building2 } from 'lucide-react'
+import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { Link } from 'react-router-dom'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
@@ -294,6 +295,15 @@ export const CharacterShow = () => (
           </Datagrid>
         </ReferenceManyField>
       </Box>
+
+      {/* Entity Display Media */}
+      <WithRecord render={(record) => (
+        <EntityDisplayMediaSection
+          ownerType="character"
+          ownerId={record.id}
+          accentColor="#1976d2"
+        />
+      )} />
     </SimpleShowLayout>
   </Show>
 )

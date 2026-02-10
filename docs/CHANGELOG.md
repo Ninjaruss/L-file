@@ -6,6 +6,8 @@
 - Gamble factions to indicate supporters for each gambler or outside entities within the gamble
 - Auto detection for media type during submission
 - Pagination updated to check for url
+- Entity display media management for admin dashboard
+- Media preview fixed for admin dashboard
 
 ## 2026-02-08
 - Media default view updated to show general (excluding volumes)

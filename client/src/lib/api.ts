@@ -717,6 +717,7 @@ class ApiClient {
     ownerId: number
     chapterNumber?: number
     description?: string
+    purpose?: 'gallery' | 'entity_display'
   }) {
     return this.post<any>('/media', data)
   }

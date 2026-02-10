@@ -26,10 +26,12 @@ import {
   ExportButton,
   SearchInput,
   NumberField,
-  FunctionField
+  FunctionField,
+  WithRecord
 } from 'react-admin'
 import { Box, Typography } from '@mui/material'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
+import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { EditToolbar } from './EditToolbar'
 
 
@@ -416,6 +418,15 @@ export const GambleShow = () => (
               </Datagrid>
             </ReferenceManyField>
           </Box>
+        </Tab>
+        <Tab label="Media">
+          <WithRecord render={(record) => (
+            <EntityDisplayMediaSection
+              ownerType="gamble"
+              ownerId={record.id}
+              accentColor="#d32f2f"
+            />
+          )} />
         </Tab>
       </TabbedShowLayout>
     </Box>

@@ -43,7 +43,6 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material'
-import Image from 'next/image'
 import {
   Check,
   X,
@@ -232,18 +231,17 @@ const MediaPreviewField = ({ source }: { source: string }) => {
 
       return (
         <Box sx={{ width: '80px', height: '60px', position: 'relative', display: 'flex', justifyContent: 'center' }}>
-          <Image
+          <img
             src={record.url}
             alt="Media preview"
-            width={60}
-            height={60}
             style={{
+              width: 60,
+              height: 60,
               objectFit: 'cover',
               borderRadius: '4px',
               border: '2px solid #e11d48'
             }}
             onError={() => setImageError(true)}
-            unoptimized={record.url.startsWith('http') && !record.url.includes('localhost')}
           />
         </Box>
       )
@@ -2313,11 +2311,9 @@ export const MediaShow = () => {
             borderRadius: 2,
             border: '2px dashed rgba(225, 29, 72, 0.3)'
           }}>
-            <Image
+            <img
               src={record.url}
               alt={record.description || 'Media content'}
-              width={800}
-              height={600}
               style={{
                 maxWidth: '100%',
                 height: 'auto',
@@ -2325,9 +2321,7 @@ export const MediaShow = () => {
                 boxShadow: '0 8px 32px rgba(225, 29, 72, 0.3)',
                 border: '1px solid rgba(225, 29, 72, 0.2)'
               }}
-              sizes="(max-width: 768px) 100vw, 800px"
               onError={() => setImageError(true)}
-              unoptimized={record.url.startsWith('http') && !record.url.includes('localhost')}
             />
           </Box>
         )

@@ -95,28 +95,6 @@ export class BadgeSeeder implements Seeder {
         isActive: true,
         isManuallyAwardable: true,
       },
-      {
-        name: 'Moderator',
-        description: 'Helps moderate and maintain the community',
-        type: BadgeType.CUSTOM,
-        icon: '🛡️',
-        color: '#32CD32',
-        backgroundColor: '#006400',
-        displayOrder: 5,
-        isActive: true,
-        isManuallyAwardable: true,
-      },
-      {
-        name: 'Administrator',
-        description: 'Site administrator',
-        type: BadgeType.CUSTOM,
-        icon: '⚙️',
-        color: '#FF4500',
-        backgroundColor: '#8B0000',
-        displayOrder: 1,
-        isActive: true,
-        isManuallyAwardable: true,
-      },
     ];
 
     await badgeRepository.save(badges);
