@@ -6,7 +6,6 @@ import {
   Avatar,
   Badge,
   Box,
-  Button,
   Card,
   Group,
   HoverCard,
@@ -26,7 +25,6 @@ import {
   Hash,
   Volume2,
   Quote,
-  ExternalLink
 } from 'lucide-react'
 import {
   fetchEntityData,
@@ -214,6 +212,29 @@ const EntityCard: React.FC<EntityCardProps> = ({
     </Avatar>
   )
 
+  const renderDescription = () => {
+    if (!data) return null
+
+    let desc: string | undefined
+
+    if (type === 'character') desc = data.description
+    else if (type === 'arc') desc = data.description
+    else if (type === 'gamble') desc = data.description || data.arc?.name
+    else if (type === 'guide') desc = data.description
+    else if (type === 'organization') desc = data.description
+    else if (type === 'quote') desc = data.text
+    else if (type === 'chapter') desc = data.summary || data.title
+    else if (type === 'volume') desc = data.description
+
+    if (!desc) return null
+
+    return (
+      <Text size="xs" c="dimmed" lineClamp={2} style={{ lineHeight: 1.4 }}>
+        {desc}
+      </Text>
+    )
+  }
+
   // --- Popover content for hover card ---
   const renderPopoverContent = () => {
     if (loading) return renderLoading()
@@ -255,26 +276,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
             </Group>
           </Box>
         </Group>
-        <Button
-          component={Link}
-          href={linkHref}
-          size="xs"
-          variant="light"
-          fullWidth
-          rightSection={<ExternalLink size={12} />}
-          styles={{
-            root: {
-              color: accentColor,
-              backgroundColor: rgba(accentColor, 0.1),
-              border: `1px solid ${rgba(accentColor, 0.2)}`,
-              '&:hover': {
-                backgroundColor: rgba(accentColor, 0.18)
-              }
-            }
-          }}
-        >
-          View {getEntityTypeLabel(type)}
-        </Button>
+        {renderDescription()}
       </Stack>
     )
   }

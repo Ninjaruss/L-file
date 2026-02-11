@@ -189,6 +189,11 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
     [theme]
   )
 
+  const filterableEntityTypes = useMemo(
+    () => entityTypes.filter((et) => !['chapter', 'volume', 'quote'].includes(et.type)),
+    [entityTypes]
+  )
+
   useEffect(() => {
     const loadAllEntities = async () => {
       try {
@@ -443,7 +448,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
 
           {/* Entity type filter toolbar */}
           <Group gap={6}>
-            {entityTypes.map((et) => (
+            {filterableEntityTypes.map((et) => (
               <Tooltip key={et.type} label={et.label} withArrow>
                 <ActionIcon
                   variant={activeTypeFilter === et.type ? 'filled' : 'subtle'}
