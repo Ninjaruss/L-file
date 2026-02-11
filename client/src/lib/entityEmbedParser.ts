@@ -40,7 +40,7 @@ export function parseEntityEmbeds(content: string): {
   }> = []
 
   // Regex to match {{type:id}} or {{type:id:display_text}}
-  const embedRegex = /\{\{(character|arc|gamble|guide|organization|chapter|volume|quote):(\d+)(?::([^}]+))?\}\}/g
+  const embedRegex = /\{\{(character|arc|gamble|guide|organization|chapter|volume|quote):(\d+)(?:[:|]([^}]+))?\}\}/g
   
   let match
   let counter = 0

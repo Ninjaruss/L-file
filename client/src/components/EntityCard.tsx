@@ -3,16 +3,19 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  Card,
-  Badge,
   Avatar,
-  Group,
+  Badge,
   Box,
-  Text,
+  Button,
+  Card,
+  Group,
+  HoverCard,
   Skeleton,
+  Stack,
+  Text,
   rem,
-  useMantineTheme,
-  rgba
+  rgba,
+  useMantineTheme
 } from '@mantine/core'
 import {
   User,
@@ -22,14 +25,14 @@ import {
   Users,
   Hash,
   Volume2,
-  Quote
+  Quote,
+  ExternalLink
 } from 'lucide-react'
 import {
   fetchEntityData,
   getEntityTypeLabel,
   getDefaultDisplayText,
-  getEntityUrl,
-  EntityEmbedData
+  getEntityUrl
 } from '../lib/entityEmbedParser'
 import { getEntityAccent, EntityAccentKey } from '../lib/mantine-theme'
 import MediaThumbnail from './MediaThumbnail'
@@ -65,6 +68,17 @@ const ICON_MAP: Record<EntityCardProps['type'], React.ReactNode> = {
   quote: <Quote size={18} />
 }
 
+const ICON_MAP_SM: Record<EntityCardProps['type'], React.ReactNode> = {
+  character: <User size={14} />,
+  arc: <BookOpen size={14} />,
+  gamble: <Dice6 size={14} />,
+  guide: <FileText size={14} />,
+  organization: <Users size={14} />,
+  chapter: <Hash size={14} />,
+  volume: <Volume2 size={14} />,
+  quote: <Quote size={14} />
+}
+
 const skeletonCircle = (size: number) => (
   <Skeleton width={size} height={size} circle radius={size / 2} />
 )
@@ -78,7 +92,8 @@ const EntityCard: React.FC<EntityCardProps> = ({
   inline = false
 }) => {
   const theme = useMantineTheme()
-  const [data, setData] = useState<EntityEmbedData | null>(null)
+  // fetchEntityData returns the raw entity object (not wrapped in EntityEmbedData)
+  const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -115,8 +130,9 @@ const EntityCard: React.FC<EntityCardProps> = ({
 
   const accentKey = ENTITY_ACCENT_MAP[type]
   const accentColor = accentKey ? getEntityAccent(accentKey, theme) : theme.colors.gray[5] || '#94a3b8'
+  const linkHref = getEntityUrl(type, id)
 
-  const renderChip = (label: string) => (
+  const renderTypeBadge = (label: string) => (
     <Badge
       size="sm"
       variant="outline"
@@ -135,26 +151,26 @@ const EntityCard: React.FC<EntityCardProps> = ({
   )
 
   const renderMeta = () => {
-    if (!data?.data) return null
+    if (!data) return null
 
-    if (type === 'character' && data.data.organization) {
-      return data.data.organization
+    if (type === 'character' && data.organization) {
+      return data.organization
     }
 
-    if (type === 'arc' && data.data.startChapter && data.data.endChapter) {
-      return `Ch. ${data.data.startChapter}-${data.data.endChapter}`
+    if (type === 'arc' && data.startChapter && data.endChapter) {
+      return `Ch. ${data.startChapter}-${data.endChapter}`
     }
 
-    if (type === 'gamble' && data.data.chapterNumber) {
-      return `Ch. ${data.data.chapterNumber}`
+    if (type === 'gamble' && data.chapterNumber) {
+      return `Ch. ${data.chapterNumber}`
     }
 
-    if (type === 'chapter' && data.data.number) {
-      return `#${data.data.number}`
+    if (type === 'chapter' && data.number) {
+      return `#${data.number}`
     }
 
-    if (type === 'volume' && data.data.number) {
-      return `Vol. ${data.data.number}`
+    if (type === 'volume' && data.number) {
+      return `Vol. ${data.number}`
     }
 
     return null
@@ -198,6 +214,139 @@ const EntityCard: React.FC<EntityCardProps> = ({
     </Avatar>
   )
 
+  // --- Popover content for hover card ---
+  const renderPopoverContent = () => {
+    if (loading) return renderLoading()
+    if (error || !data) return renderError()
+
+    const finalDisplayText = displayText || getDefaultDisplayText(type, data)
+    const meta = renderMeta()
+
+    return (
+      <Stack gap="xs">
+        <Group gap="sm" wrap="nowrap" align="center">
+          {showImage && ['character', 'arc', 'volume'].includes(type) ? (
+            <Box style={{ width: rem(40), height: rem(40), flexShrink: 0 }}>
+              <MediaThumbnail
+                entityType={type as 'character' | 'arc' | 'volume'}
+                entityId={id}
+                entityName={finalDisplayText}
+                maxWidth={40}
+                maxHeight={40}
+                inline
+              />
+            </Box>
+          ) : (
+            <Avatar size={40} radius="xl" styles={{ root: { backgroundColor: accentColor, color: '#ffffff' } }}>
+              {ICON_MAP[type]}
+            </Avatar>
+          )}
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <Text size="sm" fw={700} lineClamp={1} style={{ color: accentColor }}>
+              {finalDisplayText}
+            </Text>
+            <Group gap="xs" mt={2} align="center">
+              {renderTypeBadge(getEntityTypeLabel(type))}
+              {meta && (
+                <Text size="xs" c="dimmed" lineClamp={1}>
+                  {meta}
+                </Text>
+              )}
+            </Group>
+          </Box>
+        </Group>
+        <Button
+          component={Link}
+          href={linkHref}
+          size="xs"
+          variant="light"
+          fullWidth
+          rightSection={<ExternalLink size={12} />}
+          styles={{
+            root: {
+              color: accentColor,
+              backgroundColor: rgba(accentColor, 0.1),
+              border: `1px solid ${rgba(accentColor, 0.2)}`,
+              '&:hover': {
+                backgroundColor: rgba(accentColor, 0.18)
+              }
+            }
+          }}
+        >
+          View {getEntityTypeLabel(type)}
+        </Button>
+      </Stack>
+    )
+  }
+
+  // --- Inline chip mode (Discord-mention style) ---
+  if (inline) {
+    const chipDisplayText = loading
+      ? '...'
+      : error
+        ? (displayText || 'Not found')
+        : (displayText || (data ? getDefaultDisplayText(type, data) : `${getEntityTypeLabel(type)} #${id}`))
+
+    return (
+      <HoverCard width={280} shadow="lg" openDelay={200} closeDelay={100} position="top" withinPortal>
+        <HoverCard.Target>
+          <span style={{ display: 'inline' }}>
+            <Link
+              href={linkHref}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: rem(4),
+                padding: `${rem(2)} ${rem(8)}`,
+                borderRadius: rem(12),
+                backgroundColor: rgba(accentColor, 0.12),
+                color: accentColor,
+                textDecoration: 'none',
+                fontSize: rem(13),
+                fontWeight: 600,
+                lineHeight: 1.4,
+                verticalAlign: 'middle',
+                cursor: 'pointer',
+                transition: 'background-color 120ms ease',
+                whiteSpace: 'nowrap',
+                maxWidth: rem(240)
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.backgroundColor = rgba(accentColor, 0.22)
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.backgroundColor = rgba(accentColor, 0.12)
+              }}
+            >
+              <span style={{ display: 'inline-flex', flexShrink: 0, color: accentColor }}>
+                {ICON_MAP_SM[type]}
+              </span>
+              <Text
+                component="span"
+                size="sm"
+                fw={600}
+                lineClamp={1}
+                style={{ color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              >
+                {chipDisplayText}
+              </Text>
+            </Link>
+          </span>
+        </HoverCard.Target>
+        <HoverCard.Dropdown
+          style={{
+            backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a',
+            border: `1px solid ${rgba(accentColor, 0.3)}`,
+            borderRadius: rem(12)
+          }}
+        >
+          {renderPopoverContent()}
+        </HoverCard.Dropdown>
+      </HoverCard>
+    )
+  }
+
+  // --- Compact mode (non-inline) ---
   const renderContent = () => {
     if (loading) {
       return renderLoading()
@@ -244,7 +393,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
 
           {!compact && (
             <Group gap="xs" mt={4} align="center">
-              {renderChip(getEntityTypeLabel(type))}
+              {renderTypeBadge(getEntityTypeLabel(type))}
               {meta && (
                 <Text size="xs" c="dimmed" lineClamp={1}>
                   {meta}
@@ -257,22 +406,21 @@ const EntityCard: React.FC<EntityCardProps> = ({
     )
   }
 
-  const linkHref = getEntityUrl(type, id)
   const interactiveStyles = {
     border: `1px solid ${rgba(accentColor, 0.25)}`,
     background: `linear-gradient(135deg, ${rgba(accentColor, 0.12)} 0%, transparent 100%)`,
     textDecoration: 'none',
-    transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
-    display: inline ? 'inline-flex' : undefined
+    transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease'
   } as const
 
-  if (compact || inline) {
+  if (compact) {
     return (
       <Box
         component={Link}
         href={linkHref}
         style={{
           ...interactiveStyles,
+          display: 'inline-flex',
           alignItems: 'center',
           padding: '4px 8px',
           borderRadius: rem(8),

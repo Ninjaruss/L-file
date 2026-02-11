@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Accordion,
   ActionIcon,
   Alert,
   Box,
   Button,
+  Group,
   Loader,
   Modal,
   Paper,
@@ -35,7 +36,7 @@ import {
   Search
 } from 'lucide-react'
 import { api } from '../lib/api'
-import { EntityAccentKey, getEntityAccent, getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
+import { EntityAccentKey, getEntityAccent, getEntityThemeColor } from '../lib/mantine-theme'
 
 interface EntityOption {
   id: number
@@ -65,34 +66,34 @@ interface EmbedEntityType {
 const baseExamples: Record<EntityAccentKey | 'chapter' | 'volume', EmbedExample[]> = {
   character: [
     { code: '{{character:1}}', description: 'Basic character embed' },
-    { code: '{{character:1|Baku Madarame}}', description: 'Character with custom text' }
+    { code: '{{character:1:Baku Madarame}}', description: 'Character with custom text' }
   ],
   arc: [
     { code: '{{arc:5}}', description: 'Basic arc embed' },
-    { code: '{{arc:5|Tower Arc}}', description: 'Arc with custom text' }
+    { code: '{{arc:5:Tower Arc}}', description: 'Arc with custom text' }
   ],
   gamble: [
     { code: '{{gamble:12}}', description: 'Basic gamble embed' },
-    { code: '{{gamble:12|Air Poker}}', description: 'Gamble with custom text' }
+    { code: '{{gamble:12:Air Poker}}', description: 'Gamble with custom text' }
   ],
   guide: [
     { code: '{{guide:3}}', description: 'Basic guide embed' },
-    { code: '{{guide:3|Gambling Rules Guide}}', description: 'Guide with custom text' }
+    { code: '{{guide:3:Gambling Rules Guide}}', description: 'Guide with custom text' }
   ],
   organization: [
     { code: '{{organization:2}}', description: 'Basic organization embed' },
-    { code: '{{organization:2|Kakerou}}', description: 'Organization with custom text' }
+    { code: '{{organization:2:Kakerou}}', description: 'Organization with custom text' }
   ],
   quote: [{ code: '{{quote:45}}', description: 'Basic quote embed' }],
   media: [],
   event: [],
   chapter: [
     { code: '{{chapter:150}}', description: 'Basic chapter embed' },
-    { code: '{{chapter:150|The Final Gamble}}', description: 'Chapter with custom text' }
+    { code: '{{chapter:150:The Final Gamble}}', description: 'Chapter with custom text' }
   ],
   volume: [
     { code: '{{volume:20}}', description: 'Basic volume embed' },
-    { code: '{{volume:20|The Conclusion}}', description: 'Volume with custom text' }
+    { code: '{{volume:20:The Conclusion}}', description: 'Volume with custom text' }
   ]
 }
 
@@ -102,6 +103,8 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchResults, setSearchResults] = useState<EntityOption[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeTypeFilter, setActiveTypeFilter] = useState<string | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [allEntities, setAllEntities] = useState({
     characters: [] as any[],
     arcs: [] as any[],
@@ -364,6 +367,28 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  // Filter results by active type filter
+  const filteredResults = useMemo(() => {
+    if (!activeTypeFilter) return searchResults
+    return searchResults.filter((r) => r.type === activeTypeFilter)
+  }, [searchResults, activeTypeFilter])
+
+  // Group filtered results by entity type
+  const groupedResults = useMemo(() => {
+    const groups = new Map<string, EntityOption[]>()
+    for (const result of filteredResults) {
+      const existing = groups.get(result.type) || []
+      existing.push(result)
+      groups.set(result.type, existing)
+    }
+    return groups
+  }, [filteredResults])
+
+  const handleTypeFilterToggle = (typeKey: string) => {
+    setActiveTypeFilter(activeTypeFilter === typeKey ? null : typeKey)
+    searchInputRef.current?.focus()
+  }
+
   return (
     <>
       <Paper
@@ -371,13 +396,13 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
         radius="md"
         shadow="lg"
         mb="lg"
-        p="lg"
+        p="md"
         style={{
           border: `1px solid ${(theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48')}30`,
           background: `linear-gradient(135deg, ${(theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48')}08 0%, transparent 100%)`
         }}
       >
-        <Stack gap="md">
+        <Stack gap="sm">
           <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box style={{ display: 'flex', alignItems: 'center', gap: rem(8) }}>
               <Code size={20} color={theme.other?.usogui?.red ?? theme.colors.red[6] ?? '#e11d48'} />
@@ -396,80 +421,135 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
           </Box>
 
           <Text size="sm" c="dimmed">
-            Use embeds to reference characters, arcs, gambles, and more. Search for specific entities below or
-            use the quick insert buttons.
+            Use embeds to reference characters, arcs, gambles, and more. Search below or filter by type.
           </Text>
 
           <TextInput
+            ref={searchInputRef}
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.currentTarget.value)}
             placeholder="Search for characters, arcs, gambles..."
             size="sm"
+            leftSection={<Search size={16} />}
             rightSection={searchLoading ? <Loader size="xs" /> : undefined}
             styles={{
               input: {
                 padding: rem(12),
+                paddingLeft: rem(36),
                 fontSize: rem(14),
               },
             }}
           />
 
+          {/* Entity type filter toolbar */}
+          <Group gap={6}>
+            {entityTypes.map((et) => (
+              <Tooltip key={et.type} label={et.label} withArrow>
+                <ActionIcon
+                  variant={activeTypeFilter === et.type ? 'filled' : 'subtle'}
+                  size="sm"
+                  radius="md"
+                  onClick={() => handleTypeFilterToggle(et.type)}
+                  styles={{
+                    root: {
+                      backgroundColor: activeTypeFilter === et.type ? rgba(et.color, 0.2) : 'transparent',
+                      color: et.color,
+                      border: activeTypeFilter === et.type ? `1px solid ${rgba(et.color, 0.4)}` : '1px solid transparent',
+                      '&:hover': {
+                        backgroundColor: rgba(et.color, 0.12)
+                      }
+                    }
+                  }}
+                >
+                  {et.icon}
+                </ActionIcon>
+              </Tooltip>
+            ))}
+            {activeTypeFilter && (
+              <Text
+                size="xs"
+                c="dimmed"
+                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => setActiveTypeFilter(null)}
+              >
+                Clear filter
+              </Text>
+            )}
+          </Group>
+
           {searchQuery.length >= 2 && (
             <Paper withBorder radius="md" shadow="sm" p="sm" style={{ maxHeight: rem(360), overflowY: 'auto' }}>
-              {searchResults.length === 0 && !searchLoading ? (
+              {filteredResults.length === 0 && !searchLoading ? (
                 <Text size="sm" c="dimmed" ta="center" py="sm">
                   No entities found.
                 </Text>
               ) : (
-                <Stack gap="sm">
-                  {searchResults.map((result) => {
-                    const entityTypeDef = entityTypes.find((entity) => entity.type === result.type)
+                <Stack gap="md">
+                  {Array.from(groupedResults.entries()).map(([typeKey, results]) => {
+                    const entityTypeDef = entityTypes.find((e) => e.type === typeKey)
                     const entityColor = entityTypeDef?.color ?? '#666'
 
                     return (
-                      <Button
-                        key={`${result.type}-${result.id}`}
-                        variant="default"
-                        fullWidth
-                        size="md"
-                        onClick={() => handleInsertEntity(result)}
-                        styles={{
-                          root: {
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            backgroundColor: theme.colors.dark[6],
-                            border: `1px solid ${rgba(entityColor, 0.22)}`,
-                            borderRadius: rem(10),
-                            padding: `${rem(10)} ${rem(14)}`,
-                            minHeight: rem(56),
-                            textAlign: 'left',
-                            color: theme.colors.gray[2],
-                            transition: 'background-color 120ms ease',
-                            '&:hover': {
-                              backgroundColor: rgba(entityColor, 0.06),
-                            },
-                          },
-                        }}
-                      >
-                        <Box style={{ display: 'flex', gap: rem(12), alignItems: 'center', flex: 1 }}>
-                          <Box style={{ width: rem(36), height: rem(36), display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(8), background: rgba(entityColor, 0.08) }}>
-                            {entityTypeDef?.icon}
-                          </Box>
+                      <Box key={typeKey}>
+                        <Group gap="xs" mb={6}>
+                          <Box style={{ color: entityColor }}>{entityTypeDef?.icon}</Box>
+                          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
+                            {entityTypeDef?.label} ({results.length})
+                          </Text>
+                        </Group>
+                        <Stack gap="xs">
+                          {results.map((result) => (
+                            <Button
+                              key={`${result.type}-${result.id}`}
+                              variant="default"
+                              fullWidth
+                              size="sm"
+                              onClick={() => handleInsertEntity(result)}
+                              styles={{
+                                root: {
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  backgroundColor: theme.colors.dark[6],
+                                  border: `1px solid ${rgba(entityColor, 0.22)}`,
+                                  borderRadius: rem(10),
+                                  padding: `${rem(8)} ${rem(12)}`,
+                                  minHeight: rem(44),
+                                  textAlign: 'left',
+                                  color: theme.colors.gray[2],
+                                  transition: 'background-color 120ms ease',
+                                  '&:hover': {
+                                    backgroundColor: rgba(entityColor, 0.06),
+                                  },
+                                },
+                              }}
+                            >
+                              <Box style={{ display: 'flex', gap: rem(10), alignItems: 'center', flex: 1, overflow: 'hidden' }}>
+                                <Box style={{ width: rem(32), height: rem(32), display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(8), background: rgba(entityColor, 0.08), flexShrink: 0 }}>
+                                  {entityTypeDef?.icon}
+                                </Box>
 
-                          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
-                            <Text size="sm" fw={700} style={{ lineHeight: 1.2, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                              {result.name}
-                            </Text>
-                          </Box>
-                        </Box>
+                                <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden', flex: 1 }}>
+                                  <Text size="sm" fw={700} style={{ lineHeight: 1.2, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                                    {result.name}
+                                  </Text>
+                                  {result.subtitle && (
+                                    <Text size="xs" c="dimmed" lineClamp={1} style={{ marginTop: 2 }}>
+                                      {result.subtitle}
+                                    </Text>
+                                  )}
+                                </Box>
+                              </Box>
 
-                        <Box style={{ marginLeft: rem(12), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Box style={{ backgroundColor: rgba(entityColor, 0.12), color: entityColor, padding: `${rem(6)} ${rem(8)}`, borderRadius: rem(999), fontWeight: 700, fontSize: rem(12) }}>
-                            {entityTypeDef?.label.toUpperCase()}
-                          </Box>
-                        </Box>
-                      </Button>
+                              <Box style={{ marginLeft: rem(8), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Box style={{ backgroundColor: rgba(entityColor, 0.12), color: entityColor, padding: `${rem(4)} ${rem(8)}`, borderRadius: rem(999), fontWeight: 700, fontSize: rem(11) }}>
+                                  {entityTypeDef?.label.toUpperCase()}
+                                </Box>
+                              </Box>
+                            </Button>
+                          ))}
+                        </Stack>
+                      </Box>
                     )
                   })}
                 </Stack>
@@ -493,7 +573,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
       >
         <Stack gap="xl">
           <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light" radius="md">
-            Entity embeds create interactive cards linking to characters, arcs, gambles, and more. They make
+            Entity embeds create interactive chips linking to characters, arcs, gambles, and more. They make
             guides richer and help readers discover related content quickly.
           </Alert>
 
@@ -505,7 +585,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
             </Text>
             <Text size="sm">
               Add custom display text when needed:{' '}
-              <Text component="code">{'{{character:1|Baku Madarame}}'}</Text>
+              <Text component="code">{'{{character:1:Baku Madarame}}'}</Text>
             </Text>
           </Stack>
 
@@ -522,7 +602,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
                   </Box>
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm"> 
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                     {entityType.examples.map((example, index) => (
                       <Paper key={index} withBorder radius="md" p="sm">
                         <Box
@@ -573,7 +653,7 @@ const EntityEmbedHelperWithSearch: React.FC<EntityEmbedHelperProps> = ({ onInser
                 </Text>
               </li>
               <li>
-                <Text size="sm">Embeds render as interactive cards in the published guide.</Text>
+                <Text size="sm">Embeds render as inline chips that readers can hover for details.</Text>
               </li>
               <li>
                 <Text size="sm">Combine multiple embeds in a section for comprehensive references.</Text>

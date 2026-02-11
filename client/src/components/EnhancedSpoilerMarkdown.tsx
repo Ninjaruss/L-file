@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Box } from '@mantine/core'
+
 import TimelineSpoilerWrapper from './TimelineSpoilerWrapper'
 import EntityCard from './EntityCard'
 import { parseEntityEmbeds } from '../lib/entityEmbedParser'
@@ -33,25 +33,17 @@ const EnhancedSpoilerMarkdown: React.FC<EnhancedSpoilerMarkdownProps> = ({
     // Create React components for each embed
     embeds.forEach((embed) => {
       const component = (
-        <Box
-          key={embed.id}
-          component="span"
-          style={{
-            display: compactEntityCards ? 'inline' : 'inline-block',
-            margin: compactEntityCards ? '0 4px' : '4px 2px',
-            verticalAlign: compactEntityCards ? 'middle' : 'top'
-          }}
-        >
+        <span key={embed.id} style={{ display: 'inline', margin: '0 2px' }}>
           <EntityCard
             type={embed.type}
             id={embed.entityId}
             displayText={embed.displayText}
             compact={compactEntityCards}
-            inline={true}
+            inline
           />
-        </Box>
+        </span>
       )
-      
+
       embedLookup.set(embed.placeholder, component)
     })
 
