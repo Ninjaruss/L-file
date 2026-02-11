@@ -247,18 +247,18 @@ const EntityCard: React.FC<EntityCardProps> = ({
       <Stack gap="xs">
         <Group gap="sm" wrap="nowrap" align="center">
           {showImage && ['character', 'arc', 'volume'].includes(type) ? (
-            <Box style={{ width: rem(40), height: rem(40), flexShrink: 0 }}>
+            <Box style={{ width: rem(56), height: rem(56), flexShrink: 0 }}>
               <MediaThumbnail
                 entityType={type as 'character' | 'arc' | 'volume'}
                 entityId={id}
                 entityName={finalDisplayText}
-                maxWidth={40}
-                maxHeight={40}
+                maxWidth={56}
+                maxHeight={56}
                 inline
               />
             </Box>
           ) : (
-            <Avatar size={40} radius="xl" styles={{ root: { backgroundColor: accentColor, color: '#ffffff' } }}>
+            <Avatar size={48} radius="xl" styles={{ root: { backgroundColor: accentColor, color: '#ffffff' } }}>
               {ICON_MAP[type]}
             </Avatar>
           )}
@@ -290,7 +290,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
         : (displayText || (data ? getDefaultDisplayText(type, data) : `${getEntityTypeLabel(type)} #${id}`))
 
     return (
-      <HoverCard width={280} shadow="lg" openDelay={200} closeDelay={100} position="top" withinPortal>
+      <HoverCard width={340} shadow="lg" openDelay={200} closeDelay={100} position="top" withinPortal>
         <HoverCard.Target>
           <span style={{ display: 'inline' }}>
             <Link
