@@ -130,9 +130,21 @@ export default function AuthCallback() {
           window.history.replaceState({}, '', newUrl.toString())
         }
 
-        // SECURITY: Use BroadcastChannel to communicate token to main tab
-        // Token is NOT stored in localStorage to prevent XSS token theft
-        // The AuthProvider will receive this and store token in memory only
+        // Store token as a short-lived sessionStorage bridge so AuthProvider can pick it
+        // up on the next page. BroadcastChannel does NOT dispatch to the sender tab
+        // (per spec), so this is the only reliable mechanism for direct-navigation OAuth.
+        // The bridge is consumed (deleted) immediately by AuthProvider on init.
+        try {
+          sessionStorage.setItem('_oauth_token_bridge', JSON.stringify({
+            token,
+            expires: Date.now() + 60000 // 60s window
+          }))
+        } catch {
+          // sessionStorage unavailable (e.g. private mode on some browsers)
+        }
+
+        // Also broadcast to any OTHER open tabs that may have a parent AuthProvider
+        // (covers the popup flow where BroadcastChannel IS received by the opener tab)
         try {
           const authChannel = new BroadcastChannel('auth_channel')
           authChannel.postMessage({
@@ -141,9 +153,7 @@ export default function AuthCallback() {
             refreshUser: true
           })
           authChannel.close()
-        } catch (broadcastError) {
-          // BroadcastChannel not supported, try postMessage to opener
-          console.log('[AUTH CALLBACK] BroadcastChannel failed, trying opener.postMessage')
+        } catch {
           if (window.opener) {
             window.opener.postMessage({
               type: 'OAUTH_AUTH_SUCCESS',
@@ -153,7 +163,7 @@ export default function AuthCallback() {
           }
         }
 
-        // Check for return URL from sessionStorage (not localStorage for slightly better security)
+        // Check for return URL from sessionStorage
         // SECURITY: Validate URL to prevent open redirect attacks
         const returnUrl = sessionStorage.getItem('authReturnUrl')
         let redirectUrl = '/'

@@ -95,6 +95,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('[AUTH PROVIDER] Initializing auth...')
 
     try {
+      // Check for a one-time sessionStorage bridge token written by /auth/callback
+      // when OAuth completes via direct (non-popup) navigation. BroadcastChannel
+      // messages are NOT received by the sender tab, so this bridge is the only
+      // reliable way to hand off the token after a full-page OAuth redirect.
+      const bridgeStr = sessionStorage.getItem('_oauth_token_bridge')
+      if (bridgeStr) {
+        sessionStorage.removeItem('_oauth_token_bridge')
+        try {
+          const bridge = JSON.parse(bridgeStr)
+          if (bridge.token && bridge.expires > Date.now()) {
+            console.log('[AUTH PROVIDER] Found OAuth token bridge, using it')
+            api.setToken(bridge.token)
+            const userData = await api.getCurrentUser()
+            setUser(userData)
+            console.log('[AUTH PROVIDER] User loaded from bridge token:', userData.username)
+            return
+          }
+        } catch {
+          // malformed bridge entry — fall through to normal init
+        }
+      }
+
       // SECURITY: Access tokens are now stored in memory only (not localStorage)
       // On page load, we always try to get a new token via refresh token cookie
       // This is more secure as tokens can't be stolen via XSS
