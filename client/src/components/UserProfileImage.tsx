@@ -11,6 +11,7 @@ interface UserProfileImageProps {
     username: string
     profilePictureType?:
       | 'discord'
+      | 'fluxer'
       | 'character_media'
       | 'premium_character_media'
       | 'animated_avatar'
@@ -34,6 +35,8 @@ interface UserProfileImageProps {
     } | null
     discordId?: string | null
     discordAvatar?: string | null
+    fluxerId?: string | null
+    fluxerAvatar?: string | null
   }
   size?: number
   showFallback?: boolean
@@ -70,6 +73,32 @@ export default function UserProfileImage({
     return user.discordAvatar.startsWith('http')
       ? user.discordAvatar
       : `https://cdn.discordapp.com/avatars/${user.discordId}/${user.discordAvatar}.png?size=256`
+  }
+
+  const getFluxerUrl = () => {
+    if (!user.fluxerAvatar) return null
+    return user.fluxerAvatar.startsWith('http')
+      ? user.fluxerAvatar
+      : `https://cdn.fluxer.app/avatars/${user.fluxerId}/${user.fluxerAvatar}.png?size=256`
+  }
+
+  if (user.profilePictureType === 'fluxer' && !error) {
+    const fluxerAvatarUrl = getFluxerUrl()
+    if (fluxerAvatarUrl) {
+      return (
+        <Avatar
+          src={fluxerAvatarUrl}
+          alt={`${user.username}'s Fluxer avatar`}
+          className={className}
+          size={size}
+          radius="xl"
+          onError={() => setError(true)}
+          styles={commonStyles}
+        >
+          {(error || !user.fluxerAvatar) && showFallback && fallbackLetter}
+        </Avatar>
+      )
+    }
   }
 
   if (user.profilePictureType === 'discord' && !error) {
@@ -154,6 +183,22 @@ export default function UserProfileImage({
           styles={commonStyles}
         >
           {(error || !user.discordAvatar) && showFallback && fallbackLetter}
+        </Avatar>
+      )
+    }
+    const fluxerAvatarUrl = getFluxerUrl()
+    if (fluxerAvatarUrl) {
+      return (
+        <Avatar
+          src={fluxerAvatarUrl}
+          alt={`${user.username}'s Fluxer avatar`}
+          className={className}
+          size={size}
+          radius="xl"
+          onError={() => setError(true)}
+          styles={commonStyles}
+        >
+          {(error || !user.fluxerAvatar) && showFallback && fallbackLetter}
         </Avatar>
       )
     }

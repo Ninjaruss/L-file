@@ -368,6 +368,7 @@ export class UsersService {
       role: data.role || UserRole.USER,
       isEmailVerified: true, // Fluxer users are considered verified
       password: null, // No password for Fluxer users
+      profilePictureType: ProfilePictureType.FLUXER,
     });
 
     return this.repo.save(user);

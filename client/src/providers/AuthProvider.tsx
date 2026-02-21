@@ -26,8 +26,12 @@ interface User {
   discordId?: string | null
   discordUsername?: string | null
   discordAvatar?: string | null
+  // Fluxer fields
+  fluxerId?: string | null
+  fluxerUsername?: string | null
+  fluxerAvatar?: string | null
   // Profile picture fields
-  profilePictureType?: 'discord' | 'character_media' | 'premium_character_media' | 'animated_avatar' | 'custom_frame' | 'exclusive_artwork' | null
+  profilePictureType?: 'discord' | 'fluxer' | 'character_media' | 'premium_character_media' | 'animated_avatar' | 'custom_frame' | 'exclusive_artwork' | null
   selectedCharacterMediaId?: number | null
   customRole?: string | null
   // Full relation objects

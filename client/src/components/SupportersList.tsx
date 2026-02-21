@@ -13,7 +13,9 @@ interface SupporterData {
     username: string;
     customRole: string | null;
     discordAvatar: string | null;
-    profilePictureType: 'discord' | 'character_media' | 'premium_character_media' | 'animated_avatar' | 'custom_frame' | 'exclusive_artwork' | null;
+    fluxerAvatar?: string | null;
+    fluxerId?: string | null;
+    profilePictureType: 'discord' | 'fluxer' | 'character_media' | 'premium_character_media' | 'animated_avatar' | 'custom_frame' | 'exclusive_artwork' | null;
     selectedCharacterMediaId: number | null;
     selectedCharacterMedia: any | null;
   };

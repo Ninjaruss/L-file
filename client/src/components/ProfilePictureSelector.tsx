@@ -264,6 +264,11 @@ export default function ProfilePictureSelector({
         description: 'Use your Discord profile picture',
       },
       {
+        type: 'fluxer',
+        label: 'Fluxer Avatar',
+        description: 'Use your Fluxer profile picture',
+      },
+      {
         type: 'character_media',
         label: 'Character Media',
         description: 'Choose from character images',
@@ -299,8 +304,8 @@ export default function ProfilePictureSelector({
       fetchCharacterMedia();
     }
     
-    // If selecting discord or premium (without media selection), call onSelect immediately
-    if (optionType === 'discord') {
+    // If selecting discord, fluxer, or premium (without media selection), call onSelect immediately
+    if (optionType === 'discord' || optionType === 'fluxer') {
       onSelect(optionType);
     }
   };

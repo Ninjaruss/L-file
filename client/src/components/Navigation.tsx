@@ -184,6 +184,14 @@ const Navigation: React.FC = () => {
         : `https://cdn.discordapp.com/avatars/${user.discordId}/${user.discordAvatar}.png`
     }
 
+    // If user has Fluxer avatar
+    if (user.fluxerAvatar &&
+        (user.profilePictureType === 'fluxer' || !user.profilePictureType)) {
+      return user.fluxerAvatar.startsWith('http')
+        ? user.fluxerAvatar
+        : `https://cdn.fluxer.app/avatars/${user.fluxerId}/${user.fluxerAvatar}.png`
+    }
+
     // Default: no image, show initials
     return null
   }
