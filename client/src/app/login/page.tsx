@@ -17,7 +17,6 @@ import {
 import { AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { API_BASE_URL } from '../../../src/lib/api'
 import { useAuth } from '../../providers/AuthProvider'
 
 const errorMessages: Record<string, string> = {
@@ -31,9 +30,8 @@ const errorMessages: Record<string, string> = {
 function LoginContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, loginWithFluxer } = useAuth()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [isRedirecting, setIsRedirecting] = useState(false)
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
@@ -41,7 +39,7 @@ function LoginContent() {
   useEffect(() => {
     const returnUrl = searchParams.get('returnUrl')
     if (returnUrl) {
-      localStorage.setItem('authReturnUrl', returnUrl)
+      sessionStorage.setItem('authReturnUrl', returnUrl)
     }
 
     const error = searchParams.get('error')
@@ -52,8 +50,7 @@ function LoginContent() {
 
   const handleFluxerLogin = () => {
     setErrorMessage(null)
-    setIsRedirecting(true)
-    window.location.href = `${API_BASE_URL}/auth/fluxer`
+    loginWithFluxer()
   }
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -62,8 +59,8 @@ function LoginContent() {
     setEmailLoading(true)
     try {
       await login(identifier, password)
-      const returnUrl = localStorage.getItem('authReturnUrl')
-      localStorage.removeItem('authReturnUrl')
+      const returnUrl = sessionStorage.getItem('authReturnUrl')
+      sessionStorage.removeItem('authReturnUrl')
       router.push(returnUrl || '/')
     } catch (err: any) {
       setErrorMessage(err?.message || 'Login failed. Check your credentials and try again.')
@@ -100,19 +97,15 @@ function LoginContent() {
               color="violet"
               fullWidth
               size="md"
-              loading={isRedirecting}
-              disabled={isRedirecting || emailLoading}
-              aria-busy={isRedirecting}
-              aria-label={isRedirecting ? 'Redirecting to Fluxer...' : 'Continue with Fluxer'}
+              disabled={emailLoading}
+              aria-label="Continue with Fluxer"
               leftSection={
-                !isRedirecting && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                  </svg>
-                )
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
               }
             >
-              {isRedirecting ? 'Redirecting to Fluxer...' : 'Continue with Fluxer'}
+              Continue with Fluxer
             </Button>
             <Text size="xs" c="dimmed" ta="center">
               New to Fluxer?{' '}
@@ -132,7 +125,7 @@ function LoginContent() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.currentTarget.value)}
                 required
-                disabled={isRedirecting}
+                disabled={emailLoading}
               />
               <PasswordInput
                 label="Password"
@@ -140,7 +133,7 @@ function LoginContent() {
                 value={password}
                 onChange={(e) => setPassword(e.currentTarget.value)}
                 required
-                disabled={isRedirecting}
+                disabled={emailLoading}
               />
               <Text size="xs" ta="right">
                 <Anchor component={Link} href="/password-reset" size="xs">
@@ -152,7 +145,7 @@ function LoginContent() {
                 fullWidth
                 size="md"
                 loading={emailLoading}
-                disabled={isRedirecting || emailLoading || !identifier || !password}
+                disabled={emailLoading || !identifier || !password}
               >
                 Sign In
               </Button>

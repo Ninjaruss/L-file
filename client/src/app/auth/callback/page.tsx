@@ -33,7 +33,6 @@ export default function AuthCallback() {
         // Extract tokens from URL
         const urlParams = new URLSearchParams(window.location.search)
         const token = urlParams.get('token')
-        const refreshToken = urlParams.get('refreshToken')
         const error = urlParams.get('error')
         const linked = urlParams.get('linked')
 
@@ -95,39 +94,6 @@ export default function AuthCallback() {
             window.location.href = '/login?error=invalid_token'
           }, 2000)
           return
-        }
-
-        // If we have a refresh token, store it as httpOnly cookie via backend endpoint
-        // This avoids third-party cookie blocking issues with popup-based OAuth
-        if (refreshToken) {
-          console.log('[AUTH CALLBACK] Setting refresh token cookie via API')
-          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://l-file.com/api' : 'http://localhost:3001/api')
-
-          try {
-            const response = await fetch(`${API_BASE_URL}/auth/set-cookie`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'Fetch',
-              },
-              credentials: 'include',
-              body: JSON.stringify({ refreshToken }),
-            })
-
-            if (!response.ok) {
-              console.error('[AUTH CALLBACK] Failed to set cookie:', response.status)
-            } else {
-              console.log('[AUTH CALLBACK] Cookie set successfully')
-            }
-          } catch (err) {
-            console.error('[AUTH CALLBACK] Error setting cookie:', err)
-          }
-
-          // IMPORTANT: Remove refresh token from URL for security
-          // Replace URL without the refreshToken parameter
-          const newUrl = new URL(window.location.href)
-          newUrl.searchParams.delete('refreshToken')
-          window.history.replaceState({}, '', newUrl.toString())
         }
 
         // Store token as a short-lived sessionStorage bridge so AuthProvider can pick it

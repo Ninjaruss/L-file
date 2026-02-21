@@ -567,13 +567,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  // Legacy methods (keep for compatibility but may not be used)
   const login = async (username: string, password: string) => {
     try {
       const response = await api.login(username, password)
       setUser(response.user)
-      // Force a page reload to ensure all data is refreshed with new auth state
-      window.location.reload()
     } catch (error) {
       console.error('Login failed:', error)
       throw error
