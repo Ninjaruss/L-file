@@ -10,9 +10,7 @@ import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { DiscordStrategy } from './strategies/discord.strategy';
-import { DiscordLinkStrategy } from './strategies/discord-link.strategy';
 import { FluxerStrategy } from './strategies/fluxer.strategy';
-import { FluxerLinkStrategy } from './strategies/fluxer-link.strategy';
 import { DevBypassStrategy } from './strategies/dev-bypass.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailModule } from '../email/email.module';
@@ -41,9 +39,7 @@ import { EmailModule } from '../email/email.module';
     LocalStrategy,
     JwtStrategy,
     DiscordStrategy,
-    DiscordLinkStrategy,
     FluxerStrategy,
-    FluxerLinkStrategy,
     DevBypassStrategy,
   ],
   exports: [AuthService],

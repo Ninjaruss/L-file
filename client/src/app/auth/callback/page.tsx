@@ -35,10 +35,41 @@ export default function AuthCallback() {
         const token = urlParams.get('token')
         const refreshToken = urlParams.get('refreshToken')
         const error = urlParams.get('error')
+        const linked = urlParams.get('linked')
+
+        // Handle account linking success (no new token, just signal the opener)
+        if (linked) {
+          setStatus(`${linked.charAt(0).toUpperCase() + linked.slice(1)} account linked successfully!`)
+          try {
+            const authChannel = new BroadcastChannel('auth_channel')
+            authChannel.postMessage({ type: 'ACCOUNT_LINKED', provider: linked })
+            authChannel.close()
+          } catch {
+            if (window.opener) {
+              window.opener.postMessage({ type: 'ACCOUNT_LINKED', provider: linked }, window.location.origin)
+            }
+          }
+          if (window.opener) {
+            setTimeout(() => window.close(), 500)
+          }
+          return
+        }
 
         if (error) {
           setStatus('Authentication failed. Redirecting to login...')
           setIsError(true)
+          // If in a popup, signal the opener about the error
+          if (window.opener) {
+            try {
+              const authChannel = new BroadcastChannel('auth_channel')
+              authChannel.postMessage({ type: 'ACCOUNT_LINK_ERROR', error })
+              authChannel.close()
+            } catch {
+              window.opener.postMessage({ type: 'ACCOUNT_LINK_ERROR', error }, window.location.origin)
+            }
+            setTimeout(() => window.close(), 1500)
+            return
+          }
           setTimeout(() => {
             window.location.href = '/login?error=' + encodeURIComponent(error)
           }, 2000)

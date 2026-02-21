@@ -189,7 +189,7 @@ const Navigation: React.FC = () => {
         (user.profilePictureType === 'fluxer' || !user.profilePictureType)) {
       return user.fluxerAvatar.startsWith('http')
         ? user.fluxerAvatar
-        : `https://cdn.fluxer.app/avatars/${user.fluxerId}/${user.fluxerAvatar}.png`
+        : `https://fluxerusercontent.com/avatars/${user.fluxerId}/${user.fluxerAvatar}.png`
     }
 
     // Default: no image, show initials

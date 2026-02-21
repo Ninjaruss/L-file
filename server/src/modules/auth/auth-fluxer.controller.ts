@@ -7,10 +7,11 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import type { Request, Response } from 'express';
+import type { Request, Response, CookieOptions } from 'express';
 import { AuthService } from './auth.service';
 import { FluxerAuthGuard } from './guards/fluxer-auth.guard';
 import { User } from '../../entities/user.entity';
+import { LINK_TOKEN_COOKIE } from './auth-link.controller';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -19,6 +20,17 @@ export class AuthFluxerController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
+
+  private getLinkTokenCookieOptions(): CookieOptions {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 10 * 60 * 1000,
+      path: '/',
+    };
+  }
 
   @ApiOperation({
     summary: 'Login with Fluxer',
@@ -52,21 +64,48 @@ export class AuthFluxerController {
   @UseGuards(FluxerAuthGuard)
   async fluxerCallback(@Req() req: Request, @Res() res: Response) {
     console.log('[FLUXER CALLBACK] Starting callback');
-    // Generate JWT token for the authenticated user
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
+    // Check if this is an account-linking flow (link_token cookie present)
+    const linkToken = req.cookies?.[LINK_TOKEN_COOKIE];
+    if (linkToken) {
+      console.log('[FLUXER CALLBACK] Link token found — linking account');
+      res.clearCookie(LINK_TOKEN_COOKIE, this.getLinkTokenCookieOptions());
+
+      let userId: number;
+      try {
+        const payload = this.authService.verifyLinkToken(linkToken);
+        userId = payload.sub;
+      } catch {
+        console.error('[FLUXER CALLBACK] Invalid link token');
+        return res.redirect(
+          `${frontendUrl}/auth/callback?error=link_token_invalid`,
+        );
+      }
+
+      try {
+        await this.authService.linkFluxerToUser(userId, req.user);
+        console.log(`[FLUXER CALLBACK] Linked Fluxer to user ${userId}`);
+      } catch (err: any) {
+        console.error('[FLUXER CALLBACK] Link failed:', err.message);
+        return res.redirect(
+          `${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message || 'link_failed')}`,
+        );
+      }
+
+      return res.redirect(`${frontendUrl}/auth/callback?linked=fluxer`);
+    }
+
+    // Normal login flow
     const loginResult = await this.authService.login(req.user as User);
     console.log(
       '[FLUXER CALLBACK] Login result generated for user:',
       (req.user as User)?.username,
     );
 
-    // Pass BOTH tokens to frontend callback
-    // Frontend will call /auth/set-cookie to store refresh token as httpOnly cookie
-    // This avoids third-party cookie blocking issues with popup-based OAuth
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const redirectUrl = `${frontendUrl}/auth/callback?token=${loginResult.access_token}&refreshToken=${loginResult.refresh_token}`;
     console.log('[FLUXER CALLBACK] Redirecting to:', redirectUrl);
-
     res.redirect(redirectUrl);
   }
 }

@@ -783,6 +783,14 @@ class ApiClient {
     return this.post<any>('/users/profile/refresh-discord-avatar', {})
   }
 
+  async unlinkDiscord() {
+    return this.delete<{ message: string }>('/auth/link/discord')
+  }
+
+  async unlinkFluxer() {
+    return this.delete<{ message: string }>('/auth/link/fluxer')
+  }
+
 
   async updateUserProgress(userProgress: number) {
     return this.put<{ message: string; userProgress: number }>('/users/profile/progress', { userProgress })

@@ -48,6 +48,8 @@ interface AuthContextType {
   loading: boolean
   loginWithDiscord: () => void
   loginWithFluxer: () => void
+  linkDiscord: () => void
+  linkFluxer: () => void
   devLogin: (asAdmin?: boolean) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -288,6 +290,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       }
+
+      if (event.data.type === 'ACCOUNT_LINKED') {
+        console.log('[AUTH PROVIDER] Account linked message received:', event.data.provider)
+        if (window.authPopup && !window.authPopup.closed) {
+          window.authPopup.close()
+          window.authPopup = null
+        }
+        try {
+          const userData = await api.getCurrentUser()
+          setUser(userData)
+        } catch (error) {
+          console.error('[AUTH PROVIDER] Failed to refresh user after account link:', error)
+        }
+      }
+
+      if (event.data.type === 'ACCOUNT_LINK_ERROR') {
+        console.error('[AUTH PROVIDER] Account link error (postMessage):', event.data.error)
+        if (window.authPopup && !window.authPopup.closed) {
+          window.authPopup.close()
+          window.authPopup = null
+        }
+        window.dispatchEvent(new CustomEvent('account_link_error', { detail: { error: event.data.error } }))
+      }
     }
 
     // Listen for BroadcastChannel messages
@@ -340,6 +365,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.error('[AUTH PROVIDER] Broadcast message missing token:', { token: !!token })
         }
+      }
+
+      if (event.data.type === 'ACCOUNT_LINKED') {
+        console.log('[AUTH PROVIDER] Account linked broadcast received:', event.data.provider)
+        if (window.authPopup && !window.authPopup.closed) {
+          window.authPopup.close()
+          window.authPopup = null
+        }
+        // Refresh user data to reflect newly linked account
+        try {
+          const userData = await api.getCurrentUser()
+          setUser(userData)
+        } catch (error) {
+          console.error('[AUTH PROVIDER] Failed to refresh user after account link:', error)
+        }
+      }
+
+      if (event.data.type === 'ACCOUNT_LINK_ERROR') {
+        console.error('[AUTH PROVIDER] Account link error:', event.data.error)
+        if (window.authPopup && !window.authPopup.closed) {
+          window.authPopup.close()
+          window.authPopup = null
+        }
+        // Dispatch a custom event so profile page can show the error
+        window.dispatchEvent(new CustomEvent('account_link_error', { detail: { error: event.data.error } }))
       }
     }
 
@@ -429,6 +479,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'width=500,height=600,scrollbars=yes,resizable=yes'
     )
 
+    if (popup) {
+      popup.focus()
+      window.authPopup = popup
+    }
+  }
+
+  const linkDiscord = () => {
+    const token = api.getToken()
+    if (!token) return
+    const popup = window.open(
+      `${API_BASE_URL}/auth/link/discord/init?accessToken=${encodeURIComponent(token)}`,
+      'discord-link',
+      'width=500,height=600,scrollbars=yes,resizable=yes'
+    )
+    if (popup) {
+      popup.focus()
+      window.authPopup = popup
+    }
+  }
+
+  const linkFluxer = () => {
+    const token = api.getToken()
+    if (!token) return
+    const popup = window.open(
+      `${API_BASE_URL}/auth/link/fluxer/init?accessToken=${encodeURIComponent(token)}`,
+      'fluxer-link',
+      'width=500,height=600,scrollbars=yes,resizable=yes'
+    )
     if (popup) {
       popup.focus()
       window.authPopup = popup
@@ -550,6 +628,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     loginWithDiscord,
     loginWithFluxer,
+    linkDiscord,
+    linkFluxer,
     devLogin,
     logout,
     refreshUser,

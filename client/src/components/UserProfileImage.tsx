@@ -79,7 +79,7 @@ export default function UserProfileImage({
     if (!user.fluxerAvatar) return null
     return user.fluxerAvatar.startsWith('http')
       ? user.fluxerAvatar
-      : `https://cdn.fluxer.app/avatars/${user.fluxerId}/${user.fluxerAvatar}.png?size=256`
+      : `https://fluxerusercontent.com/avatars/${user.fluxerId}/${user.fluxerAvatar}.png?size=256`
   }
 
   if (user.profilePictureType === 'fluxer' && !error) {

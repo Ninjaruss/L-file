@@ -14,6 +14,7 @@ import { DiscordAuthGuard } from './guards/discord-auth.guard';
 import { DevBypassAuthGuard } from './guards/dev-bypass-auth.guard';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../../entities/user.entity';
+import { LINK_TOKEN_COOKIE } from './auth-link.controller';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -42,6 +43,17 @@ export class AuthDiscordController {
 
     console.log('[DISCORD COOKIE] Cookie options:', JSON.stringify(options));
     return options as CookieOptions;
+  }
+
+  private getLinkTokenCookieOptions(): CookieOptions {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 10 * 60 * 1000,
+      path: '/',
+    };
   }
 
   @ApiOperation({
@@ -76,7 +88,40 @@ export class AuthDiscordController {
   @UseGuards(DiscordAuthGuard)
   async discordCallback(@Req() req: Request, @Res() res: Response) {
     console.log('[DISCORD CALLBACK] Starting callback');
-    // Generate JWT token for the authenticated user
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
+    // Check if this is an account-linking flow (link_token cookie present)
+    const linkToken = req.cookies?.[LINK_TOKEN_COOKIE];
+    if (linkToken) {
+      console.log('[DISCORD CALLBACK] Link token found — linking account');
+      res.clearCookie(LINK_TOKEN_COOKIE, this.getLinkTokenCookieOptions());
+
+      let userId: number;
+      try {
+        const payload = this.authService.verifyLinkToken(linkToken);
+        userId = payload.sub;
+      } catch {
+        console.error('[DISCORD CALLBACK] Invalid link token');
+        return res.redirect(
+          `${frontendUrl}/auth/callback?error=link_token_invalid`,
+        );
+      }
+
+      try {
+        await this.authService.linkDiscordToUser(userId, req.user);
+        console.log(`[DISCORD CALLBACK] Linked Discord to user ${userId}`);
+      } catch (err: any) {
+        console.error('[DISCORD CALLBACK] Link failed:', err.message);
+        return res.redirect(
+          `${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message || 'link_failed')}`,
+        );
+      }
+
+      return res.redirect(`${frontendUrl}/auth/callback?linked=discord`);
+    }
+
+    // Normal login flow
     const loginResult = await this.authService.login(req.user as User);
     console.log(
       '[DISCORD CALLBACK] Login result generated for user:',
@@ -86,8 +131,6 @@ export class AuthDiscordController {
     // Pass BOTH tokens to frontend callback
     // Frontend will call /auth/set-cookie to store refresh token as httpOnly cookie
     // This avoids third-party cookie blocking issues with popup-based OAuth
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const redirectUrl = `${frontendUrl}/auth/callback?token=${loginResult.access_token}&refreshToken=${loginResult.refresh_token}`;
     console.log('[DISCORD CALLBACK] Redirecting to:', redirectUrl);
 
