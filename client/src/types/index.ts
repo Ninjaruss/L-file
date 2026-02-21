@@ -207,6 +207,8 @@ export interface Annotation {
     id: number;
     username: string;
     discordAvatar?: string | null;
+    fluxerId?: string | null;
+    fluxerAvatar?: string | null;
     profilePictureType?: string | null;
     selectedCharacterMediaId?: number | null;
   };

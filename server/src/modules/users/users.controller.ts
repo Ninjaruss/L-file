@@ -148,6 +148,8 @@ export class UsersController {
         : null,
       discordId: user.discordId,
       discordAvatar: user.discordAvatar,
+      fluxerId: user.fluxerId,
+      fluxerAvatar: user.fluxerAvatar,
       createdAt: user.createdAt,
     }));
 
@@ -236,6 +238,8 @@ export class UsersController {
       favoriteGamble: user.favoriteGamble,
       discordId: user.discordId,
       discordAvatar: user.discordAvatar,
+      fluxerId: user.fluxerId,
+      fluxerAvatar: user.fluxerAvatar,
       userStats,
       createdAt: user.createdAt,
     };

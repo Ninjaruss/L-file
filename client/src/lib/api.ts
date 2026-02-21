@@ -278,8 +278,12 @@ class ApiClient {
       discordId?: string | null
       discordUsername?: string | null
       discordAvatar?: string | null
-      // Profile picture fields  
-      profilePictureType?: 'discord' | 'character_media' | null
+      // Fluxer fields
+      fluxerId?: string | null
+      fluxerUsername?: string | null
+      fluxerAvatar?: string | null
+      // Profile picture fields
+      profilePictureType?: 'discord' | 'fluxer' | 'character_media' | null
       selectedCharacterMediaId?: number | null
       // Full relation objects
       selectedCharacterMedia?: {

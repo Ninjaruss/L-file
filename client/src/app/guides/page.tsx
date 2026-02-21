@@ -17,7 +17,7 @@ interface Guide {
     username: string
     role?: string
     customRole?: string
-    profilePictureType?: 'discord' | 'character_media' | null
+    profilePictureType?: 'discord' | 'fluxer' | 'character_media' | null
     selectedCharacterMediaId?: number | null
     selectedCharacterMedia?: {
       id: number
@@ -27,6 +27,8 @@ interface Guide {
     } | null
     discordId?: string | null
     discordAvatar?: string | null
+    fluxerId?: string | null
+    fluxerAvatar?: string | null
   }
   characters?: Array<{
     id: number

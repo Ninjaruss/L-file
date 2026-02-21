@@ -345,13 +345,17 @@ export class DonationsService {
         'donation.userId',
         'user.username',
         'user.discordAvatar',
+        'user.discordId',
+        'user.fluxerId',
+        'user.fluxerAvatar',
+        'user.profilePictureType',
         'SUM(donation.amount) as totalAmount',
         'COUNT(donation.id) as donationCount',
       ])
       .leftJoin('donation.user', 'user')
       .where('donation.status = :status', { status: DonationStatus.COMPLETED })
       .andWhere('donation.isAnonymous = :isAnonymous', { isAnonymous: false })
-      .groupBy('donation.userId, user.username, user.discordAvatar')
+      .groupBy('donation.userId, user.username, user.discordAvatar, user.discordId, user.fluxerId, user.fluxerAvatar, user.profilePictureType')
       .orderBy('totalAmount', 'DESC')
       .limit(limit)
       .getRawMany();
