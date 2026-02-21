@@ -324,20 +324,30 @@ export class AuthService {
     }
   }
 
-  async linkDiscordToUser(userId: number, discordProfile: any): Promise<void> {
-    const { id: discordId, username: discordUsername, avatar } = discordProfile;
+  async linkDiscordToUser(userId: number, discordUser: any): Promise<void> {
+    // The Discord strategy returns a User entity (from validateDiscordUser),
+    // not a raw Discord profile. Extract the provider-specific fields.
+    const discordId = discordUser.discordId;
+    const discordUsername = discordUser.discordUsername;
+    const discordAvatar = discordUser.discordAvatar;
+
+    if (!discordId) {
+      throw new ForbiddenException('Discord profile data is missing');
+    }
 
     // Check if this Discord account is already linked to another user
     const existingUser = await this.usersService.findByDiscordId(discordId);
     if (existingUser && existingUser.id !== userId) {
-      throw new ForbiddenException(
-        'This Discord account is already linked to another user',
-      );
+      // validateDiscordUser may have created a duplicate user — clean it up
+      // if it's a freshly-created shell account (not the target user)
+      if (existingUser.id === discordUser.id) {
+        await this.usersService.remove(existingUser.id);
+      } else {
+        throw new ForbiddenException(
+          'This Discord account is already linked to another user',
+        );
+      }
     }
-
-    const discordAvatar = avatar
-      ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png`
-      : null;
 
     await this.usersService.linkDiscord(userId, {
       discordId,
@@ -346,25 +356,35 @@ export class AuthService {
     });
   }
 
-  async linkFluxerToUser(userId: number, fluxerProfile: any): Promise<void> {
-    const {
-      id: fluxerId,
-      username: fluxerUsername,
-      avatar,
-    } = fluxerProfile;
+  async linkFluxerToUser(userId: number, fluxerUser: any): Promise<void> {
+    // The Fluxer strategy returns a User entity (from validateFluxerUser),
+    // not a raw Fluxer profile. Extract the provider-specific fields.
+    const fluxerId = fluxerUser.fluxerId;
+    const fluxerUsername = fluxerUser.fluxerUsername;
+    const fluxerAvatar = fluxerUser.fluxerAvatar;
+
+    if (!fluxerId) {
+      throw new ForbiddenException('Fluxer profile data is missing');
+    }
 
     // Check if this Fluxer account is already linked to another user
     const existingUser = await this.usersService.findByFluxerId(fluxerId);
     if (existingUser && existingUser.id !== userId) {
-      throw new ForbiddenException(
-        'This Fluxer account is already linked to another user',
-      );
+      // validateFluxerUser may have created a duplicate user — clean it up
+      // if it's a freshly-created shell account (not the target user)
+      if (existingUser.id === fluxerUser.id) {
+        await this.usersService.remove(existingUser.id);
+      } else {
+        throw new ForbiddenException(
+          'This Fluxer account is already linked to another user',
+        );
+      }
     }
 
     await this.usersService.linkFluxer(userId, {
       fluxerId,
       fluxerUsername,
-      fluxerAvatar: avatar || null, // Store hash only
+      fluxerAvatar: fluxerAvatar || null,
     });
   }
 
