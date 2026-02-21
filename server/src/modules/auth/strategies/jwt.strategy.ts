@@ -54,6 +54,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       discordId: user.discordId,
       discordUsername: user.discordUsername,
       discordAvatar: user.discordAvatar,
+      // Fluxer fields
+      fluxerId: user.fluxerId,
+      fluxerUsername: user.fluxerUsername,
+      fluxerAvatar: user.fluxerAvatar,
     };
   }
 }

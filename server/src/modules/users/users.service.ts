@@ -467,6 +467,65 @@ export class UsersService {
     });
   }
 
+  async linkDiscord(
+    userId: number,
+    data: {
+      discordId: string;
+      discordUsername: string;
+      discordAvatar: string | null;
+    },
+  ): Promise<void> {
+    await this.repo.update(userId, {
+      discordId: data.discordId,
+      discordUsername: data.discordUsername,
+      discordAvatar: data.discordAvatar,
+    });
+  }
+
+  async linkFluxer(
+    userId: number,
+    data: {
+      fluxerId: string;
+      fluxerUsername: string;
+      fluxerAvatar: string | null;
+    },
+  ): Promise<void> {
+    await this.repo.update(userId, {
+      fluxerId: data.fluxerId,
+      fluxerUsername: data.fluxerUsername,
+      fluxerAvatar: data.fluxerAvatar,
+    });
+  }
+
+  async unlinkDiscord(userId: number): Promise<void> {
+    await this.repo.update(userId, {
+      discordId: null as any,
+      discordUsername: null as any,
+      discordAvatar: null as any,
+    });
+  }
+
+  async unlinkFluxer(userId: number): Promise<void> {
+    await this.repo.update(userId, {
+      fluxerId: null as any,
+      fluxerUsername: null as any,
+      fluxerAvatar: null as any,
+    });
+  }
+
+  async hasOtherAuthMethod(
+    userId: number,
+    providerToRemove: 'discord' | 'fluxer',
+  ): Promise<boolean> {
+    const user = await this.repo.findOne({ where: { id: userId } });
+    if (!user) return false;
+
+    if (providerToRemove === 'discord') {
+      return !!user.fluxerId || !!user.password;
+    }
+    return !!user.discordId || !!user.password;
+  }
+
   async refreshDiscordAvatar(userId: number): Promise<User> {
     const user = await this.findOne(userId);
 

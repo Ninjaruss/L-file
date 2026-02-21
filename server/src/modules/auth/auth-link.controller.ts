@@ -1,0 +1,243 @@
+import {
+  Controller,
+  Delete,
+  Get,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import type { Request, Response } from 'express';
+import { AuthService } from './auth.service';
+import { DiscordLinkGuard } from './guards/discord-link.guard';
+import { FluxerLinkGuard } from './guards/fluxer-link.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { User } from '../../entities/user.entity';
+
+const LINK_TOKEN_COOKIE = 'link_token';
+
+@ApiTags('auth')
+@Controller('auth/link')
+export class AuthLinkController {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  private getFrontendUrl(): string {
+    return (
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000'
+    );
+  }
+
+  private getLinkTokenCookieOptions() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      maxAge: 10 * 60 * 1000, // 10 minutes
+      path: '/',
+    };
+  }
+
+  // --- Discord Link ---
+
+  @ApiOperation({ summary: 'Initiate Discord account linking' })
+  @ApiResponse({ status: 302, description: 'Redirects to Discord OAuth' })
+  @Get('discord/init')
+  async discordLinkInit(
+    @Query('accessToken') accessToken: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    if (!accessToken) {
+      throw new UnauthorizedException('Access token required');
+    }
+
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(accessToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
+
+    const userId =
+      typeof payload.sub === 'string'
+        ? parseInt(payload.sub, 10)
+        : payload.sub;
+
+    // Generate a short-lived link token
+    const linkToken = this.authService.generateLinkToken(userId);
+
+    // Store link token in a short-lived httpOnly cookie
+    res.cookie(LINK_TOKEN_COOKIE, linkToken, this.getLinkTokenCookieOptions());
+
+    // Redirect to the Passport-guarded route that initiates Discord OAuth
+    const apiBase = `${req.protocol}://${req.get('host')}`;
+    res.redirect(`${apiBase}/api/auth/link/discord`);
+  }
+
+  @ApiOperation({ summary: 'Initiate Discord OAuth for linking (Passport)' })
+  @ApiResponse({ status: 302, description: 'Redirects to Discord OAuth2' })
+  @Get('discord')
+  @UseGuards(DiscordLinkGuard)
+  async discordLink() {
+    // Passport handles the redirect to Discord
+  }
+
+  @ApiOperation({ summary: 'Discord link OAuth callback' })
+  @ApiResponse({ status: 302, description: 'Redirects to frontend with result' })
+  @Get('discord/callback')
+  @UseGuards(DiscordLinkGuard)
+  async discordLinkCallback(@Req() req: Request, @Res() res: Response) {
+    const frontendUrl = this.getFrontendUrl();
+    const linkToken = req.cookies?.[LINK_TOKEN_COOKIE];
+
+    if (!linkToken) {
+      console.error('[DISCORD LINK CALLBACK] No link token cookie found');
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=link_token_missing`,
+      );
+    }
+
+    let userId: number;
+    try {
+      const payload = this.authService.verifyLinkToken(linkToken);
+      userId = payload.sub;
+    } catch {
+      console.error('[DISCORD LINK CALLBACK] Invalid link token');
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=link_token_invalid`,
+      );
+    }
+
+    // Clear the link token cookie
+    res.clearCookie(LINK_TOKEN_COOKIE, this.getLinkTokenCookieOptions());
+
+    try {
+      await this.authService.linkDiscordToUser(userId, req.user);
+      console.log(
+        `[DISCORD LINK CALLBACK] Linked Discord to user ${userId}`,
+      );
+    } catch (err: any) {
+      console.error('[DISCORD LINK CALLBACK] Link failed:', err.message);
+      const encodedError = encodeURIComponent(err.message || 'link_failed');
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=${encodedError}`,
+      );
+    }
+
+    res.redirect(`${frontendUrl}/auth/callback?linked=discord`);
+  }
+
+  // --- Fluxer Link ---
+
+  @ApiOperation({ summary: 'Initiate Fluxer account linking' })
+  @ApiResponse({ status: 302, description: 'Redirects to Fluxer OAuth' })
+  @Get('fluxer/init')
+  async fluxerLinkInit(
+    @Query('accessToken') accessToken: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    if (!accessToken) {
+      throw new UnauthorizedException('Access token required');
+    }
+
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(accessToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
+
+    const userId =
+      typeof payload.sub === 'string'
+        ? parseInt(payload.sub, 10)
+        : payload.sub;
+
+    const linkToken = this.authService.generateLinkToken(userId);
+    res.cookie(LINK_TOKEN_COOKIE, linkToken, this.getLinkTokenCookieOptions());
+
+    const apiBase = `${req.protocol}://${req.get('host')}`;
+    res.redirect(`${apiBase}/api/auth/link/fluxer`);
+  }
+
+  @ApiOperation({ summary: 'Initiate Fluxer OAuth for linking (Passport)' })
+  @ApiResponse({ status: 302, description: 'Redirects to Fluxer OAuth2' })
+  @Get('fluxer')
+  @UseGuards(FluxerLinkGuard)
+  async fluxerLink() {
+    // Passport handles the redirect to Fluxer
+  }
+
+  @ApiOperation({ summary: 'Fluxer link OAuth callback' })
+  @ApiResponse({ status: 302, description: 'Redirects to frontend with result' })
+  @Get('fluxer/callback')
+  @UseGuards(FluxerLinkGuard)
+  async fluxerLinkCallback(@Req() req: Request, @Res() res: Response) {
+    const frontendUrl = this.getFrontendUrl();
+    const linkToken = req.cookies?.[LINK_TOKEN_COOKIE];
+
+    if (!linkToken) {
+      console.error('[FLUXER LINK CALLBACK] No link token cookie found');
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=link_token_missing`,
+      );
+    }
+
+    let userId: number;
+    try {
+      const payload = this.authService.verifyLinkToken(linkToken);
+      userId = payload.sub;
+    } catch {
+      console.error('[FLUXER LINK CALLBACK] Invalid link token');
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=link_token_invalid`,
+      );
+    }
+
+    res.clearCookie(LINK_TOKEN_COOKIE, this.getLinkTokenCookieOptions());
+
+    try {
+      await this.authService.linkFluxerToUser(userId, req.user);
+      console.log(`[FLUXER LINK CALLBACK] Linked Fluxer to user ${userId}`);
+    } catch (err: any) {
+      console.error('[FLUXER LINK CALLBACK] Link failed:', err.message);
+      const encodedError = encodeURIComponent(err.message || 'link_failed');
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=${encodedError}`,
+      );
+    }
+
+    res.redirect(`${frontendUrl}/auth/callback?linked=fluxer`);
+  }
+
+  // --- Unlink ---
+
+  @ApiOperation({ summary: 'Unlink Discord from current account' })
+  @ApiResponse({ status: 200, description: 'Discord unlinked' })
+  @Delete('discord')
+  @UseGuards(JwtAuthGuard)
+  async unlinkDiscord(@Req() req: Request) {
+    const user = req.user as User;
+    await this.authService.unlinkProvider(user.id, 'discord');
+    return { message: 'Discord account unlinked' };
+  }
+
+  @ApiOperation({ summary: 'Unlink Fluxer from current account' })
+  @ApiResponse({ status: 200, description: 'Fluxer unlinked' })
+  @Delete('fluxer')
+  @UseGuards(JwtAuthGuard)
+  async unlinkFluxer(@Req() req: Request) {
+    const user = req.user as User;
+    await this.authService.unlinkProvider(user.id, 'fluxer');
+    return { message: 'Fluxer account unlinked' };
+  }
+}

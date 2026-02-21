@@ -87,11 +87,6 @@ export class AuthService {
     let user = await this.usersService.findByFluxerId(fluxerId);
 
     if (!user) {
-      // Auto-register new Fluxer user
-      const avatarUrl = avatar
-        ? `https://cdn.fluxer.app/avatars/${fluxerId}/${avatar}.png`
-        : null;
-
       // Check if admin Fluxer ID
       const adminFluxerId = this.configService.get<string>('ADMIN_FLUXER_ID');
       const isAdmin = adminFluxerId && fluxerId === adminFluxerId;
@@ -102,18 +97,16 @@ export class AuthService {
       user = await this.usersService.createFluxerUser({
         fluxerId,
         fluxerUsername,
-        fluxerAvatar: avatarUrl,
+        fluxerAvatar: avatar || null, // Store hash only, URL constructed on frontend
         username: siteUsername,
         email: email || null,
         role: isAdmin ? UserRole.ADMIN : UserRole.USER,
       });
     } else {
-      // Update existing user's Fluxer info
+      // Update existing user's Fluxer info (store hash only)
       await this.usersService.updateFluxerInfo(user.id, {
         fluxerUsername,
-        fluxerAvatar: avatar
-          ? `https://cdn.fluxer.app/avatars/${fluxerId}/${avatar}.png`
-          : null,
+        fluxerAvatar: avatar || null,
       });
     }
 
@@ -312,5 +305,87 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     await this.usersService.resetPassword(token, newPassword);
     return { message: 'Password successfully reset' };
+  }
+
+  // --- Account Linking ---
+
+  generateLinkToken(userId: number): string {
+    return this.jwt.sign(
+      { sub: userId, purpose: 'link' },
+      { expiresIn: '10m' },
+    );
+  }
+
+  verifyLinkToken(token: string): { sub: number; purpose: string } {
+    try {
+      return this.jwt.verify(token) as { sub: number; purpose: string };
+    } catch {
+      throw new UnauthorizedException('Invalid or expired link token');
+    }
+  }
+
+  async linkDiscordToUser(userId: number, discordProfile: any): Promise<void> {
+    const { id: discordId, username: discordUsername, avatar } = discordProfile;
+
+    // Check if this Discord account is already linked to another user
+    const existingUser = await this.usersService.findByDiscordId(discordId);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ForbiddenException(
+        'This Discord account is already linked to another user',
+      );
+    }
+
+    const discordAvatar = avatar
+      ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png`
+      : null;
+
+    await this.usersService.linkDiscord(userId, {
+      discordId,
+      discordUsername,
+      discordAvatar,
+    });
+  }
+
+  async linkFluxerToUser(userId: number, fluxerProfile: any): Promise<void> {
+    const {
+      id: fluxerId,
+      username: fluxerUsername,
+      avatar,
+    } = fluxerProfile;
+
+    // Check if this Fluxer account is already linked to another user
+    const existingUser = await this.usersService.findByFluxerId(fluxerId);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ForbiddenException(
+        'This Fluxer account is already linked to another user',
+      );
+    }
+
+    await this.usersService.linkFluxer(userId, {
+      fluxerId,
+      fluxerUsername,
+      fluxerAvatar: avatar || null, // Store hash only
+    });
+  }
+
+  async unlinkProvider(
+    userId: number,
+    provider: 'discord' | 'fluxer',
+  ): Promise<void> {
+    const hasOther = await this.usersService.hasOtherAuthMethod(
+      userId,
+      provider,
+    );
+    if (!hasOther) {
+      throw new ForbiddenException(
+        'Cannot unlink your only authentication method',
+      );
+    }
+
+    if (provider === 'discord') {
+      await this.usersService.unlinkDiscord(userId);
+    } else {
+      await this.usersService.unlinkFluxer(userId);
+    }
   }
 }
