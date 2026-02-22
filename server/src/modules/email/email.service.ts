@@ -19,7 +19,7 @@ export class EmailService {
     // Make email from address configurable with fallback
     this.fromEmail =
       this.configService.get('EMAIL_FROM_ADDRESS') ||
-      'Usogui Fan Site <noreply@usoguifansite.com>';
+      'Usogui Fan Site <noreply@l-file.com>';
   }
 
   private createEmailTemplate(content: string) {
