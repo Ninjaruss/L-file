@@ -16,6 +16,8 @@ import { UsersService } from './users.service';
 import { User } from '../../entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { QuotePopularityDto } from './dto/quote-popularity.dto';
 import { GamblePopularityDto } from './dto/gamble-popularity.dto';
 import { PasswordResetConfirmDto } from '../auth/dto/password-reset-confirm.dto';
@@ -291,8 +293,16 @@ export class UsersController {
       },
     },
   })
-  requestPasswordReset(@Body('email') email: string) {
-    return this.service.generatePasswordReset(email);
+  async requestPasswordReset(@Body('email') email: string) {
+    try {
+      await this.service.generatePasswordReset(email);
+    } catch {
+      // SECURITY: Do not reveal whether the email is registered
+    }
+    return {
+      message:
+        'If an account with this email exists, a password reset link has been sent.',
+    };
   }
 
   @Post('password-reset/confirm')
@@ -470,6 +480,61 @@ export class UsersController {
     @Body() updateProfileDto: UpdateProfileDto,
   ): Promise<User> {
     return this.service.updateProfile(user.id, updateProfileDto);
+  }
+
+  @Patch('profile/email')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change account email',
+    description:
+      'Change the email address for the current account. Requires the current password for email/password accounts. A verification email will be sent to the new address.',
+  })
+  @ApiBody({ type: ChangeEmailDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Email updated — verification email sent to new address',
+    schema: {
+      type: 'object',
+      properties: { message: { type: 'string' } },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Missing or invalid input' })
+  @ApiResponse({ status: 401, description: 'Wrong current password' })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  async changeEmail(
+    @CurrentUser() user: User,
+    @Body() dto: ChangeEmailDto,
+  ) {
+    return this.service.changeEmail(user.id, dto.newEmail, dto.currentPassword);
+  }
+
+  @Patch('profile/password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change account password',
+    description:
+      'Change or set the password for the current account. If the account already has a password, the current password must be provided. Fluxer-only accounts can set a password without providing a current one.',
+  })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password updated successfully',
+    schema: {
+      type: 'object',
+      properties: { message: { type: 'string' } },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Missing or invalid input' })
+  @ApiResponse({ status: 401, description: 'Wrong current password' })
+  async changePassword(
+    @CurrentUser() user: User,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.service.changePassword(user.id, dto.newPassword, dto.currentPassword);
   }
 
   @Get('profile/progress')

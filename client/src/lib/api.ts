@@ -261,6 +261,20 @@ class ApiClient {
     }
   }
 
+  async changeEmail(newEmail: string, currentPassword?: string) {
+    return this.patch<{ message: string }>('/users/profile/email', {
+      newEmail,
+      ...(currentPassword ? { currentPassword } : {}),
+    })
+  }
+
+  async changePassword(newPassword: string, currentPassword?: string) {
+    return this.patch<{ message: string }>('/users/profile/password', {
+      newPassword,
+      ...(currentPassword ? { currentPassword } : {}),
+    })
+  }
+
   async getCurrentUser() {
     return this.get<{
       id: number

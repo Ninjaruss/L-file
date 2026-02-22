@@ -231,7 +231,18 @@ export class AuthService {
 
   // --- Legacy Password Reset (keep for reference) ---
   async requestPasswordReset(email: string) {
-    const token = await this.usersService.generatePasswordReset(email);
+    const genericMessage = {
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
+    };
+
+    let token: string;
+    try {
+      token = await this.usersService.generatePasswordReset(email);
+    } catch {
+      // SECURITY: Do not reveal whether the email is registered
+      return genericMessage;
+    }
 
     // For test user, return token directly instead of sending email
     if (this.isTestUser(email)) {
@@ -243,10 +254,7 @@ export class AuthService {
     }
 
     await this.emailService.sendPasswordReset(email, token);
-    return {
-      message:
-        'If an account exists with this email, a password reset link has been sent.',
-    };
+    return genericMessage;
   }
 
   async resetPassword(token: string, newPassword: string) {

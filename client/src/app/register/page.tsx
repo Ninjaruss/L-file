@@ -8,20 +8,60 @@ import {
   Card,
   Container,
   Divider,
+  List,
   PasswordInput,
   Stack,
   Text,
   TextInput,
   Title,
+  ThemeIcon,
 } from '@mantine/core'
-import { AlertCircle, CheckCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Circle } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { API_BASE_URL } from '../../../src/lib/api'
 import { useAuth } from '../../providers/AuthProvider'
 
+const PASSWORD_RULES = [
+  { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
+  { label: 'At most 128 characters', test: (p: string) => p.length <= 128 },
+  { label: 'One uppercase letter (A–Z)', test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'One lowercase letter (a–z)', test: (p: string) => /[a-z]/.test(p) },
+  { label: 'One number (0–9)', test: (p: string) => /\d/.test(p) },
+]
+
+function PasswordRequirements({ password }: { password: string }) {
+  if (!password) return null
+  return (
+    <List spacing={2} size="xs" mt={4}>
+      {PASSWORD_RULES.map(({ label, test }) => {
+        const ok = test(password)
+        return (
+          <List.Item
+            key={label}
+            icon={
+              <ThemeIcon color={ok ? 'green' : 'gray'} size={14} radius="xl" variant="transparent">
+                {ok ? <CheckCircle size={12} /> : <Circle size={12} />}
+              </ThemeIcon>
+            }
+          >
+            <Text size="xs" c={ok ? 'green' : 'dimmed'}>{label}</Text>
+          </List.Item>
+        )
+      })}
+    </List>
+  )
+}
+
+function validatePassword(p: string): string | null {
+  if (p.length < 8) return 'Password must be at least 8 characters.'
+  if (p.length > 128) return 'Password must not exceed 128 characters.'
+  if (!/[A-Z]/.test(p)) return 'Password must contain at least one uppercase letter.'
+  if (!/[a-z]/.test(p)) return 'Password must contain at least one lowercase letter.'
+  if (!/\d/.test(p)) return 'Password must contain at least one number.'
+  return null
+}
+
 function RegisterContent() {
-  const router = useRouter()
   const { register } = useAuth()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -41,12 +81,23 @@ function RegisterContent() {
     e.preventDefault()
     setError(null)
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters.')
       return
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+    if (username.length > 30) {
+      setError('Username must not exceed 30 characters.')
+      return
+    }
+
+    const pwError = validatePassword(password)
+    if (pwError) {
+      setError(pwError)
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
       return
     }
 
@@ -129,7 +180,7 @@ function RegisterContent() {
             <Stack gap="sm">
               <TextInput
                 label="Username"
-                placeholder="your_username"
+                placeholder="your_username (3–30 characters)"
                 value={username}
                 onChange={(e) => setUsername(e.currentTarget.value)}
                 required
@@ -144,14 +195,17 @@ function RegisterContent() {
                 required
                 disabled={isRedirecting}
               />
-              <PasswordInput
-                label="Password"
-                placeholder="At least 8 characters"
-                value={password}
-                onChange={(e) => setPassword(e.currentTarget.value)}
-                required
-                disabled={isRedirecting}
-              />
+              <div>
+                <PasswordInput
+                  label="Password"
+                  placeholder="Create a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.currentTarget.value)}
+                  required
+                  disabled={isRedirecting}
+                />
+                <PasswordRequirements password={password} />
+              </div>
               <PasswordInput
                 label="Confirm Password"
                 placeholder="Repeat your password"
@@ -159,6 +213,7 @@ function RegisterContent() {
                 onChange={(e) => setConfirmPassword(e.currentTarget.value)}
                 required
                 disabled={isRedirecting}
+                error={confirmPassword && password !== confirmPassword ? 'Passwords do not match' : undefined}
               />
               <Button
                 type="submit"

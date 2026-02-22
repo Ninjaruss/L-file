@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThan, Repository } from 'typeorm';
@@ -19,6 +20,7 @@ import { Event, EventStatus } from '../../entities/event.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
 import { createQueryLimiter } from '../../utils/db-query-limiter';
+import { EmailService } from '../email/email.service';
 
 // Refresh token expiration duration (30 days)
 const REFRESH_TOKEN_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -29,6 +31,7 @@ export class UsersService {
     @InjectRepository(User) private readonly repo: Repository<User>,
     @InjectRepository(Quote) private readonly quoteRepo: Repository<Quote>,
     @InjectRepository(Gamble) private readonly gambleRepo: Repository<Gamble>,
+    private readonly emailService: EmailService,
   ) {}
 
   // --- Find methods ---
@@ -975,5 +978,67 @@ export class UsersService {
     const user = await this.findOne(id);
     // findOne already throws NotFoundException if user not found
     await this.repo.remove(user);
+  }
+
+  // --- Credential changes (authenticated user) ---
+  async changeEmail(
+    userId: number,
+    newEmail: string,
+    currentPassword?: string,
+  ): Promise<{ message: string }> {
+    const user = await this.findOne(userId);
+
+    if (user.password) {
+      // Account has a password — current password is required
+      if (!currentPassword) {
+        throw new BadRequestException('Current password is required');
+      }
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+    }
+
+    // Check the new email isn't already taken by another account
+    const existing = await this.findByEmail(newEmail);
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('Email address is already registered');
+    }
+
+    // Generate verification token and mark email as unverified
+    const token = randomBytes(32).toString('hex');
+    user.email = newEmail;
+    user.isEmailVerified = false;
+    user.emailVerificationToken = token;
+    await this.repo.save(user);
+
+    await this.emailService.sendEmailVerification(newEmail, token);
+
+    return { message: 'Email updated. Please verify your new email address.' };
+  }
+
+  async changePassword(
+    userId: number,
+    newPassword: string,
+    currentPassword?: string,
+  ): Promise<{ message: string }> {
+    const user = await this.findOne(userId);
+
+    if (user.password) {
+      // Account already has a password — current password is required
+      if (!currentPassword) {
+        throw new BadRequestException('Current password is required');
+      }
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+    }
+    // If user.password is null (Fluxer-only), allow setting a new password freely
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await this.repo.save(user);
+
+    return { message: 'Password updated successfully.' };
   }
 }

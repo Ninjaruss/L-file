@@ -12,6 +12,7 @@ import {
   Group,
   Loader,
   Menu,
+  PasswordInput,
   SegmentedControl,
   SimpleGrid,
   Skeleton,
@@ -160,6 +161,14 @@ export default function ProfilePageClient() {
   const [usernameInput, setUsernameInput] = useState('')
   const [savingUsername, setSavingUsername] = useState(false)
   const [unlinkingProvider, setUnlinkingProvider] = useState<'fluxer' | null>(null)
+
+  // Account Security: change email
+  const [changeEmailForm, setChangeEmailForm] = useState({ newEmail: '', currentPassword: '' })
+  const [changingEmail, setChangingEmail] = useState(false)
+
+  // Account Security: change password
+  const [changePasswordForm, setChangePasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [changingPassword, setChangingPassword] = useState(false)
 
   const isAuthenticated = !!user
 
@@ -522,6 +531,65 @@ export default function ProfilePageClient() {
       })
     } finally {
       setUnlinkingProvider(null)
+    }
+  }
+
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!changeEmailForm.newEmail) return
+    setChangingEmail(true)
+    try {
+      await api.changeEmail(changeEmailForm.newEmail, changeEmailForm.currentPassword || undefined)
+      setChangeEmailForm({ newEmail: '', currentPassword: '' })
+      await refreshUser()
+      notifications.show({
+        title: 'Email updated',
+        message: 'A verification link has been sent to your new email address.',
+        color: 'green',
+      })
+    } catch (err: any) {
+      notifications.show({
+        title: 'Failed to update email',
+        message: err?.message || 'Please check your password and try again.',
+        color: 'red',
+      })
+    } finally {
+      setChangingEmail(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const { currentPassword, newPassword, confirmPassword } = changePasswordForm
+    if (newPassword !== confirmPassword) {
+      notifications.show({ title: 'Passwords do not match', message: 'New password and confirmation must be identical.', color: 'red' })
+      return
+    }
+    const pwRules = [
+      { ok: newPassword.length >= 8, msg: 'Password must be at least 8 characters.' },
+      { ok: newPassword.length <= 128, msg: 'Password must not exceed 128 characters.' },
+      { ok: /[A-Z]/.test(newPassword), msg: 'Password must contain at least one uppercase letter.' },
+      { ok: /[a-z]/.test(newPassword), msg: 'Password must contain at least one lowercase letter.' },
+      { ok: /\d/.test(newPassword), msg: 'Password must contain at least one number.' },
+    ]
+    const failed = pwRules.find(r => !r.ok)
+    if (failed) {
+      notifications.show({ title: 'Invalid password', message: failed.msg, color: 'red' })
+      return
+    }
+    setChangingPassword(true)
+    try {
+      await api.changePassword(newPassword, currentPassword || undefined)
+      setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      notifications.show({ title: 'Password updated', message: 'Your password has been changed successfully.', color: 'green' })
+    } catch (err: any) {
+      notifications.show({
+        title: 'Failed to update password',
+        message: err?.message || 'Please check your current password and try again.',
+        color: 'red',
+      })
+    } finally {
+      setChangingPassword(false)
     }
   }
 
@@ -1446,6 +1514,121 @@ export default function ProfilePageClient() {
                       </Stack>
                     </>
                   )}
+                </Stack>
+              </Stack>
+            </Card>
+
+            {/* Account Security Section */}
+            <Card shadow="sm" padding="md" radius="md">
+              <Stack gap="md">
+                <Text fw={600} size="lg">Account Security</Text>
+
+                {/* Change Email */}
+                <Stack gap="xs">
+                  <Text fw={500} size="md">Change Email</Text>
+                  <Text size="sm" c="dimmed">
+                    {user?.email
+                      ? <>Current email: <strong>{user.email}</strong></>
+                      : 'No email address set.'}
+                  </Text>
+                  <form onSubmit={handleChangeEmail}>
+                    <Stack gap="xs">
+                      <TextInput
+                        label="New Email Address"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={changeEmailForm.newEmail}
+                        onChange={(e) => setChangeEmailForm(prev => ({ ...prev, newEmail: e.currentTarget.value }))}
+                        required
+                        disabled={changingEmail}
+                      />
+                      {/* Only show current password if the account has one (i.e. has an email = was registered, not Fluxer-only) */}
+                      {user?.email && (
+                        <PasswordInput
+                          label="Current Password"
+                          placeholder="Confirm with your current password"
+                          value={changeEmailForm.currentPassword}
+                          onChange={(e) => setChangeEmailForm(prev => ({ ...prev, currentPassword: e.currentTarget.value }))}
+                          required
+                          disabled={changingEmail}
+                        />
+                      )}
+                      <Button
+                        type="submit"
+                        size="sm"
+                        loading={changingEmail}
+                        disabled={changingEmail || !changeEmailForm.newEmail || (!!user?.email && !changeEmailForm.currentPassword)}
+                        style={{ alignSelf: 'flex-start' }}
+                      >
+                        Update Email
+                      </Button>
+                    </Stack>
+                  </form>
+                </Stack>
+
+                <Divider />
+
+                {/* Change / Set Password */}
+                <Stack gap="xs">
+                  <Text fw={500} size="md">
+                    {user?.email ? 'Change Password' : 'Set a Password'}
+                  </Text>
+                  {!user?.email && (
+                    <Text size="sm" c="dimmed">
+                      Add a password to your account so you can log in with email as well as Fluxer.
+                    </Text>
+                  )}
+                  <form onSubmit={handleChangePassword}>
+                    <Stack gap="xs">
+                      {/* Show current password field only for accounts that already have a password (have email = registered with email) */}
+                      {user?.email && (
+                        <PasswordInput
+                          label="Current Password"
+                          placeholder="Your current password"
+                          value={changePasswordForm.currentPassword}
+                          onChange={(e) => setChangePasswordForm(prev => ({ ...prev, currentPassword: e.currentTarget.value }))}
+                          required
+                          disabled={changingPassword}
+                        />
+                      )}
+                      <PasswordInput
+                        label="New Password"
+                        placeholder="At least 8 characters, uppercase, lowercase, number"
+                        value={changePasswordForm.newPassword}
+                        onChange={(e) => setChangePasswordForm(prev => ({ ...prev, newPassword: e.currentTarget.value }))}
+                        required
+                        disabled={changingPassword}
+                        description="8–128 characters · uppercase · lowercase · number"
+                      />
+                      <PasswordInput
+                        label="Confirm New Password"
+                        placeholder="Repeat your new password"
+                        value={changePasswordForm.confirmPassword}
+                        onChange={(e) => setChangePasswordForm(prev => ({ ...prev, confirmPassword: e.currentTarget.value }))}
+                        required
+                        disabled={changingPassword}
+                        error={
+                          changePasswordForm.confirmPassword && changePasswordForm.newPassword !== changePasswordForm.confirmPassword
+                            ? 'Passwords do not match'
+                            : undefined
+                        }
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        loading={changingPassword}
+                        disabled={
+                          changingPassword ||
+                          !changePasswordForm.newPassword ||
+                          !changePasswordForm.confirmPassword ||
+                          (!!user?.email && !changePasswordForm.currentPassword)
+                        }
+                        style={{ alignSelf: 'flex-start' }}
+                      >
+                        {user?.email ? 'Change Password' : 'Set Password'}
+                      </Button>
+                    </Stack>
+                  </form>
                 </Stack>
               </Stack>
             </Card>
