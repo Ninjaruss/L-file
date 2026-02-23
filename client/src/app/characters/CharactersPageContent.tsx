@@ -3,41 +3,33 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionIcon,
-  Alert,
   Badge,
-  Box,
   Button,
-  Card,
   FileInput,
-  Loader,
+  Group,
   Modal,
-  Pagination,
   Select,
-  Stack,
   Text,
   TextInput,
   Title,
-  Group,
   rem,
   useMantineTheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
-import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
-import { AlertCircle, Camera, User, Search, X, ArrowUpDown, Building2 } from 'lucide-react'
-import Link from 'next/link'
+import { getEntityThemeColor } from '../../lib/mantine-theme'
+import { Building2, User, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion } from 'motion/react'
 import { useAuth } from '../../providers/AuthProvider'
 import { api } from '../../lib/api'
-import MediaThumbnail from '../../components/MediaThumbnail'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
-import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 import { ScrollToTop } from '../../components/ScrollToTop'
 import { useProgress } from '../../providers/ProgressProvider'
 import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { shouldHideSpoiler } from '../../lib/spoiler-utils'
+import { ListPageLayout } from '../../components/layouts/ListPageLayout'
+import { PlayingCard } from '../../components/cards/PlayingCard'
 
 interface Character {
   id: number
@@ -141,7 +133,6 @@ export default function CharactersPageContent({
     const urlSort = (searchParams.get('sort') as SortOption) || 'firstAppearance'
     const urlOrg = searchParams.get('org') || null
 
-    // Only update if values differ to avoid unnecessary re-renders
     if (urlSearch !== searchQuery) {
       setSearchInput(urlSearch)
       setSearchQuery(urlSearch)
@@ -160,20 +151,10 @@ export default function CharactersPageContent({
   // Filter characters by organization client-side
   const filteredCharacters = useMemo(() => {
     if (!organizationFilter) return characters
-
-    // Filter characters that belong to the selected organization
     return characters.filter(character =>
       character.organizations?.some(org => org.id.toString() === organizationFilter)
     )
   }, [characters, organizationFilter])
-
-  // Group characters by organization for visual display
-  const groupedByOrganization = useMemo(() => {
-    if (!organizationFilter) return null
-
-    const orgName = organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Unknown'
-    return { name: orgName, characters: filteredCharacters }
-  }, [organizationFilter, organizations, filteredCharacters])
 
   // Load characters with server-side pagination
   const loadCharacters = useCallback(async (page: number, search: string, sort: SortOption) => {
@@ -189,7 +170,6 @@ export default function CharactersPageContent({
       if (search) {
         params.name = search
       }
-      // Map sort option to API params (backend uses 'sort' and 'order')
       if (sort === 'name') {
         params.sort = 'name'
         params.order = 'ASC'
@@ -234,11 +214,10 @@ export default function CharactersPageContent({
     loadCharacters(currentPage, searchQuery, sortBy)
   }, [currentPage, searchQuery, sortBy, loadCharacters])
 
-  // Debounced search with useDebouncedValue
+  // Debounced search
   const [debouncedSearch] = useDebouncedValue(searchInput, 300)
 
   useEffect(() => {
-    // Skip if input was cleared but debounce hasn't caught up yet
     if (searchInput.trim() === '' && debouncedSearch.trim() !== '') {
       return
     }
@@ -268,12 +247,9 @@ export default function CharactersPageContent({
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value
     setSearchInput(value)
-
-    // Immediately clear search when input is emptied (bypass debounce)
     if (value.trim() === '' && searchQuery !== '') {
       setSearchQuery('')
       setCurrentPage(1)
-      // Keep organization filter when just clearing search text
       updateURL(1, '', sortBy, organizationFilter)
     }
   }
@@ -283,21 +259,18 @@ export default function CharactersPageContent({
     setSearchQuery('')
     setOrganizationFilter(null)
     setCurrentPage(1)
-    // Pass null explicitly for org to clear the filter from URL
     updateURL(1, '', sortBy, null)
   }
 
   const handleOrganizationFilterChange = (value: string | null) => {
     setOrganizationFilter(value)
     setCurrentPage(1)
-    // Use updateURL for consistency
     updateURL(1, searchQuery, sortBy, value)
   }
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     updateURL(page, searchQuery, sortBy)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleSortChange = (value: string | null) => {
@@ -307,6 +280,7 @@ export default function CharactersPageContent({
     updateURL(1, searchQuery, newSort)
   }
 
+  // Image upload handlers
   const handleEditImage = (character: Character) => {
     setSelectedCharacter(character)
     setImageDisplayName(character.imageDisplayName || '')
@@ -315,7 +289,6 @@ export default function CharactersPageContent({
 
   const handleUploadImage = async () => {
     if (!selectedFile || !selectedCharacter) return
-
     setUploading(true)
     try {
       const formData = new FormData()
@@ -325,29 +298,14 @@ export default function CharactersPageContent({
       if (imageDisplayName) {
         formData.append('displayName', imageDisplayName)
       }
-
       const response = await api.post('/media', formData) as Response
-
-      if (!response.ok) {
-        throw new Error('Upload failed')
-      }
-
-      notifications.show({
-        title: 'Success',
-        message: 'Image uploaded successfully',
-        color: 'green'
-      })
-
-      // Close dialog and refresh
+      if (!response.ok) throw new Error('Upload failed')
+      notifications.show({ title: 'Success', message: 'Image uploaded successfully', color: 'green' })
       handleCloseImageDialog()
       loadCharacters(currentPage, searchQuery, sortBy)
     } catch (error) {
       console.error('Upload error:', error)
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to upload image',
-        color: 'red'
-      })
+      notifications.show({ title: 'Error', message: 'Failed to upload image', color: 'red' })
     } finally {
       setUploading(false)
     }
@@ -355,29 +313,16 @@ export default function CharactersPageContent({
 
   const handleRemoveImage = async () => {
     if (!selectedCharacter?.imageFileName) return
-
     setUploading(true)
     try {
       const response = await api.delete(`/media/character/${selectedCharacter.imageFileName}`) as Response
-      if (!response.ok) {
-        throw new Error('Failed to remove image')
-      }
-
-      notifications.show({
-        title: 'Success',
-        message: 'Image removed successfully',
-        color: 'green'
-      })
-
+      if (!response.ok) throw new Error('Failed to remove image')
+      notifications.show({ title: 'Success', message: 'Image removed successfully', color: 'green' })
       handleCloseImageDialog()
       loadCharacters(currentPage, searchQuery, sortBy)
     } catch (error) {
       console.error('Error removing image:', error)
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to remove image',
-        color: 'red'
-      })
+      notifications.show({ title: 'Error', message: 'Failed to remove image', color: 'red' })
     } finally {
       setUploading(false)
     }
@@ -390,95 +335,99 @@ export default function CharactersPageContent({
     setImageDialogOpen(false)
   }
 
+  // Card render function (entity-specific)
+  const renderCharacterCard = useCallback((character: Character) => {
+    const handleCardClick = (e: React.MouseEvent) => {
+      if (isTouchDevice) {
+        const isSpoilered = shouldHideSpoiler(character.firstAppearanceChapter, userProgress, spoilerSettings)
+        const hasBeenRevealed = revealedCharacters.has(character.id)
+        if (!isSpoilered || hasBeenRevealed) {
+          if (hoveredCharacter?.id !== character.id) {
+            e.preventDefault()
+            handleCharacterTap(character, e)
+          }
+        }
+      }
+    }
+
+    const handleCardMouseEnter = (e: React.MouseEvent) => {
+      if (isTouchDevice) return
+      currentlyHoveredRef.current = { character, element: e.currentTarget as HTMLElement }
+      const isSpoilered = shouldHideSpoiler(character.firstAppearanceChapter, userProgress, spoilerSettings)
+      const hasBeenRevealed = revealedCharacters.has(character.id)
+      if (!isSpoilered || hasBeenRevealed) {
+        handleCharacterMouseEnter(character, e)
+      }
+    }
+
+    const handleCardMouseLeave = () => {
+      if (isTouchDevice) return
+      currentlyHoveredRef.current = null
+      handleCharacterMouseLeave()
+    }
+
+    return (
+      <PlayingCard
+        entityType="character"
+        href={`/characters/${character.id}`}
+        entityId={character.id}
+        name={character.name}
+        chapterBadge={character.firstAppearanceChapter ? `Ch. ${character.firstAppearanceChapter}` : undefined}
+        canEdit={canEditContent}
+        onEditClick={() => handleEditImage(character)}
+        onClick={handleCardClick}
+        onMouseEnter={handleCardMouseEnter}
+        onMouseLeave={handleCardMouseLeave}
+        isTouchDevice={isTouchDevice}
+        isHovered={hoveredCharacter?.id === character.id}
+        spoilerChapter={character.firstAppearanceChapter}
+        onSpoilerRevealed={() => {
+          setRevealedCharacters(prev => new Set(prev).add(character.id))
+          if (currentlyHoveredRef.current?.character.id === character.id) {
+            const element = currentlyHoveredRef.current.element
+            const syntheticEvent = {
+              currentTarget: element,
+              target: element
+            } as unknown as React.MouseEvent
+            handleCharacterMouseEnter(currentlyHoveredRef.current.character, syntheticEvent)
+          }
+        }}
+      />
+    )
+  }, [
+    isTouchDevice, hoveredCharacter, userProgress, spoilerSettings,
+    revealedCharacters, canEditContent, handleCharacterMouseEnter,
+    handleCharacterMouseLeave, handleCharacterTap
+  ])
+
   return (
-    <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      {/* Hero Section */}
-      <Box
-        style={getHeroStyles(theme, accentCharacter)}
-        p="md"
-      >
-        <Stack align="center" gap="xs">
-          <Box
-            style={{
-              background: `linear-gradient(135deg, ${accentCharacter}, ${accentCharacter}CC)`,
-              borderRadius: '50%',
-              width: rem(40),
-              height: rem(40),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: `0 4px 16px ${accentCharacter}40`
-            }}
-          >
-            <User size={20} color="white" />
-          </Box>
-
-          <Stack align="center" gap="xs">
-            <Title order={1} size="1.5rem" fw={700} ta="center" c={accentCharacter}>
-              Characters
-            </Title>
-            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
-              Explore the rich cast of Usogui characters, from cunning gamblers to mysterious adversaries
-            </Text>
-
-            {total > 0 && (
-              <Badge size="md" variant="light" c={accentCharacter} radius="xl" mt="xs">
-                {total} character{total !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
-              </Badge>
-            )}
-          </Stack>
-        </Stack>
-      </Box>
-
-      {/* Search and Filters */}
-      <Box mb="xl" px="md">
-        <Group justify="center" mb="md" gap="md">
-          <Box style={{ maxWidth: rem(500), width: '100%' }}>
-            <TextInput
-              placeholder="Search characters by name, alias, or tag..."
-              value={searchInput}
-              onChange={handleSearchChange}
-              leftSection={<Search size={20} />}
-              size="lg"
-              radius="xl"
-              rightSection={
-                hasSearchQuery ? (
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    onClick={handleClearSearch}
-                    size="lg"
-                    aria-label="Clear search"
-                    style={{ minWidth: 44, minHeight: 44 }}
-                  >
-                    <X size={18} />
-                  </ActionIcon>
-                ) : null
-              }
-              styles={{
-                input: {
-                  fontSize: rem(16),
-                  paddingLeft: rem(50),
-                  paddingRight: hasSearchQuery ? rem(50) : rem(20)
-                }
-              }}
-            />
-          </Box>
-          <Select
-            data={sortOptions}
-            value={sortBy}
-            onChange={handleSortChange}
-            leftSection={<ArrowUpDown size={16} />}
-            w={180}
-            size="lg"
-            radius="xl"
-            styles={{
-              input: {
-                fontSize: rem(14)
-              }
-            }}
-          />
+    <>
+      <ListPageLayout
+        entityType="character"
+        icon={<User size={24} color="white" />}
+        title="Characters"
+        subtitle="Explore the rich cast of Usogui characters, from cunning gamblers to mysterious adversaries"
+        items={filteredCharacters}
+        total={total}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        pageSize={PAGE_SIZE}
+        loading={loading}
+        error={error}
+        searchPlaceholder="Search characters by name, alias, or tag..."
+        searchInput={searchInput}
+        onSearchChange={handleSearchChange}
+        onClearSearch={handleClearSearch}
+        hasActiveFilters={hasSearchQuery}
+        sortOptions={sortOptions}
+        sortValue={sortBy}
+        onSortChange={handleSortChange}
+        renderCard={renderCharacterCard}
+        getKey={(c) => c.id}
+        onPageChange={handlePageChange}
+        entityNamePlural="characters"
+        emptyIcon={<User size={48} />}
+        filterSlot={
           <Select
             data={[
               { value: '', label: 'All Organizations' },
@@ -493,331 +442,164 @@ export default function CharactersPageContent({
             placeholder="Filter by organization"
             clearable
             disabled={organizationsLoading}
-            styles={{
-              input: {
-                fontSize: rem(14)
-              }
-            }}
+            styles={{ input: { fontSize: rem(14) } }}
           />
-        </Group>
-
-        {/* Active Organization Filter Badge */}
-        {organizationFilter && (
-          <Group justify="center" mt="sm">
-            <Badge
-              size="lg"
-              variant="filled"
-              style={{ backgroundColor: accentCharacter }}
-              radius="xl"
-              rightSection={
-                <ActionIcon
-                  size="md"
-                  color="white"
-                  variant="transparent"
-                  onClick={() => handleOrganizationFilterChange(null)}
-                  aria-label="Clear organization filter"
-                  style={{ minWidth: 32, minHeight: 32 }}
-                >
-                  <X size={14} />
-                </ActionIcon>
-              }
-            >
-              {organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Organization'}
-            </Badge>
-          </Group>
-        )}
-      </Box>
-
-      {/* Error State */}
-      {error && (
-        <Box px="md">
-          <Alert
-            color="red"
-            radius="md"
-            mb="xl"
-            icon={<AlertCircle size={16} />}
-            title="Error loading characters"
-          >
-            {error}
-          </Alert>
-        </Box>
-      )}
-
-      {/* Loading State */}
-      {loading ? (
-        <CardGridSkeleton count={12} cardWidth={200} cardHeight={280} accentColor={accentCharacter} />
-      ) : (
-        <>
-          {/* Empty State */}
-          {filteredCharacters.length === 0 ? (
-            <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
-              <User size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
-                {hasSearchQuery ? 'No characters found' : 'No characters available'}
-              </Title>
-              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
-                {hasSearchQuery
-                  ? 'Try adjusting your search terms or filters'
-                  : 'Check back later for new characters'}
-              </Text>
-              {hasSearchQuery && (
-                <Button variant="outline" c={accentCharacter} onClick={handleClearSearch}>
-                  Clear search
-                </Button>
-              )}
-            </Box>
-          ) : (
-            <>
-              {/* Results Grid */}
-              <Box
-                px="md"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 220px))',
-                  gap: rem(20),
-                  justifyContent: 'center'
-                }}
-              >
-                {filteredCharacters.map((character: Character, index: number) => (
-                  <motion.div
-                    key={character.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    style={{
-                      width: '100%',
-                      maxWidth: '220px',
-                      aspectRatio: '5/7' // Playing card aspect ratio
-                    }}
+        }
+        activeFilterBadges={
+          organizationFilter ? (
+            <Group justify="center" mt="sm" mb="md">
+              <Badge
+                size="lg"
+                variant="filled"
+                style={{ backgroundColor: accentCharacter }}
+                radius="xl"
+                rightSection={
+                  <ActionIcon
+                    size="md"
+                    color="white"
+                    variant="transparent"
+                    onClick={() => handleOrganizationFilterChange(null)}
+                    aria-label="Clear organization filter"
+                    style={{ minWidth: 32, minHeight: 32 }}
                   >
-                    <Card
-                      component={Link}
-                      href={`/characters/${character.id}`}
-                      withBorder={false}
-                      radius="lg"
-                      shadow="sm"
-                      className="hoverable-card hoverable-card-character"
-                      style={getPlayingCardStyles(theme, accentCharacter)}
-                      onClick={(e) => {
-                        // On touch devices, first tap shows preview, second tap navigates
-                        if (isTouchDevice) {
-                          const isSpoilered = shouldHideSpoiler(
-                            character.firstAppearanceChapter,
-                            userProgress,
-                            spoilerSettings
-                          )
-                          const hasBeenRevealed = revealedCharacters.has(character.id)
-                          if (!isSpoilered || hasBeenRevealed) {
-                            // If modal is not showing for this character, prevent navigation and show modal
-                            if (hoveredCharacter?.id !== character.id) {
-                              e.preventDefault()
-                              handleCharacterTap(character, e)
-                            }
-                            // If modal is already showing, allow navigation (second tap)
-                          }
-                        }
-                      }}
-                      onMouseEnter={(e) => {
-                        if (isTouchDevice) return // Skip hover on touch devices
+                    <X size={14} />
+                  </ActionIcon>
+                }
+              >
+                {organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Organization'}
+              </Badge>
+            </Group>
+          ) : undefined
+        }
+        hoverModal={
+          <HoverModal
+            isOpen={
+              !!hoveredCharacter &&
+              (!shouldHideSpoiler(hoveredCharacter.firstAppearanceChapter, userProgress, spoilerSettings) ||
+                revealedCharacters.has(hoveredCharacter.id))
+            }
+            position={hoverPosition}
+            accentColor={accentCharacter}
+            onMouseEnter={handleModalMouseEnter}
+            onMouseLeave={handleModalMouseLeave}
+            onClose={closeModal}
+            showCloseButton={isTouchDevice}
+          >
+            {hoveredCharacter &&
+              (!shouldHideSpoiler(hoveredCharacter.firstAppearanceChapter, userProgress, spoilerSettings) ||
+                revealedCharacters.has(hoveredCharacter.id)) && (
+              <>
+                <Title order={4} size="md" fw={700} c={accentCharacter} ta="center" lineClamp={2}>
+                  {hoveredCharacter.name}
+                </Title>
 
-                        // Store the currently hovered character and element
-                        currentlyHoveredRef.current = { character, element: e.currentTarget as HTMLElement }
-
-                        // Only show hover modal if content is not spoilered OR has been revealed
-                        const isSpoilered = shouldHideSpoiler(
-                          character.firstAppearanceChapter,
-                          userProgress,
-                          spoilerSettings
-                        )
-                        const hasBeenRevealed = revealedCharacters.has(character.id)
-                        if (!isSpoilered || hasBeenRevealed) {
-                          handleCharacterMouseEnter(character, e)
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        if (isTouchDevice) return // Skip hover on touch devices
-                        currentlyHoveredRef.current = null
-                        handleCharacterMouseLeave()
-                      }}
-                    >
-                      {/* Chapter Badge at Top Left */}
-                      {character.firstAppearanceChapter && (
-                        <Badge
-                          variant="filled"
-                          radius="sm"
-                          size="sm"
-                          c="white"
-                          style={{
-                            position: 'absolute',
-                            top: rem(8),
-                            left: rem(8),
-                            backgroundColor: accentCharacter,
-                            fontSize: rem(10),
-                            fontWeight: 700,
-                            zIndex: 10,
-                            backdropFilter: 'blur(4px)',
-                            maxWidth: canEditContent ? 'calc(100% - 60px)' : 'calc(100% - 16px)'
-                          }}
-                        >
-                          Ch. {character.firstAppearanceChapter}
-                        </Badge>
-                      )}
-
-                      {/* Edit Button at Top Right */}
-                      {canEditContent && (
-                        <ActionIcon
-                          size="xs"
-                          variant="filled"
-                          color="dark"
-                          radius="xl"
-                          aria-label="Edit character image"
-                          style={{
-                            position: 'absolute',
-                            top: rem(8),
-                            right: rem(8),
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            backdropFilter: 'blur(4px)',
-                            zIndex: 10,
-                            width: rem(24),
-                            height: rem(24)
-                          }}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handleEditImage(character)
-                          }}
-                        >
-                          <Camera size={12} />
-                        </ActionIcon>
-                      )}
-
-                      {/* Main Image Section - Takes up most of the card */}
-                      <Box style={{
-                        position: 'relative',
-                        overflow: 'hidden',
-                        flex: 1,
-                        minHeight: 0
-                      }}>
-                        <MediaThumbnail
-                          entityType="character"
-                          entityId={character.id}
-                          entityName={character.name}
-                          allowCycling={false}
-                          maxWidth={200}
-                          maxHeight={230}
-                          spoilerChapter={character.firstAppearanceChapter}
-                          onSpoilerRevealed={() => {
-                            setRevealedCharacters(prev => new Set(prev).add(character.id))
-                            // If this character is currently being hovered, trigger the modal
-                            if (currentlyHoveredRef.current?.character.id === character.id) {
-                              const element = currentlyHoveredRef.current.element
-                              // Create a synthetic event for the handleCharacterMouseEnter function
-                              const syntheticEvent = {
-                                currentTarget: element,
-                                target: element
-                              } as unknown as React.MouseEvent
-                              handleCharacterMouseEnter(
-                                currentlyHoveredRef.current.character,
-                                syntheticEvent
-                              )
-                            }
-                          }}
-                        />
-                      </Box>
-
-                      {/* Character Name at Bottom */}
-                      <Box
-                        p={rem(6)}
-                        ta="center"
-                        style={{
-                          backgroundColor: 'transparent',
-                          minHeight: rem(40),
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          gap: rem(4)
-                        }}
-                      >
-                        <Text
-                          size="sm"
-                          fw={700}
-                          lineClamp={2}
-                          ta="center"
-                          style={{
-                            lineHeight: 1.3,
-                            fontSize: rem(15),
-                            color: '#ffffff',
-                            textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                            background: `linear-gradient(135deg, ${accentCharacter}dd, ${accentCharacter}aa)`,
-                            backdropFilter: 'blur(4px)',
-                            borderRadius: rem(6),
-                            padding: `${rem(6)} ${rem(10)}`,
-                            border: `1px solid ${accentCharacter}40`
-                          }}
-                        >
-                          {character.name}
-                        </Text>
-                        {/* Touch device hint */}
-                        {isTouchDevice && hoveredCharacter?.id !== character.id && (
-                          <Text
-                            size="xs"
-                            c="dimmed"
-                            ta="center"
-                            style={{
-                              fontSize: rem(10),
-                              opacity: 0.7
-                            }}
-                          >
-                            Tap to preview
-                          </Text>
-                        )}
-                      </Box>
-                    </Card>
-                  </motion.div>
-                ))}
-              </Box>
-
-              {/* Pagination Info & Controls */}
-              <Box
-                px="md"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  marginTop: rem(48),
-                  gap: rem(12)
-                }}>
-                {/* Always show pagination info when we have characters */}
-                {(total > 0 || filteredCharacters.length > 0) && (
-                  <Text size="sm" style={{ color: theme.colors.gray[6] }}>
-                    {organizationFilter
-                      ? `${filteredCharacters.length} character${filteredCharacters.length !== 1 ? 's' : ''} in this organization`
-                      : `Showing ${filteredCharacters.length} of ${total} characters`}
-                    {!organizationFilter && totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                {hoveredCharacter.alias && (
+                  <Text size="sm" style={{ color: theme.colors.gray[6] }} ta="center" className="italic">
+                    &ldquo;{hoveredCharacter.alias}&rdquo;
                   </Text>
                 )}
 
-                {/* Show pagination controls when we have multiple pages */}
-                {totalPages > 1 && (
-                  <Pagination
-                    total={totalPages}
-                    value={currentPage}
-                    onChange={handlePageChange}
-                    color="character"
-                    size="lg"
-                    radius="xl"
-                    withEdges
-                  />
+                {hoveredCharacter.alternateNames && hoveredCharacter.alternateNames.length > 0 && (
+                  <Group justify="center" gap="xs" wrap="wrap">
+                    {hoveredCharacter.alternateNames.map((name, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        c={getEntityThemeColor(theme, 'character')}
+                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                        size="xs"
+                        fw={500}
+                      >
+                        {name}
+                      </Badge>
+                    ))}
+                  </Group>
                 )}
 
-                {loading && <Loader size="sm" color={accentCharacter} />}
-              </Box>
-            </>
-          )}
-        </>
-      )}
+                {hoveredCharacter.firstAppearanceChapter && (
+                  <Group justify="center" gap="xs">
+                    <Badge variant="filled" c="white" style={{ backgroundColor: accentCharacter }} size="sm" fw={600}>
+                      Ch. {hoveredCharacter.firstAppearanceChapter}
+                    </Badge>
+                  </Group>
+                )}
+
+                {hoveredCharacter.organizations && hoveredCharacter.organizations.length > 0 && (
+                  <Group justify="center" gap="xs">
+                    {hoveredCharacter.organizations.slice(0, 2).map((org) => (
+                      <Badge
+                        key={org.id}
+                        variant="light"
+                        c={getEntityThemeColor(theme, 'event')}
+                        style={{
+                          backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
+                          borderColor: getEntityThemeColor(theme, 'event')
+                        }}
+                        size="xs"
+                        fw={500}
+                      >
+                        {org.name}
+                      </Badge>
+                    ))}
+                    {hoveredCharacter.organizations.length > 2 && (
+                      <Badge
+                        variant="light"
+                        c={getEntityThemeColor(theme, 'event')}
+                        style={{
+                          backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
+                          borderColor: getEntityThemeColor(theme, 'event')
+                        }}
+                        size="xs"
+                        fw={500}
+                      >
+                        +{hoveredCharacter.organizations.length - 2}
+                      </Badge>
+                    )}
+                  </Group>
+                )}
+
+                {hoveredCharacter.description && (
+                  <Text
+                    size="sm"
+                    ta="center"
+                    lineClamp={3}
+                    style={{ color: theme.colors.gray[6], lineHeight: 1.4, maxHeight: rem(60) }}
+                  >
+                    {hoveredCharacter.description}
+                  </Text>
+                )}
+
+                {hoveredCharacter.tags && hoveredCharacter.tags.length > 0 && (
+                  <Group justify="center" gap="xs">
+                    {hoveredCharacter.tags.slice(0, 3).map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        c={getEntityThemeColor(theme, 'character')}
+                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                        size="xs"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                    {hoveredCharacter.tags.length > 3 && (
+                      <Badge
+                        variant="outline"
+                        c={getEntityThemeColor(theme, 'character')}
+                        style={{ borderColor: getEntityThemeColor(theme, 'character') }}
+                        size="xs"
+                      >
+                        +{hoveredCharacter.tags.length - 3}
+                      </Badge>
+                    )}
+                  </Group>
+                )}
+              </>
+            )}
+          </HoverModal>
+        }
+        afterContent={<ScrollToTop accentColor={accentCharacter} />}
+      />
 
       {/* Image Upload Modal */}
       <Modal
@@ -829,17 +611,13 @@ export default function CharactersPageContent({
         <div className="space-y-4">
           {selectedCharacter && (
             <>
-              <Text size="lg" fw={500}>
-                {selectedCharacter.name}
-              </Text>
-
+              <Text size="lg" fw={500}>{selectedCharacter.name}</Text>
               <TextInput
                 label="Display Name (optional)"
                 value={imageDisplayName}
                 onChange={(e) => setImageDisplayName(e.currentTarget.value)}
                 placeholder="Enter display name for the image"
               />
-
               <div>
                 <Text size="sm" mb={8}>Select Image File:</Text>
                 <FileInput
@@ -848,7 +626,6 @@ export default function CharactersPageContent({
                   onChange={(file) => setSelectedFile(file)}
                 />
               </div>
-
               <div className="flex gap-2 pt-4">
                 <Button
                   onClick={handleUploadImage}
@@ -859,7 +636,6 @@ export default function CharactersPageContent({
                 >
                   Upload
                 </Button>
-
                 {selectedCharacter.imageFileName && (
                   <Button
                     onClick={handleRemoveImage}
@@ -877,165 +653,6 @@ export default function CharactersPageContent({
           )}
         </div>
       </Modal>
-
-      {/* Hover Modal */}
-      <HoverModal
-        isOpen={
-          !!hoveredCharacter &&
-          (!shouldHideSpoiler(hoveredCharacter.firstAppearanceChapter, userProgress, spoilerSettings) ||
-            revealedCharacters.has(hoveredCharacter.id))
-        }
-        position={hoverPosition}
-        accentColor={accentCharacter}
-        onMouseEnter={handleModalMouseEnter}
-        onMouseLeave={handleModalMouseLeave}
-        onClose={closeModal}
-        showCloseButton={isTouchDevice}
-      >
-        {hoveredCharacter &&
-          (!shouldHideSpoiler(hoveredCharacter.firstAppearanceChapter, userProgress, spoilerSettings) ||
-            revealedCharacters.has(hoveredCharacter.id)) && (
-          <>
-            {/* Character Name */}
-            <Title
-              order={4}
-              size="md"
-              fw={700}
-              c={accentCharacter}
-              ta="center"
-              lineClamp={2}
-            >
-              {hoveredCharacter.name}
-            </Title>
-
-            {/* Character Alias */}
-            {hoveredCharacter.alias && (
-              <Text
-                size="sm"
-                style={{ color: theme.colors.gray[6] }}
-                ta="center"
-                className="italic"
-              >
-                &ldquo;{hoveredCharacter.alias}&rdquo;
-              </Text>
-            )}
-
-            {/* Alternate Names */}
-            {hoveredCharacter.alternateNames && hoveredCharacter.alternateNames.length > 0 && (
-              <Group justify="center" gap="xs" wrap="wrap">
-                {hoveredCharacter.alternateNames.map((name, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    c={getEntityThemeColor(theme, 'character')}
-                    style={{ borderColor: getEntityThemeColor(theme, 'character') }}
-                    size="xs"
-                    fw={500}
-                  >
-                    {name}
-                  </Badge>
-                ))}
-              </Group>
-            )}
-
-            {/* Start Chapter */}
-            {hoveredCharacter.firstAppearanceChapter && (
-              <Group justify="center" gap="xs">
-                <Badge
-                  variant="filled"
-                  c="white"
-                  style={{ backgroundColor: accentCharacter }}
-                  size="sm"
-                  fw={600}
-                >
-                  Ch. {hoveredCharacter.firstAppearanceChapter}
-                </Badge>
-              </Group>
-            )}
-
-            {/* Organizations/Factions */}
-            {hoveredCharacter.organizations && hoveredCharacter.organizations.length > 0 && (
-              <Group justify="center" gap="xs">
-                {hoveredCharacter.organizations.slice(0, 2).map((org) => (
-                  <Badge
-                    key={org.id}
-                    variant="light"
-                    c={getEntityThemeColor(theme, 'event')}
-                    style={{
-                      backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
-                      borderColor: getEntityThemeColor(theme, 'event')
-                    }}
-                    size="xs"
-                    fw={500}
-                  >
-                    {org.name}
-                  </Badge>
-                ))}
-                {hoveredCharacter.organizations.length > 2 && (
-                  <Badge
-                    variant="light"
-                    c={getEntityThemeColor(theme, 'event')}
-                    style={{
-                      backgroundColor: `${getEntityThemeColor(theme, 'event')}20`,
-                      borderColor: getEntityThemeColor(theme, 'event')
-                    }}
-                    size="xs"
-                    fw={500}
-                  >
-                    +{hoveredCharacter.organizations.length - 2}
-                  </Badge>
-                )}
-              </Group>
-            )}
-
-            {/* Description */}
-            {hoveredCharacter.description && (
-              <Text
-                size="sm"
-                ta="center"
-                lineClamp={3}
-                style={{
-                  color: theme.colors.gray[6],
-                  lineHeight: 1.4,
-                  maxHeight: rem(60)
-                }}
-              >
-                {hoveredCharacter.description}
-              </Text>
-            )}
-
-            {/* Tags */}
-            {hoveredCharacter.tags && hoveredCharacter.tags.length > 0 && (
-              <Group justify="center" gap="xs">
-                {hoveredCharacter.tags.slice(0, 3).map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    c={getEntityThemeColor(theme, 'character')}
-                    style={{ borderColor: getEntityThemeColor(theme, 'character') }}
-                    size="xs"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-                {hoveredCharacter.tags.length > 3 && (
-                  <Badge
-                    variant="outline"
-                    c={getEntityThemeColor(theme, 'character')}
-                    style={{ borderColor: getEntityThemeColor(theme, 'character') }}
-                    size="xs"
-                  >
-                    +{hoveredCharacter.tags.length - 3}
-                  </Badge>
-                )}
-              </Group>
-            )}
-          </>
-        )}
-      </HoverModal>
-
-      <ScrollToTop accentColor={accentCharacter} />
-    </motion.div>
-    </Box>
+    </>
   )
 }

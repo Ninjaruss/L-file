@@ -484,3 +484,139 @@ textarea:focus-visible {
   background: rgba(0, 0, 0, 0.3);
   border-radius: inherit;
 }
+
+/* ============================================
+   Manga / Playing Card Decorative Patterns
+   ============================================ */
+
+/* Halftone dot overlay - used in hero sections */
+.manga-halftone {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+/* Speed lines - radiating from center */
+.manga-speed-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background: repeating-conic-gradient(
+    currentColor 0deg 0.5deg,
+    transparent 0.5deg 10deg
+  );
+}
+
+/* Panel border - manga panel framing effect */
+.manga-panel-border {
+  position: relative;
+}
+
+.manga-panel-border::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid currentColor;
+  opacity: 0.08;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Diagonal stripe patterns */
+.manga-diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    currentColor 5px,
+    currentColor 6px
+  );
+  opacity: 0.04;
+}
+
+/* Card flip animation for PlayingCard hover */
+@keyframes card-flip-in {
+  from {
+    transform: perspective(600px) rotateY(10deg) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: perspective(600px) rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Shimmer animation for count badges */
+@keyframes badge-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.badge-shimmer {
+  background-size: 200% auto;
+  animation: badge-shimmer 3s linear infinite;
+}
+
+/* Suit watermark - faded suit icon in backgrounds */
+.suit-watermark {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.03;
+  z-index: 0;
+}
+
+/* ============================================
+   Reduced Motion & Accessibility
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all CSS animations and transitions */
+  .hoverable-card,
+  .hoverable-paper,
+  .hoverable-badge,
+  .themed-transition,
+  .themed-transition-short,
+  .gambling-card {
+    transition: none !important;
+  }
+
+  .hoverable-card:hover,
+  .hoverable-paper:hover {
+    transform: none !important;
+  }
+
+  /* Disable decorative animations */
+  .badge-shimmer {
+    animation: none !important;
+  }
+
+  /* Disable Motion/Framer entry animations via data attribute */
+  [data-motion] {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Keep focus indicators visible even with reduced motion */
+  :focus-visible {
+    outline: 2px solid var(--usogui-red);
+    outline-offset: 2px;
+    transition: none !important;
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .manga-halftone,
+  .manga-speed-lines,
+  .suit-watermark {
+    display: none;
+  }
+
+  .hoverable-card:hover {
+    outline: 2px solid currentColor;
+  }
+}

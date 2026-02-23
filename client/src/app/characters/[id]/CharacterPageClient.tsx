@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import {
   Badge,
   Box,
-  Button,
   Card,
   Container,
   Group,
@@ -29,14 +28,13 @@ import {
 import { User, Crown, Calendar, BookOpen, Image as ImageIcon, Building2, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
+import { pageEnter } from '../../../lib/motion-presets'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import CharacterTimeline, { TimelineEvent } from '../../../components/CharacterTimeline'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import type { Arc, Gamble, Guide, Quote } from '../../../types'
-import MediaThumbnail from '../../../components/MediaThumbnail'
-import ErrorBoundary from '../../../components/ErrorBoundary'
 import CharacterRelationships from '../../../components/CharacterRelationships'
 import CharacterOrganizationMemberships from '../../../components/CharacterOrganizationMemberships'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
@@ -44,6 +42,8 @@ import { AnnotationSection } from '../../../components/annotations'
 import { EntityQuickActions } from '../../../components/EntityQuickActions'
 import { useAuth } from '../../../providers/AuthProvider'
 import { AnnotationOwnerType } from '../../../types'
+import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
+import { RelatedContentSection } from '../../../components/layouts/RelatedContentSection'
 
 interface Character {
   id: number
@@ -86,11 +86,8 @@ export default function CharacterPageClient({
   const theme = useMantineTheme()
   const { user } = useAuth()
 
-  // FIX: Initialize with default value to prevent hydration mismatch
-  // The hash is read in useEffect after hydration completes
   const [activeTab, setActiveTab] = useState<string>('overview')
 
-  // Read initial tab from URL hash after mount (client-side only)
   useEffect(() => {
     const hash = window.location.hash.slice(1)
     if (['overview', 'timeline', 'media', 'annotations'].includes(hash)) {
@@ -100,14 +97,11 @@ export default function CharacterPageClient({
 
   usePageView('character', character.id.toString(), true)
 
-  // Set tab accent colors for character entity
   useEffect(() => {
     setTabAccentColors('character')
   }, [])
 
-  // Sync tab state with URL hash
   useEffect(() => {
-    // Update URL hash when tab changes (without triggering navigation)
     const newHash = activeTab === 'overview' ? '' : `#${activeTab}`
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname + window.location.search
@@ -115,7 +109,6 @@ export default function CharacterPageClient({
     }
   }, [activeTab])
 
-  // Listen for hash changes (e.g., back/forward navigation)
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1)
@@ -125,12 +118,10 @@ export default function CharacterPageClient({
         setActiveTab('overview')
       }
     }
-
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  // Use consistent theme colors for better readability
   const entityColors = {
     character: getEntityThemeColor(theme, 'character'),
     arc: getEntityThemeColor(theme, 'arc'),
@@ -149,208 +140,122 @@ export default function CharacterPageClient({
     }}>
     <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
     <Stack gap={theme.spacing.md}>
-      {/* Breadcrumb Navigation */}
       <BreadcrumbNav
         items={createEntityBreadcrumbs('character', character.name)}
         entityType="character"
       />
 
       {/* Enhanced Character Header */}
-      <Card
-        withBorder
-        radius="lg"
-        shadow="lg"
-        p={0}
-        style={{
-          ...getCardStyles(theme, entityColors.character),
-          border: `2px solid ${entityColors.character}`,
-          position: 'relative',
-          overflow: 'hidden'
-        }}
+      <DetailPageHeader
+        entityType="character"
+        entityId={character.id}
+        entityName={character.name}
       >
-        {/* Subtle Pattern Overlay */}
-        <Box
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `
-              radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
-              radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
-            `,
-            backgroundSize: '40px 40px, 80px 80px',
-            backgroundPosition: '0 0, 20px 20px',
-            pointerEvents: 'none'
-          }}
-        />
+        <Stack gap={theme.spacing.sm}>
+          <Title
+            order={1}
+            size="2.8rem"
+            fw={800}
+            c={headerColors.h1}
+            style={{
+              lineHeight: 1.1,
+              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              letterSpacing: '-0.02em'
+            }}
+          >
+            {character.name}
+          </Title>
+          {character.alternateNames && character.alternateNames.length > 0 && (
+            <Group gap={theme.spacing.xs} wrap="wrap">
+              {character.alternateNames.map((name, index) => (
+                <Badge
+                  key={index}
+                  variant="light"
+                  size="md"
+                  radius="md"
+                  style={{
+                    background: `${theme.colors.dark[5]}80`,
+                    border: `1px solid ${theme.colors.dark[4]}`,
+                    fontWeight: 500,
+                    letterSpacing: '0.02em'
+                  }}
+                  c={textColors.secondary}
+                >
+                  {name}
+                </Badge>
+              ))}
+            </Group>
+          )}
+        </Stack>
 
-        {/* Content */}
-        <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
-          <Group gap={theme.spacing.lg} align="flex-start" wrap="wrap" justify="center">
-            <Box style={{ flexShrink: 0 }}>
-              <Box
+        <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+          <Group gap={theme.spacing.md} wrap="wrap" align="center">
+            {character.firstAppearanceChapter && (
+              <Badge
+                variant="filled"
+                size="lg"
+                radius="md"
                 style={{
-                  width: '200px',
-                  height: '280px',
-                  borderRadius: theme.radius.md,
-                  overflow: 'hidden',
-                  border: `3px solid ${entityColors.character}`,
-                  boxShadow: theme.shadows.xl,
-                  transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
+                  background: `linear-gradient(135deg, ${entityColors.character} 0%, ${entityColors.character}dd 100%)`,
+                  border: `1px solid ${entityColors.character}`,
+                  boxShadow: theme.shadows.md,
+                  fontSize: fontSize.sm,
+                  color: textColors.primary,
+                  fontWeight: 600
                 }}
               >
-                <ErrorBoundary>
-                  <MediaThumbnail
-                    entityType="character"
-                    entityId={character.id}
-                    entityName={character.name}
-                    allowCycling={false}
-                    maxWidth="200px"
-                    maxHeight="280px"
-                  />
-                </ErrorBoundary>
-              </Box>
-            </Box>
+                First appears in Chapter {character.firstAppearanceChapter}
+              </Badge>
+            )}
+          </Group>
 
-            <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: '280px' }} justify="space-between">
-              <Stack gap={theme.spacing.sm}>
-                <Title
-                  order={1}
-                  size="2.8rem"
-                  fw={800}
-                  c={headerColors.h1}
+          {character.organizations && character.organizations.length > 0 && (
+            <Group gap={theme.spacing.sm} wrap="wrap">
+              {character.organizations.map((org) => (
+                <Badge
+                  key={org.id}
+                  variant="light"
+                  size="lg"
+                  radius="md"
                   style={{
-                    lineHeight: 1.1,
-                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                    letterSpacing: '-0.02em'
+                    background: getAlphaColor(entityColors.character, 0.25),
+                    border: `1.5px solid ${entityColors.character}`,
+                    color: textColors.character,
+                    fontSize: fontSize.sm,
+                    padding: `${spacing.sm} ${spacing.md}`,
+                    fontWeight: 500,
+                    transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
                   }}
                 >
-                  {character.name}
-                </Title>
-                {character.alternateNames && character.alternateNames.length > 0 && (
-                  <Group gap={theme.spacing.xs} wrap="wrap">
-                    {character.alternateNames.map((name, index) => (
-                      <Badge
-                        key={index}
-                        variant="light"
-                        size="md"
-                        radius="md"
-                        style={{
-                          background: `${theme.colors.dark[5]}80`,
-                          border: `1px solid ${theme.colors.dark[4]}`,
-                          fontWeight: 500,
-                          letterSpacing: '0.02em'
-                        }}
-                        c={textColors.secondary}
-                      >
-                        {name}
-                      </Badge>
-                    ))}
-                  </Group>
-                )}
-              </Stack>
+                  {org.name}
+                </Badge>
+              ))}
+            </Group>
+          )}
 
-              <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-                <Group gap={theme.spacing.md} wrap="wrap" align="center">
-                  {character.firstAppearanceChapter && (
-                    <Badge
-                      variant="filled"
-                      size="lg"
-                      radius="md"
-                      style={{
-                        background: `linear-gradient(135deg, ${entityColors.character} 0%, ${entityColors.character}dd 100%)`,
-                        border: `1px solid ${entityColors.character}`,
-                        boxShadow: theme.shadows.md,
-                        fontSize: fontSize.sm,
-                        color: textColors.primary,
-                        fontWeight: 600
-                      }}
-                    >
-                      First appears in Chapter {character.firstAppearanceChapter}
-                    </Badge>
-                  )}
-                </Group>
-
-                {character.organizations && character.organizations.length > 0 && (
-                  <Group gap={theme.spacing.sm} wrap="wrap">
-                    {character.organizations.map((org) => (
-                      <Badge
-                        key={org.id}
-                        variant="light"
-                        size="lg"
-                        radius="md"
-                        style={{
-                          background: getAlphaColor(entityColors.character, 0.25),
-                          border: `1.5px solid ${entityColors.character}`,
-                          color: textColors.character,
-                          fontSize: fontSize.sm,
-                          padding: `${spacing.sm} ${spacing.md}`,
-                          fontWeight: 500,
-                          transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
-                        }}
-                      >
-                        {org.name}
-                      </Badge>
-                    ))}
-                  </Group>
-                )}
-
-                {/* Content Stats */}
-                <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                  <Badge size="lg" variant="light" c={textColors.arc} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.arc, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`
-                  }}>
-                    {arcs.length} Story Arcs
-                  </Badge>
-                  <Badge size="lg" variant="light" c={textColors.gamble} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.gamble, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`
-                  }}>
-                    {gambles.length} Gambles
-                  </Badge>
-                  <Badge size="lg" variant="light" c={textColors.character} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.character, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
-                  }}>
-                    {events.length} Events
-                  </Badge>
-                  <Badge size="lg" variant="light" c={textColors.quote} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.quote, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.quote, 0.4)}`
-                  }}>
-                    {quotes.length} Quotes
-                  </Badge>
-                  <Badge size="lg" variant="light" c={textColors.guide} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.guide, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.guide, 0.4)}`
-                  }}>
-                    {guides.length} Guides
-                  </Badge>
-                </Group>
-              </Stack>
-            </Stack>
+          {/* Content Stats */}
+          <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+            {[
+              { count: arcs.length, label: 'Story Arcs', color: entityColors.arc, textColor: textColors.arc },
+              { count: gambles.length, label: 'Gambles', color: entityColors.gamble, textColor: textColors.gamble },
+              { count: events.length, label: 'Events', color: entityColors.character, textColor: textColors.character },
+              { count: quotes.length, label: 'Quotes', color: entityColors.quote, textColor: textColors.quote },
+              { count: guides.length, label: 'Guides', color: entityColors.guide, textColor: textColors.guide }
+            ].map(({ count, label, color, textColor }) => (
+              <Badge key={label} size="lg" variant="light" c={textColor} style={{
+                fontSize: fontSize.xs,
+                fontWeight: 600,
+                background: getAlphaColor(color, 0.2),
+                border: `1px solid ${getAlphaColor(color, 0.4)}`
+              }}>
+                {count} {label}
+              </Badge>
+            ))}
           </Group>
-        </Box>
-      </Card>
+        </Stack>
+      </DetailPageHeader>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div {...pageEnter}>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
         <Tabs
           value={activeTab}
@@ -371,17 +276,12 @@ export default function CharacterPageClient({
               </Tabs.Tab>
             )}
             <Tabs.Tab value="media" leftSection={<ImageIcon size={16} />}>Media</Tabs.Tab>
-            <Tabs.Tab
-              value="annotations"
-              leftSection={<MessageSquare size={16} />}
-            >
-              Annotations
-            </Tabs.Tab>
+            <Tabs.Tab value="annotations" leftSection={<MessageSquare size={16} />}>Annotations</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="overview" pt={theme.spacing.md}>
             <Stack gap={theme.spacing.lg}>
-              {/* Character Description Section */}
+              {/* Character Description */}
               <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.character)}>
                 <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                   <Group gap={theme.spacing.sm} align="center">
@@ -402,7 +302,7 @@ export default function CharacterPageClient({
                 </Stack>
               </Card>
 
-              {/* Character Backstory Section */}
+              {/* Character Backstory */}
               {character.backstory && (
                 <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.character)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
@@ -412,11 +312,7 @@ export default function CharacterPageClient({
                     </Group>
                     <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
                       <Box style={{ lineHeight: 1.6 }}>
-                        <EnhancedSpoilerMarkdown
-                          content={character.backstory}
-                          enableEntityEmbeds
-                          compactEntityCards={false}
-                        />
+                        <EnhancedSpoilerMarkdown content={character.backstory} enableEntityEmbeds compactEntityCards={false} />
                       </Box>
                     </TimelineSpoilerWrapper>
                   </Stack>
@@ -424,10 +320,7 @@ export default function CharacterPageClient({
               )}
 
               {/* Character Relationships */}
-              <CharacterRelationships
-                characterId={character.id}
-                characterName={character.name}
-              />
+              <CharacterRelationships characterId={character.id} characterName={character.name} />
 
               {/* Organization Memberships */}
               <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.organization)}>
@@ -436,224 +329,128 @@ export default function CharacterPageClient({
                     <Building2 size={20} color={entityColors.organization} />
                     <Title order={4} c={textColors.primary}>Organizations</Title>
                   </Group>
-                  <CharacterOrganizationMemberships
-                    characterId={character.id}
-                    characterName={character.name}
-                  />
+                  <CharacterOrganizationMemberships characterId={character.id} characterName={character.name} />
                 </Stack>
               </Card>
 
               {/* Related Story Arcs */}
-              {arcs.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.arc)}>
-                  <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                    <Group justify="space-between" align="center">
-                      <Group gap={theme.spacing.sm}>
-                        <BookOpen size={20} color={entityColors.arc} />
-                        <Title order={4} c={textColors.arc}>Related Story Arcs</Title>
-                      </Group>
-                      <Button
-                        component={Link}
-                        href={`/arcs?character=${character.name}`}
-                        variant="outline"
-                        c={entityColors.arc}
-                        size="sm"
-                        radius="xl"
-                        style={{
-                          fontWeight: 600,
-                          border: `2px solid ${entityColors.arc}`,
-                          transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
-                        }}
-                      >
-                        View All ({arcs.length})
-                      </Button>
+              <RelatedContentSection
+                entityType="arc"
+                icon={<BookOpen size={20} color={entityColors.arc} />}
+                title="Related Story Arcs"
+                items={arcs}
+                previewCount={4}
+                viewAllHref={`/arcs?character=${character.name}`}
+                getKey={(arc) => arc.id}
+                titleColorKey="arc"
+                renderItem={(arc) => (
+                  <Paper withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
+                    border: `1px solid ${getAlphaColor(entityColors.arc, 0.3)}`
+                  }}>
+                    <Group justify="space-between" align="flex-start">
+                      <Box style={{ flex: 1 }}>
+                        <Text component={Link} href={`/arcs/${arc.id}`} fw={600} size="sm" c={textColors.arc} style={{ textDecoration: 'none' }}>
+                          {arc.name}
+                        </Text>
+                        {arc.description && (
+                          <Text size="xs" c={textColors.tertiary} lineClamp={2} mt={spacing.xs}>{arc.description}</Text>
+                        )}
+                      </Box>
+                      <Badge c={entityColors.arc} variant="outline" size="xs">
+                        Arc {(arc as Arc & { order?: number }).order ?? "N/A"}
+                      </Badge>
                     </Group>
-                    <Stack gap={theme.spacing.sm}>
-                      {arcs.slice(0, 4).map((arc) => (
-                        <Paper key={arc.id} withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
-                          border: `1px solid ${getAlphaColor(entityColors.arc, 0.3)}`
-                        }}>
-                          <Group justify="space-between" align="flex-start">
-                            <Box style={{ flex: 1 }}>
-                              <Text
-                                component={Link}
-                                href={`/arcs/${arc.id}`}
-                                fw={600}
-                                size="sm"
-                                c={textColors.arc}
-                                style={{ textDecoration: 'none' }}
-                              >
-                                {arc.name}
-                              </Text>
-                              {arc.description && (
-                                <Text size="xs" c={textColors.tertiary} lineClamp={2} mt={spacing.xs}>
-                                  {arc.description}
-                                </Text>
-                              )}
-                            </Box>
-                            <Badge c={entityColors.arc} variant="outline" size="xs">
-                              Arc {(arc as Arc & { order?: number }).order ?? "N/A"}
-                            </Badge>
-                          </Group>
-                        </Paper>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Card>
-              )}
+                  </Paper>
+                )}
+              />
 
               {/* Related Gambles */}
-              {gambles.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.gamble)}>
-                  <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                    <Group justify="space-between" align="center">
-                      <Group gap={theme.spacing.sm}>
-                        <Crown size={20} color={entityColors.gamble} />
-                        <Title order={4} c={textColors.gamble}>Related Gambles</Title>
+              <RelatedContentSection
+                entityType="gamble"
+                icon={<Crown size={20} color={entityColors.gamble} />}
+                title="Related Gambles"
+                items={gambles}
+                previewCount={4}
+                viewAllHref={`/gambles?character=${character.name}`}
+                getKey={(gamble) => gamble.id}
+                titleColorKey="gamble"
+                renderItem={(gamble) => (
+                  <Paper withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
+                    border: `1px solid ${getAlphaColor(entityColors.gamble, 0.3)}`
+                  }}>
+                    <TimelineSpoilerWrapper chapterNumber={gamble.chapterId ?? undefined}>
+                      <Group justify="space-between" align="flex-start">
+                        <Box style={{ flex: 1 }}>
+                          <Text component={Link} href={`/gambles/${gamble.id}`} fw={600} size="sm" c={textColors.gamble} style={{ textDecoration: 'none' }}>
+                            {gamble.name}
+                          </Text>
+                          {gamble.description && (
+                            <Text size="xs" c={textColors.tertiary} lineClamp={2} mt={spacing.xs}>{gamble.description}</Text>
+                          )}
+                        </Box>
+                        {gamble.chapterId && (
+                          <Badge c={entityColors.gamble} variant="outline" size="xs">Ch. {gamble.chapterId}</Badge>
+                        )}
                       </Group>
-                      <Button
-                        component={Link}
-                        href={`/gambles?character=${character.name}`}
-                        variant="outline"
-                        c={entityColors.gamble}
-                        size="sm"
-                        radius="xl"
-                      >
-                        View All ({gambles.length})
-                      </Button>
-                    </Group>
-                    <Stack gap={theme.spacing.sm}>
-                      {gambles.slice(0, 4).map((gamble) => (
-                        <Paper key={gamble.id} withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
-                          border: `1px solid ${getAlphaColor(entityColors.gamble, 0.3)}`
-                        }}>
-                          <TimelineSpoilerWrapper chapterNumber={gamble.chapterId ?? undefined}>
-                            <Group justify="space-between" align="flex-start">
-                              <Box style={{ flex: 1 }}>
-                                <Text
-                                  component={Link}
-                                  href={`/gambles/${gamble.id}`}
-                                  fw={600}
-                                  size="sm"
-                                  c={textColors.gamble}
-                                  style={{ textDecoration: 'none' }}
-                                >
-                                  {gamble.name}
-                                </Text>
-                                {gamble.description && (
-                                  <Text size="xs" c={textColors.tertiary} lineClamp={2} mt={spacing.xs}>
-                                    {gamble.description}
-                                  </Text>
-                                )}
-                              </Box>
-                              {gamble.chapterId && (
-                                <Badge c={entityColors.gamble} variant="outline" size="xs">
-                                  Ch. {gamble.chapterId}
-                                </Badge>
-                              )}
-                            </Group>
-                          </TimelineSpoilerWrapper>
-                        </Paper>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Card>
-              )}
+                    </TimelineSpoilerWrapper>
+                  </Paper>
+                )}
+              />
 
               {/* Memorable Quotes */}
-              {quotes.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.quote)}>
-                  <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                    <Group justify="space-between" align="center">
-                      <Group gap={theme.spacing.sm}>
-                        <BookOpen size={20} color={entityColors.quote} />
-                        <Title order={4} c={textColors.quote}>Memorable Quotes</Title>
-                      </Group>
-                      <Button
-                        component={Link}
-                        href={`/quotes?characterId=${character.id}`}
-                        variant="outline"
-                        c={entityColors.quote}
-                        size="sm"
-                        radius="xl"
-                      >
-                        View All ({quotes.length})
-                      </Button>
-                    </Group>
-
-                    <Stack gap={theme.spacing.sm}>
-                      {quotes.slice(0, 3).map((quote) => (
-                        <Paper key={quote.id} withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
-                          border: `1px solid ${getAlphaColor(entityColors.quote, 0.3)}`
-                        }}>
-                          <TimelineSpoilerWrapper chapterNumber={quote.chapter?.number ?? undefined}>
-                            <Stack gap={theme.spacing.sm}>
-                              <Text size="sm" style={{ fontStyle: 'italic', lineHeight: 1.5 }}>
-                                &ldquo;{quote.text}&rdquo;
-                              </Text>
-                              <Badge c={entityColors.quote} variant="light" radius="sm" size="xs" style={{ alignSelf: 'flex-start' }}>
-                                Chapter {quote.chapter?.number ?? '?'}
-                              </Badge>
-                            </Stack>
-                          </TimelineSpoilerWrapper>
-                        </Paper>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Card>
-              )}
+              <RelatedContentSection
+                entityType="quote"
+                icon={<BookOpen size={20} color={entityColors.quote} />}
+                title="Memorable Quotes"
+                items={quotes}
+                previewCount={3}
+                viewAllHref={`/quotes?characterId=${character.id}`}
+                getKey={(quote) => quote.id}
+                titleColorKey="quote"
+                renderItem={(quote) => (
+                  <Paper withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
+                    border: `1px solid ${getAlphaColor(entityColors.quote, 0.3)}`
+                  }}>
+                    <TimelineSpoilerWrapper chapterNumber={quote.chapter?.number ?? undefined}>
+                      <Stack gap={theme.spacing.sm}>
+                        <Text size="sm" style={{ fontStyle: 'italic', lineHeight: 1.5 }}>
+                          &ldquo;{quote.text}&rdquo;
+                        </Text>
+                        <Badge c={entityColors.quote} variant="light" radius="sm" size="xs" style={{ alignSelf: 'flex-start' }}>
+                          Chapter {quote.chapter?.number ?? '?'}
+                        </Badge>
+                      </Stack>
+                    </TimelineSpoilerWrapper>
+                  </Paper>
+                )}
+              />
 
               {/* Community Guides */}
-              {guides.length > 0 && (
-                <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.guide)}>
-                  <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                    <Group justify="space-between" align="center">
-                      <Group gap={theme.spacing.sm}>
-                        <BookOpen size={20} color={entityColors.guide} />
-                        <Title order={4} c={textColors.guide}>Community Guides</Title>
+              <RelatedContentSection
+                entityType="guide"
+                icon={<BookOpen size={20} color={entityColors.guide} />}
+                title="Community Guides"
+                items={guides}
+                previewCount={4}
+                viewAllHref={`/guides?character=${character.name}`}
+                getKey={(guide) => guide.id}
+                titleColorKey="guide"
+                renderItem={(guide) => (
+                  <Paper withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
+                    border: `1px solid ${getAlphaColor(entityColors.guide, 0.3)}`
+                  }}>
+                    <Stack gap={spacing.xs}>
+                      <Text component={Link} href={`/guides/${guide.id}`} fw={600} size="sm" c={textColors.guide} style={{ textDecoration: 'none' }} lineClamp={2}>
+                        {guide.title}
+                      </Text>
+                      <Group gap={theme.spacing.xs} align="center">
+                        <User size={12} color={textColors.tertiary} />
+                        <Text size="xs" c={textColors.tertiary}>By {guide.author?.username ?? 'Unknown'}</Text>
                       </Group>
-                      <Button
-                        component={Link}
-                        href={`/guides?character=${character.name}`}
-                        variant="outline"
-                        c={entityColors.guide}
-                        size="sm"
-                        radius="xl"
-                      >
-                        View All ({guides.length})
-                      </Button>
-                    </Group>
-
-                    <Stack gap={theme.spacing.sm}>
-                      {guides.slice(0, 4).map((guide) => (
-                        <Paper key={guide.id} withBorder radius="lg" p={theme.spacing.md} shadow="md" className="hoverable-paper" style={{
-                          border: `1px solid ${getAlphaColor(entityColors.guide, 0.3)}`
-                        }}>
-                          <Stack gap={spacing.xs}>
-                            <Text
-                              component={Link}
-                              href={`/guides/${guide.id}`}
-                              fw={600}
-                              size="sm"
-                              c={textColors.guide}
-                              style={{ textDecoration: 'none' }}
-                              lineClamp={2}
-                            >
-                              {guide.title}
-                            </Text>
-                            <Group gap={theme.spacing.xs} align="center">
-                              <User size={12} color={textColors.tertiary} />
-                              <Text size="xs" c={textColors.tertiary}>
-                                By {guide.author?.username ?? 'Unknown'}
-                              </Text>
-                            </Group>
-                          </Stack>
-                        </Paper>
-                      ))}
                     </Stack>
-                  </Stack>
-                </Card>
-              )}
+                  </Paper>
+                )}
+              />
             </Stack>
           </Tabs.Panel>
 
@@ -675,16 +472,6 @@ export default function CharacterPageClient({
                       <ImageIcon size={20} color={entityColors.media} />
                       <Title order={4} c={textColors.media}>Media Gallery</Title>
                     </Group>
-                    <Button
-                      component={Link}
-                      href={`/media?ownerType=character&ownerId=${character.id}`}
-                      variant="outline"
-                      c={entityColors.media}
-                      size="sm"
-                      radius="xl"
-                    >
-                      View All
-                    </Button>
                   </Group>
                   <MediaGallery
                     ownerType="character"
@@ -711,11 +498,9 @@ export default function CharacterPageClient({
           </Tabs.Panel>
         </Tabs>
       </Card>
-
-    </motion.div>
+      </motion.div>
     </Stack>
 
-    {/* Quick Actions for authenticated users */}
     <EntityQuickActions
       entityType="character"
       entityId={character.id}

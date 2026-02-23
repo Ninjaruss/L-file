@@ -2,7 +2,10 @@
 
 import React from 'react'
 import { Breadcrumbs, Anchor, Text, Group, useMantineTheme, rem } from '@mantine/core'
-import { ChevronRight, Home } from 'lucide-react'
+import {
+  ChevronRight, Home, User, Crown, BookOpen, Book,
+  Dice6, CalendarSearch, Shield, FileText
+} from 'lucide-react'
 import Link from 'next/link'
 import { textColors, getEntityThemeColor, EntityAccentKey } from '../lib/mantine-theme'
 import { routes, EntityType } from '../lib/routes'
@@ -17,6 +20,18 @@ const entityTypeToAccentKey: Partial<Record<EntityType, EntityAccentKey>> = {
   event: 'event',
   organization: 'organization',
   guide: 'guide',
+}
+
+// Entity type icons for breadcrumb visual enhancement
+const entityIcons: Partial<Record<EntityType, React.ComponentType<{ size: number; color?: string }>>> = {
+  character: User,
+  arc: BookOpen,
+  volume: Book,
+  chapter: BookOpen,
+  gamble: Dice6,
+  event: CalendarSearch,
+  organization: Shield,
+  guide: FileText,
 }
 
 export interface BreadcrumbItem {
@@ -113,7 +128,9 @@ export function BreadcrumbNav({ items, showHome = true, entityType }: Breadcrumb
               transition: 'color 150ms ease',
               display: 'flex',
               alignItems: 'center',
-              gap: rem(4)
+              gap: rem(4),
+              borderRadius: rem(4),
+              padding: `${rem(2)} ${rem(4)}`
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = accentColor
@@ -123,6 +140,7 @@ export function BreadcrumbNav({ items, showHome = true, entityType }: Breadcrumb
             }}
           >
             {isHome && <Home size={14} />}
+            {!isHome && item.entityType && entityIcons[item.entityType] && React.createElement(entityIcons[item.entityType]!, { size: 14 })}
             {item.label}
           </Anchor>
         )
@@ -164,7 +182,7 @@ export function createEntityBreadcrumbs(
   }
 
   return [
-    { label: listLabel || labels[entityType], href: listRoutes[entityType] },
+    { label: listLabel || labels[entityType], href: listRoutes[entityType], entityType },
     { label: entityName }
   ]
 }

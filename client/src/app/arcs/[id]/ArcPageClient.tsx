@@ -28,11 +28,12 @@ import Link from 'next/link'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
+import { pageEnter } from '../../../lib/motion-presets'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import ArcTimeline from '../../../components/ArcTimeline'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
-import MediaThumbnail from '../../../components/MediaThumbnail'
+import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 import { ArcStructuredData } from '../../../components/StructuredData'
 import { AnnotationSection } from '../../../components/annotations'
 import { EntityQuickActions } from '../../../components/EntityQuickActions'
@@ -163,164 +164,105 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
       )}
 
       {/* Enhanced Arc Header */}
-      <Card
-        withBorder
-        radius="lg"
-        shadow="lg"
-        p={0}
-        style={{
-          background: backgroundStyles.card,
-          border: `2px solid ${arcColor}`,
-          position: 'relative',
-          overflow: 'hidden'
-        }}
+      <DetailPageHeader
+        entityType="arc"
+        entityId={initialArc.id}
+        entityName={initialArc.name}
       >
-        {/* Subtle Pattern Overlay */}
-        <Box
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `
-              radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
-              radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
-            `,
-            backgroundSize: '40px 40px, 80px 80px',
-            backgroundPosition: '0 0, 20px 20px',
-            pointerEvents: 'none'
-          }}
-        />
+        <Stack gap={theme.spacing.sm}>
+          <Title
+            order={1}
+            size="2.8rem"
+            fw={800}
+            c={headerColors.h1}
+            style={{
+              lineHeight: 1.1,
+              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              letterSpacing: '-0.02em'
+            }}
+          >
+            {initialArc.name}
+          </Title>
 
-        {/* Content */}
-        <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
-          <Group gap={theme.spacing.lg} align="stretch" wrap="nowrap">
-            <Box style={{ flexShrink: 0 }}>
-              <Box
-                style={{
-                  width: '200px',
-                  height: '280px',
-                  borderRadius: theme.radius.md,
-                  overflow: 'hidden',
-                  border: `3px solid ${arcColor}`,
-                  boxShadow: theme.shadows.xl,
-                  transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
-                }}
-              >
-                <MediaThumbnail
-                  entityType="arc"
-                  entityId={initialArc.id}
-                  entityName={initialArc.name}
-                  allowCycling={false}
-                  maxWidth="200px"
-                  maxHeight="280px"
-                />
-              </Box>
-            </Box>
+          {/* Chapter Range Info */}
+          <Badge
+            variant="filled"
+            size="lg"
+            radius="md"
+            style={{
+              background: `linear-gradient(135deg, ${arcColor} 0%, ${arcColor}dd 100%)`,
+              border: `1px solid ${arcColor}`,
+              boxShadow: theme.shadows.md,
+              fontSize: fontSize.sm,
+              color: textColors.primary,
+              fontWeight: 600
+            }}
+          >
+            Chapters {initialArc.startChapter} - {initialArc.endChapter}
+          </Badge>
+        </Stack>
 
-            <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: 0, height: '100%' }} justify="space-between">
-              <Stack gap={theme.spacing.sm}>
-                <Title
-                  order={1}
-                  size="2.8rem"
-                  fw={800}
-                  c={headerColors.h1}
-                  style={{
-                    lineHeight: 1.1,
-                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                    letterSpacing: '-0.02em'
-                  }}
-                >
-                  {initialArc.name}
-                </Title>
-
-                {/* Chapter Range Info */}
-                <Badge
-                  variant="filled"
-                  size="lg"
-                  radius="md"
-                  style={{
-                    background: `linear-gradient(135deg, ${arcColor} 0%, ${arcColor}dd 100%)`,
-                    border: `1px solid ${arcColor}`,
-                    boxShadow: theme.shadows.md,
-                    fontSize: fontSize.sm,
-                    color: textColors.primary,
-                    fontWeight: 600
-                  }}
-                >
-                  Chapters {initialArc.startChapter} - {initialArc.endChapter}
-                </Badge>
-              </Stack>
-
-              <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-                {/* Content Stats */}
-                <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                  <Badge size="lg" variant="light" c={textColors.arc} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(arcColor, 0.2),
-                    border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
-                  }}>
-                    {chapterCount} Chapters
-                  </Badge>
-                  <Badge size="lg" variant="light" c={textColors.arc} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(arcColor, 0.2),
-                    border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
-                  }}>
-                    {initialEvents.length} Events
-                  </Badge>
-                  <Badge size="lg" variant="light" c={textColors.gamble} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(gambleColor, 0.2),
-                    border: `1px solid ${getAlphaColor(gambleColor, 0.4)}`
-                  }}>
-                    {initialGambles.length} Gambles
-                  </Badge>
-                  {initialArc.order && (
-                    <Badge size="lg" variant="light" c={textColors.arc} style={{
-                      fontSize: fontSize.xs,
-                      fontWeight: 600,
-                      background: getAlphaColor(arcColor, 0.2),
-                      border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
-                    }}>
-                      Arc #{initialArc.order}
-                    </Badge>
-                  )}
-                  {initialArc.children && initialArc.children.length > 0 && (
-                    <Badge size="lg" variant="light" c={textColors.arc} style={{
-                      fontSize: fontSize.xs,
-                      fontWeight: 600,
-                      background: getAlphaColor(arcColor, 0.2),
-                      border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
-                    }}>
-                      {initialArc.children.length} Sub-arcs
-                    </Badge>
-                  )}
-                  {initialArc.parent && (
-                    <Badge size="lg" variant="outline" c={textColors.arc} style={{
-                      fontSize: fontSize.xs,
-                      fontWeight: 600,
-                      borderColor: getAlphaColor(arcColor, 0.4)
-                    }}>
-                      Sub-arc
-                    </Badge>
-                  )}
-                </Group>
-              </Stack>
-            </Stack>
+        <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+          {/* Content Stats */}
+          <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+            <Badge size="lg" variant="light" c={textColors.arc} style={{
+              fontSize: fontSize.xs,
+              fontWeight: 600,
+              background: getAlphaColor(arcColor, 0.2),
+              border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
+            }}>
+              {chapterCount} Chapters
+            </Badge>
+            <Badge size="lg" variant="light" c={textColors.arc} style={{
+              fontSize: fontSize.xs,
+              fontWeight: 600,
+              background: getAlphaColor(arcColor, 0.2),
+              border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
+            }}>
+              {initialEvents.length} Events
+            </Badge>
+            <Badge size="lg" variant="light" c={textColors.gamble} style={{
+              fontSize: fontSize.xs,
+              fontWeight: 600,
+              background: getAlphaColor(gambleColor, 0.2),
+              border: `1px solid ${getAlphaColor(gambleColor, 0.4)}`
+            }}>
+              {initialGambles.length} Gambles
+            </Badge>
+            {initialArc.order && (
+              <Badge size="lg" variant="light" c={textColors.arc} style={{
+                fontSize: fontSize.xs,
+                fontWeight: 600,
+                background: getAlphaColor(arcColor, 0.2),
+                border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
+              }}>
+                Arc #{initialArc.order}
+              </Badge>
+            )}
+            {initialArc.children && initialArc.children.length > 0 && (
+              <Badge size="lg" variant="light" c={textColors.arc} style={{
+                fontSize: fontSize.xs,
+                fontWeight: 600,
+                background: getAlphaColor(arcColor, 0.2),
+                border: `1px solid ${getAlphaColor(arcColor, 0.4)}`
+              }}>
+                {initialArc.children.length} Sub-arcs
+              </Badge>
+            )}
+            {initialArc.parent && (
+              <Badge size="lg" variant="outline" c={textColors.arc} style={{
+                fontSize: fontSize.xs,
+                fontWeight: 600,
+                borderColor: getAlphaColor(arcColor, 0.4)
+              }}>
+                Sub-arc
+              </Badge>
+            )}
           </Group>
-        </Box>
-      </Card>
+        </Stack>
+      </DetailPageHeader>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div {...pageEnter}>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={{
           background: backgroundStyles.card,
           border: `1px solid ${getAlphaColor(arcColor, 0.4)}`

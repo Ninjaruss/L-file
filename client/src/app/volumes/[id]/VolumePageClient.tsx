@@ -30,10 +30,11 @@ import {
 import { Book, Hash, FileText, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
+import { pageEnter } from '../../../lib/motion-presets'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
-import MediaThumbnail from '../../../components/MediaThumbnail'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
+import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 
 interface Volume {
   id: number
@@ -95,149 +96,90 @@ export default function VolumePageClient({ initialVolume, initialChapters }: Vol
           />
 
           {/* Enhanced Volume Header */}
-          <Card
-            withBorder
-            radius="lg"
-            shadow="lg"
-            p={0}
-            style={{
-              ...getCardStyles(theme, entityColors.volume),
-              border: `2px solid ${entityColors.volume}`,
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+          <DetailPageHeader
+            entityType="volume"
+            entityId={initialVolume.id}
+            entityName={`Volume ${initialVolume.number}`}
           >
-            {/* Subtle Pattern Overlay */}
-            <Box
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundImage: `
-                  radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
-                  radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
-                `,
-                backgroundSize: '40px 40px, 80px 80px',
-                backgroundPosition: '0 0, 20px 20px',
-                pointerEvents: 'none'
-              }}
-            />
-
-            {/* Content */}
-            <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
-              <Group gap={theme.spacing.lg} align="stretch" wrap="nowrap">
-                <Box style={{ flexShrink: 0 }}>
-                  <Box
-                    style={{
-                      width: '200px',
-                      height: '280px',
-                      borderRadius: theme.radius.md,
-                      overflow: 'hidden',
-                      border: `3px solid ${entityColors.volume}`,
-                      boxShadow: theme.shadows.xl,
-                      transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
-                    }}
-                  >
-                    <MediaThumbnail
-                      entityType="volume"
-                      entityId={initialVolume.id}
-                      entityName={`Volume ${initialVolume.number}`}
-                      allowCycling
-                      maxWidth="200px"
-                      maxHeight="280px"
-                    />
-                  </Box>
-                </Box>
-
-                <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: 0, height: '100%' }} justify="space-between">
-                  <Stack gap={theme.spacing.sm}>
-                    <Group gap={theme.spacing.sm} align="center">
-                      <Book size={28} color={entityColors.volume} />
-                      <Title
-                        order={1}
-                        size="2.8rem"
-                        fw={800}
-                        c={headerColors.h1}
-                        style={{
-                          lineHeight: 1.1,
-                          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                          letterSpacing: '-0.02em'
-                        }}
-                      >
-                        Volume {initialVolume.number}
-                      </Title>
-                    </Group>
-
-                    {initialVolume.title && (
-                      <Text size="lg" c={textColors.secondary} fw={500}>
-                        {initialVolume.title}
-                      </Text>
-                    )}
-
-                    {/* Chapter Range Badge */}
-                    <Badge
-                      variant="filled"
-                      size="lg"
-                      radius="md"
-                      leftSection={<Hash size={14} />}
-                      style={{
-                        background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
-                        border: `1px solid ${entityColors.volume}`,
-                        boxShadow: theme.shadows.md,
-                        fontSize: fontSize.sm,
-                        color: textColors.primary,
-                        fontWeight: 600,
-                        alignSelf: 'flex-start'
-                      }}
-                    >
-                      Chapters {initialVolume.startChapter} - {initialVolume.endChapter}
-                    </Badge>
-                  </Stack>
-
-                  <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-                    {/* Content Stats */}
-                    <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                      <Badge
-                        size="lg"
-                        variant="light"
-                        c={textColors.volume}
-                        leftSection={<BookOpen size={14} />}
-                        style={{
-                          fontSize: fontSize.xs,
-                          fontWeight: 600,
-                          background: getAlphaColor(entityColors.volume, 0.2),
-                          border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
-                        }}
-                      >
-                        {chapterCount} Chapters
-                      </Badge>
-                      <Badge
-                        size="lg"
-                        variant="light"
-                        c={textColors.volume}
-                        style={{
-                          fontSize: fontSize.xs,
-                          fontWeight: 600,
-                          background: getAlphaColor(entityColors.volume, 0.2),
-                          border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
-                        }}
-                      >
-                        Volume #{initialVolume.number}
-                      </Badge>
-                    </Group>
-                  </Stack>
-                </Stack>
+            <Stack gap={theme.spacing.sm}>
+              <Group gap={theme.spacing.sm} align="center">
+                <Book size={28} color={entityColors.volume} />
+                <Title
+                  order={1}
+                  size="2.8rem"
+                  fw={800}
+                  c={headerColors.h1}
+                  style={{
+                    lineHeight: 1.1,
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  Volume {initialVolume.number}
+                </Title>
               </Group>
-            </Box>
-          </Card>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+              {initialVolume.title && (
+                <Text size="lg" c={textColors.secondary} fw={500}>
+                  {initialVolume.title}
+                </Text>
+              )}
+
+              {/* Chapter Range Badge */}
+              <Badge
+                variant="filled"
+                size="lg"
+                radius="md"
+                leftSection={<Hash size={14} />}
+                style={{
+                  background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
+                  border: `1px solid ${entityColors.volume}`,
+                  boxShadow: theme.shadows.md,
+                  fontSize: fontSize.sm,
+                  color: textColors.primary,
+                  fontWeight: 600,
+                  alignSelf: 'flex-start'
+                }}
+              >
+                Chapters {initialVolume.startChapter} - {initialVolume.endChapter}
+              </Badge>
+            </Stack>
+
+            <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+              {/* Content Stats */}
+              <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+                <Badge
+                  size="lg"
+                  variant="light"
+                  c={textColors.volume}
+                  leftSection={<BookOpen size={14} />}
+                  style={{
+                    fontSize: fontSize.xs,
+                    fontWeight: 600,
+                    background: getAlphaColor(entityColors.volume, 0.2),
+                    border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
+                  }}
+                >
+                  {chapterCount} Chapters
+                </Badge>
+                <Badge
+                  size="lg"
+                  variant="light"
+                  c={textColors.volume}
+                  style={{
+                    fontSize: fontSize.xs,
+                    fontWeight: 600,
+                    background: getAlphaColor(entityColors.volume, 0.2),
+                    border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
+                  }}
+                >
+                  Volume #{initialVolume.number}
+                </Badge>
+              </Group>
+            </Stack>
+          </DetailPageHeader>
+
+          <motion.div {...pageEnter}>
             <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
               <Tabs
                 value={activeTab}

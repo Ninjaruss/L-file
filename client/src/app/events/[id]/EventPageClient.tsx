@@ -30,11 +30,12 @@ import Link from 'next/link'
 import { useAuth } from '../../../providers/AuthProvider'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
+import { pageEnter } from '../../../lib/motion-presets'
 import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import MediaGallery from '../../../components/MediaGallery'
-import MediaThumbnail from '../../../components/MediaThumbnail'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
+import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 import type { Event } from '../../../types'
 
 interface EventPageClientProps {
@@ -84,199 +85,138 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
           />
 
           {/* Enhanced Event Header */}
-          <Card
-            withBorder
-            radius="lg"
-            shadow="lg"
-            p={0}
-            style={{
-              ...getCardStyles(theme, entityColors.event),
-              border: `2px solid ${entityColors.event}`,
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+          <DetailPageHeader
+            entityType="event"
+            entityId={initialEvent.id}
+            entityName={initialEvent.title}
           >
-            {/* Subtle Pattern Overlay */}
-            <Box
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundImage: `
-                  radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
-                  radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
-                `,
-                backgroundSize: '40px 40px, 80px 80px',
-                backgroundPosition: '0 0, 20px 20px',
-                pointerEvents: 'none'
-              }}
-            />
+            <Stack gap={theme.spacing.sm}>
+              <Group gap={theme.spacing.sm} align="center">
+                <CalendarSearch size={28} color={entityColors.event} />
+                <Title
+                  order={1}
+                  size="2.8rem"
+                  fw={800}
+                  c={headerColors.h1}
+                  style={{
+                    lineHeight: 1.1,
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  {initialEvent.title}
+                </Title>
+              </Group>
 
-            {/* Content */}
-            <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
-              <Group gap={theme.spacing.lg} align="stretch" wrap="nowrap">
-                <Box style={{ flexShrink: 0 }}>
-                  <Box
+              {/* Chapter Badge and Edit Button */}
+              <Group gap={theme.spacing.sm}>
+                <Badge
+                  variant="filled"
+                  size="lg"
+                  radius="md"
+                  style={{
+                    background: `linear-gradient(135deg, ${entityColors.event} 0%, ${entityColors.event}dd 100%)`,
+                    border: `1px solid ${entityColors.event}`,
+                    boxShadow: theme.shadows.md,
+                    fontSize: fontSize.sm,
+                    color: textColors.primary,
+                    fontWeight: 600
+                  }}
+                >
+                  Chapter {initialEvent.chapterNumber}
+                </Badge>
+                {canEdit && (
+                  <Button
+                    component={Link}
+                    href={`/submit-event?edit=${initialEvent.id}`}
+                    variant="outline"
+                    size="sm"
+                    radius="xl"
+                    leftSection={<Edit size={14} />}
+                    color={isRejected ? 'orange' : 'gray'}
+                    style={{ fontWeight: 600 }}
+                  >
+                    {isRejected ? 'Edit & Resubmit' : 'Edit'}
+                  </Button>
+                )}
+              </Group>
+            </Stack>
+
+            <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+              {/* Content Stats */}
+              <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+                {initialEvent.arc && (
+                  <Badge
+                    component={Link}
+                    href={`/arcs/${initialEvent.arc.id}`}
+                    size="lg"
+                    variant="light"
+                    c={textColors.arc}
                     style={{
-                      width: '200px',
-                      height: '280px',
-                      borderRadius: theme.radius.md,
-                      overflow: 'hidden',
-                      border: `3px solid ${entityColors.event}`,
-                      boxShadow: theme.shadows.xl,
-                      transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.arc, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`,
+                      textDecoration: 'none',
+                      cursor: 'pointer'
                     }}
                   >
-                    <MediaThumbnail
-                      entityType="event"
-                      entityId={initialEvent.id}
-                      entityName={initialEvent.title}
-                      allowCycling={false}
-                      maxWidth="200px"
-                      maxHeight="280px"
-                    />
-                  </Box>
-                </Box>
-
-                <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: 0, height: '100%' }} justify="space-between">
-                  <Stack gap={theme.spacing.sm}>
-                    <Group gap={theme.spacing.sm} align="center">
-                      <CalendarSearch size={28} color={entityColors.event} />
-                      <Title
-                        order={1}
-                        size="2.8rem"
-                        fw={800}
-                        c={headerColors.h1}
-                        style={{
-                          lineHeight: 1.1,
-                          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                          letterSpacing: '-0.02em'
-                        }}
-                      >
-                        {initialEvent.title}
-                      </Title>
-                    </Group>
-
-                    {/* Chapter Badge and Edit Button */}
-                    <Group gap={theme.spacing.sm}>
-                      <Badge
-                        variant="filled"
-                        size="lg"
-                        radius="md"
-                        style={{
-                          background: `linear-gradient(135deg, ${entityColors.event} 0%, ${entityColors.event}dd 100%)`,
-                          border: `1px solid ${entityColors.event}`,
-                          boxShadow: theme.shadows.md,
-                          fontSize: fontSize.sm,
-                          color: textColors.primary,
-                          fontWeight: 600
-                        }}
-                      >
-                        Chapter {initialEvent.chapterNumber}
-                      </Badge>
-                      {canEdit && (
-                        <Button
-                          component={Link}
-                          href={`/submit-event?edit=${initialEvent.id}`}
-                          variant="outline"
-                          size="sm"
-                          radius="xl"
-                          leftSection={<Edit size={14} />}
-                          color={isRejected ? 'orange' : 'gray'}
-                          style={{
-                            fontWeight: 600
-                          }}
-                        >
-                          {isRejected ? 'Edit & Resubmit' : 'Edit'}
-                        </Button>
-                      )}
-                    </Group>
-                  </Stack>
-
-                  <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-                    {/* Content Stats */}
-                    <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                      {initialEvent.arc && (
-                        <Badge
-                          component={Link}
-                          href={`/arcs/${initialEvent.arc.id}`}
-                          size="lg"
-                          variant="light"
-                          c={textColors.arc}
-                          style={{
-                            fontSize: fontSize.xs,
-                            fontWeight: 600,
-                            background: getAlphaColor(entityColors.arc, 0.2),
-                            border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`,
-                            textDecoration: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {initialEvent.arc.name}
-                        </Badge>
-                      )}
-                      {initialEvent.gamble && (
-                        <Badge
-                          component={Link}
-                          href={`/gambles/${initialEvent.gamble.id}`}
-                          size="lg"
-                          variant="light"
-                          c={textColors.gamble}
-                          style={{
-                            fontSize: fontSize.xs,
-                            fontWeight: 600,
-                            background: getAlphaColor(entityColors.gamble, 0.2),
-                            border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`,
-                            textDecoration: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {initialEvent.gamble.name}
-                        </Badge>
-                      )}
-                      <Badge
-                        size="lg"
-                        variant="light"
-                        c={textColors.event}
-                        leftSection={<Tag size={12} />}
-                        style={{
-                          fontSize: fontSize.xs,
-                          fontWeight: 600,
-                          background: getAlphaColor(entityColors.event, 0.2),
-                          border: `1px solid ${getAlphaColor(entityColors.event, 0.4)}`
-                        }}
-                      >
-                        {initialEvent.status === 'pending' ? 'Unverified' : initialEvent.status === 'approved' ? 'Verified' : initialEvent.status}
-                      </Badge>
-                      {initialEvent.characters && initialEvent.characters.length > 0 && (
-                        <Badge
-                          size="lg"
-                          variant="light"
-                          c={textColors.character}
-                          style={{
-                            fontSize: fontSize.xs,
-                            fontWeight: 600,
-                            background: getAlphaColor(entityColors.character, 0.2),
-                            border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
-                          }}
-                        >
-                          {initialEvent.characters.length} Characters
-                        </Badge>
-                      )}
-                    </Group>
-                  </Stack>
-                </Stack>
+                    {initialEvent.arc.name}
+                  </Badge>
+                )}
+                {initialEvent.gamble && (
+                  <Badge
+                    component={Link}
+                    href={`/gambles/${initialEvent.gamble.id}`}
+                    size="lg"
+                    variant="light"
+                    c={textColors.gamble}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.gamble, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`,
+                      textDecoration: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {initialEvent.gamble.name}
+                  </Badge>
+                )}
+                <Badge
+                  size="lg"
+                  variant="light"
+                  c={textColors.event}
+                  leftSection={<Tag size={12} />}
+                  style={{
+                    fontSize: fontSize.xs,
+                    fontWeight: 600,
+                    background: getAlphaColor(entityColors.event, 0.2),
+                    border: `1px solid ${getAlphaColor(entityColors.event, 0.4)}`
+                  }}
+                >
+                  {initialEvent.status === 'pending' ? 'Unverified' : initialEvent.status === 'approved' ? 'Verified' : initialEvent.status}
+                </Badge>
+                {initialEvent.characters && initialEvent.characters.length > 0 && (
+                  <Badge
+                    size="lg"
+                    variant="light"
+                    c={textColors.character}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.character, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+                    }}
+                  >
+                    {initialEvent.characters.length} Characters
+                  </Badge>
+                )}
               </Group>
-            </Box>
-          </Card>
+            </Stack>
+          </DetailPageHeader>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div {...pageEnter}>
             <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
               <Tabs
                 value={activeTab}

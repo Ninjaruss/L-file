@@ -29,9 +29,11 @@ import {
 import { BookOpen, Hash, FileText, Users, MessageSquareQuote, CalendarSearch, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
+import { pageEnter } from '../../../lib/motion-presets'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
+import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 import type { Chapter as ChapterResource } from '../../../types'
 import { AnnotationSection } from '../../../components/annotations'
 import { EntityQuickActions } from '../../../components/EntityQuickActions'
@@ -108,162 +110,129 @@ export default function ChapterPageClient({
           />
 
           {/* Enhanced Chapter Header */}
-          <Card
-            withBorder
-            radius="lg"
-            shadow="lg"
-            p={0}
-            style={{
-              ...getCardStyles(theme, entityColors.chapter),
-              border: `2px solid ${entityColors.chapter}`,
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+          <DetailPageHeader
+            entityType="chapter"
+            entityId={initialChapter.id}
+            entityName={`Chapter ${initialChapter.number}`}
+            showImage={false}
           >
-            {/* Subtle Pattern Overlay */}
-            <Box
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundImage: `
-                  radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
-                  radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
-                `,
-                backgroundSize: '40px 40px, 80px 80px',
-                backgroundPosition: '0 0, 20px 20px',
-                pointerEvents: 'none'
-              }}
-            />
+            <Stack gap={theme.spacing.sm}>
+              <Group gap={theme.spacing.sm} align="center">
+                <BookOpen size={28} color={entityColors.chapter} />
+                <Title
+                  order={1}
+                  size="2.8rem"
+                  fw={800}
+                  c={headerColors.h1}
+                  style={{
+                    lineHeight: 1.1,
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  Chapter {initialChapter.number}
+                </Title>
+              </Group>
 
-            {/* Content */}
-            <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
-              <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: 0 }} justify="space-between">
-                  <Stack gap={theme.spacing.sm}>
-                    <Group gap={theme.spacing.sm} align="center">
-                      <BookOpen size={28} color={entityColors.chapter} />
-                      <Title
-                        order={1}
-                        size="2.8rem"
-                        fw={800}
-                        c={headerColors.h1}
-                        style={{
-                          lineHeight: 1.1,
-                          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                          letterSpacing: '-0.02em'
-                        }}
-                      >
-                        Chapter {initialChapter.number}
-                      </Title>
-                    </Group>
+              {initialChapter.title && (
+                <Text size="lg" c={textColors.secondary} fw={500}>
+                  {initialChapter.title}
+                </Text>
+              )}
 
-                    {initialChapter.title && (
-                      <Text size="lg" c={textColors.secondary} fw={500}>
-                        {initialChapter.title}
-                      </Text>
-                    )}
+              {/* Volume Badge */}
+              {initialChapter.volume && (
+                <Badge
+                  component={Link}
+                  href={`/volumes/${initialChapter.volume.id}`}
+                  variant="filled"
+                  size="lg"
+                  radius="md"
+                  style={{
+                    background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
+                    border: `1px solid ${entityColors.volume}`,
+                    boxShadow: theme.shadows.md,
+                    fontSize: fontSize.sm,
+                    color: textColors.primary,
+                    fontWeight: 600,
+                    alignSelf: 'flex-start',
+                    textDecoration: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Volume {initialChapter.volume.number}
+                  {initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
+                </Badge>
+              )}
+            </Stack>
 
-                    {/* Volume Badge */}
-                    {initialChapter.volume && (
-                      <Badge
-                        component={Link}
-                        href={`/volumes/${initialChapter.volume.id}`}
-                        variant="filled"
-                        size="lg"
-                        radius="md"
-                        style={{
-                          background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
-                          border: `1px solid ${entityColors.volume}`,
-                          boxShadow: theme.shadows.md,
-                          fontSize: fontSize.sm,
-                          color: textColors.primary,
-                          fontWeight: 600,
-                          alignSelf: 'flex-start',
-                          textDecoration: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Volume {initialChapter.volume.number}
-                        {initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
-                      </Badge>
-                    )}
-                  </Stack>
+            <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+              {/* Content Stats */}
+              <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+                <Badge
+                  size="lg"
+                  variant="light"
+                  c={textColors.chapter}
+                  leftSection={<Hash size={14} />}
+                  style={{
+                    fontSize: fontSize.xs,
+                    fontWeight: 600,
+                    background: getAlphaColor(entityColors.chapter, 0.2),
+                    border: `1px solid ${getAlphaColor(entityColors.chapter, 0.4)}`
+                  }}
+                >
+                  Chapter #{initialChapter.number}
+                </Badge>
+                {Array.isArray(initialEvents) && initialEvents.length > 0 && (
+                  <Badge
+                    size="lg"
+                    variant="light"
+                    c={textColors.event}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.event, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.event, 0.4)}`
+                    }}
+                  >
+                    {initialEvents.length} Events
+                  </Badge>
+                )}
+                {Array.isArray(initialQuotes) && initialQuotes.length > 0 && (
+                  <Badge
+                    size="lg"
+                    variant="light"
+                    c={textColors.quote}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.quote, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.quote, 0.4)}`
+                    }}
+                  >
+                    {initialQuotes.length} Quotes
+                  </Badge>
+                )}
+                {initialCharacters.length > 0 && (
+                  <Badge
+                    size="lg"
+                    variant="light"
+                    c={textColors.character}
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: 600,
+                      background: getAlphaColor(entityColors.character, 0.2),
+                      border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+                    }}
+                  >
+                    {initialCharacters.length} Characters
+                  </Badge>
+                )}
+              </Group>
+            </Stack>
+          </DetailPageHeader>
 
-                  <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-                    {/* Content Stats */}
-                    <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                      <Badge
-                        size="lg"
-                        variant="light"
-                        c={textColors.chapter}
-                        leftSection={<Hash size={14} />}
-                        style={{
-                          fontSize: fontSize.xs,
-                          fontWeight: 600,
-                          background: getAlphaColor(entityColors.chapter, 0.2),
-                          border: `1px solid ${getAlphaColor(entityColors.chapter, 0.4)}`
-                        }}
-                      >
-                        Chapter #{initialChapter.number}
-                      </Badge>
-                      {Array.isArray(initialEvents) && initialEvents.length > 0 && (
-                        <Badge
-                          size="lg"
-                          variant="light"
-                          c={textColors.event}
-                          style={{
-                            fontSize: fontSize.xs,
-                            fontWeight: 600,
-                            background: getAlphaColor(entityColors.event, 0.2),
-                            border: `1px solid ${getAlphaColor(entityColors.event, 0.4)}`
-                          }}
-                        >
-                          {initialEvents.length} Events
-                        </Badge>
-                      )}
-                      {Array.isArray(initialQuotes) && initialQuotes.length > 0 && (
-                        <Badge
-                          size="lg"
-                          variant="light"
-                          c={textColors.quote}
-                          style={{
-                            fontSize: fontSize.xs,
-                            fontWeight: 600,
-                            background: getAlphaColor(entityColors.quote, 0.2),
-                            border: `1px solid ${getAlphaColor(entityColors.quote, 0.4)}`
-                          }}
-                        >
-                          {initialQuotes.length} Quotes
-                        </Badge>
-                      )}
-                      {initialCharacters.length > 0 && (
-                        <Badge
-                          size="lg"
-                          variant="light"
-                          c={textColors.character}
-                          style={{
-                            fontSize: fontSize.xs,
-                            fontWeight: 600,
-                            background: getAlphaColor(entityColors.character, 0.2),
-                            border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
-                          }}
-                        >
-                          {initialCharacters.length} Characters
-                        </Badge>
-                      )}
-                    </Group>
-                  </Stack>
-                </Stack>
-            </Box>
-          </Card>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div {...pageEnter}>
             <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
               <Tabs
                 value={activeTab}

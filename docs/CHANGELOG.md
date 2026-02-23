@@ -1,10 +1,10 @@
 # Changelog and notes
 
 ## TODO
-# Refine entity embed for guide markdown
 
 ## 2026-02-21
 - Discord removal; option to create an account via email
+- Email/password changes added to profile page
 
 ## 2026-02-20
 - Fluxer login option added with updates to the frontend to reflect this change (replacing Discord)

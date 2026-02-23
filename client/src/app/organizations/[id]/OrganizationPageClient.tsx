@@ -20,18 +20,19 @@ import {
   textColors,
   headerColors,
   getAlphaColor,
-  spacing,
   fontSize,
   setTabAccentColors,
   backgroundStyles,
   getCardStyles
 } from '../../../lib/mantine-theme'
-import { ArrowLeft, Users, Shield, Crown, Image as ImageIcon } from 'lucide-react'
+import { Users, Shield, Crown, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
-import MediaThumbnail from '../../../components/MediaThumbnail'
+import { pageEnter } from '../../../lib/motion-presets'
 import MediaGallery from '../../../components/MediaGallery'
+import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
+import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import OrganizationMembers from '../../../components/OrganizationMembers'
@@ -98,125 +99,53 @@ export default function OrganizationPageClient({
     }}>
     <Container size="lg" py="md" style={{ backgroundColor: backgroundStyles.container(theme) }}>
     <Stack gap={theme.spacing.md}>
-      <Button
-        component={Link}
-        href="/organizations"
-        variant="subtle"
-        c={textColors.secondary}
-        leftSection={<ArrowLeft size={18} />}
-        mb="lg"
-        style={{
-          alignSelf: 'flex-start',
-          color: textColors.secondary,
-          '&:hover': {
-            color: textColors.primary,
-            backgroundColor: getAlphaColor(entityColors.organization, 0.1)
-          }
-        }}
-      >
-        Back to Organizations
-      </Button>
+      {/* Breadcrumb Navigation */}
+      <BreadcrumbNav
+        items={createEntityBreadcrumbs('organization', initialOrganization.name)}
+        entityType="organization"
+      />
 
       {/* Enhanced Organization Header */}
-      <Card
-        withBorder
-        radius="lg"
-        shadow="lg"
-        p={0}
-        style={{
-          ...getCardStyles(theme, entityColors.organization),
-          border: `2px solid ${entityColors.organization}`,
-          position: 'relative',
-          overflow: 'hidden'
-        }}
+      <DetailPageHeader
+        entityType="organization"
+        entityId={initialOrganization.id}
+        entityName={initialOrganization.name}
       >
-        {/* Subtle Pattern Overlay */}
-        <Box
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `
-              radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0),
-              radial-gradient(circle at 20px 20px, rgba(255,255,255,0.03) 1px, transparent 0)
-            `,
-            backgroundSize: '40px 40px, 80px 80px',
-            backgroundPosition: '0 0, 20px 20px',
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Content */}
-        <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
-          <Group gap={theme.spacing.lg} align="stretch" wrap="nowrap">
-            <Box style={{ flexShrink: 0 }}>
-              <Box
-                style={{
-                  width: '200px',
-                  height: '280px',
-                  borderRadius: theme.radius.md,
-                  overflow: 'hidden',
-                  border: `3px solid ${entityColors.organization}`,
-                  boxShadow: theme.shadows.xl,
-                  transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
-                }}
-              >
-                <MediaThumbnail
-                  entityType="organization"
-                  entityId={initialOrganization.id}
-                  entityName={initialOrganization.name}
-                  allowCycling={false}
-                  maxWidth="200px"
-                  maxHeight="280px"
-                />
-              </Box>
-            </Box>
-
-            <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: 0, height: '100%' }} justify="space-between">
-              <Stack gap={theme.spacing.sm}>
-                <Group gap={theme.spacing.sm} align="center">
-                  <Shield size={28} color={entityColors.organization} />
-                  <Title
-                    order={1}
-                    size="2.8rem"
-                    fw={800}
-                    c={headerColors.h1}
-                    style={{
-                      lineHeight: 1.1,
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                      letterSpacing: '-0.02em'
-                    }}
-                  >
-                    {initialOrganization.name}
-                  </Title>
-                </Group>
-              </Stack>
-
-              <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-                {/* Content Stats */}
-                <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                  <Badge size="lg" variant="light" c={textColors.character} style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.character, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
-                  }}>
-                    {initialMembers.length} Members
-                  </Badge>
-                </Group>
-              </Stack>
-            </Stack>
+        <Stack gap={theme.spacing.sm}>
+          <Group gap={theme.spacing.sm} align="center">
+            <Shield size={28} color={entityColors.organization} />
+            <Title
+              order={1}
+              size="2.8rem"
+              fw={800}
+              c={headerColors.h1}
+              style={{
+                lineHeight: 1.1,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                letterSpacing: '-0.02em'
+              }}
+            >
+              {initialOrganization.name}
+            </Title>
           </Group>
-        </Box>
-      </Card>
+        </Stack>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+        <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
+          {/* Content Stats */}
+          <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
+            <Badge size="lg" variant="light" c={textColors.character} style={{
+              fontSize: fontSize.xs,
+              fontWeight: 600,
+              background: getAlphaColor(entityColors.character, 0.2),
+              border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
+            }}>
+              {initialMembers.length} Members
+            </Badge>
+          </Group>
+        </Stack>
+      </DetailPageHeader>
+
+      <motion.div {...pageEnter}>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
         <Tabs
           value={activeTab}

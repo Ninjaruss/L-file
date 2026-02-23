@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 // Note: Avoid importing Mantine Header to preserve compatibility; using native <header> element
 import {
   Group,
@@ -66,6 +66,7 @@ const Navigation: React.FC = () => {
 
   // Mobile menu open state (controlled Menu)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Focus trap for mobile menu accessibility
   const focusTrapRef = useFocusTrap(mobileMenuOpen)
@@ -82,10 +83,19 @@ const Navigation: React.FC = () => {
     }
   }, [mobileMenuOpen])
 
-  // Handle escape key to close mobile menu
+  // Handle global keyboard shortcuts
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape' && mobileMenuOpen) {
       setMobileMenuOpen(false)
+    }
+    // "/" to focus search (when not typing in an input/textarea)
+    if (event.key === '/' && !event.ctrlKey && !event.metaKey) {
+      const target = event.target as HTMLElement
+      const tagName = target.tagName.toLowerCase()
+      if (tagName !== 'input' && tagName !== 'textarea' && !target.isContentEditable) {
+        event.preventDefault()
+        searchInputRef.current?.focus()
+      }
     }
   }, [mobileMenuOpen])
 
@@ -667,7 +677,8 @@ const Navigation: React.FC = () => {
               }}
             >
               <TextInput
-                placeholder="Search"
+                ref={searchInputRef}
+                placeholder="Search (press /)"
                 aria-label="Search characters, arcs, gambles, and more"
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e)}
