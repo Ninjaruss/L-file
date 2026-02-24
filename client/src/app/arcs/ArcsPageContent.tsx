@@ -214,7 +214,10 @@ export default function ArcsPageContent({
 
   const formatChapterRange = (arc: Arc) => {
     if (typeof arc.startChapter === 'number' && typeof arc.endChapter === 'number') {
-      return `Ch. ${arc.startChapter}-${arc.endChapter}`
+      return `Ch. ${arc.startChapter}–${arc.endChapter}`
+    }
+    if (typeof arc.startChapter === 'number') {
+      return `Ch. ${arc.startChapter} – ongoing`
     }
     return null
   }
@@ -503,12 +506,6 @@ export default function ArcsPageContent({
                   </Text>
                 )}
 
-                {hoveredArc.startChapter && (
-                  <Group justify="center" gap="xs">
-                    <Text size="xs" style={{ color: theme.colors.gray[6] }}>Starts:</Text>
-                    <Text size="xs" fw={500} c={accentArc}>Chapter {hoveredArc.startChapter}</Text>
-                  </Group>
-                )}
               </>
             )}
           </HoverModal>

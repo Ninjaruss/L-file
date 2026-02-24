@@ -1,7 +1,10 @@
 # Changelog and notes
 
 ## TODO
+
+## 2026-02-23
 - Public page component overhaul
+- Additional error pages for each detail page; SEO meta data to update when on specific pages
 
 ## 2026-02-21
 - Discord removal; option to create an account via email

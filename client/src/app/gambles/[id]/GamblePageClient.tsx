@@ -282,13 +282,15 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                 Win Condition
               </Badge>
             )}
-            <Badge size="lg" variant="light" c={textColors.gamble} style={{
-              fontSize: fontSize.xs, fontWeight: 600,
-              background: getAlphaColor(gambleColor, 0.2),
-              border: `1px solid ${getAlphaColor(gambleColor, 0.4)}`
-            }}>
-              {timelineEvents.length} Events
-            </Badge>
+            {!timelineLoading && timelineEvents.length > 0 && (
+              <Badge size="lg" variant="light" c={textColors.gamble} style={{
+                fontSize: fontSize.xs, fontWeight: 600,
+                background: getAlphaColor(gambleColor, 0.2),
+                border: `1px solid ${getAlphaColor(gambleColor, 0.4)}`
+              }}>
+                {timelineEvents.length} Events
+              </Badge>
+            )}
           </Group>
         </Stack>
       </DetailPageHeader>
