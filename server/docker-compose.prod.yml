@@ -79,6 +79,9 @@ services:
           cpus: '0.25'
           memory: 512M
 
+    networks:
+      - dokploy-network
+
     logging:
       driver: "json-file"
       options:
@@ -86,5 +89,5 @@ services:
         max-file: "3"
 
 networks:
-  default:
-    driver: bridge
+  dokploy-network:
+    external: true
