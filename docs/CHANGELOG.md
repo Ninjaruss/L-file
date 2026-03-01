@@ -2,6 +2,8 @@
 
 ## TODO
 
+# 2026
+
 ## 2026-02-28
 - Added the tooltip label icon with tooltip for "press / to search" to the top right search bar
 - Fixed performance issue with public folder images loading not being cached and loaded quickly
@@ -10,8 +12,7 @@
 - For arcs list page, fully shows the arc title rather than needing to hover to show the full title
 - Removed the use of users, events, guides, and media seeders for default seeder run
 - Pushed updated deploy-frontend.yml that was not being added due to it being a local config
-
-
+- Dokploy redploy when changes are made to docker image now works
 
 ## 2026-02-26
 See [docs/DEPLOYMENT.md](DEPLOYMENT.md) for the full deployment guide.
@@ -22,7 +23,6 @@ See [docs/DEPLOYMENT.md](DEPLOYMENT.md) for the full deployment guide.
 - Required GitHub Secrets: `NEXT_PUBLIC_API_URL` (baked into bundle at build time), `DOKPLOY_WEBHOOK_URL`
 - Dokploy needs GHCR registry credentials (GitHub PAT with `read:packages`) to pull the frontend image
 - Both services join the external `dokploy-network` bridge for Traefik reverse proxy routing
-
 
 ## 2026-02-24
 - Final quality pass: bug fixes, security hardening, and documentation updates
@@ -71,89 +71,31 @@ See [docs/DEPLOYMENT.md](DEPLOYMENT.md) for the full deployment guide.
 - Character backstory should now refresh properly
 - Granular seeder skip config added
 
-## 2026-02-04
-### Backblaze B2 Upload Retry Logic
-**Fixed 503 "service_unavailable" errors with automatic retry mechanism:**
-- **Retry Logic**: Implemented exponential backoff with up to 3 retry attempts for failed uploads
-- **Fresh Upload URLs**: Get a new upload URL on each retry attempt to handle expired tokens
-- **Retryable Errors**: Automatically retry on 503, 500, 408 status codes and network errors
-- **Better Error Logging**: Enhanced error messages with structured JSON logging for debugging
-- **Backoff Strategy**: Exponential backoff (1s, 2s, 4s) between retry attempts to avoid overwhelming B2 servers
-
-### Database Performance & Migration Safety Optimization
-**Major performance improvements to prevent crashes and speed up operations 10-50x:**
-
-#### Seeder Performance (10-50x Faster)
-- **Batch Operations**: Converted all seeders from individual saves to bulk batch operations
-  - Reduced database queries from ~1000+ to ~20-30 per seeder
-  - All seeders (Characters, Organizations, Gambles, Quotes, Arcs, Tags, Volumes, Events, Chapters, CharacterOrganizations, FandomData) now use batch inserts
-- **Optimized Existence Checks**: Single query to check all existing records instead of individual `findOne()` loops
-- **Memory Usage**: Reduced by 70-80% through efficient connection pooling
-- **Seeding Configuration** in `seed.ts`:
-  - Disabled query logging during seeding for better I/O performance
-  - Increased connection pool to 20 for parallel operations
-  - Added 5-minute statement timeout for long-running operations
-
-#### Database Indexes Added for Faster Queries
-- Added index on `organization.name` for faster lookups
-- Added unique index on `volume.number` for data integrity and faster queries
-- Added unique index on `chapter.number` for data integrity and faster queries
-- Added index on `gamble.name` for faster searches
-- *Note: Run `yarn db:generate add-seeder-indexes` and `yarn db:migrate` to apply*
-
-#### Migration Safety & Performance Improvements
-**New Commands for Safe Migrations:**
-- `yarn db:migrate:dry-run` - Preview what SQL will run without executing
-- `yarn db:migrate:check` - Check for pending migrations
-- `yarn db:status` - Show complete migration history
-
-**Enhanced Migration Helper Script:**
-- Pre-migration database connection validation
-- Automatic pending migration detection
-- Improved error handling with troubleshooting tips
-- Safe backup prompts before any destructive operations
-- Optimized PostgreSQL settings for faster migration execution
-
-**TypeORM Configuration Optimization:**
-- Disabled query logging during migrations for better performance
-- Optimized connection pool settings (max: 10, statement_timeout: 5 min)
-- Configurable timeout via `PGSTATEMENT_TIMEOUT` environment variable
-
-#### Developer Experience
-- **New Documentation**: Comprehensive [Migration Guide](../server/docs/MIGRATION_GUIDE.md) covering:
-  - Safe migration workflow with checklist
-  - Best practices for adding new data
-  - Performance optimization guidelines for large datasets
-  - Batch operation examples
-  - Troubleshooting common issues (timeouts, crashes, failures)
-  - Emergency rollback procedures
-
-- **Base Seeder Utilities** in `base.seeder.ts`:
-  - `batchUpsert()` - Efficient bulk upserts with `ON CONFLICT` handling
-  - `batchInsert()` - Fast batch insertions for new records
-  - `getExistingByField()` - Single-query lookups by any field
-
-#### Bugs Fixed
-- Fixed VS Code crashes during database seeding due to excessive memory usage from N+1 query patterns
-- Fixed migration timeout issues with large datasets by adding statement timeouts
-- Corrected TypeScript strict mode compliance in `fandom-data.seeder.ts` for nullable fields
+## 2026-02-04 *(AI-assisted)*
+- B2 upload retry logic with exponential backoff (up to 3 retries, fresh URL per retry); retries on 503/500/408 and network errors
+- Batch operations for all seeders; reduced queries from ~1000+ to ~20-30 per seeder
+- Seeder config: disabled query logging, connection pool bumped to 20, 5-minute statement timeout
+- Added DB indexes on `organization.name`, `volume.number`, `chapter.number`, `gamble.name`
+- New migration commands: `db:migrate:dry-run`, `db:migrate:check`, `db:status`
+- Migration helper script with pre-migration validation, pending migration detection, and backup prompts
+- Base seeder utilities in `base.seeder.ts`: `batchUpsert()`, `batchInsert()`, `getExistingByField()`
+- Added [Migration Guide](../server/docs/MIGRATION_GUIDE.md)
+- Fixed VS Code crashes during seeding (N+1 query patterns causing excessive memory usage)
+- Fixed migration timeouts on large datasets; TypeScript strict mode compliance in `fandom-data.seeder.ts`
 
 ## 2026-02-03
 - backstory field for characters and explanation field for gambles
 
-## 2026-02-01
-### Admin Dashboard UX Improvements
-- **Created shared `usePendingCounts` hook**: Centralized pending count fetching for guides, media, events, and annotations with auto-refresh every 30s
-- **Enhanced AppBar pending counter**: Now tracks all 4 moderatable resources (guides, media, events, annotations) with dropdown menu showing per-resource breakdown
-- **Dashboard stat cards**: Added pending count badges to Community Guides, Media Submissions, and Events cards
-- **Quick actions with live counts**: All moderation quick actions now show live pending counts (e.g., "Review pending guides (5)") and dim when count is 0
-- **Smart default filters**: Guides, Media, Events, and Annotations list views now default to `status: pending` filter for faster moderation workflow
-- **Sidebar pending badges**: Guides, Media, and Annotations menu items show live pending count badges
-- **Role-adaptive dashboard layouts**:
-  - Moderators/Editors: Moderation Queue panel appears first with Content Creation shortcuts
-  - Admins: Quick Actions panel with System Overview showing total users and total pending items
-- **Role-based menu filtering**: User Management section now hidden for non-admins
-- **Fixed build error**: Removed duplicate cleanup effect in QuotesPageContent.tsx (useHoverModal already handles cleanup)
+## 2026-02-01 *(AI-assisted)*
+- Shared `usePendingCounts` hook for guides, media, events, annotations (auto-refreshes every 30s)
+- AppBar counter now tracks all 4 moderatable resources with per-resource breakdown dropdown
+- Dashboard stat cards show pending count badges
+- Quick action links show live pending counts; dim when count is 0
+- Guides, media, events, annotations list views default to `status: pending` filter
+- Sidebar badges show live pending counts for guides, media, annotations
+- Role-adaptive dashboard layout: moderators get moderation queue first; admins get quick actions + system overview
+- User Management section in sidebar hidden for non-admins
+- Fixed build error: removed duplicate cleanup effect in QuotesPageContent.tsx
 
 ## 2026-01-31
 - Users list cache refreshes when changes are made to a user's profile (improved with react-query predicate-based invalidation)
@@ -182,74 +124,36 @@ See [docs/DEPLOYMENT.md](DEPLOYMENT.md) for the full deployment guide.
 - Moderators can now access dashboard properly without getting kicked out
 - Users list should now update properly
 
-## 2026-01-29
-### Annotation System Refactor
-- **Removed CHAPTER from AnnotationOwnerType**: Annotations can no longer be directly owned by chapters
-- **Chapter Annotations via Reference**: Annotations now appear on chapters based on the `chapterReference` field
-  - This allows annotations (for characters, gambles, arcs, etc.) to appear on specific chapters contextually
-  - Backend: New `findApprovedByChapterReference` service method
-  - Frontend: Updated `AnnotationSection` component to support `chapterReference` prop
-- **Updated Seeder**: Converted existing chapter-type annotations to arc-type with chapter references
-- **Validation**: Removed chapter validation from `validateOwnerExists` method
-- **Admin UI**: Removed chapter option from annotation forms and filters
-
-**Breaking Change**: Existing chapter-type annotations in production databases will need migration to arc/character/gamble types
+## 2026-01-29 *(AI-assisted)*
+- Removed CHAPTER from AnnotationOwnerType; annotations on chapters now done via `chapterReference` field instead
+- New `findApprovedByChapterReference` service method
+- Updated `AnnotationSection` component to support `chapterReference` prop
+- Updated seeder; removed chapter validation from `validateOwnerExists`
+- Removed chapter option from annotation admin forms and filters
+- Note: existing chapter-type annotations in prod need manual migration to arc/character/gamble type
 
 ## 2026-01-27
 - Added annotations and contribution tracking (may not be complete due to previously losing untracked edits)
 - Added sections for admin dashboard sidebar
 
-## 2026-01-20
-### Code Cleanup & ESLint Fixes
-- **ESLint Configuration**: Updated `eslint.config.mjs` to exclude dev tools from linting
-  - Excluded `database/tools/` and `reset-db.ts` (one-time scripts)
-  - Downgraded strict type-checking rules to warnings for raw SQL queries
-  - Added underscore-prefix pattern for intentionally unused variables
-- **Fixed Switch Case Declarations**: Wrapped switch cases in braces in `search.service.ts`
-- **Fixed Async/Await Issues**: Removed unnecessary `async` from methods without awaits
-  - `gambles.service.ts` - findByTeam
-  - `media.service.ts` - migrateToPolymorphic
-  - `media-url-resolver.service.ts` - resolvePixivUrl
-- **Fixed TypeScript Imports**: Changed to `import type` for Express types in auth controllers
-- **Removed Unused Imports**: Cleaned up unused imports across entities and controllers
-- **Client Debug Logging**: Gated API debug console.logs behind `NODE_ENV=development` in `api.ts`
-- **Regex Fix**: Removed unnecessary escape characters in `create-media.dto.ts`
+## 2026-01-20 *(AI-assisted)*
+- ESLint config: excluded `database/tools/` and `reset-db.ts`, downgraded strict type-checking to warnings for raw SQL, added underscore-prefix for unused vars
+- Fixed switch case declarations (wrapped in braces) in `search.service.ts`
+- Removed unnecessary `async` from methods without awaits in gambles/media/media-url-resolver services
+- Changed to `import type` for Express types in auth controllers
+- Removed unused imports across entities and controllers
+- Gated API debug console.logs behind `NODE_ENV=development` in `api.ts`
+- Fixed regex unnecessary escape in `create-media.dto.ts`
 
-
-## 2026-01-17
-### Security Audit & Hardening
-Comprehensive security review addressing 17 issues across authentication, data integrity, and reliability.
-
-**Critical Security (2 issues)**
-- ✅ Removed client-side dev secret exposure
-- ✅ Added timing-safe comparison for secrets (prevents timing attacks)
-
-**High Security (4 issues)**
-- ✅ Refresh token expiration implemented (30 days)
-- ✅ Removed cascading tag deletes
-- ✅ Added token refresh lock (race condition fix)
-- ✅ CSRF guard development bypass safeguarded
-
-**Medium Security (3 issues)**
-- ✅ Test user backdoor production guarded (triple-check: NODE_ENV + ENABLE_TEST_USER + email match)
-- ✅ Sensitive logging gated behind NODE_ENV
-- ✅ JWT invalidation limitation documented
-
-**Data Integrity (3 issues)**
-- ✅ Media entity onDelete constraint added (SET NULL)
-- ✅ N+1 query fixed (batch tag insert in guides)
-- ✅ B2 upload error handling added
-
-**Reliability (3 issues)**
-- ✅ Silent API failures now throw errors
-- ✅ Request timeouts added (30s)
-- ✅ Error boundaries for key pages (characters, guides)
-
-**Configuration (2 issues)**
-- ✅ Environment validation for B2/Discord credentials
-- ✅ Schema sync default changed to false (prevents accidental data loss)
-
-### Features
+## 2026-01-17 *(AI-assisted)*
+- Comprehensive security review; 17 issues addressed across auth, data integrity, and reliability
+- Removed client-side dev secret exposure; timing-safe comparison for secrets added
+- Refresh token expiration (30 days); removed cascading tag deletes; token refresh lock for race condition; CSRF guard dev bypass safeguarded
+- Test user backdoor production guarded (triple-check: NODE_ENV + ENABLE_TEST_USER + email match)
+- Sensitive logging gated behind NODE_ENV; JWT invalidation limitation documented
+- Media entity onDelete constraint (SET NULL); N+1 fixed for batch tag insert in guides; B2 upload error handling
+- Silent API failures now throw; request timeouts added (30s); error boundaries for characters and guides pages
+- Env validation for B2 credentials; schema sync default changed to false
 - Added sub arcs hierarchy
 
 ## 2026-01-16
@@ -263,38 +167,17 @@ Comprehensive security review addressing 17 issues across authentication, data i
 - Added bulk actions for guides/media
 - Fixed pending approval button to navigate to higher priority pending items (by count)
 
-## 2026-01-02
-### Admin & Moderator Workflow Improvements
-- **Role Elevation Protection**: Added confirmation dialog when promoting users to admin role
-  - Shows explicit warning about admin privileges before confirmation
-  - Moderators can no longer see admin role option in dropdown (backend already enforced)
-- **Guide Rejection Validation**: Added real-time validation requiring rejection reason when status is set to "Rejected"
-  - Visual warning box highlights missing reason
-  - Form validation prevents saving without reason
-- **Bulk Actions for Guides**: Added bulk approve/reject buttons to Guide list view
-  - Multi-select guides and approve/reject in batch
-  - Bulk rejection requires shared reason for all selected guides
-- **Bulk Actions for Media**: Added bulk approve/reject buttons to Media list and approval queue
-  - Multi-select media items and approve/reject in batch
-  - Bulk rejection requires shared reason for all selected items
-- **Bulk Actions for Events**: Added bulk approve/reject buttons to Events list view
-  - Multi-select events and approve/reject pending items in batch
-  - Only processes events with pending status
+## 2026-01-02 *(AI-assisted)*
+- Role elevation: confirmation dialog when promoting users to admin; moderators can't see admin option in dropdown
+- Guide rejection: real-time validation requiring rejection reason when status is set to "Rejected"
+- Bulk approve/reject for guides (shared rejection reason for batch rejections)
+- Bulk approve/reject for media
+- Bulk approve/reject for events (only processes pending status)
+- All dashboard stat cards and quick actions now navigate to respective pages; hover effects indicate clickability
+- Badges admin standardized to match other resources (EditToolbar, delete confirmation, card layouts, amber theming)
+- Removed 30+ console.log/console.warn statements from AdminDataProvider.ts
 
-### Admin Dashboard UX Improvements
-- **Clickable Dashboard Navigation**: All stat cards and quick actions now navigate to respective pages
-  - Stat cards link directly to resource list views
-  - Quick actions link to filtered lists (e.g., pending items) or create forms
-  - Hover effects indicate clickability with smooth animations
-- **Badges Admin Standardization**: Updated Badges component to match styling of other admin resources
-  - Added EditToolbar with delete confirmation dialog to BadgeEdit
-  - Standardized card layouts, gradient headers, and color theming (amber #f59e0b)
-  - Enhanced BadgeShow, BadgeCreate, and BadgeEdit with consistent admin UI patterns
-
-### Code Quality
-- **Removed Debug Statements**: Cleaned up 30+ console.log/console.warn statements from AdminDataProvider.ts
-  - Kept console.error in catch blocks for production error logging
-  - Reduces console noise during development and production
+# 2025
 
 ## 2025-12-31
 - Added CSS-based card hover effects to globals.css (`.hoverable-card`, `.hoverable-card-*` entity variants)
@@ -350,7 +233,6 @@ Comprehensive security review addressing 17 issues across authentication, data i
   - Character thumbnails with links to related character pages
 
 ## 2025-12-24
-
 - Replaced browser `prompt()` with styled modal for guide and media rejection workflow
 - Added navigation to pending counter badge (clicks through to pending guides/media)
 - Added "showing X of Y" indicator to entity filter dropdowns in Guides admin
@@ -404,14 +286,13 @@ Comprehensive security review addressing 17 issues across authentication, data i
 - Adjusting search for users page
 - Updates to admin dashboard show/edit look
 - Standardize pagination to 12 items per page
-Added sorting to characters, arcs, and gambles list pages
+- Added sorting to characters, arcs, and gambles list pages
 - Consistent 404 handling for all list pages
 
 ## 2025-10-01
 - Multiple updates to ensure build goes through properly (eslint and typing)
 - Updated theming to user detail page
 - Landing page volume cover pop outs accept single and pair volume covers (still need to test)
-- 
 
 ## 2025-09-23
 - Adjustments to look of list pages and detail pages
@@ -436,7 +317,6 @@ Added sorting to characters, arcs, and gambles list pages
 - All 49 volume covers and 539 chapter titles are indexed and seeded properly
 - Paged hook caching implemented as well as optimizations to search and adding limits with TTL config
 
-
 ### Notes
 - Debouncing is the solution for the search function calling continuous api calls. A simple timeout delay between the first call and subsequent calls limits how many calls are made while typing in search.
 
@@ -454,7 +334,7 @@ Added sorting to characters, arcs, and gambles list pages
 - Implemented SSR and meta tags for all data pages and detail pages except users/guides/admin and any client heavy page.
 
 ### Notes
-- I am realizing more and more that using Material UI has become a lot more troublesome. Mainly due to it conflicting with a lot of server side rendering and causes many hydration issues. The reason to leverage server side rendering is to improve SEO and to provide the user with a prerendered page with initial data (so the backend can continue to load the rest of the javascript in the background). The drawback is a longer initial load, but subsequent loads are extremely fast. 
+- I am realizing more and more that using Material UI has become a lot more troublesome. Mainly due to it conflicting with a lot of server side rendering and causes many hydration issues. The reason to leverage server side rendering is to improve SEO and to provide the user with a prerendered page with initial data (so the backend can continue to load the rest of the javascript in the background). The drawback is a longer initial load, but subsequent loads are extremely fast.
 
 ## 2025-09-15
 - Replaced all markdown components into enhanced version (support for entity embeds and spoilers)
@@ -463,12 +343,13 @@ Added sorting to characters, arcs, and gambles list pages
 - Fixed issues with badge system from admin pages
 - Added custom role display to user profile if active supporter badge is active
 - Redesign of navbar; categories to group content pages and search bar
+
 ### Notes
 - It seems MUI styling can interfere with event detection for mouse leaving a component.
 
 ## 2025-09-14
 - Updated guides admin page to look like the media admin page
-- Updated media/guide endpoints to allow sorting 
+- Updated media/guide endpoints to allow sorting
 - Search and filter by entity added to both media/guide admin pages
 - Added embedded entity support for markdown
 
@@ -487,8 +368,8 @@ Added sorting to characters, arcs, and gambles list pages
 - Profile picture can now select from available character display media or keep default Discord profile
 - Updated users page and profile to load the new modern profile header
 - Normalized spoiler wrapper component by replacing it with timeline spoiler component
-- Normalized entity display to be shown on arcs, gambles, gambles, volumes, and organizations 
-- Added highlight of most popular quote, gamble, and character profile picture 
+- Normalized entity display to be shown on arcs, gambles, gambles, volumes, and organizations
+- Added highlight of most popular quote, gamble, and character profile picture
 
 ### Notes
 - I really like the new profile picture selection. I was inspired by the og duelingnetwork profile pictures that showed the card art of the iconic monsters.
@@ -523,7 +404,6 @@ Added sorting to characters, arcs, and gambles list pages
 ### Notes
 - Lots of fiddeling around with getting relations to work for each entity in the admin pages.
 
-
 ## 2025-09-05
 - Fixed syntax errors in arc and character detail pages causing build failures
 - Completed ArcTimeline component implementation with spoiler protection
@@ -533,7 +413,7 @@ Added sorting to characters, arcs, and gambles list pages
 
 ### Notes
 - I need to start manually asking Claude to summarize long chats to limit use of tokens and continue working on complex features that require continous context. The command seems to be /compact to summarize context.
-- So I made the mistake of asking Claude to create a timeline for gambles based on the timelines of characters and arcs. The result was the original timelines got refactored and not being the look of their original design. I noticed this too late, so I need to step by step revert changes rather than resetting to previous Git save. 
+- So I made the mistake of asking Claude to create a timeline for gambles based on the timelines of characters and arcs. The result was the original timelines got refactored and not being the look of their original design. I noticed this too late, so I need to step by step revert changes rather than resetting to previous Git save.
 - Definitely need to look into making sure I understand how state/data is passed around in frontend. I understand the code, but applying that understanding to fixing bugs takes a lot of time. Additionally, Claude seems to make decent design decisions as long as context and half decent prompt is provided. I really like the design of arcs timeline even though it was Claude that refactored it.
 - Might have issues with styling down the line since styling is split between MUI React components (v6) and Tailwind CSS. This is because MUI uses JSS for styling, while Tailwind uses utility classes. I am probably leaving an absolute mess for anyone (me) if I need to edit the styling.
 
@@ -574,7 +454,7 @@ Added sorting to characters, arcs, and gambles list pages
 - Arc and gamble appearances added to character detail page
 - Fixed saving data of observers/participants in gambles admin page
 - Adjustment in layout for nav bar to center
-- Updated theming of website to use red, purple, white and black color palette 
+- Updated theming of website to use red, purple, white and black color palette
 - Font for headers updated to use LTC Goudy Text (https://fontmeme.com/fonts/goudy-text-font/)
 - Added proper view counting for pages as well as trending section
 - Updated consistency of Lucide icons use (themeing)
@@ -587,7 +467,6 @@ Added sorting to characters, arcs, and gambles list pages
 - Added disclaimer footer and links
 - Added editing your own guide
 - Removal of media approval queue; set default to show pending for guides and media
-- 
 
 ### Notes
 - Cloister Black was a close contender for font, but I wanted to prioritize legibility of the uppercase.
@@ -620,7 +499,6 @@ Added sorting to characters, arcs, and gambles list pages
 ### Notes
 - It seems there have been changes or fluctuations to Claude code this recent week (no official announcement, was looking through reddit lol). May have been the cause for code to be weaker in quality.
 
-
 ## 2025-08-30
 - Adjusting fields for admin pages to edit data
 - Fixed updating data of most fields; need more work on complex fields like gambles
@@ -630,17 +508,16 @@ Added sorting to characters, arcs, and gambles list pages
 - Approval/reject works for media approval queue (need to add rejected search to media)
 - User profile page improved to update chapter progress and select favorite quote/gamble
 
-
 ### Notes
 - There's been minor issues with ensuring code is consistent; primarily with trying to keep context concise. The "5-hour limit" for Claude Pro runs out very quickly when it comes to making sweeping changes. Clearing the context seems to help, but still feels limiting. For reference, I spent maybe 2 hours last night and little above 3 hours this morning before I hit each session's limits.
-- Fixing code tends to not fix the issue if there are missing endpoints or functions that are assumed. This is apparent for something like requesting a media approval queue as it sends a query to the backend with additional params that don't exist on the backend. 
+- Fixing code tends to not fix the issue if there are missing endpoints or functions that are assumed. This is apparent for something like requesting a media approval queue as it sends a query to the backend with additional params that don't exist on the backend.
 - Added Serena MCP to improve Claude code. So far, it has saved a bit more on the usage limit and seems to be more understanding of the code. I need to look into adjusting Serena because it is clear Claude misses a bit of the memories it store. Not sure if this is a config issue. Despite this, I will look into more MCP implementations as adding Serena has improved the quality of the responses overall while not costing additional usage.
 
 ## 2025-08-28
 - Reset everything to regenerate code from scratch with Claude 3.7
 
 ### Notes
-- After a long amount of frustrations with Gemini 2.5 and basic models for Github Copilot, I am trying out Claude Code. It seems to be just as good as using it as the model for Copilot so far. Definitely a lot better in terms of initial impressions as auth was immediately working from generated code. Still has mistakes, but this will actually solve the issues is what I noticed compared to other models. 
+- After a long amount of frustrations with Gemini 2.5 and basic models for Github Copilot, I am trying out Claude Code. It seems to be just as good as using it as the model for Copilot so far. Definitely a lot better in terms of initial impressions as auth was immediately working from generated code. Still has mistakes, but this will actually solve the issues is what I noticed compared to other models.
 - Looking over the code, it seems a good way to avoid issues is to clearly define the relationships in your data. A lot of bugs I am finding are from the LLM not realizing that it needs to expect a more complex object that a simple string or number.
 - Fixed character relation for events (still need to update for character/event pages)
 
@@ -693,7 +570,7 @@ Added sorting to characters, arcs, and gambles list pages
 ## 2025-08-22
 - Support for Japanese translated database via translation module
 - Added additional character details (firstChapter, alternate names, roles, etc)
-- Included chapter spoiler for deaths 
+- Included chapter spoiler for deaths
 - OpenAPI decorators for all API routes
 - Email service hooked to Resend
 - URL validation for uploaded media including normalization of link url
@@ -705,14 +582,12 @@ Added sorting to characters, arcs, and gambles list pages
 - Translation setup for Japanese made; however, will need to manually input translations in the admin panel. Considering AI translation for any missing translations.
 - Default language is English, can fetch translation via -jp in request. Translation module allows for us to keep using backend without worrying for missing translations
 - create-character.dto and similar files are made to specify the entity DTO, allowing us to implement pagination and filtering. Recommended if route needs validation.
-- It seems that the Large Language Modules (LLMs) for GitHub Copilot Agent mode chat can easily hallucinate and forget how to keep consistency if using a basic model (ChatGPT 4.1). Currently using Claude Sonnet 3.7 which seems to be a lot more consistent. 
+- It seems that the Large Language Modules (LLMs) for GitHub Copilot Agent mode chat can easily hallucinate and forget how to keep consistency if using a basic model (ChatGPT 4.1). Currently using Claude Sonnet 3.7 which seems to be a lot more consistent.
 - Hopefully, copilot instructions are a bit more easier for the basic models to get project context
 - Migrations seem to be an absolute headache when it comes to working with several data points. I need to ensure that any data that is changed their corresponding files that use said data need to be changed (i.e. entity <-> controller). Absolutely annoying when I need to add a new data point like gambles and volumes
 - e2e testing using jest seems really useful, but I highly doubt I would want to spend the time writing out all the tests
 
-
 ## 2025-08-21
-
 - Added modules for auth including setup for authentication role guards
 - Authentication reads both local and jwt tokens
 - Confirmed all routes for register user, verify email, log in user, get user, request password request, confirm password request  via Postman testing
@@ -731,9 +606,7 @@ Added sorting to characters, arcs, and gambles list pages
 - Global exception handling is helpful to protect the application, but may not be as thorough in specifics
 - Database migrations might be a headache if I don't ensure connection of the database is clean. Hard reset may be required when it gets really confusing; so I should have a backup of the data saved
 
-
 ## 2025-08-20
-
 - Initialized data for multiple data points (characters, arcs, chapters, etc)
 - Connected TypeOrmModule for postgres connection; added relationships between data to relevant entities (ex. Media for Characters)
 - Controllers for REST endpoints, Services for basic Create-Remove-Update-Delete functions, Modules for abstraction (separation of features for easier debugging)
