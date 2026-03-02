@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const participantCount = gamble.participants?.length ?? 0
 
   return {
-    title: `${gamble.name} - Gamble Details | Usogui Fansite`,
+    title: `${gamble.name} - Gamble Details | Usogui Database`,
     description: `Explore the ${gamble.name} gamble from ${chapterInfo}${participantCount > 0 ? ` with ${participantCount} participants` : ''}. ${(gamble.description || gamble.rules).slice(0, 120)}...`,
     keywords: `Usogui, ${gamble.name}, gamble, ${chapterInfo}, manga, gambling${gamble.participants?.map((p) => `, ${p.name}`).join('') || ''}`,
     openGraph: {

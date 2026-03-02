@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `Chapter ${chapter.number}${chapter.title ? ` - ${chapter.title}` : ''} | Usogui Fansite`,
+    title: `Chapter ${chapter.number}${chapter.title ? ` - ${chapter.title}` : ''} | Usogui Database`,
     description: chapter.summary
       ? chapter.summary.substring(0, 160).replace(/\n/g, ' ') + '...'
       : `Read about Chapter ${chapter.number} of Usogui. Summary and details are available for readers to revisit key events.`

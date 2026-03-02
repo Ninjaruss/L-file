@@ -62,18 +62,18 @@ export default function SupportersList() {
 
   if (loading) {
     return (
-      <div className="bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="bg-white/5 rounded-lg shadow-sm p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-700 rounded w-1/3 mb-4"></div>
+          <div className="h-6 bg-white/10 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-700 rounded-full"></div>
+                <div className="w-12 h-12 bg-white/10 rounded-full"></div>
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-gray-700 rounded w-1/3"></div>
+                  <div className="h-4 bg-white/10 rounded w-1/4 mb-2"></div>
+                  <div className="h-3 bg-white/10 rounded w-1/3"></div>
                 </div>
-                <div className="w-8 h-8 bg-gray-700 rounded-full"></div>
+                <div className="w-8 h-8 bg-white/10 rounded-full"></div>
               </div>
             ))}
           </div>
@@ -84,7 +84,7 @@ export default function SupportersList() {
 
   if (error) {
     return (
-      <div className="bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="bg-white/5 rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Our Supporters</h2>
         <p className="text-red-600 dark:text-red-400">Failed to load supporters: {error}</p>
       </div>
@@ -93,9 +93,9 @@ export default function SupportersList() {
 
   if (supporters.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="bg-white/5 rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Our Supporters</h2>
-        <p className="text-gray-400">
+        <p className="text-white/55">
           No supporters yet. Be the first to support our fansite!
         </p>
       </div>
@@ -118,13 +118,13 @@ export default function SupportersList() {
   });
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-sm p-6">
+    <div className="bg-white/5 rounded-lg shadow-sm p-6">
       <div className="flex items-center gap-2 mb-6">
         <h2 className="text-2xl font-bold text-white">Our Supporters</h2>
         <span className="text-red-500">❤️</span>
       </div>
 
-      <p className="text-gray-400 mb-6">
+      <p className="text-white/55 mb-6">
         Thank you to all our amazing supporters who help keep this fansite running!
       </p>
 
@@ -135,12 +135,12 @@ export default function SupportersList() {
 
         return (
           <div key={badgeType} className="mb-8 last:mb-0">
-            <h3 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-white/85 mb-4 flex items-center gap-2">
               <span>{groupSupporters[0].badge.icon}</span>
               {badgeType === 'sponsor' && 'Sponsors'}
               {badgeType === 'supporter' && 'Supporters'}
               {badgeType === 'custom' && 'Special Contributors'}
-              <span className="text-sm font-normal text-gray-500">
+              <span className="text-sm font-normal text-white/40">
                 ({groupSupporters.length})
               </span>
             </h3>
@@ -149,7 +149,7 @@ export default function SupportersList() {
               {sortedSupporters.map((supporter) => (
                 <div
                   key={`${supporter.user.id}-${supporter.badge.id}`}
-                  className="flex items-center gap-3 p-4 bg-gray-700 rounded-lg"
+                  className="flex items-center gap-3 p-4 bg-white/8 rounded-lg"
                 >
                   <UserProfileImage
                     user={supporter.user}
@@ -169,7 +169,7 @@ export default function SupportersList() {
                         />
                       </div>
                     )}
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-white/55">
                       Since {new Date(supporter.awardedAt).getFullYear()}
                     </div>
                   </div>
@@ -197,16 +197,16 @@ export default function SupportersList() {
         );
       })}
 
-      <div className="mt-8 pt-6 border-t border-gray-600">
+      <div className="mt-8 pt-6 border-t border-white/10">
         <div className="text-center">
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-white/55 mb-2">
             Want to support us?
           </p>
           <a
             href="https://ko-fi.com/ninjaruss"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors"
           >
             ☕ Support on Ko-fi
           </a>

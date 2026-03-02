@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import {
-  ActionIcon,
   Badge,
   Box,
   Card,
@@ -16,7 +15,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor, textColors } from '../../lib/mantine-theme'
 import { notifications } from '@mantine/notifications'
-import { Quote, X } from 'lucide-react'
+import { Quote } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
@@ -28,6 +27,7 @@ import TimelineSpoilerWrapper from '../../components/TimelineSpoilerWrapper'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
 import { ListPageLayout } from '../../components/layouts/ListPageLayout'
+import { ActiveFilterBadge, ActiveFilterBadgeRow } from '../../components/layouts/ActiveFilterBadge'
 
 interface QuoteData {
   id: number
@@ -398,27 +398,14 @@ export default function QuotesPageContent({
       emptyIcon={<Quote size={48} />}
       activeFilterBadges={
         characterId && characterName ? (
-          <Group justify="center" mb="md">
-            <Badge
-              size="lg"
-              variant="filled"
-              style={{ backgroundColor: accentQuote }}
-              radius="xl"
-              rightSection={
-                <ActionIcon
-                  size="xs"
-                  style={{ color: accentQuote }}
-                  variant="transparent"
-                  onClick={clearCharacterFilter}
-                  aria-label="Clear character filter"
-                >
-                  <X size={12} />
-                </ActionIcon>
-              }
-            >
-              Character: {characterName}
-            </Badge>
-          </Group>
+          <ActiveFilterBadgeRow>
+            <ActiveFilterBadge
+              label="Character"
+              value={characterName}
+              onClear={clearCharacterFilter}
+              accentColor={accentQuote}
+            />
+          </ActiveFilterBadgeRow>
         ) : undefined
       }
       hoverModal={

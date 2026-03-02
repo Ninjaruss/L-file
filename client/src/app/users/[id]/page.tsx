@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const readingProgress = Math.min(Math.round((user.userProgress / MAX_CHAPTER) * 100), 100)
 
   return {
-    title: `${user.username} - User Profile | Usogui Fansite`,
+    title: `${user.username} - User Profile | Usogui Database`,
     description: `View ${user.username}'s profile on Usogui Fansite. Reading progress: Chapter ${user.userProgress} (${readingProgress}%). ${user.userStats?.guidesWritten ? `Author of ${user.userStats.guidesWritten} guides.` : ''}`,
     keywords: `Usogui, ${user.username}, user profile, reading progress, guides${user.customRole ? `, ${user.customRole}` : ''}`,
     openGraph: {

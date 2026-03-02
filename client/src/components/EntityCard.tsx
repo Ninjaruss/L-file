@@ -436,13 +436,17 @@ const EntityCard: React.FC<EntityCardProps> = ({
           maxWidth: '100%',
           color: 'inherit'
         }}
-        onMouseEnter={(event) => {
-          event.currentTarget.style.borderColor = rgba(accentColor, 0.6)
-          event.currentTarget.style.transform = 'translateY(-1px)'
-        }}
-        onMouseLeave={(event) => {
-          event.currentTarget.style.borderColor = rgba(accentColor, 0.25)
-          event.currentTarget.style.transform = 'none'
+        styles={{
+          root: {
+            '&:hover': {
+              borderColor: rgba(accentColor, 0.6),
+              transform: 'translateY(-1px)'
+            },
+            '@media (prefers-reduced-motion: reduce)': {
+              transition: 'none !important',
+              '&:hover': { transform: 'none' }
+            }
+          }
         }}
       >
         {renderContent()}
@@ -462,15 +466,18 @@ const EntityCard: React.FC<EntityCardProps> = ({
         borderRadius: rem(12),
         cursor: 'pointer'
       }}
-      onMouseEnter={(event) => {
-        event.currentTarget.style.borderColor = rgba(accentColor, 0.6)
-        event.currentTarget.style.boxShadow = `0 12px 24px ${rgba(accentColor, 0.18)}`
-        event.currentTarget.style.transform = 'translateY(-2px)'
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.borderColor = rgba(accentColor, 0.25)
-        event.currentTarget.style.boxShadow = 'none'
-        event.currentTarget.style.transform = 'none'
+      styles={{
+        root: {
+          '&:hover': {
+            borderColor: rgba(accentColor, 0.6),
+            boxShadow: `0 12px 24px ${rgba(accentColor, 0.18)}`,
+            transform: 'translateY(-2px)'
+          },
+          '@media (prefers-reduced-motion: reduce)': {
+            transition: 'none !important',
+            '&:hover': { transform: 'none', boxShadow: 'none' }
+          }
+        }
       }}
     >
       {renderContent()}

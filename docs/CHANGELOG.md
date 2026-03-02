@@ -2,7 +2,7 @@
 
 ## TODO
 
-# 2026
+
 
 ## 2026-02-28
 - Added the tooltip label icon with tooltip for "press / to search" to the top right search bar

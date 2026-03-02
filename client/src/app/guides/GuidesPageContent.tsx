@@ -23,6 +23,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
+import { ActiveFilterBadge, ActiveFilterBadgeRow } from '../../components/layouts/ActiveFilterBadge'
 import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6, AlertCircle, ArrowUpDown } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -433,63 +434,38 @@ export default function GuidesPageContent({
             value={sortBy}
             onChange={handleSortChange}
             leftSection={<ArrowUpDown size={16} />}
-            w={180}
+            style={{ minWidth: rem(140), flex: '0 0 auto' }}
             size="lg"
             radius="xl"
             styles={{
               input: {
-                fontSize: rem(14)
+                fontSize: rem(14),
+                '&:focus': { borderColor: accentGuide }
               }
             }}
           />
         </Group>
 
-        {(authorFilter && authorName) || tagFilter ? (
-          <Group justify="center" gap="sm" wrap="wrap">
+        {((authorFilter && authorName) || tagFilter) && (
+          <ActiveFilterBadgeRow>
             {authorFilter && authorName && (
-              <>
-                <Badge
-                  size="md"
-                  c="white"
-                  variant="filled"
-                  style={{ backgroundColor: getEntityThemeColor(theme, 'character') }}
-                >
-                  Author: {authorName}
-                </Badge>
-                <Button
-                  variant="subtle"
-                  size="xs"
-                  style={{ color: getEntityThemeColor(theme, 'character') }}
-                  leftSection={<X size={14} />}
-                  onClick={clearAuthorFilter}
-                >
-                  Clear Author
-                </Button>
-              </>
+              <ActiveFilterBadge
+                label="Author"
+                value={authorName}
+                onClear={clearAuthorFilter}
+                accentColor={accentGuide}
+              />
             )}
             {tagFilter && (
-              <>
-                <Badge
-                  size="md"
-                  c="white"
-                  variant="filled"
-                  style={{ backgroundColor: getEntityThemeColor(theme, 'organization') }}
-                >
-                  Tag: #{tagFilter}
-                </Badge>
-                <Button
-                  variant="subtle"
-                  size="xs"
-                  style={{ color: getEntityThemeColor(theme, 'organization') }}
-                  leftSection={<X size={14} />}
-                  onClick={clearTagFilter}
-                >
-                  Clear Tag
-                </Button>
-              </>
+              <ActiveFilterBadge
+                label="Tag"
+                value={`#${tagFilter}`}
+                onClear={clearTagFilter}
+                accentColor={accentGuide}
+              />
             )}
-          </Group>
-        ) : null}
+          </ActiveFilterBadgeRow>
+        )}
       </Box>
 
       {/* Error State */}
@@ -537,7 +513,7 @@ export default function GuidesPageContent({
                 px="md"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
                   gap: rem(20),
                   justifyItems: 'center',
                   maxWidth: '1400px',

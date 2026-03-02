@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Reset Password | L-File',
+  title: 'Reset Password',
   description: 'Reset your L-File account password.',
   robots: { index: false, follow: false },
 }

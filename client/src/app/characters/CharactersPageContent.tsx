@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ActionIcon,
   Badge,
   Group,
   Select,
@@ -13,7 +12,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { getEntityThemeColor } from '../../lib/mantine-theme'
-import { Building2, User, X } from 'lucide-react'
+import { Building2, User } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useHoverModal } from '../../hooks/useHoverModal'
@@ -24,6 +23,7 @@ import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { shouldHideSpoiler } from '../../lib/spoiler-utils'
 import { ListPageLayout } from '../../components/layouts/ListPageLayout'
 import { PlayingCard } from '../../components/cards/PlayingCard'
+import { ActiveFilterBadge, ActiveFilterBadgeRow } from '../../components/layouts/ActiveFilterBadge'
 
 interface Character {
   id: number
@@ -367,39 +367,25 @@ export default function CharactersPageContent({
             value={organizationFilter || ''}
             onChange={(value) => handleOrganizationFilterChange(value || null)}
             leftSection={<Building2 size={16} />}
-            w={200}
+            style={{ minWidth: rem(160), flex: '1 1 160px' }}
             size="lg"
             radius="xl"
             placeholder="Filter by organization"
             clearable
             disabled={organizationsLoading}
-            styles={{ input: { fontSize: rem(14) } }}
+            styles={{ input: { fontSize: rem(14), '&:focus': { borderColor: accentCharacter } } }}
           />
         }
         activeFilterBadges={
           organizationFilter ? (
-            <Group justify="center" mt="sm" mb="md">
-              <Badge
-                size="lg"
-                variant="filled"
-                style={{ backgroundColor: accentCharacter }}
-                radius="xl"
-                rightSection={
-                  <ActionIcon
-                    size="md"
-                    color="white"
-                    variant="transparent"
-                    onClick={() => handleOrganizationFilterChange(null)}
-                    aria-label="Clear organization filter"
-                    style={{ minWidth: 32, minHeight: 32 }}
-                  >
-                    <X size={14} />
-                  </ActionIcon>
-                }
-              >
-                {organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Organization'}
-              </Badge>
-            </Group>
+            <ActiveFilterBadgeRow>
+              <ActiveFilterBadge
+                label="Organization"
+                value={organizations.find(o => o.id.toString() === organizationFilter)?.name || 'Organization'}
+                onClear={() => handleOrganizationFilterChange(null)}
+                accentColor={accentCharacter}
+              />
+            </ActiveFilterBadgeRow>
           ) : undefined
         }
         hoverModal={

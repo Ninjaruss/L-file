@@ -4,16 +4,16 @@ import SubmitAnnotationPageContent from './SubmitAnnotationPageContent'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Submit Annotation | L-file',
+    title: 'Submit Annotation',
     description: 'Submit an annotation to the L-file wiki. Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs.',
     openGraph: {
-      title: 'Submit Annotation | L-file',
+      title: 'Submit Annotation',
       description: 'Submit an annotation to the L-file wiki. Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs.',
       type: 'website',
     },
     twitter: {
       card: 'summary',
-      title: 'Submit Annotation | L-file',
+      title: 'Submit Annotation',
       description: 'Submit an annotation to the L-file wiki. Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs.',
     },
   }

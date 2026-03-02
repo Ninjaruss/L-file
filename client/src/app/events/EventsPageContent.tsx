@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Accordion,
-  ActionIcon,
   Badge,
   Box,
   Card,
@@ -17,7 +16,8 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
-import { CalendarSearch, AlertCircle, X } from 'lucide-react'
+import { ActiveFilterBadge, ActiveFilterBadgeRow } from '../../components/layouts/ActiveFilterBadge'
+import { CalendarSearch, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -505,7 +505,7 @@ export default function EventsPageContent({
       entityNamePlural="events"
       emptyIcon={<CalendarSearch size={48} />}
       filterSlot={
-        <Group gap="sm">
+        <Group gap="sm" wrap="wrap">
           <Select
             placeholder="All Types"
             value={selectedType}
@@ -513,7 +513,8 @@ export default function EventsPageContent({
             data={eventTypeOptions}
             clearable
             size="md"
-            style={{ minWidth: rem(150) }}
+            style={{ minWidth: rem(140), flex: '1 1 140px' }}
+            styles={{ input: { '&:focus': { borderColor: accentEvent } } }}
           />
           <Select
             placeholder="All Statuses"
@@ -522,35 +523,24 @@ export default function EventsPageContent({
             data={eventStatusOptions}
             clearable
             size="md"
-            style={{ minWidth: rem(150) }}
+            style={{ minWidth: rem(140), flex: '1 1 140px' }}
+            styles={{ input: { '&:focus': { borderColor: accentEvent } } }}
           />
         </Group>
       }
       activeFilterBadges={
         selectedCharacter ? (
-          <Group justify="center" gap="xs" align="center" mb="md">
-            <Text size="sm" c="dimmed">Filtering by character:</Text>
-            <Badge
-              size="lg"
-              variant="filled"
-              color={getEntityThemeColor(theme, 'character')}
-              rightSection={
-                <ActionIcon
-                  size="xs"
-                  color="gray"
-                  variant="transparent"
-                  onClick={() => {
-                    setSelectedCharacter('')
-                    updateUrl(searchTerm, selectedType, selectedStatus, '')
-                  }}
-                >
-                  <X size={12} />
-                </ActionIcon>
-              }
-            >
-              {selectedCharacter}
-            </Badge>
-          </Group>
+          <ActiveFilterBadgeRow>
+            <ActiveFilterBadge
+              label="Character"
+              value={selectedCharacter}
+              onClear={() => {
+                setSelectedCharacter('')
+                updateUrl(searchTerm, selectedType, selectedStatus, '')
+              }}
+              accentColor={accentEvent}
+            />
+          </ActiveFilterBadgeRow>
         ) : undefined
       }
       hoverModal={

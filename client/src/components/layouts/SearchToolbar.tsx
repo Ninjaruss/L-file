@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import {
   Box,
   TextInput,
@@ -180,11 +180,14 @@ export function SearchToolbar({
             value={sortValue}
             onChange={onSortChange}
             leftSection={<ArrowUpDown size={16} />}
-            w={180}
+            style={{ minWidth: rem(140), flex: '0 0 auto' }}
             size="lg"
             radius="xl"
             styles={{
-              input: { fontSize: rem(14) }
+              input: {
+                fontSize: rem(14),
+                '&:focus': { borderColor: accentColor }
+              }
             }}
           />
 

@@ -607,12 +607,13 @@ export default function MediaPageContent({
                     onChange={(value) => setSelectedType(value || 'all')}
                     placeholder="Type"
                     leftSection={getMediaTypeIcon(selectedType)}
-                    w={140}
+                    style={{ minWidth: rem(120), flex: '1 1 120px' }}
                     styles={{
                       input: {
                         backgroundColor: backgroundStyles.input,
                         border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff'
+                        color: '#ffffff',
+                        '&:focus': { borderColor: accentMedia }
                       },
                       dropdown: {
                         backgroundColor: backgroundStyles.card
@@ -633,12 +634,13 @@ export default function MediaPageContent({
                     value={selectedOwnerType}
                     onChange={(value) => setSelectedOwnerType((value as typeof selectedOwnerType) || 'all')}
                     placeholder="Category"
-                    w={160}
+                    style={{ minWidth: rem(140), flex: '1 1 140px' }}
                     styles={{
                       input: {
                         backgroundColor: backgroundStyles.input,
                         border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff'
+                        color: '#ffffff',
+                        '&:focus': { borderColor: accentMedia }
                       },
                       dropdown: {
                         backgroundColor: backgroundStyles.card
@@ -654,12 +656,13 @@ export default function MediaPageContent({
                     value={selectedPurpose}
                     onChange={(value) => setSelectedPurpose(value || 'gallery')}
                     placeholder="Source"
-                    w={130}
+                    style={{ minWidth: rem(120), flex: '1 1 120px' }}
                     styles={{
                       input: {
                         backgroundColor: backgroundStyles.input,
                         border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff'
+                        color: '#ffffff',
+                        '&:focus': { borderColor: accentMedia }
                       },
                       dropdown: {
                         backgroundColor: backgroundStyles.card

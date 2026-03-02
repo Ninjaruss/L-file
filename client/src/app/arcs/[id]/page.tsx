@@ -87,7 +87,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const chapterCount = arc.endChapter - arc.startChapter + 1
 
   return {
-    title: `${arc.name} - Arc Details | Usogui Fansite`,
+    title: `${arc.name} - Arc Details`,
     description: `Explore ${arc.name}, spanning chapters ${arc.startChapter}-${arc.endChapter} with ${chapterCount} chapters, ${events.length} key events, and ${gambles.length} gambles. ${arc.description ? arc.description.slice(0, 100) + '...' : ''}`,
     keywords: `Usogui, ${arc.name}, arc, chapters ${arc.startChapter}-${arc.endChapter}, manga, gambling`,
     openGraph: {

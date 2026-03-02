@@ -21,6 +21,12 @@
   }
 }
 
+@media (max-width: 480px) {
+  .masonryGrid {
+    column-count: 1;
+  }
+}
+
 .masonryItem {
   break-inside: avoid;
   margin-bottom: 12px;

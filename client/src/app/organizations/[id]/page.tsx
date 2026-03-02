@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const memberCount = members.length
 
   return {
-    title: `${organization.name} - Organization Details | Usogui Fansite`,
+    title: `${organization.name} - Organization Details | Usogui Database`,
     description: `Learn about ${organization.name}, ${memberCount > 0 ? `an organization with ${memberCount} known members` : 'an organization in the Usogui universe'}. ${organization.description ? organization.description.slice(0, 120) + '...' : ''}`,
     keywords: `Usogui, ${organization.name}, organization, characters, members${members.map((m: any) => `, ${m.name}`).join('').slice(0, 100)}`,
     openGraph: {

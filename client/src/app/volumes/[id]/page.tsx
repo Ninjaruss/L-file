@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const chapterCount = volume.endChapter - volume.startChapter + 1
 
   return {
-    title: `Volume ${volume.number}${volume.title ? ` - ${volume.title}` : ''} | Usogui Fansite`,
+    title: `Volume ${volume.number}${volume.title ? ` - ${volume.title}` : ''} | Usogui Database`,
     description: `Volume ${volume.number} of Usogui${volume.title ? ` (${volume.title})` : ''} spans chapters ${volume.startChapter}-${volume.endChapter} with ${chapterCount} chapters. ${volume.description ? volume.description.slice(0, 120) + '...' : ''}`,
     keywords: `Usogui, Volume ${volume.number}, chapters ${volume.startChapter}-${volume.endChapter}, manga${volume.title ? `, ${volume.title}` : ''}`,
     openGraph: {

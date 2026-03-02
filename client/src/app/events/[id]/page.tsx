@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${event.title} - Event Details | Usogui Fansite`,
+    title: `${event.title} - Event Details | Usogui Database`,
     description: `Explore the ${event.title} event from Chapter ${event.chapterNumber}. ${(event.description || '').slice(0, 150)}...`,
     keywords: `Usogui, ${event.title}, event, chapter ${event.chapterNumber}, manga${event.arc ? `, ${event.arc.name}` : ''}${event.gamble ? `, ${event.gamble.name}` : ''}`,
     openGraph: {

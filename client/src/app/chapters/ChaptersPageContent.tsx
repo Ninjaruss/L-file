@@ -317,8 +317,8 @@ export default function ChaptersPageContent({
                 px="md"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))',
-                  gap: rem(8)
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(110px, 42vw), 1fr))',
+                  gap: rem(10)
                 }}
               >
                 {paginatedChapters.map((chapter, index) => (
@@ -342,7 +342,7 @@ export default function ChaptersPageContent({
                         alignItems: 'center',
                         gap: rem(6),
                         padding: `${rem(6)} ${rem(6)}`,
-                        minHeight: rem(88),
+                        minHeight: rem(100),
                         justifyContent: 'center'
                       }}
                       onClick={(e) => {
