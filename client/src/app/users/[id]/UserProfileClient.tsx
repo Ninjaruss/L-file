@@ -21,8 +21,8 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getAlphaColor, getEntityThemeColor, headerColors, textColors } from '../../../lib/mantine-theme'
-import { ArrowLeft, FileText, Quote, Dices, BookOpen, Camera } from 'lucide-react'
+import { getAlphaColor, getEntityThemeColor, headerColors, outlineStyles, textColors } from '../../../lib/mantine-theme'
+import { ArrowLeft, BookOpen, Camera, Dices, Eye, FileText, Heart, Quote, Star } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { api } from '../../../lib/api'
@@ -161,7 +161,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
   const quoteColor = getEntityThemeColor(theme, 'quote')
   const eventColor = getEntityThemeColor(theme, 'event')
   const arcColor = getEntityThemeColor(theme, 'arc')
-  const accentColor = theme.colors.dark?.[6] ?? '#2c2e33'
+  const accentColor = outlineStyles.accentColor
   const accentBorderColor = getAlphaColor(accentColor, 0.4)
   const accentHoverColor = getAlphaColor(accentColor, 0.18)
   const accentTextColor = theme.colors.gray?.[0] ?? '#ffffff'
@@ -185,7 +185,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     {
       label: 'Likes Received',
       value: userStats?.likesReceived ?? 0,
-      icon: <BookOpen size={22} color={eventColor} />,
+      icon: <Heart size={22} color={eventColor} />,
       color: eventColor,
       isLoading: dataLoading && !userStats
     }
@@ -206,7 +206,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
               borderColor: accentBorderColor,
               color: accentTextColor,
               backgroundColor: getAlphaColor(accentColor, 0.1),
-              '&:hover': {
+              _hover: {
                 backgroundColor: accentHoverColor
               }
             }
@@ -369,9 +369,10 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                 <Divider color={getAlphaColor(accentColor, 0.25)} />
                 <Stack gap="lg">
                   <Group gap="sm" align="center">
-                    <Text fw={700} size="xl" c={characterColor}>
-                      ⭐ Favorites
-                    </Text>
+                    <Star size={20} color={characterColor} />
+                    <Title order={2} size="h3" c={headerColors.h2}>
+                      Favorites
+                    </Title>
                   </Group>
                   
                   <SimpleGrid cols={{ base: 1, sm: favoriteQuote && favoriteGamble ? 2 : 1 }} spacing="lg">
@@ -653,13 +654,13 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                       borderColor: accentBorderColor,
                       color: accentTextColor,
                       backgroundColor: getAlphaColor(accentColor, 0.1),
-                      '&:hover': {
+                      _hover: {
                         backgroundColor: accentHoverColor
                       }
                     }
                   }}
                   size="sm"
-                  leftSection={<BookOpen size={16} />}
+                  leftSection={<FileText size={16} />}
                 >
                   View All Guides
                 </Button>
@@ -696,14 +697,16 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
 
                       <Group justify="space-between" align="center" mt="xs">
                         <Group gap="md">
-                          <Group gap="xs">
+                          <Group gap={4} align="center">
+                            <Eye size={12} color={textColors.tertiary as string} />
                             <Text size="xs" c={textColors.tertiary}>
-                              👁 {guide.viewCount}
+                              {guide.viewCount}
                             </Text>
                           </Group>
-                          <Group gap="xs">
+                          <Group gap={4} align="center">
+                            <Heart size={12} color={textColors.tertiary as string} />
                             <Text size="xs" c={textColors.tertiary}>
-                              ❤️ {guide.likeCount}
+                              {guide.likeCount}
                             </Text>
                           </Group>
                         </Group>

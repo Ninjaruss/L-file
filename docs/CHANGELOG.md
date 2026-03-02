@@ -2,6 +2,9 @@
 
 ## TODO
 
+## 2026-03-01
+- Styling updates to filter buttons
+- Meta data text updated to use L-file - Usogui Database
 
 
 ## 2026-02-28

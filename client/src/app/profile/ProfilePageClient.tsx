@@ -13,6 +13,7 @@ import {
   Loader,
   Menu,
   PasswordInput,
+  Progress,
   SegmentedControl,
   SimpleGrid,
   Skeleton,
@@ -23,14 +24,19 @@ import {
   Title,
   useMantineTheme,
   ActionIcon,
-  Center
+  Center,
+  rem,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, semanticColors, textColors } from '../../lib/mantine-theme'
+import { getAlphaColor, getEntityThemeColor, headerColors, outlineStyles, textColors } from '../../lib/mantine-theme'
 import {
   User,
+  AlertCircle,
+  BarChart2,
   BookOpen,
+  CheckCircle,
+  Clock,
   Edit,
   Check,
   X,
@@ -55,9 +61,10 @@ import QuoteSelectionPopup from '../../components/QuoteSelectionPopup'
 import GambleSelectionPopup from '../../components/GambleSelectionPopup'
 import ProfilePictureSelector from '../../components/ProfilePictureSelector'
 import UserBadges from '../../components/UserBadges'
-import CustomRoleDisplay from '../../components/CustomRoleDisplay'
+import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import SubmissionCard from '../../components/SubmissionCard'
 import type { SubmissionItem } from '../../components/SubmissionCard'
+import { MAX_CHAPTER } from '../../lib/constants'
 
 interface UserGuide {
   id: number
@@ -639,8 +646,19 @@ export default function ProfilePageClient() {
       <Container size="lg" py="xl">
         <Stack gap="xl">
           {/* Profile Header */}
-          <Card shadow="md" padding="xl" radius="md">
-            <Group align="center" gap="lg">
+          <Card
+            className="gambling-card"
+            withBorder
+            radius="lg"
+            shadow="xl"
+            padding="xl"
+            style={{
+              background: `linear-gradient(135deg, ${getAlphaColor(outlineStyles.accentColor, 0.15)}, ${getAlphaColor(outlineStyles.accentColor, 0.04)}), ${theme.colors.dark?.[7] ?? '#070707'}`,
+              border: `1px solid ${getAlphaColor(outlineStyles.accentColor, 0.3)}`,
+              boxShadow: `0 20px 45px ${getAlphaColor(outlineStyles.accentColor, 0.08)}`
+            }}
+          >
+            <Group align="flex-start" gap="xl">
               <Box
                 style={{
                   position: 'relative',
@@ -770,14 +788,13 @@ export default function ProfilePageClient() {
                       </ActionIcon>
                     </Group>
                   )}
-                  <Badge variant="light" color={
-                    user?.role === 'admin' ? 'red' :
-                    user?.role === 'moderator' ? 'orange' : 'blue'
-                  }>
-                    {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
-                  </Badge>
+                  <UserRoleDisplay
+                    userRole={user?.role as 'admin' | 'moderator' | 'user'}
+                    customRole={user?.customRole || null}
+                    size="medium"
+                    spacing={2}
+                  />
                   <UserBadges userId={user?.id} />
-                  <CustomRoleDisplay customRole={user?.customRole || null} />
                 </Group>
                 <Text size="sm" c="dimmed">
                   Member since {new Date(user?.createdAt || '').toLocaleDateString()}
@@ -788,7 +805,7 @@ export default function ProfilePageClient() {
 
           {/* Profile Picture Selector - Inline when opened */}
           {profilePictureSelectorOpened && user?.id && typeof user.id === 'number' && (
-            <Card shadow="sm" padding="md" radius="md">
+            <Card shadow="sm" padding="md" radius="md" withBorder>
               <Stack gap="md">
                 <Group justify="space-between">
                   <Text fw={600} size="lg">Profile Picture Options</Text>
@@ -809,9 +826,9 @@ export default function ProfilePageClient() {
           {/* Main Content - Single Page Layout */}
           <Stack gap="xl">
             {/* Linked Accounts Section */}
-            <Card shadow="sm" padding="md" radius="md">
+            <Card shadow="sm" padding="md" radius="md" withBorder>
               <Stack gap="md">
-                <Text fw={600} size="lg">Linked Accounts</Text>
+                <Title order={2} size="h3" c={headerColors.h2}>Linked Accounts</Title>
                 <Text size="sm" c="dimmed">Manage which accounts are connected to your profile.</Text>
 
                 <Stack gap="sm">
@@ -857,10 +874,57 @@ export default function ProfilePageClient() {
               </Stack>
             </Card>
 
-            {/* Favorites Section */}
-            <Card shadow="sm" padding="md" radius="md">
+            {/* Reading Progress */}
+            <Card
+              withBorder
+              radius="lg"
+              padding="lg"
+              shadow="lg"
+              style={{
+                background: getAlphaColor(getEntityThemeColor(theme, 'arc'), 0.12),
+                border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'arc'), 0.35)}`
+              }}
+            >
               <Stack gap="md">
-                <Text fw={600} size="lg">Favorites</Text>
+                <Group gap="sm" align="center">
+                  <BookOpen size={24} color={getEntityThemeColor(theme, 'arc')} />
+                  <Title order={2} size="h3" c={headerColors.h2}>Reading Progress</Title>
+                </Group>
+
+                <Stack gap="sm">
+                  <Group justify="space-between" align="center">
+                    <Text size="sm" c={textColors.tertiary}>
+                      Current Chapter
+                    </Text>
+                    <Text fw={600}>
+                      {user?.userProgress ?? 0} / {MAX_CHAPTER}
+                    </Text>
+                  </Group>
+
+                  <Progress
+                    value={Math.min(Math.round(((user?.userProgress ?? 0) / MAX_CHAPTER) * 100), 100)}
+                    color={getEntityThemeColor(theme, 'arc')}
+                    radius="md"
+                    size="lg"
+                    striped
+                    animated
+                  />
+
+                  <Group justify="space-between" align="center">
+                    <Text size="xs" c={textColors.tertiary}>0%</Text>
+                    <Text size="sm" fw={600} c={getEntityThemeColor(theme, 'arc')}>
+                      {Math.min(Math.round(((user?.userProgress ?? 0) / MAX_CHAPTER) * 100), 100)}%
+                    </Text>
+                    <Text size="xs" c={textColors.tertiary}>100%</Text>
+                  </Group>
+                </Stack>
+              </Stack>
+            </Card>
+
+            {/* Favorites Section */}
+            <Card shadow="sm" padding="md" radius="md" withBorder>
+              <Stack gap="md">
+                <Title order={2} size="h3" c={headerColors.h2}>Favorites</Title>
 
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                   <Stack gap="sm">
@@ -973,17 +1037,21 @@ export default function ProfilePageClient() {
               <Stack gap="lg">
                 {/* Header with Create Menu */}
                 <Group justify="space-between" wrap="wrap">
-                  <Group gap="sm">
+                  <Group gap="sm" align="center">
                     <BookOpen size={20} color={getEntityThemeColor(theme, 'guide')} />
-                    <Text fw={600} size="lg">My Content</Text>
+                    <Title order={2} size="h3" c={headerColors.h2}>My Content</Title>
                   </Group>
                   <Menu shadow="md" width={200}>
                     <Menu.Target>
                       <Button
                         leftSection={<Plus size={16} />}
                         variant="light"
-                        color="teal"
                         radius="md"
+                        style={{
+                          backgroundColor: getAlphaColor(getEntityThemeColor(theme, 'guide'), 0.15),
+                          color: getEntityThemeColor(theme, 'guide'),
+                          border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'guide'), 0.3)}`
+                        }}
                       >
                         Create New
                       </Button>
@@ -1007,29 +1075,41 @@ export default function ProfilePageClient() {
 
                 {/* Quick Stats */}
                 <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-                  <Card withBorder padding="xs" radius="md">
-                    <Text size="xs" c="dimmed">Total Approved</Text>
-                    <Text size="lg" fw={700} c="green">
-                      {submissions.filter(s => s.status === 'approved').length}
-                    </Text>
+                  <Card withBorder padding="sm" radius="md" style={{ background: getAlphaColor(getEntityThemeColor(theme, 'guide'), 0.08) }}>
+                    <Stack gap={4} align="center">
+                      <CheckCircle size={18} color={getEntityThemeColor(theme, 'guide')} />
+                      <Text size="lg" fw={700} c={getEntityThemeColor(theme, 'guide')}>
+                        {submissions.filter(s => s.status === 'approved').length}
+                      </Text>
+                      <Text size="xs" c={textColors.tertiary} ta="center">Total Approved</Text>
+                    </Stack>
                   </Card>
-                  <Card withBorder padding="xs" radius="md">
-                    <Text size="xs" c="dimmed">Pending Review</Text>
-                    <Text size="lg" fw={700} c="yellow">
-                      {submissions.filter(s => s.status === 'pending').length}
-                    </Text>
+                  <Card withBorder padding="sm" radius="md" style={{ background: getAlphaColor(getEntityThemeColor(theme, 'event'), 0.08) }}>
+                    <Stack gap={4} align="center">
+                      <Clock size={18} color={getEntityThemeColor(theme, 'event')} />
+                      <Text size="lg" fw={700} c={getEntityThemeColor(theme, 'event')}>
+                        {submissions.filter(s => s.status === 'pending').length}
+                      </Text>
+                      <Text size="xs" c={textColors.tertiary} ta="center">Pending Review</Text>
+                    </Stack>
                   </Card>
-                  <Card withBorder padding="xs" radius="md">
-                    <Text size="xs" c="dimmed">Needs Resubmit</Text>
-                    <Text size="lg" fw={700} c="red">
-                      {submissions.filter(s => s.status === 'rejected').length}
-                    </Text>
+                  <Card withBorder padding="sm" radius="md" style={{ background: getAlphaColor(getEntityThemeColor(theme, 'gamble'), 0.08) }}>
+                    <Stack gap={4} align="center">
+                      <AlertCircle size={18} color={getEntityThemeColor(theme, 'gamble')} />
+                      <Text size="lg" fw={700} c={getEntityThemeColor(theme, 'gamble')}>
+                        {submissions.filter(s => s.status === 'rejected').length}
+                      </Text>
+                      <Text size="xs" c={textColors.tertiary} ta="center">Needs Resubmit</Text>
+                    </Stack>
                   </Card>
-                  <Card withBorder padding="xs" radius="md">
-                    <Text size="xs" c="dimmed">Total Submissions</Text>
-                    <Text size="lg" fw={700}>
-                      {submissions.length}
-                    </Text>
+                  <Card withBorder padding="sm" radius="md" style={{ background: getAlphaColor(getEntityThemeColor(theme, 'character'), 0.08) }}>
+                    <Stack gap={4} align="center">
+                      <BarChart2 size={18} color={getEntityThemeColor(theme, 'character')} />
+                      <Text size="lg" fw={700} c={getEntityThemeColor(theme, 'character')}>
+                        {submissions.length}
+                      </Text>
+                      <Text size="xs" c={textColors.tertiary} ta="center">Total Submissions</Text>
+                    </Stack>
                   </Card>
                 </SimpleGrid>
 
@@ -1046,7 +1126,7 @@ export default function ProfilePageClient() {
                       value="guides"
                       leftSection={<FileText size={16} />}
                       rightSection={contentCounts.guides > 0 ? (
-                        <Badge size="xs" variant="light" color="teal" circle>{contentCounts.guides}</Badge>
+                        <Badge size="xs" circle style={{ background: getAlphaColor(getEntityThemeColor(theme, 'guide'), 0.2), color: getEntityThemeColor(theme, 'guide'), border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'guide'), 0.4)}` }}>{contentCounts.guides}</Badge>
                       ) : null}
                     >
                       Guides
@@ -1055,7 +1135,7 @@ export default function ProfilePageClient() {
                       value="media"
                       leftSection={<FileImage size={16} />}
                       rightSection={contentCounts.media > 0 ? (
-                        <Badge size="xs" variant="light" color="violet" circle>{contentCounts.media}</Badge>
+                        <Badge size="xs" circle style={{ background: getAlphaColor(getEntityThemeColor(theme, 'media'), 0.2), color: getEntityThemeColor(theme, 'media'), border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'media'), 0.4)}` }}>{contentCounts.media}</Badge>
                       ) : null}
                     >
                       Media
@@ -1064,7 +1144,7 @@ export default function ProfilePageClient() {
                       value="events"
                       leftSection={<Calendar size={16} />}
                       rightSection={contentCounts.events > 0 ? (
-                        <Badge size="xs" variant="light" color="orange" circle>{contentCounts.events}</Badge>
+                        <Badge size="xs" circle style={{ background: getAlphaColor(getEntityThemeColor(theme, 'event'), 0.2), color: getEntityThemeColor(theme, 'event'), border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'event'), 0.4)}` }}>{contentCounts.events}</Badge>
                       ) : null}
                     >
                       Events
@@ -1073,7 +1153,7 @@ export default function ProfilePageClient() {
                       value="annotations"
                       leftSection={<MessageSquare size={16} />}
                       rightSection={contentCounts.annotations > 0 ? (
-                        <Badge size="xs" variant="light" color="blue" circle>{contentCounts.annotations}</Badge>
+                        <Badge size="xs" circle style={{ background: getAlphaColor(getEntityThemeColor(theme, 'quote'), 0.2), color: getEntityThemeColor(theme, 'quote'), border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'quote'), 0.4)}` }}>{contentCounts.annotations}</Badge>
                       ) : null}
                     >
                       Annotations
@@ -1436,9 +1516,9 @@ export default function ProfilePageClient() {
             </Card>
 
             {/* Settings Section */}
-            <Card shadow="sm" padding="md" radius="md">
+            <Card shadow="sm" padding="md" radius="md" withBorder>
               <Stack gap="md">
-                <Text fw={600} size="lg">Settings</Text>
+                <Title order={2} size="h3" c={headerColors.h2}>Settings</Title>
                 
                 {/* Custom Role Editor */}
                 <Stack gap="sm">
@@ -1508,9 +1588,9 @@ export default function ProfilePageClient() {
             </Card>
 
             {/* Account Security Section */}
-            <Card shadow="sm" padding="md" radius="md">
+            <Card shadow="sm" padding="md" radius="md" withBorder>
               <Stack gap="md">
-                <Text fw={600} size="lg">Account Security</Text>
+                <Title order={2} size="h3" c={headerColors.h2}>Account Security</Title>
 
                 {/* Change Email */}
                 <Stack gap="xs">
