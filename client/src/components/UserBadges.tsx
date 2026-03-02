@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react'
+import { Group, Skeleton, ThemeIcon, Text, rem } from '@mantine/core'
 import { UserBadge } from '../types'
 import { api } from '../lib/api'
 import BadgeDisplay from './BadgeDisplay'
@@ -45,18 +46,15 @@ export default function UserBadges({
     fetchBadges()
   }, [userId])
 
+  const iconSize = size === 'sm' ? rem(24) : size === 'md' ? rem(32) : rem(40)
+
   if (loading) {
     return (
-      <div className={`flex gap-2 ${className}`}>
+      <Group gap={rem(8)} className={className}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className={`rounded-full bg-gray-700 animate-pulse ${
-              size === 'sm' ? 'w-6 h-6' : size === 'md' ? 'w-8 h-8' : 'w-10 h-10'
-            }`}
-          />
+          <Skeleton key={i} height={iconSize} width={iconSize} radius="xl" />
         ))}
-      </div>
+      </Group>
     );
   }
 
@@ -64,12 +62,10 @@ export default function UserBadges({
     return null; // Silently fail for badges
   }
 
-  // Ensure badges is an array and has content
   if (!Array.isArray(badges) || badges.length === 0) {
     return null;
   }
 
-  // Sort badges by display order and awarded date
   const sortedBadges = badges.sort((a, b) => {
     if (a.badge.displayOrder !== b.badge.displayOrder) {
       return a.badge.displayOrder - b.badge.displayOrder;
@@ -81,7 +77,7 @@ export default function UserBadges({
   const remainingCount = badges.length - maxDisplay;
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <Group gap={rem(8)} align="center" className={className}>
       {visibleBadges.map((userBadge) => (
         <BadgeDisplay
           key={userBadge.id}
@@ -90,16 +86,16 @@ export default function UserBadges({
         />
       ))}
       {remainingCount > 0 && (
-        <div
-          className={`
-            inline-flex items-center justify-center rounded-full bg-gray-600 text-gray-300
-            ${size === 'sm' ? 'w-6 h-6 text-xs' : size === 'md' ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-base'}
-          `}
+        <ThemeIcon
+          radius="xl"
+          variant="filled"
+          color="dark"
+          size={iconSize}
           title={`+${remainingCount} more badge${remainingCount > 1 ? 's' : ''}`}
         >
-          +{remainingCount}
-        </div>
+          <Text size="xs" fw={500}>+{remainingCount}</Text>
+        </ThemeIcon>
       )}
-    </div>
+    </Group>
   );
 }

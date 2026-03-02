@@ -5,7 +5,7 @@
 ## 2026-03-01
 - Styling updates to filter buttons
 - Meta data text updated to use L-file - Usogui Database
-
+- Users detail page and profile page updates for better visual clarity (styling)
 
 ## 2026-02-28
 - Added the tooltip label icon with tooltip for "press / to search" to the top right search bar

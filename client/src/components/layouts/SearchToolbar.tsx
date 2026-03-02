@@ -35,6 +35,8 @@ interface SearchToolbarProps {
   onSortChange: (value: string | null) => void
   /** Entity accent color */
   accentColor: string
+  /** Optional keydown handler for the search input (e.g., Enter key triggers immediate search) */
+  onSearchKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void
   /** Current view mode */
   viewMode?: ViewMode
   /** Handler for view mode changes */
@@ -53,6 +55,7 @@ export function SearchToolbar({
   sortValue,
   onSortChange,
   accentColor,
+  onSearchKeyDown,
   viewMode = 'grid',
   onViewModeChange,
   children
@@ -130,6 +133,7 @@ export function SearchToolbar({
               placeholder={searchPlaceholder}
               value={searchInput}
               onChange={onSearchChange}
+              onKeyDown={onSearchKeyDown}
               leftSection={<Search size={20} />}
               size="lg"
               radius="xl"
@@ -174,22 +178,24 @@ export function SearchToolbar({
             />
           </Box>
 
-          {/* Sort dropdown */}
-          <Select
-            data={sortOptions}
-            value={sortValue}
-            onChange={onSortChange}
-            leftSection={<ArrowUpDown size={16} />}
-            style={{ minWidth: rem(140), flex: '0 0 auto' }}
-            size="lg"
-            radius="xl"
-            styles={{
-              input: {
-                fontSize: rem(14),
-                '&:focus': { borderColor: accentColor }
-              }
-            }}
-          />
+          {/* Sort dropdown — only rendered when sort options are provided */}
+          {sortOptions.length > 0 && (
+            <Select
+              data={sortOptions}
+              value={sortValue}
+              onChange={onSortChange}
+              leftSection={<ArrowUpDown size={16} />}
+              style={{ minWidth: rem(140), flex: '0 0 auto' }}
+              size="lg"
+              radius="xl"
+              styles={{
+                input: {
+                  fontSize: rem(14),
+                  '&:focus': { borderColor: accentColor }
+                }
+              }}
+            />
+          )}
 
           {/* Entity-specific filters */}
           {children}

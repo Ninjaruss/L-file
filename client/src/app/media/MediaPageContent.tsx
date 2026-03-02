@@ -6,7 +6,6 @@ import {
   Text,
   Group,
   Select,
-  TextInput,
   Button,
   Card,
   Badge,
@@ -25,7 +24,6 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue, useIntersection } from '@mantine/hooks'
 import {
-  Search,
   Image as ImageIcon,
   Play,
   Volume2,
@@ -42,9 +40,15 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { BackToTop } from '../../components/BackToTop'
 import { api, API_BASE_URL } from '../../lib/api'
-import { getEntityThemeColor, backgroundStyles, getHeroStyles } from '../../lib/mantine-theme'
+import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
+import { ListPageHero } from '../../components/layouts/ListPageHero'
 import { useAuth } from '../../providers/AuthProvider'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
+import { FilterEmptyState } from '../../components/EmptyState'
+import { ActiveFilterBadge, ActiveFilterBadgeRow } from '../../components/layouts/ActiveFilterBadge'
+import { SearchToolbar } from '../../components/layouts/SearchToolbar'
+import { motion } from 'motion/react'
+import { pageEnter } from '../../lib/motion-presets'
 import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl } from '../../lib/video-utils'
 import styles from './media.module.css'
 
@@ -411,12 +415,13 @@ export default function MediaPageContent({
   }, [media])
 
   const activeFilters = useMemo(() => {
-    const filters: Array<{ key: string; label: string; onClear: () => void }> = []
+    const filters: Array<{ key: string; label: string; value: string; onClear: () => void }> = []
 
     if (searchValue.trim()) {
       filters.push({
         key: 'search',
-        label: `Keyword: ${searchValue.trim()}`,
+        label: 'Keyword',
+        value: searchValue.trim(),
         onClear: () => setSearchValue('')
       })
     }
@@ -424,7 +429,8 @@ export default function MediaPageContent({
     if (selectedType !== 'all') {
       filters.push({
         key: 'type',
-        label: `Type: ${selectedType}`,
+        label: 'Type',
+        value: selectedType,
         onClear: () => setSelectedType('all')
       })
     }
@@ -432,7 +438,8 @@ export default function MediaPageContent({
     if (selectedOwnerType !== 'all') {
       filters.push({
         key: 'owner',
-        label: `Content: ${selectedOwnerType}`,
+        label: 'Content',
+        value: selectedOwnerType,
         onClear: () => setSelectedOwnerType('all')
       })
     }
@@ -440,7 +447,8 @@ export default function MediaPageContent({
     if (selectedPurpose !== 'gallery') {
       filters.push({
         key: 'purpose',
-        label: 'Official media',
+        label: 'Source',
+        value: 'Official',
         onClear: () => setSelectedPurpose('gallery')
       })
     }
@@ -488,223 +496,143 @@ export default function MediaPageContent({
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
+      <motion.div {...pageEnter}>
       <Stack gap="md">
-        <Box p="md" style={getHeroStyles(theme, accentMedia)}>
-          <Stack align="center" gap="sm">
-            <Box
-              style={{
-                background: `linear-gradient(135deg, ${accentMedia}, ${accentMedia}CC)`,
-                borderRadius: '50%',
-                width: rem(40),
-                height: rem(40),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 10px 30px ${accentMedia}40`
-              }}
+        <ListPageHero
+          icon={<ImageIcon size={26} color="#ffffff" />}
+          title="Media Gallery"
+          subtitle="Community fanart, videos, and official artwork celebrating Usogui."
+          entityType="media"
+          count={total}
+          countLabel={totalLabel}
+          hasActiveSearch={hasActiveFilters}
+        >
+          {user && (
+            <Button
+              component={Link}
+              href="/submit-media"
+              size="xs"
+              radius="sm"
+              variant="outline"
+              style={{ color: accentMedia, borderColor: accentMedia }}
+              leftSection={<Upload size={14} />}
             >
-              <ImageIcon size={20} color="#ffffff" />
-            </Box>
+              Submit Media
+            </Button>
+          )}
+        </ListPageHero>
 
-            <Stack align="center" gap={4} maw={520} ta="center">
-              <Title order={1} size="1.5rem" fw={700} c="#ffffff">
-                Media Gallery
-              </Title>
-              <Text size="sm" c="dimmed">
-                Community fanart, videos, and official artwork celebrating Usogui.
+        <SearchToolbar
+          searchPlaceholder="Search descriptions..."
+          searchInput={searchValue}
+          onSearchChange={(e) => {
+            const value = e.target.value
+            setSearchValue(value)
+            if (value.trim() === '' && searchValue.trim() !== '') {
+              setCurrentPage(1)
+              setHasMore(true)
+            }
+          }}
+          onClearSearch={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+          sortOptions={[]}
+          sortValue=""
+          onSortChange={() => {}}
+          accentColor={accentMedia}
+        >
+          <Select
+            data={[
+              { value: 'all', label: 'All Types' },
+              { value: 'image', label: 'Images' },
+              { value: 'video', label: 'Videos' },
+              { value: 'audio', label: 'Audio' }
+            ]}
+            value={selectedType}
+            onChange={(value) => setSelectedType(value || 'all')}
+            placeholder="Type"
+            leftSection={getMediaTypeIcon(selectedType)}
+            size="lg"
+            radius="xl"
+            style={{ minWidth: rem(120), flex: '1 1 120px' }}
+          />
+          <Select
+            data={[
+              { value: 'all', label: 'All Content' },
+              { value: 'character', label: 'Characters' },
+              { value: 'arc', label: 'Arcs' },
+              { value: 'event', label: 'Events' },
+              { value: 'gamble', label: 'Gambles' },
+              { value: 'organization', label: 'Organizations' },
+              { value: 'user', label: 'Community' }
+            ]}
+            value={selectedOwnerType}
+            onChange={(value) => setSelectedOwnerType((value as typeof selectedOwnerType) || 'all')}
+            placeholder="Category"
+            size="lg"
+            radius="xl"
+            style={{ minWidth: rem(140), flex: '1 1 140px' }}
+          />
+          <Select
+            data={[
+              { value: 'gallery', label: 'Community' },
+              { value: 'entity_display', label: 'Official' }
+            ]}
+            value={selectedPurpose}
+            onChange={(value) => setSelectedPurpose(value || 'gallery')}
+            placeholder="Source"
+            size="lg"
+            radius="xl"
+            style={{ minWidth: rem(120), flex: '1 1 120px' }}
+          />
+          {hasActiveFilters && (
+            <Button
+              variant="light"
+              size="sm"
+              onClick={handleClearFilters}
+              color={accentMedia}
+              leftSection={<X size={14} />}
+            >
+              Clear
+            </Button>
+          )}
+        </SearchToolbar>
+
+        {(media.length > 0 || total > 0) && (
+          <Container size="lg" px="md">
+            <Group gap="xs" wrap="wrap">
+              <Group gap={6}>
+                <ImageIcon size={12} color={accentMedia} />
+                <Text size="xs" c="dimmed">
+                  {total.toLocaleString()} total
+                </Text>
+              </Group>
+              <Text size="xs" c="dimmed">•</Text>
+              <Text size="xs" c="dimmed">
+                {mediaInsights.contributors} creator{mediaInsights.contributors !== 1 ? 's' : ''}
               </Text>
-              <Group gap={6} justify="center">
-                <Badge
-                  size="sm"
-                  variant="light"
-                  radius="sm"
-                  c={accentMedia}
-                  style={{ backgroundColor: `${accentMedia}20` }}
-                >
-                  {total.toLocaleString()} {totalLabel}
-                </Badge>
-                {user && (
-                  <Button
-                    component={Link}
-                    href="/submit-media"
-                    size="xs"
-                    radius="sm"
-                    variant="outline"
-                    color="grape"
-                    leftSection={<Upload size={14} />}
-                  >
-                    Submit Media
-                  </Button>
-                )}
-              </Group>
-            </Stack>
-          </Stack>
-        </Box>
+              <Text size="xs" c="dimmed">•</Text>
+              <Text size="xs" c="dimmed">
+                {selectionSummary}
+              </Text>
+            </Group>
+          </Container>
+        )}
 
-        <Container size="lg" px="md">
-          <Paper
-            withBorder
-            radius="md"
-            p="md"
-            style={{ background: backgroundStyles.card, borderColor: `${accentMedia}25` }}
-          >
-            <Stack gap="md">
-              <Group gap="md" wrap="wrap">
-                <Box style={{ flex: '1 1 280px', minWidth: '200px' }}>
-                  <TextInput
-                    placeholder="Search descriptions..."
-                    leftSection={<Search size={16} />}
-                    value={searchValue}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setSearchValue(value)
-                      // Immediately trigger search when cleared
-                      if (value.trim() === '' && searchValue.trim() !== '') {
-                        setCurrentPage(1)
-                        setHasMore(true)
-                      }
-                    }}
-                    rightSection={
-                      searchValue && (
-                        <ActionIcon
-                          size="lg"
-                          variant="subtle"
-                          color="gray"
-                          onClick={() => {
-                            setSearchValue('')
-                            setCurrentPage(1)
-                            setHasMore(true)
-                          }}
-                          aria-label="Clear search"
-                          style={{ minWidth: 44, minHeight: 44 }}
-                        >
-                          <X size={18} />
-                        </ActionIcon>
-                      )
-                    }
-                    styles={{
-                      input: {
-                        backgroundColor: backgroundStyles.input,
-                        border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff',
-                        '&:focus': {
-                          borderColor: accentMedia
-                        }
-                      }
-                    }}
-                  />
-                </Box>
-
-                <Group gap="sm" wrap="wrap">
-                  <Select
-                    data={[
-                      { value: 'all', label: 'All Types' },
-                      { value: 'image', label: 'Images' },
-                      { value: 'video', label: 'Videos' },
-                      { value: 'audio', label: 'Audio' }
-                    ]}
-                    value={selectedType}
-                    onChange={(value) => setSelectedType(value || 'all')}
-                    placeholder="Type"
-                    leftSection={getMediaTypeIcon(selectedType)}
-                    style={{ minWidth: rem(120), flex: '1 1 120px' }}
-                    styles={{
-                      input: {
-                        backgroundColor: backgroundStyles.input,
-                        border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff',
-                        '&:focus': { borderColor: accentMedia }
-                      },
-                      dropdown: {
-                        backgroundColor: backgroundStyles.card
-                      }
-                    }}
-                  />
-
-                  <Select
-                    data={[
-                      { value: 'all', label: 'All Content' },
-                      { value: 'character', label: 'Characters' },
-                      { value: 'arc', label: 'Arcs' },
-                      { value: 'event', label: 'Events' },
-                      { value: 'gamble', label: 'Gambles' },
-                      { value: 'organization', label: 'Organizations' },
-                      { value: 'user', label: 'Community' }
-                    ]}
-                    value={selectedOwnerType}
-                    onChange={(value) => setSelectedOwnerType((value as typeof selectedOwnerType) || 'all')}
-                    placeholder="Category"
-                    style={{ minWidth: rem(140), flex: '1 1 140px' }}
-                    styles={{
-                      input: {
-                        backgroundColor: backgroundStyles.input,
-                        border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff',
-                        '&:focus': { borderColor: accentMedia }
-                      },
-                      dropdown: {
-                        backgroundColor: backgroundStyles.card
-                      }
-                    }}
-                  />
-
-                  <Select
-                    data={[
-                      { value: 'gallery', label: 'Community' },
-                      { value: 'entity_display', label: 'Official' }
-                    ]}
-                    value={selectedPurpose}
-                    onChange={(value) => setSelectedPurpose(value || 'gallery')}
-                    placeholder="Source"
-                    style={{ minWidth: rem(120), flex: '1 1 120px' }}
-                    styles={{
-                      input: {
-                        backgroundColor: backgroundStyles.input,
-                        border: `1px solid ${accentMedia}30`,
-                        color: '#ffffff',
-                        '&:focus': { borderColor: accentMedia }
-                      },
-                      dropdown: {
-                        backgroundColor: backgroundStyles.card
-                      }
-                    }}
-                  />
-
-                  {hasActiveFilters && (
-                    <Button
-                      variant="light"
-                      size="sm"
-                      onClick={handleClearFilters}
-                      color="grape"
-                      leftSection={<X size={14} />}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </Group>
-              </Group>
-
-              {(media.length > 0 || total > 0) && (
-                <Group gap="xs" wrap="wrap">
-                  <Group gap={6}>
-                    <ImageIcon size={12} color={accentMedia} />
-                    <Text size="xs" c="dimmed">
-                      {total.toLocaleString()} total
-                    </Text>
-                  </Group>
-                  <Text size="xs" c="dimmed">•</Text>
-                  <Text size="xs" c="dimmed">
-                    {mediaInsights.contributors} creator{mediaInsights.contributors !== 1 ? 's' : ''}
-                  </Text>
-                  <Text size="xs" c="dimmed">•</Text>
-                  <Text size="xs" c="dimmed">
-                    {selectionSummary}
-                  </Text>
-                </Group>
-              )}
-            </Stack>
-          </Paper>
-        </Container>
+        {activeFilters.length > 0 && (
+          <Container size="lg" px="md">
+            <ActiveFilterBadgeRow>
+              {activeFilters.map(f => (
+                <ActiveFilterBadge
+                  key={f.key}
+                  label={f.label}
+                  value={f.value}
+                  onClear={f.onClear}
+                  accentColor={accentMedia}
+                />
+              ))}
+            </ActiveFilterBadgeRow>
+          </Container>
+        )}
 
         {error && (
           <Container size="lg" px="md">
@@ -721,20 +649,11 @@ export default function MediaPageContent({
             ) : (
               <>
                 {media.length === 0 ? (
-                  <Paper p="md" radius="md" withBorder ta="center" style={{ background: backgroundStyles.card, borderColor: `${accentMedia}25` }}>
-                    <Stack gap="md" align="center">
-                      <ImageIcon size={40} style={{ color: accentMedia, opacity: 0.6 }} />
-                      <Stack gap="xs" align="center">
-                        <Text fw={600}>No media found</Text>
-                        <Text size="sm" c="dimmed">
-                          Try adjusting your filters or search terms
-                        </Text>
-                      </Stack>
-                      <Button variant="light" color="grape" size="sm" onClick={handleClearFilters} leftSection={<X size={14} />}>
-                        Reset filters
-                      </Button>
-                    </Stack>
-                  </Paper>
+                  <FilterEmptyState
+                    entityName="media"
+                    onClearFilters={handleClearFilters}
+                    accentColor={accentMedia}
+                  />
                 ) : (
                   <Stack gap="md">
                     <Group justify="space-between" align="center" wrap="wrap">
@@ -965,6 +884,7 @@ export default function MediaPageContent({
           </Container>
         )}
       </Stack>
+      </motion.div>
 
       <Modal
         opened={viewerOpen}

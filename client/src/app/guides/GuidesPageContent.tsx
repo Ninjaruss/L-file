@@ -10,24 +10,23 @@ import {
   Card,
   Group,
   Loader,
-  Pagination,
   Paper,
-  Select,
   Stack,
   Text,
-  TextInput,
   Title,
   rem,
   useMantineTheme
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { getEntityThemeColor, backgroundStyles, getHeroStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
+import { getEntityThemeColor, backgroundStyles, getPlayingCardStyles } from '../../lib/mantine-theme'
+import { ListPageHero } from '../../components/layouts/ListPageHero'
 import { ActiveFilterBadge, ActiveFilterBadgeRow } from '../../components/layouts/ActiveFilterBadge'
-import { Search, FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6, AlertCircle, ArrowUpDown } from 'lucide-react'
+import { FileText, Eye, Calendar, ThumbsUp, Heart, X, Users, BookOpen, Dice6, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
+import { pageEnter } from '../../lib/motion-presets'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
@@ -37,6 +36,9 @@ import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 import { ScrollToTop } from '../../components/ScrollToTop'
 import { useHoverModal } from '../../hooks/useHoverModal'
+import { PaginationBar } from '../../components/layouts/PaginationBar'
+import { EmptyState, SearchEmptyState } from '../../components/EmptyState'
+import { SearchToolbar } from '../../components/layouts/SearchToolbar'
 
 type GuideEntity = {
   id: number
@@ -343,110 +345,53 @@ export default function GuidesPageContent({
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <motion.div {...pageEnter}>
       {/* Hero Section */}
-      <Box
-        style={getHeroStyles(theme, accentGuide)}
-        p="md"
+      <ListPageHero
+        icon={<FileText size={26} color="white" />}
+        title="Community Guides"
+        subtitle="In-depth analysis and insights from the Usogui community"
+        entityType="guide"
+        count={total}
+        countLabel={`guide${total !== 1 ? 's' : ''} published`}
+        hasActiveSearch={hasSearchQuery || !!authorFilter || !!tagFilter}
       >
-        <Stack align="center" gap="xs">
-          <Box
-            style={{
-              background: `linear-gradient(135deg, ${accentGuide}, ${accentGuide}CC)`,
-              borderRadius: '50%',
-              width: rem(40),
-              height: rem(40),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: `0 4px 16px ${accentGuide}40`
-            }}
+        {user && (
+          <Button
+            component={Link}
+            href="/submit-guide"
+            size="md"
+            leftSection={<FileText size={16} />}
+            radius="md"
+            variant="gradient"
+            gradient={{ from: accentGuide, to: theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48' }}
           >
-            <FileText size={20} color="white" />
-          </Box>
-
-          <Stack align="center" gap="xs">
-            <Title order={1} size="1.5rem" fw={700} ta="center" c={accentGuide}>
-              Community Guides
-            </Title>
-            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
-              In-depth analysis and insights from the Usogui community
-            </Text>
-
-            {total > 0 && (
-              <Badge size="md" variant="light" c={accentGuide} radius="xl" mt="xs">
-                {total} guide{total !== 1 ? 's' : ''} published
-              </Badge>
-            )}
-          </Stack>
-
-          {user && (
-            <Button
-              component={Link}
-              href="/submit-guide"
-              size="md"
-              leftSection={<FileText size={16} />}
-              radius="md"
-              variant="gradient"
-              gradient={{ from: accentGuide, to: theme.other?.usogui?.red ?? theme.colors.red?.[6] ?? '#e11d48' }}
-            >
-              Write Guide
-            </Button>
-          )}
-        </Stack>
-      </Box>
+            Write Guide
+          </Button>
+        )}
+      </ListPageHero>
 
       {/* Search and Filters */}
-      <Box mb="xl" px="md">
-        <Group justify="center" mb="md" gap="md">
-          <Box style={{ maxWidth: rem(500), width: '100%' }}>
-            <TextInput
-              placeholder="Search guides by title or description..."
-              value={searchInput}
-              onChange={handleSearchChange}
-              onKeyDown={handleSearchKeyDown}
-              leftSection={<Search size={20} />}
-              size="lg"
-              radius="xl"
-              rightSection={
-                hasSearchQuery ? (
-                  <ActionIcon variant="subtle" color="gray" onClick={handleClearSearch} size="lg" aria-label="Clear search" style={{ minWidth: 44, minHeight: 44 }}>
-                    <X size={18} />
-                  </ActionIcon>
-                ) : null
-              }
-              styles={{
-                input: {
-                  fontSize: rem(16),
-                  paddingLeft: rem(50),
-                  paddingRight: hasSearchQuery ? rem(50) : rem(20)
-                }
-              }}
-            />
-          </Box>
-          <Select
-            data={[
-              { value: 'newest', label: 'Newest' },
-              { value: 'oldest', label: 'Oldest' },
-              { value: 'mostLiked', label: 'Most Liked' },
-              { value: 'mostViewed', label: 'Most Viewed' },
-            ]}
-            value={sortBy}
-            onChange={handleSortChange}
-            leftSection={<ArrowUpDown size={16} />}
-            style={{ minWidth: rem(140), flex: '0 0 auto' }}
-            size="lg"
-            radius="xl"
-            styles={{
-              input: {
-                fontSize: rem(14),
-                '&:focus': { borderColor: accentGuide }
-              }
-            }}
-          />
-        </Group>
+      <SearchToolbar
+        searchPlaceholder="Search guides by title or description..."
+        searchInput={searchInput}
+        onSearchChange={handleSearchChange}
+        onClearSearch={handleClearSearch}
+        onSearchKeyDown={handleSearchKeyDown}
+        hasActiveFilters={hasSearchQuery || !!authorFilter || !!tagFilter}
+        sortOptions={[
+          { value: 'newest', label: 'Newest' },
+          { value: 'oldest', label: 'Oldest' },
+          { value: 'mostLiked', label: 'Most Liked' },
+          { value: 'mostViewed', label: 'Most Viewed' },
+        ]}
+        sortValue={sortBy}
+        onSortChange={handleSortChange}
+        accentColor={accentGuide}
+      />
 
-        {((authorFilter && authorName) || tagFilter) && (
+      {((authorFilter && authorName) || tagFilter) && (
+        <Box px="md">
           <ActiveFilterBadgeRow>
             {authorFilter && authorName && (
               <ActiveFilterBadge
@@ -465,8 +410,8 @@ export default function GuidesPageContent({
               />
             )}
           </ActiveFilterBadgeRow>
-        )}
-      </Box>
+        </Box>
+      )}
 
       {/* Error State */}
       {error && (
@@ -490,22 +435,19 @@ export default function GuidesPageContent({
         <>
           {/* Empty State */}
           {guides.length === 0 ? (
-            <Box style={{ textAlign: 'center', paddingBlock: rem(80) }}>
-              <FileText size={64} color={theme.colors.gray[4]} style={{ marginBottom: rem(20) }} />
-              <Title order={3} style={{ color: theme.colors.gray[6] }} mb="sm">
-                {hasSearchQuery ? 'No guides found' : 'No guides available'}
-              </Title>
-              <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
-                {hasSearchQuery
-                  ? 'Try adjusting your search terms or filters'
-                  : 'Check back later for new guides'}
-              </Text>
-              {hasSearchQuery && (
-                <Button variant="outline" c={accentGuide} onClick={handleClearSearch}>
-                  Clear search
-                </Button>
-              )}
-            </Box>
+            hasSearchQuery ? (
+              <SearchEmptyState
+                query={searchInput}
+                onClearSearch={handleClearSearch}
+                accentColor={accentGuide}
+              />
+            ) : (
+              <EmptyState
+                title="No guides available"
+                description="Check back later for new community guides."
+                accentColor={accentGuide}
+              />
+            )
           ) : (
             <>
               {/* Results Grid */}
@@ -754,39 +696,21 @@ export default function GuidesPageContent({
                 ))}
               </Box>
 
-              {/* Pagination Info & Controls */}
-              <Box
-                px="md"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  marginTop: rem(48),
-                  gap: rem(12)
-                }}>
-                {/* Always show pagination info when we have guides */}
-                {total > 0 && (
-                  <Text size="sm" style={{ color: theme.colors.gray[6] }}>
-                    Showing {guides.length} of {total} guides
-                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
-                  </Text>
-                )}
-
-                {/* Show pagination controls when we have multiple pages */}
-                {totalPages > 1 && (
-                  <Pagination
-                    total={totalPages}
-                    value={currentPage}
-                    onChange={handlePageChange}
-                    color="guide"
-                    size="lg"
-                    radius="xl"
-                    withEdges
-                  />
-                )}
-
-                {loading && <Loader size="sm" color={accentGuide} />}
-              </Box>
+              {/* Pagination */}
+              <PaginationBar
+                currentPage={currentPage}
+                totalPages={totalPages}
+                total={total}
+                pageSize={12}
+                onPageChange={handlePageChange}
+                entityType="guide"
+                entityName="guides"
+              />
+              {loading && (
+                <Group justify="center" mt="sm">
+                  <Loader size="sm" color={accentGuide} />
+                </Group>
+              )}
             </>
           )}
         </>

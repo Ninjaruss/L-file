@@ -3,42 +3,38 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Alert,
-  Badge,
   Box,
   Card,
   Container,
   Group,
   Loader,
-  Pagination,
-  Paper,
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
-  Title,
   rem,
-  useMantineTheme,
-  Select,
-  ActionIcon,
-  Tooltip
+  useMantineTheme
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   backgroundStyles,
-  getHeroStyles,
   getCardStyles
 } from '../../lib/mantine-theme'
-import { Search, Users as UsersIcon, ArrowUpDown, X } from 'lucide-react'
+import { ListPageHero } from '../../components/layouts/ListPageHero'
+import { Users as UsersIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { motion } from 'motion/react'
+import { pageEnter } from '../../lib/motion-presets'
 import UserProfileImage from '../../components/UserProfileImage'
 import UserBadges from '../../components/UserBadges'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
+import { PaginationBar } from '../../components/layouts/PaginationBar'
+import { EmptyState, SearchEmptyState } from '../../components/EmptyState'
+import { SearchToolbar } from '../../components/layouts/SearchToolbar'
 
 interface PublicUser {
   id: number
@@ -213,127 +209,34 @@ export default function UsersPageContent() {
   const isLoading = pageLoading && users.length === 0
   const isRefreshing = pageLoading && users.length > 0
 
-  const rangeStart = (page - 1) * RESULTS_PER_PAGE + (users.length > 0 ? 1 : 0)
-  const rangeEnd = rangeStart + users.length - 1
-
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box p="md" style={getHeroStyles(theme, accentCommunity)}>
-          <Stack align="center" gap="sm">
-            <Box
-              style={{
-                background: `linear-gradient(135deg, ${accentCommunity}, ${accentCommunity}CC)`,
-                borderRadius: '50%',
-                width: rem(40),
-                height: rem(40),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 10px 30px ${accentCommunity}40`
-              }}
-            >
-              <UsersIcon size={20} color="#ffffff" />
-            </Box>
+      <motion.div {...pageEnter}>
+        <ListPageHero
+          icon={<UsersIcon size={26} color="#ffffff" />}
+          title="Community Hub"
+          subtitle="Discover fellow readers, track progress, and celebrate community contributions."
+          entityType="organization"
+          count={total}
+          countLabel={`member${total === 1 ? '' : 's'}`}
+          hasActiveSearch={hasSearch}
+        />
 
-            <Stack align="center" gap={4} maw={520} ta="center">
-              <Title order={1} size="1.5rem" fw={700} c={accentCommunity}>
-                Community Hub
-              </Title>
-              <Text size="sm" c="dimmed">
-                Discover fellow readers, track progress, and celebrate community contributions.
-              </Text>
-              <Badge
-                size="sm"
-                variant="light"
-                c={accentCommunity}
-                radius="sm"
-                style={{ backgroundColor: `${accentCommunity}20` }}
-              >
-                {total.toLocaleString()} member{total === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-          </Stack>
-        </Box>
-
-        <Container size="lg" px="md" mb="md">
-          <Paper
-            withBorder
-            radius="md"
-            p="md"
-            style={{
-              background: backgroundStyles.card,
-              borderColor: `${accentCommunity}25`
-            }}
-          >
-            <Stack gap="md">
-              <Group gap="md" align="flex-end" wrap="wrap">
-                <Box style={{ flex: '1 1 auto', minWidth: '0', width: '100%' }} maw={{ sm: '100%', md: 'calc(100% - 250px)' }}>
-                  <TextInput
-                    size="md"
-                    radius="md"
-                    placeholder="Search by username..."
-                    value={searchInput}
-                    onChange={handleSearch}
-                    onKeyDown={handleSearchKeyDown}
-                    leftSection={<Search size={16} />}
-                    rightSection={
-                      searchInput && (
-                        <ActionIcon
-                          size="sm"
-                          variant="subtle"
-                          onClick={handleClearSearch}
-                          style={{ color: accentCommunity }}
-                          aria-label="Clear search"
-                        >
-                          <X size={14} />
-                        </ActionIcon>
-                      )
-                    }
-                    styles={{
-                      input: {
-                        backgroundColor: backgroundStyles.input,
-                        border: `1px solid ${accentCommunity}30`,
-                        color: '#ffffff',
-                        '&:focus': {
-                          borderColor: accentCommunity
-                        }
-                      }
-                    }}
-                  />
-                </Box>
-
-                <Select
-                  size="md"
-                  radius="md"
-                  placeholder="Sort by..."
-                  value={sortBy}
-                  onChange={handleSortChange}
-                  leftSection={<ArrowUpDown size={16} />}
-                  data={[
-                    { value: 'newest', label: 'Newest Members' },
-                    { value: 'username', label: 'Username (A-Z)' }
-                  ]}
-                  w={{ base: '100%', md: 220 }}
-                  styles={{
-                    input: {
-                      backgroundColor: backgroundStyles.input,
-                      border: `1px solid ${accentCommunity}30`,
-                      color: '#ffffff'
-                    },
-                    dropdown: {
-                      backgroundColor: backgroundStyles.card
-                    }
-                  }}
-                />
-              </Group>
-            </Stack>
-          </Paper>
-        </Container>
+        <SearchToolbar
+          searchPlaceholder="Search by username..."
+          searchInput={searchInput}
+          onSearchChange={handleSearch}
+          onClearSearch={handleClearSearch}
+          onSearchKeyDown={handleSearchKeyDown}
+          hasActiveFilters={hasSearch}
+          sortOptions={[
+            { value: 'newest', label: 'Newest Members' },
+            { value: 'username', label: 'Username (A-Z)' },
+          ]}
+          sortValue={sortBy}
+          onSortChange={handleSortChange}
+          accentColor={accentCommunity}
+        />
 
         {errorMessage && (
           <Container size="lg" px="md" pb="xl">
@@ -355,30 +258,29 @@ export default function UsersPageContent() {
             ) : (
               <>
                 {users.length === 0 ? (
-                  <Stack align="center" gap="sm" py="xl">
-                    <UsersIcon size={48} color={theme.colors.dark?.[3] ?? '#4b4d52'} />
-                    <Title order={4} c="dimmed">
-                      {hasSearch ? 'No users match your search' : 'No community members yet'}
-                    </Title>
-                    <Text size="sm" c="dimmed">
-                      Try adjusting your search or check back soon.
-                    </Text>
-                  </Stack>
+                  hasSearch ? (
+                    <SearchEmptyState
+                      query={searchInput}
+                      onClearSearch={handleClearSearch}
+                      accentColor={accentCommunity}
+                    />
+                  ) : (
+                    <EmptyState
+                      title="No community members yet"
+                      description="Be the first to join the community."
+                      accentColor={accentCommunity}
+                    />
+                  )
                 ) : (
                   <Stack gap="md">
-                    <Group justify="space-between" gap={6} align="center" wrap="wrap">
-                      <Text size="sm" c="dimmed">
-                        Showing {rangeStart.toLocaleString()}–{rangeEnd.toLocaleString()} of {total.toLocaleString()} members
-                      </Text>
-                      {isRefreshing && (
-                        <Group gap={6} align="center">
-                          <Loader size="xs" color={accentCommunity} />
-                          <Text size="xs" c="dimmed">Updating…</Text>
-                        </Group>
-                      )}
-                    </Group>
+                    {isRefreshing && (
+                      <Group gap={6} justify="flex-end">
+                        <Loader size="xs" color={accentCommunity} />
+                        <Text size="xs" c="dimmed">Updating…</Text>
+                      </Group>
+                    )}
 
-                    <SimpleGrid cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4, xl: 5 }} spacing="sm">
+                    <SimpleGrid cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={rem(20)}>
                       {sortedUsers.map((user, index) => (
                           <motion.div
                             key={user.id}
@@ -439,17 +341,15 @@ export default function UsersPageContent() {
                       ))}
                     </SimpleGrid>
 
-                    {totalPages > 1 && (
-                      <Group justify="center">
-                        <Pagination
-                          total={totalPages}
-                          value={page}
-                          onChange={handlePageChange}
-                          color="grape"
-                          radius="lg"
-                        />
-                      </Group>
-                    )}
+                    <PaginationBar
+                      currentPage={page}
+                      totalPages={totalPages}
+                      total={total}
+                      pageSize={RESULTS_PER_PAGE}
+                      onPageChange={handlePageChange}
+                      entityType="organization"
+                      entityName="members"
+                    />
                   </Stack>
                 )}
               </>
