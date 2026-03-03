@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Badge,
   Group,
-  Select,
   Stack,
   Text,
   Title,
@@ -38,9 +37,9 @@ interface OrganizationsPageContentProps {
 
 const PAGE_SIZE = 12
 
-// No sort UI needed - always alphabetical
 const sortOptions = [
-  { value: 'name', label: 'Name (A-Z)' }
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'memberCount', label: 'Member Count' }
 ]
 
 export default function OrganizationsPageContent({
@@ -59,7 +58,7 @@ export default function OrganizationsPageContent({
   const [error, setError] = useState<string | null>(initialError || null)
   const [searchQuery, setSearchQuery] = useState(initialSearch || '')
   const [currentPage, setCurrentPage] = useState<number>(initialPage)
-  const [memberCountFilter, setMemberCountFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('name')
 
   // Hover modal
   const {
@@ -74,7 +73,7 @@ export default function OrganizationsPageContent({
     isTouchDevice
   } = useHoverModal<Organization>()
 
-  const hasSearchQuery = searchQuery.trim().length > 0 || memberCountFilter !== 'all'
+  const hasSearchQuery = searchQuery.trim().length > 0
 
   // Load all organizations on mount
   const loadAllOrganizations = useCallback(async () => {
@@ -91,7 +90,7 @@ export default function OrganizationsPageContent({
     }
   }, [])
 
-  // Client-side filtering
+  // Client-side filtering and sorting
   const filteredOrganizations = useMemo(() => {
     let results = allOrganizations
     if (searchQuery.trim()) {
@@ -102,20 +101,13 @@ export default function OrganizationsPageContent({
         return name.includes(query) || description.includes(query)
       })
     }
-    if (memberCountFilter !== 'all') {
-      results = results.filter(org => {
-        const count = org.memberCount ?? 0
-        switch (memberCountFilter) {
-          case 'solo': return count === 1
-          case 'small': return count >= 2 && count <= 10
-          case 'medium': return count >= 11 && count <= 50
-          case 'large': return count > 50
-          default: return true
-        }
-      })
-    }
-    return [...results].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-  }, [allOrganizations, searchQuery, memberCountFilter])
+    return [...results].sort((a, b) => {
+      if (sortBy === 'memberCount') {
+        return (b.memberCount ?? 0) - (a.memberCount ?? 0)
+      }
+      return (a.name || '').localeCompare(b.name || '')
+    })
+  }, [allOrganizations, searchQuery, sortBy])
 
   const paginatedOrganizations = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE
@@ -154,10 +146,14 @@ export default function OrganizationsPageContent({
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
-    setMemberCountFilter('all')
     setCurrentPage(1)
     router.push('/organizations', { scroll: false })
   }, [router])
+
+  const handleSortChange = useCallback((value: string | null) => {
+    setSortBy(value || 'name')
+    setCurrentPage(1)
+  }, [])
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
@@ -211,28 +207,8 @@ export default function OrganizationsPageContent({
       onClearSearch={handleClearSearch}
       hasActiveFilters={hasSearchQuery}
       sortOptions={sortOptions}
-      sortValue="name"
-      onSortChange={() => {}}
-      filterSlot={
-        <Select
-          data={[
-            { value: 'all', label: 'Any Size' },
-            { value: 'solo', label: 'Solo (1)' },
-            { value: 'small', label: 'Small (2–10)' },
-            { value: 'medium', label: 'Medium (11–50)' },
-            { value: 'large', label: 'Large (50+)' },
-          ]}
-          value={memberCountFilter}
-          onChange={(value) => {
-            setMemberCountFilter(value || 'all')
-            setCurrentPage(1)
-          }}
-          leftSection={<Users size={16} />}
-          style={{ minWidth: rem(160), flex: '0 0 auto' }}
-          size="lg"
-          radius="xl"
-        />
-      }
+      sortValue={sortBy}
+      onSortChange={handleSortChange}
       renderCard={renderOrganizationCard}
       getKey={(o) => o.id}
       onPageChange={handlePageChange}

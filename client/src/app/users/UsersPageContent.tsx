@@ -212,7 +212,7 @@ export default function UsersPageContent() {
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
       <motion.div {...pageEnter}>
-        <Box style={{ maxWidth: rem(1400), margin: '0 auto' }}>
+        <Box style={{ maxWidth: '75em', margin: '0 auto' }}>
         <ListPageHero
           icon={<UsersIcon size={26} color="#ffffff" />}
           title="Community Hub"

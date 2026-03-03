@@ -32,6 +32,7 @@ import { notifications } from '@mantine/notifications'
 import { getAlphaColor, getEntityThemeColor, headerColors, outlineStyles, textColors } from '../../lib/mantine-theme'
 import {
   User,
+  Settings,
   AlertCircle,
   BarChart2,
   BookOpen,
@@ -826,10 +827,10 @@ export default function ProfilePageClient() {
           )}
 
           {/* Main Content - Tabbed Layout */}
-          <Tabs value={profileTab} onChange={(v) => v && setProfileTab(v as ProfileTab)} variant="outline" keepMounted={false}>
+          <Tabs value={profileTab} onChange={(v) => v && setProfileTab(v as ProfileTab)} variant="outline" keepMounted={false} color={outlineStyles.accentColor}>
             <Tabs.List mb="xl">
-              <Tabs.Tab value="general">General</Tabs.Tab>
-              <Tabs.Tab value="settings">Settings</Tabs.Tab>
+              <Tabs.Tab value="general" leftSection={<User size={16} />}>General</Tabs.Tab>
+              <Tabs.Tab value="settings" leftSection={<Settings size={16} />}>Settings</Tabs.Tab>
             </Tabs.List>
 
             {/* General Tab */}
