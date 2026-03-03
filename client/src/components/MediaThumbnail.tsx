@@ -97,47 +97,6 @@ function ImageWithRetry({
   const [retryCount, setRetryCount] = useState(0)
   const theme = useMantineTheme()
 
-  // Custom intersection-based lazy loading with a generous rootMargin so images
-  // start fetching well before they scroll into view (avoids native lazy loading
-  // inconsistencies in JS-heavy React apps).
-  const { priority } = props
-  const sentinelRef = useRef<HTMLSpanElement>(null)
-  const [shouldLoad, setShouldLoad] = useState<boolean>(!!priority)
-
-  useEffect(() => {
-    if (priority) setShouldLoad(true)
-  }, [priority])
-
-  useEffect(() => {
-    if (shouldLoad) return
-    const el = sentinelRef.current
-    if (!el) return
-
-    // Synchronously check if the element is already near/in the viewport on mount.
-    // This handles both initial page loads and pagination page changes where new
-    // cards appear already visible — no need to wait for the async observer callback.
-    const rect = el.getBoundingClientRect()
-    if (rect.top < window.innerHeight + 400 && rect.bottom > -400) {
-      setShouldLoad(true)
-      return
-    }
-
-    // For cards further down the page, use IntersectionObserver so they start
-    // fetching 400px before they scroll into view.
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldLoad(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin: '400px 0px' }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Run once on mount; priority changes handled by the effect above
-
   const handleLoad = () => {
     setLoading(false)
     setError(false)
@@ -196,13 +155,11 @@ function ImageWithRetry({
   const isExternal = isExternalUrl(src)
 
   // Filter out Next.js Image-specific props for regular img tag
-  const { fill, sizes, quality, priority: _priority, placeholder, blurDataURL, unoptimized, loader, ...imgProps } = props
+  const { fill, sizes, quality, priority, placeholder, blurDataURL, unoptimized, loader, ...imgProps } = props
 
   return (
     <>
-      {/* Invisible sentinel used by IntersectionObserver to detect proximity */}
-      <span ref={sentinelRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
-      {shouldLoad && loading && (
+      {loading && (
         <Box
           style={{
             position: 'absolute',
@@ -220,7 +177,7 @@ function ImageWithRetry({
           <Loader size="sm" color={theme.colors.red?.[5]} />
         </Box>
       )}
-      {shouldLoad && (isExternal ? (
+      {isExternal ? (
         // Use regular img tag for external URLs to bypass Next.js image domain restrictions
         <img
           {...imgProps}
@@ -250,7 +207,7 @@ function ImageWithRetry({
           priority={priority ?? false}
           loading="eager"
         />
-      ))}
+      )}
     </>
   )
 }
@@ -281,6 +238,41 @@ export default function MediaThumbnail({
   const [resolvedMediaInfo, setResolvedMediaInfo] = useState<Record<string, any>>({})
   const resolvedUrlsRef = useRef<Set<string>>(new Set())
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  // Viewport detection — gates loadMedia() so only visible/near-viewport cards
+  // fire their media API call, preventing a burst of 12 simultaneous requests.
+  const containerRef = useRef<HTMLElement | null>(null)
+  const [isNearViewport, setIsNearViewport] = useState<boolean>(!!priority)
+
+  useEffect(() => {
+    if (priority) setIsNearViewport(true)
+  }, [priority])
+
+  useEffect(() => {
+    if (isNearViewport) return
+    const el = containerRef.current
+    if (!el) return
+    // Immediate check: fire for cards already on screen or within 400px on mount
+    // (handles initial page load and pagination page changes).
+    const rect = el.getBoundingClientRect()
+    if (rect.top < window.innerHeight + 400 && rect.bottom > -400) {
+      setIsNearViewport(true)
+      return
+    }
+    // For cards further down the page, pre-load when they approach the viewport.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsNearViewport(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '400px 0px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // mount only; priority changes handled above
 
   const { userProgress } = useProgress()
   const theme = useMantineTheme()
@@ -491,6 +483,8 @@ export default function MediaThumbnail({
   }, [entityId, entityType, userProgress, fetchCurrentThumbnail, initialMedia])
 
   useEffect(() => {
+    if (!isNearViewport) return
+
     loadMedia()
 
     // Cleanup function to abort request on unmount
@@ -499,7 +493,7 @@ export default function MediaThumbnail({
         abortControllerRef.current.abort()
       }
     }
-  }, [loadMedia])
+  }, [loadMedia, isNearViewport])
 
   // Resolve media URLs for special platforms
   useEffect(() => {
@@ -900,6 +894,20 @@ export default function MediaThumbnail({
     )
   }
 
+  // Not yet near the viewport — show an empty placeholder with the same
+  // dimensions/background as the container so the layout doesn't shift.
+  // The containerRef attached here is what the IntersectionObserver watches.
+  if (!isNearViewport) {
+    return (
+      <Box
+        component={containerComponent}
+        ref={containerRef as React.Ref<HTMLDivElement>}
+        className={className}
+        style={containerStyles}
+      />
+    )
+  }
+
   if (loading) {
     return (
       <Box
@@ -1030,7 +1038,7 @@ export default function MediaThumbnail({
     (!numericMaxHeight || numericMaxHeight > 64)
 
   return (
-    <Box component={containerComponent} className={className} style={containerStyles}>
+    <Box component={containerComponent} ref={containerRef as React.Ref<HTMLDivElement>} className={className} style={containerStyles}>
       <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress} spoilerChapter={spoilerChapter} onRevealed={onSpoilerRevealed}>
         {mediaContent}
       </MediaSpoilerWrapper>
