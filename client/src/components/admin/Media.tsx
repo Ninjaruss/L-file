@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import {
   List,
   Datagrid,
@@ -316,6 +317,18 @@ const EntityInfoField = () => {
 
   const colors = getEntityTypeColor(record.ownerType)
 
+  const resourceMap: Record<string, string> = {
+    character: 'characters',
+    arc: 'arcs',
+    event: 'events',
+    gamble: 'gambles',
+    organization: 'organizations',
+  }
+
+  const adminShowPath = record.ownerId && resourceMap[record.ownerType]
+    ? `/${resourceMap[record.ownerType]}/${record.ownerId}/show`
+    : null
+
   return (
     <Box sx={{ width: '180px' }}>
       <Box sx={{
@@ -347,8 +360,17 @@ const EntityInfoField = () => {
             #{record.ownerId || 'N/A'}
           </Typography>
         </Box>
-        <Box sx={{ minHeight: '20px' }}>
+        <Box sx={{ minHeight: '20px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <EntityNameDisplay />
+          {adminShowPath && (
+            <Link
+              to={adminShowPath}
+              onClick={(e) => e.stopPropagation()}
+              style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            >
+              <ExternalLink size={11} color="#666" />
+            </Link>
+          )}
         </Box>
       </Box>
     </Box>
@@ -1418,43 +1440,46 @@ const EntityNameDisplay = () => {
 
       setLoading(true)
       try {
-        let response
+        let name: string
         switch (record.ownerType) {
-          case 'character':
-            response = await api.getCharacters({ limit: 100 })
+          case 'character': {
+            const entity = await api.getCharacter(record.ownerId)
+            name = entity.name
             break
-          case 'arc':
-            response = await api.getArcs({ limit: 100 })
+          }
+          case 'arc': {
+            const entity = await api.getArc(record.ownerId)
+            name = entity.name
             break
-          case 'event':
-            response = await api.getEvents({ limit: 100 })
+          }
+          case 'event': {
+            const entity = await api.getEvent(record.ownerId)
+            name = entity.title || entity.name || `Event #${record.ownerId}`
             break
-          case 'gamble':
-            response = await api.getGambles({ limit: 100 })
+          }
+          case 'gamble': {
+            const entity = await api.getGamble(record.ownerId)
+            name = entity.name
             break
-          case 'organization':
-            response = await api.getOrganizations({ limit: 100 })
+          }
+          case 'organization': {
+            const entity = await api.getOrganization(record.ownerId)
+            name = entity.name
             break
-          case 'user':
-            response = await api.getPublicUsers({ limit: 100 })
+          }
+          case 'user': {
+            const entity = await api.get<{ username: string }>(`/users/${record.ownerId}`)
+            name = entity.username
             break
+          }
           default:
             setEntityName(`Unknown entity type: ${record.ownerType}`)
             return
         }
-
-        const entities = response.data || []
-        const entity = entities.find((e: any) => e.id === record.ownerId)
-        
-        if (entity) {
-          const name = entity.name || entity.title || entity.username || `${record.ownerType} ${entity.id}`
-          setEntityName(name)
-        } else {
-          setEntityName(`${record.ownerType} #${record.ownerId} (not found)`)
-        }
+        setEntityName(name)
       } catch (error) {
         console.error('Failed to fetch entity name:', error)
-        setEntityName(`${record.ownerType} #${record.ownerId} (error loading)`)
+        setEntityName(`${record.ownerType} #${record.ownerId}`)
       } finally {
         setLoading(false)
       }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Card,
@@ -10,9 +10,10 @@ import {
   Title,
   Badge,
   Loader,
+  UnstyledButton,
   useMantineTheme
 } from '@mantine/core'
-import { Building2 } from 'lucide-react'
+import { Building2, ChevronDown, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import {
   getEntityThemeColor,
@@ -30,6 +31,8 @@ interface CharacterOrganizationMembershipsProps {
   characterName: string
 }
 
+const COMPACT_ORG_THRESHOLD = 3
+
 export default function CharacterOrganizationMemberships({
   characterId,
   characterName
@@ -38,8 +41,19 @@ export default function CharacterOrganizationMemberships({
   const [memberships, setMemberships] = useState<CharacterOrganization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCompact, setIsCompact] = useState(false)
+  const [expandedOrgs, setExpandedOrgs] = useState<Set<number>>(new Set())
 
   const entityColor = getEntityThemeColor(theme, 'character')
+
+  const toggleOrg = useCallback((orgId: number) => {
+    setExpandedOrgs(prev => {
+      const next = new Set(prev)
+      if (next.has(orgId)) next.delete(orgId)
+      else next.add(orgId)
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     const fetchMemberships = async () => {
@@ -56,6 +70,9 @@ export default function CharacterOrganizationMemberships({
             : []
         setMemberships(membershipsArray)
         setError(null)
+        // Count unique orgs
+        const uniqueOrgCount = new Set(membershipsArray.map((m: CharacterOrganization) => m.organizationId)).size
+        if (uniqueOrgCount >= COMPACT_ORG_THRESHOLD) setIsCompact(true)
       } catch (err) {
         console.error('[CharacterOrganizationMemberships] Failed to fetch:', err)
         setMemberships([])
@@ -127,10 +144,58 @@ export default function CharacterOrganizationMemberships({
     )
   }
 
+  const showToggle = sortedOrganizations.length >= COMPACT_ORG_THRESHOLD
+
   return (
     <Stack gap={spacing.md}>
-      {sortedOrganizations.map(({ orgId, memberships: orgMemberships, organization: org, minSpoilerChapter }) => {
+      {showToggle && (
+        <Group justify="flex-end">
+          <UnstyledButton onClick={() => setIsCompact(v => !v)}>
+            <Text size="xs" c={entityColor} fw={600} style={{ cursor: 'pointer' }}>
+              {isCompact ? 'Show details' : 'Collapse'}
+            </Text>
+          </UnstyledButton>
+        </Group>
+      )}
+      {sortedOrganizations.map(({ orgId, memberships: orgMemberships, organization: org, minSpoilerChapter, earliestStartChapter }) => {
         if (!org) return null
+
+        const isExpanded = expandedOrgs.has(orgId)
+        const latestMembership = orgMemberships[orgMemberships.length - 1]
+        const chapterSummary = latestMembership?.endChapter
+          ? `Ch. ${earliestStartChapter}–${latestMembership.endChapter}`
+          : `Ch. ${earliestStartChapter}+`
+
+        if (isCompact && !isExpanded) {
+          return (
+            <TimelineSpoilerWrapper key={orgId} chapterNumber={minSpoilerChapter}>
+              <UnstyledButton onClick={() => toggleOrg(orgId)} style={{ width: '100%' }}>
+                <Group
+                  gap={spacing.sm}
+                  style={{
+                    padding: `${spacing.xs} ${spacing.sm}`,
+                    borderRadius: theme.radius.sm,
+                    backgroundColor: getAlphaColor(entityColor, 0.05),
+                    border: `1px solid ${getAlphaColor(entityColor, 0.15)}`,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Building2 size={14} color={entityColor} />
+                  <Link
+                    href={`/organizations/${orgId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ textDecoration: 'none', flex: 1 }}
+                  >
+                    <Text size="sm" fw={600} c={textColors.primary}>{org.name}</Text>
+                  </Link>
+                  <Badge size="xs" variant="light" color="violet">{orgMemberships[orgMemberships.length - 1]?.role}</Badge>
+                  <Text size="xs" c={textColors.tertiary}>{chapterSummary}</Text>
+                  <ChevronRight size={14} color={textColors.tertiary} />
+                </Group>
+              </UnstyledButton>
+            </TimelineSpoilerWrapper>
+          )
+        }
 
         return (
           <TimelineSpoilerWrapper
@@ -175,6 +240,11 @@ export default function CharacterOrganizationMemberships({
                       </Title>
                     </Link>
                   </Box>
+                  {isCompact && isExpanded && (
+                    <UnstyledButton onClick={() => toggleOrg(orgId)}>
+                      <ChevronDown size={14} color={textColors.tertiary} />
+                    </UnstyledButton>
+                  )}
                 </Group>
 
                 {/* Role history */}

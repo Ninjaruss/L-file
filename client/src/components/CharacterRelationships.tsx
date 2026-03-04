@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   Box,
   Card,
@@ -10,9 +10,10 @@ import {
   Title,
   Badge,
   Loader,
+  UnstyledButton,
   useMantineTheme
 } from '@mantine/core'
-import { Users, Heart, Swords, GraduationCap, UserMinus, Home, Handshake, Skull, UserPlus } from 'lucide-react'
+import { Users, Heart, Swords, GraduationCap, UserMinus, Home, Handshake, Skull, UserPlus, ChevronDown, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import {
   getEntityThemeColor,
@@ -100,6 +101,8 @@ const typeOrder: RelationshipType[] = [
   RelationshipType.ACQUAINTANCE
 ]
 
+const COMPACT_THRESHOLD = 8
+
 export default function CharacterRelationships({
   characterId,
   characterName
@@ -111,6 +114,8 @@ export default function CharacterRelationships({
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCompact, setIsCompact] = useState(false)
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
 
   const entityColor = getEntityThemeColor(theme, 'character')
 
@@ -122,6 +127,8 @@ export default function CharacterRelationships({
         const data = await api.getCharacterRelationships(characterId)
         setRelationships(data)
         setError(null)
+        const total = (data?.outgoing?.length ?? 0) + (data?.incoming?.length ?? 0)
+        if (total > COMPACT_THRESHOLD) setIsCompact(true)
       } catch (err) {
         console.error('Failed to fetch relationships:', err)
         setError('Failed to load relationships')
@@ -132,6 +139,15 @@ export default function CharacterRelationships({
 
     fetchRelationships()
   }, [characterId])
+
+  const toggleKey = useCallback((key: string) => {
+    setExpandedKeys(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
 
   // Group outgoing relationships by type (how this character sees others)
   const groupedOutgoing = useMemo(() => {
@@ -171,6 +187,7 @@ export default function CharacterRelationships({
   const hasOutgoing = relationships?.outgoing && relationships.outgoing.length > 0
   const hasIncoming = relationships?.incoming && relationships.incoming.length > 0
   const hasRelationships = hasOutgoing || hasIncoming
+  const totalCount = (relationships?.outgoing?.length ?? 0) + (relationships?.incoming?.length ?? 0)
 
   if (loading) {
     return (
@@ -197,19 +214,98 @@ export default function CharacterRelationships({
     return null // Don't render section if no relationships
   }
 
+  const renderTypeGroup = (
+    type: RelationshipType,
+    rels: CharacterRelationship[],
+    direction: 'outgoing' | 'incoming',
+    labelOverride?: string
+  ) => {
+    const config = relationshipConfig[type]
+    const Icon = config.icon
+    const key = `${direction}-${type}`
+    const isExpanded = expandedKeys.has(key)
+
+    if (isCompact) {
+      return (
+        <Box key={key}>
+          <UnstyledButton
+            onClick={() => toggleKey(key)}
+            style={{ width: '100%' }}
+          >
+            <Group gap={spacing.sm} style={{ padding: `${spacing.xs} 0`, cursor: 'pointer' }}>
+              <Icon size={16} color={config.color} />
+              <Text size="sm" fw={600} c={textColors.secondary} style={{ flex: 1 }}>
+                {labelOverride ?? config.label}
+              </Text>
+              <Badge size="sm" variant="light" color="gray">{rels.length}</Badge>
+              {isExpanded
+                ? <ChevronDown size={14} color={textColors.tertiary} />
+                : <ChevronRight size={14} color={textColors.tertiary} />
+              }
+            </Group>
+          </UnstyledButton>
+          {isExpanded && (
+            <Group gap={spacing.md} wrap="wrap" mt={spacing.sm} mb={spacing.sm}>
+              {rels.map((rel) => (
+                <RelationshipCard
+                  key={rel.id}
+                  relationship={rel}
+                  config={config}
+                  direction={direction}
+                />
+              ))}
+            </Group>
+          )}
+        </Box>
+      )
+    }
+
+    return (
+      <Box key={key}>
+        <Group gap={spacing.sm} mb={spacing.sm}>
+          <Icon size={18} color={config.color} />
+          <Text size="sm" fw={600} c={textColors.secondary}>
+            {labelOverride ?? config.label}
+          </Text>
+          <Badge size="sm" variant="light" color="gray">
+            {rels.length}
+          </Badge>
+        </Group>
+
+        <Group gap={spacing.md} wrap="wrap">
+          {rels.map((rel) => (
+            <RelationshipCard
+              key={rel.id}
+              relationship={rel}
+              config={config}
+              direction={direction}
+            />
+          ))}
+        </Group>
+      </Box>
+    )
+  }
+
   return (
     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColor)}>
       <Stack gap={spacing.md} p={spacing.lg}>
         <Group gap={spacing.sm} align="center">
           <Users size={24} color={entityColor} />
-          <Title order={3} c={textColors.primary}>
+          <Title order={3} c={textColors.primary} style={{ flex: 1 }}>
             Relationships
           </Title>
+          {totalCount > COMPACT_THRESHOLD && (
+            <UnstyledButton onClick={() => setIsCompact(v => !v)}>
+              <Text size="xs" c={entityColor} fw={600} style={{ cursor: 'pointer' }}>
+                {isCompact ? 'Show all' : 'Collapse'}
+              </Text>
+            </UnstyledButton>
+          )}
         </Group>
 
         {/* Outgoing relationships - how this character sees others */}
         {hasOutgoing && (
-          <Stack gap={spacing.lg}>
+          <Stack gap={isCompact ? spacing.xs : spacing.lg}>
             <Text size="sm" fw={600} c={textColors.secondary} tt="uppercase" style={{ letterSpacing: '0.05em' }}>
               {characterName}&apos;s relationships
             </Text>
@@ -217,41 +313,14 @@ export default function CharacterRelationships({
             {typeOrder.map((type) => {
               const rels = groupedOutgoing[type]
               if (!rels || rels.length === 0) return null
-
-              const config = relationshipConfig[type]
-              const Icon = config.icon
-
-              return (
-                <Box key={`outgoing-${type}`}>
-                  <Group gap={spacing.sm} mb={spacing.sm}>
-                    <Icon size={18} color={config.color} />
-                    <Text size="sm" fw={600} c={textColors.secondary}>
-                      {config.label}
-                    </Text>
-                    <Badge size="sm" variant="light" color="gray">
-                      {rels.length}
-                    </Badge>
-                  </Group>
-
-                  <Group gap={spacing.md} wrap="wrap">
-                    {rels.map((rel) => (
-                      <RelationshipCard
-                        key={rel.id}
-                        relationship={rel}
-                        config={config}
-                        direction="outgoing"
-                      />
-                    ))}
-                  </Group>
-                </Box>
-              )
+              return renderTypeGroup(type, rels, 'outgoing')
             })}
           </Stack>
         )}
 
         {/* Incoming relationships - how others see this character */}
         {hasIncoming && (
-          <Stack gap={spacing.lg}>
+          <Stack gap={isCompact ? spacing.xs : spacing.lg}>
             {hasOutgoing && (
               <Box style={{ borderTop: `1px solid ${getAlphaColor(entityColor, 0.2)}`, paddingTop: spacing.md }} />
             )}
@@ -263,34 +332,8 @@ export default function CharacterRelationships({
             {typeOrder.map((type) => {
               const rels = groupedIncoming[type]
               if (!rels || rels.length === 0) return null
-
-              const config = relationshipConfig[type]
-              const Icon = config.icon
-
-              return (
-                <Box key={`incoming-${type}`}>
-                  <Group gap={spacing.sm} mb={spacing.sm}>
-                    <Icon size={18} color={config.color} />
-                    <Text size="sm" fw={600} c={textColors.secondary}>
-                      Seen as {config.label.toLowerCase().replace(/s$/, '')}
-                    </Text>
-                    <Badge size="sm" variant="light" color="gray">
-                      {rels.length}
-                    </Badge>
-                  </Group>
-
-                  <Group gap={spacing.md} wrap="wrap">
-                    {rels.map((rel) => (
-                      <RelationshipCard
-                        key={rel.id}
-                        relationship={rel}
-                        config={config}
-                        direction="incoming"
-                      />
-                    ))}
-                  </Group>
-                </Box>
-              )
+              const label = `Seen as ${relationshipConfig[type].label.toLowerCase().replace(/s$/, '')}`
+              return renderTypeGroup(type, rels, 'incoming', label)
             })}
           </Stack>
         )}

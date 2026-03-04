@@ -29,7 +29,9 @@ import {
   FunctionField,
   WithRecord
 } from 'react-admin'
-import { Box, Typography } from '@mui/material'
+import { Box, Typography, Tooltip, IconButton, Chip } from '@mui/material'
+import { Link } from 'react-router-dom'
+import { Image as ImageIcon } from 'lucide-react'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { EditToolbar } from './EditToolbar'
@@ -94,6 +96,21 @@ export const GambleList = () => (
         </SingleFieldList>
       </ArrayField>
       <DateField source="createdAt" showTime={false} label="Created" sortable />
+      <FunctionField
+        label=""
+        render={(record: any) => (
+          <Tooltip title={`View media for ${record.name}`}>
+            <Link
+              to={`/media?filter=${encodeURIComponent(JSON.stringify({ gambleIds: String(record.id) }))}&page=1&perPage=25`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#f97316' } }}>
+                <ImageIcon size={16} />
+              </IconButton>
+            </Link>
+          </Tooltip>
+        )}
+      />
     </Datagrid>
   </List>
 )
@@ -601,14 +618,51 @@ const GambleEditForm = () => {
             />
           </ReferenceArrayInput>
 
-          <Box sx={{ mt: 4, p: 2, backgroundColor: 'rgba(211, 47, 47, 0.05)', borderRadius: 1, border: '1px solid rgba(211, 47, 47, 0.2)' }}>
-            <Typography variant="subtitle1" sx={{ color: '#d32f2f', fontWeight: 'bold', mb: 1 }}>
-              Faction / Team Management
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="subtitle1" sx={{ color: '#d32f2f', fontWeight: 'bold', mb: 1.5 }}>
+              Current Factions
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Factions allow grouping participants into teams with optional names and supported gamblers.
-              View existing factions in the Show page. Advanced faction editing can be done via the API.
-            </Typography>
+            {(record.factions || []).length === 0 ? (
+              <Box sx={{ p: 2, border: '1px dashed rgba(211,47,47,0.3)', borderRadius: 1 }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+                  No factions defined yet. Use the Show view to add faction structure.
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {record.factions.map((faction: any, i: number) => (
+                  <Box key={faction.id || i} sx={{ p: 1.5, border: '1px solid rgba(211,47,47,0.25)', borderRadius: 1, backgroundColor: '#0f0f0f' }}>
+                    <Typography variant="caption" sx={{ color: '#d32f2f', display: 'block', mb: 0.5, fontWeight: 600 }}>
+                      {faction.name || `Faction ${i + 1}`}
+                      {faction.supportedGambler && ` — Supports ${faction.supportedGambler.name}`}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(faction.members || []).map((m: any) => (
+                        <Chip
+                          key={m.id}
+                          size="small"
+                          label={`${m.character?.name || '?'} (${m.role || 'member'})`}
+                          sx={{ fontSize: '0.65rem', height: 20, backgroundColor: 'rgba(211,47,47,0.1)', color: 'rgba(255,255,255,0.8)' }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            )}
+            <Box sx={{ mt: 2, p: 1.5, backgroundColor: 'rgba(211,47,47,0.05)', borderRadius: 1, border: '1px solid rgba(211,47,47,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                To add or restructure factions, use the Show view.
+              </Typography>
+              <Link
+                to={`/gambles/${record.id}/show`}
+                style={{ textDecoration: 'none' }}
+              >
+                <Typography variant="caption" sx={{ color: '#d32f2f', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}>
+                  Open Show view →
+                </Typography>
+              </Link>
+            </Box>
           </Box>
         </Box>
       </FormTab>

@@ -22,8 +22,9 @@ import {
   BulkDeleteButton,
   WithRecord
 } from 'react-admin'
-import { Typography, Chip, Box, Card, CardContent, Grid, Tooltip } from '@mui/material'
-import { Edit3, Plus, BookOpen, Layers, GitBranch } from 'lucide-react'
+import { Typography, Chip, Box, Card, CardContent, Grid, Tooltip, IconButton } from '@mui/material'
+import { Edit3, Plus, BookOpen, Layers, GitBranch, Image as ImageIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
@@ -213,6 +214,21 @@ export const ArcList = () => (
               {record.description || 'No description'}
             </Typography>
           </Box>
+        )}
+      />
+      <FunctionField
+        label=""
+        render={(record: any) => (
+          <Tooltip title={`View media for ${record.name}`}>
+            <Link
+              to={`/media?filter=${encodeURIComponent(JSON.stringify({ arcIds: String(record.id) }))}&page=1&perPage=25`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#f97316' } }}>
+                <ImageIcon size={16} />
+              </IconButton>
+            </Link>
+          </Tooltip>
         )}
       />
     </Datagrid>

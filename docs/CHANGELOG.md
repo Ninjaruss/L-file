@@ -6,6 +6,9 @@
 - Replacing B2 backblaze with R2 cloudflare
 - Reformatting of public images to webp
 - Preloading of connections to cloudflare images and google fonts 
+- Added single entity api calls
+- Media linking in admin dashboard
+- Collapsible character relationships and memberships 
 
 ## 2026-03-02
 - Resizing users and media list to be consistent with other list pages

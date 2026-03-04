@@ -25,8 +25,8 @@ import {
   AutocompleteInput,
   BulkDeleteButton
 } from 'react-admin'
-import { Box, Card, CardContent, Typography, Grid, Chip, Button as MuiButton, Divider } from '@mui/material'
-import { Edit3, Plus, Users, ArrowRight, Building2 } from 'lucide-react'
+import { Box, Card, CardContent, Typography, Grid, Chip, Button as MuiButton, Divider, Tooltip, IconButton } from '@mui/material'
+import { Edit3, Plus, Users, ArrowRight, Building2, Image as ImageIcon } from 'lucide-react'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { Link } from 'react-router-dom'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
@@ -119,6 +119,21 @@ export const CharacterList = () => (
               />
             ))}
           </Box>
+        )}
+      />
+      <FunctionField
+        label=""
+        render={(record: any) => (
+          <Tooltip title={`View media for ${record.name}`}>
+            <Link
+              to={`/media?filter=${encodeURIComponent(JSON.stringify({ characterIds: String(record.id) }))}&page=1&perPage=25`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#f97316' } }}>
+                <ImageIcon size={16} />
+              </IconButton>
+            </Link>
+          </Tooltip>
         )}
       />
     </Datagrid>

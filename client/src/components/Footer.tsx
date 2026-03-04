@@ -97,9 +97,9 @@ export const Footer: React.FC = () => {
           {/* Right: Emphasized Fluxer and Support */}
           <Group gap="md" align="center">
             <Anchor
-              href="#" /* TODO: Replace with Fluxer server invite URL */
+              href="https://fluxer.gg/TWukaMSX"
               target="_blank"
-              rel="https://fluxer.gg/TWukaMSX"
+              rel="noopener noreferrer"
               aria-label="Join Fluxer community (opens in new tab)"
               style={{
                 textDecoration: 'none',
