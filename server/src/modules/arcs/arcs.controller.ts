@@ -30,14 +30,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
-import { BackblazeB2Service } from '../../services/backblaze-b2.service';
+import { CloudflareR2Service } from '../../services/cloudflare-r2.service';
 
 @ApiTags('arcs')
 @Controller('arcs')
 export class ArcsController {
   constructor(
     private readonly service: ArcsService,
-    private readonly b2Service: BackblazeB2Service,
+    private readonly b2Service: CloudflareR2Service,
   ) {}
 
   @Get()

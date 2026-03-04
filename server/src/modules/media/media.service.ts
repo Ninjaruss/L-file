@@ -26,6 +26,7 @@ import { UrlNormalizerService } from './services/url-normalizer.service';
 import { EmailService } from '../email/email.service';
 import { FileValidationService } from './validators/file-validation.service';
 import { UserRole } from '../../entities/user.entity';
+import { CloudflareR2Service } from '../../services/cloudflare-r2.service';
 
 @Injectable()
 export class MediaService {
@@ -148,7 +149,7 @@ export class MediaService {
     data: UploadMediaDto,
     file: Express.Multer.File,
     user: User,
-    b2Service: any, // BackblazeB2Service - will import properly later
+    b2Service: CloudflareR2Service,
   ): Promise<Media> {
     // Validate purpose constraints
     this.validateMediaPurpose(data);
@@ -513,7 +514,7 @@ export class MediaService {
     updateData: UpdateOwnMediaDto,
     file: Express.Multer.File | undefined,
     user: User,
-    b2Service: any,
+    b2Service: CloudflareR2Service,
   ): Promise<Media> {
     const media = await this.mediaRepo.findOne({
       where: { id },

@@ -56,15 +56,15 @@ export const SHOWCASE_CONFIGURATIONS: ShowcaseConfiguration[] = [
     volumes: [
       {
         id: 37,
-        backgroundImage: '/assets/showcase/Usogui_Volume_37_background.png',
-        popoutImage: '/assets/showcase/Usogui_Volume_37_popout.png',
+        backgroundImage: '/assets/showcase/Usogui_Volume_37_background.webp',
+        popoutImage: '/assets/showcase/Usogui_Volume_37_popout.webp',
         title: 'Usogui Volume 37',
         description: 'The climactic battles intensify'
       },
       {
         id: 38,
-        backgroundImage: '/assets/showcase/Usogui_Volume_38_background.png',
-        popoutImage: '/assets/showcase/Usogui_Volume_38_popout.png',
+        backgroundImage: '/assets/showcase/Usogui_Volume_38_background.webp',
+        popoutImage: '/assets/showcase/Usogui_Volume_38_popout.webp',
         title: 'Usogui Volume 38',
         description: 'The final confrontation'
       }
@@ -79,8 +79,8 @@ export const SHOWCASE_CONFIGURATIONS: ShowcaseConfiguration[] = [
     volumes: [
       {
         id: 2,
-        backgroundImage: '/assets/showcase/Usogui_Volume_2_background.png',
-        popoutImage: '/assets/showcase/Usogui_Volume_2_popout.png',
+        backgroundImage: '/assets/showcase/Usogui_Volume_2_background.webp',
+        popoutImage: '/assets/showcase/Usogui_Volume_2_popout.webp',
         title: 'Usogui Volume 2',
         description: 'The early adventures begin'
       }

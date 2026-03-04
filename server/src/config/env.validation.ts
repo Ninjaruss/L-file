@@ -85,23 +85,22 @@ class EnvironmentVariables {
   @IsOptional()
   ADMIN_FLUXER_ID?: string;
 
-  // --- Backblaze B2 Storage ---
+  // --- Cloudflare R2 Storage ---
   // SECURITY: Required for media uploads to work
   @IsString()
-  B2_APPLICATION_KEY_ID: string;
+  R2_ACCOUNT_ID: string;
 
   @IsString()
-  B2_APPLICATION_KEY: string;
+  R2_ACCESS_KEY_ID: string;
 
   @IsString()
-  B2_BUCKET_NAME: string;
+  R2_SECRET_ACCESS_KEY: string;
 
   @IsString()
-  B2_BUCKET_ID: string;
+  R2_BUCKET_NAME: string;
 
   @IsString()
-  @IsOptional()
-  B2_CUSTOM_DOMAIN?: string;
+  R2_PUBLIC_URL: string;
 
   // --- Database Migration Controls ---
   @IsString()

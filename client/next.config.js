@@ -36,13 +36,13 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'f005.backblazeb2.com',
+        hostname: '**.r2.dev',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: '**.backblazeb2.com',
+        hostname: 'media.l-file.com',
         port: '',
         pathname: '/**',
       },
@@ -203,7 +203,7 @@ const nextConfig = {
 
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react', '@mantine/core', '@mantine/hooks'],
   },
 
   // Turbopack configuration for better performance in development

@@ -31,7 +31,7 @@ import {
   MediaPurpose,
   MediaUsageType,
 } from '../../entities/media.entity';
-import { BackblazeB2Service } from '../../services/backblaze-b2.service';
+import { CloudflareR2Service } from '../../services/cloudflare-r2.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -109,7 +109,7 @@ export class MediaController {
   constructor(
     private readonly mediaService: MediaService,
     private readonly mediaUrlResolver: MediaUrlResolverService,
-    private readonly b2Service: BackblazeB2Service,
+    private readonly b2Service: CloudflareR2Service,
   ) {}
 
   // PUBLIC ENDPOINTS - No authentication required

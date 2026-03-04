@@ -28,7 +28,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
-import { BackblazeB2Service } from '../../services/backblaze-b2.service';
+import { CloudflareR2Service } from '../../services/cloudflare-r2.service';
 
 import { User } from '../../entities/user.entity';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
@@ -39,7 +39,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class CharactersController {
   constructor(
     private readonly service: CharactersService,
-    private readonly b2Service: BackblazeB2Service,
+    private readonly b2Service: CloudflareR2Service,
   ) {}
 
   @Get()

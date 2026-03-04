@@ -2,6 +2,11 @@
 
 ## TODO
 
+## 2026-03-04
+- Replacing B2 backblaze with R2 cloudflare
+- Reformatting of public images to webp
+- Preloading of connections to cloudflare images and google fonts 
+
 ## 2026-03-02
 - Resizing users and media list to be consistent with other list pages
 - Member count filter added for organizations
