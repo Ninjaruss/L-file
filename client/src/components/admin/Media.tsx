@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
   List,
@@ -473,6 +473,7 @@ const ChapterInfoField = () => {
 const MediaFilterToolbar = () => {
   const { filterValues, setFilters } = useListContext()
   const [entitySearch, setEntitySearch] = useState('')
+  const [showResults, setShowResults] = useState(false)
   const [selectedEntities, setSelectedEntities] = useState<{
     characters: any[]
     arcs: any[]
@@ -480,7 +481,7 @@ const MediaFilterToolbar = () => {
     gambles: any[]
     organizations: any[]
   }>({ characters: [], arcs: [], events: [], gambles: [], organizations: [] })
-  
+
   const [entities, setEntities] = useState<{
     characters: any[]
     arcs: any[]
@@ -489,7 +490,10 @@ const MediaFilterToolbar = () => {
     organizations: any[]
   }>({ characters: [], arcs: [], events: [], gambles: [], organizations: [] })
 
-  // Load entities on mount
+  const searchRef = useRef<HTMLDivElement>(null)
+  const userChangedRef = useRef(false)
+
+  // Load entities on mount and initialize from URL params
   useEffect(() => {
     const loadEntities = async () => {
       try {
@@ -500,7 +504,7 @@ const MediaFilterToolbar = () => {
           api.getGambles({ limit: 100 }),
           api.getOrganizations({ limit: 100 })
         ])
-        
+
         const loadedEntities = {
           characters: charactersRes.data || [],
           arcs: arcsRes.data || [],
@@ -508,57 +512,80 @@ const MediaFilterToolbar = () => {
           gambles: gamblesRes.data || [],
           organizations: organizationsRes.data || []
         }
-        
+
         setEntities(loadedEntities)
-        
+
         // Initialize selected entities from URL parameters
-        const newSelectedEntities: {
-          characters: any[]
-          arcs: any[]
-          events: any[]
-          gambles: any[]
-          organizations: any[]
-        } = {
+        const newSelectedEntities: typeof selectedEntities = {
           characters: [],
           arcs: [],
           events: [],
           gambles: [],
           organizations: []
         }
-        
+
         if (filterValues?.characterIds) {
-          const characterIds = filterValues.characterIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.characters = loadedEntities.characters.filter(c => characterIds.includes(c.id))
+          const ids = filterValues.characterIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.characters = loadedEntities.characters.filter(c => ids.includes(c.id))
         }
-        
         if (filterValues?.arcIds) {
-          const arcIds = filterValues.arcIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.arcs = loadedEntities.arcs.filter(a => arcIds.includes(a.id))
+          const ids = filterValues.arcIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.arcs = loadedEntities.arcs.filter(a => ids.includes(a.id))
         }
-        
         if (filterValues?.eventIds) {
-          const eventIds = filterValues.eventIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.events = loadedEntities.events.filter(e => eventIds.includes(e.id))
+          const ids = filterValues.eventIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.events = loadedEntities.events.filter(e => ids.includes(e.id))
         }
-        
         if (filterValues?.gambleIds) {
-          const gambleIds = filterValues.gambleIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.gambles = loadedEntities.gambles.filter(g => gambleIds.includes(g.id))
+          const ids = filterValues.gambleIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.gambles = loadedEntities.gambles.filter(g => ids.includes(g.id))
         }
-        
         if (filterValues?.organizationIds) {
-          const organizationIds = filterValues.organizationIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.organizations = loadedEntities.organizations.filter(f => organizationIds.includes(f.id))
+          const ids = filterValues.organizationIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.organizations = loadedEntities.organizations.filter(o => ids.includes(o.id))
         }
-        
+
         setSelectedEntities(newSelectedEntities)
       } catch (error) {
         console.error('Error loading entities:', error)
       }
     }
-    
+
     loadEntities()
-  }, [filterValues?.characterIds, filterValues?.arcIds, filterValues?.eventIds, filterValues?.gambleIds, filterValues?.organizationIds])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Auto-apply entity filters when selection changes (only on user-initiated changes)
+  useEffect(() => {
+    if (!userChangedRef.current) return
+    userChangedRef.current = false
+
+    const newFilters = { ...filterValues }
+    delete newFilters.characterIds
+    delete newFilters.arcIds
+    delete newFilters.eventIds
+    delete newFilters.gambleIds
+    delete newFilters.organizationIds
+
+    if (selectedEntities.characters.length) newFilters.characterIds = selectedEntities.characters.map((c: any) => c.id).join(',')
+    if (selectedEntities.arcs.length) newFilters.arcIds = selectedEntities.arcs.map((a: any) => a.id).join(',')
+    if (selectedEntities.events.length) newFilters.eventIds = selectedEntities.events.map((e: any) => e.id).join(',')
+    if (selectedEntities.gambles.length) newFilters.gambleIds = selectedEntities.gambles.map((g: any) => g.id).join(',')
+    if (selectedEntities.organizations.length) newFilters.organizationIds = selectedEntities.organizations.map((o: any) => o.id).join(',')
+
+    setFilters(newFilters, filterValues)
+  }, [selectedEntities])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const statusFilters = [
     { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
@@ -567,111 +594,72 @@ const MediaFilterToolbar = () => {
     { id: 'rejected', name: 'Rejected', color: '#f44336', icon: '❌' }
   ]
 
-  const typeFilters = [
-    { id: 'general', name: 'General', color: '#2196f3', icon: '🎨' },
-    { id: 'volumes', name: 'Volumes', color: '#ff69b4', icon: '📚' }
-  ]
-
   const handleStatusFilter = (status: string) => {
     const newFilters = status === 'all'
       ? { ...filterValues }
       : { ...filterValues, status }
-
-    if (status === 'all') {
-      delete newFilters.status
-    }
-
+    if (status === 'all') delete newFilters.status
     setFilters(newFilters, filterValues)
   }
 
-  const handleTypeFilter = (type: string) => {
-    const newFilters = { ...filterValues }
+  // Flat results across all entity types for the unified search dropdown
+  const flatResults = useMemo(() => {
+    if (!entitySearch.trim()) return []
+    const q = entitySearch.toLowerCase()
+    const results: { type: string; icon: string; id: number; name: string }[] = []
 
-    // Remove existing owner type filters
-    delete newFilters.ownerType
-    delete newFilters.excludeVolumes
+    entities.characters
+      .filter(c => c.name.toLowerCase().includes(q) && !selectedEntities.characters.find((s: any) => s.id === c.id))
+      .slice(0, 5).forEach(c => results.push({ type: 'character', icon: '👤', id: c.id, name: c.name }))
+    entities.arcs
+      .filter(a => a.name.toLowerCase().includes(q) && !selectedEntities.arcs.find((s: any) => s.id === a.id))
+      .slice(0, 5).forEach(a => results.push({ type: 'arc', icon: '📖', id: a.id, name: a.name }))
+    entities.events
+      .filter(e => e.title.toLowerCase().includes(q) && !selectedEntities.events.find((s: any) => s.id === e.id))
+      .slice(0, 5).forEach(e => results.push({ type: 'event', icon: '⚡', id: e.id, name: e.title }))
+    entities.gambles
+      .filter(g => g.name.toLowerCase().includes(q) && !selectedEntities.gambles.find((s: any) => s.id === g.id))
+      .slice(0, 5).forEach(g => results.push({ type: 'gamble', icon: '🎲', id: g.id, name: g.name }))
+    entities.organizations
+      .filter(o => o.name.toLowerCase().includes(q) && !selectedEntities.organizations.find((s: any) => s.id === o.id))
+      .slice(0, 5).forEach(o => results.push({ type: 'organization', icon: '⚔️', id: o.id, name: o.name }))
 
-    if (type === 'general') {
-      // Mark that we want to exclude volumes only
-      newFilters.excludeVolumes = 'true'
-    } else if (type === 'volumes') {
-      // Show only volume media
-      newFilters.ownerType = 'volume'
-    }
+    return results.slice(0, 15)
+  }, [entitySearch, entities, selectedEntities])
 
-    setFilters(newFilters, filterValues)
+  const addEntity = (result: { type: string; icon: string; id: number; name: string }) => {
+    userChangedRef.current = true
+    setSelectedEntities(prev => {
+      const key = result.type === 'character' ? 'characters'
+        : result.type === 'arc' ? 'arcs'
+        : result.type === 'event' ? 'events'
+        : result.type === 'gamble' ? 'gambles'
+        : 'organizations'
+      return { ...prev, [key]: [...(prev as any)[key], { id: result.id, name: result.name, title: result.name }] }
+    })
+    setEntitySearch('')
+    setShowResults(false)
   }
 
-  const handleEntityFilter = () => {
-    const newFilters = { ...filterValues }
-    
-    // Remove existing entity filters
-    delete newFilters.characterIds
-    delete newFilters.arcIds
-    delete newFilters.eventIds
-    delete newFilters.gambleIds
-    delete newFilters.organizationIds
-    
-    // Add selected entity filters
-    if (selectedEntities.characters.length > 0) {
-      newFilters.characterIds = selectedEntities.characters.map(c => c.id).join(',')
-    }
-    if (selectedEntities.arcs.length > 0) {
-      newFilters.arcIds = selectedEntities.arcs.map(a => a.id).join(',')
-    }
-    if (selectedEntities.events.length > 0) {
-      newFilters.eventIds = selectedEntities.events.map(e => e.id).join(',')
-    }
-    if (selectedEntities.gambles.length > 0) {
-      newFilters.gambleIds = selectedEntities.gambles.map(g => g.id).join(',')
-    }
-    if (selectedEntities.organizations.length > 0) {
-      newFilters.organizationIds = selectedEntities.organizations.map(f => f.id).join(',')
-    }
-    
-    setFilters(newFilters, filterValues)
+  const removeEntity = (type: string, id: number) => {
+    userChangedRef.current = true
+    setSelectedEntities(prev => {
+      const key = type === 'character' ? 'characters'
+        : type === 'arc' ? 'arcs'
+        : type === 'event' ? 'events'
+        : type === 'gamble' ? 'gambles'
+        : 'organizations'
+      return { ...prev, [key]: (prev as any)[key].filter((e: any) => e.id !== id) }
+    })
   }
 
-  const clearEntityFilters = () => {
-    setSelectedEntities({ characters: [], arcs: [], events: [], gambles: [], organizations: [] })
-    const newFilters = { ...filterValues }
-    delete newFilters.characterIds
-    delete newFilters.arcIds
-    delete newFilters.eventIds
-    delete newFilters.gambleIds
-    delete newFilters.organizationIds
-    setFilters(newFilters, filterValues)
-  }
-
-  const filteredEntities = {
-    characters: entities.characters.filter(c => 
-      c.name.toLowerCase().includes(entitySearch.toLowerCase())
-    ),
-    arcs: entities.arcs.filter(a => 
-      a.name.toLowerCase().includes(entitySearch.toLowerCase())
-    ),
-    events: entities.events.filter(e => 
-      e.title.toLowerCase().includes(entitySearch.toLowerCase())
-    ),
-    gambles: entities.gambles.filter(g => 
-      g.name.toLowerCase().includes(entitySearch.toLowerCase())
-    ),
-    organizations: entities.organizations.filter(f => 
-      f.name.toLowerCase().includes(entitySearch.toLowerCase())
-    )
-  }
+  const hasEntityFilters = selectedEntities.characters.length > 0 ||
+    selectedEntities.arcs.length > 0 ||
+    selectedEntities.events.length > 0 ||
+    selectedEntities.gambles.length > 0 ||
+    selectedEntities.organizations.length > 0
 
   const currentStatus = filterValues?.status || 'all'
-  const currentMediaType = (() => {
-    if (filterValues?.ownerType === 'volume') return 'volumes'
-    if (filterValues?.excludeVolumes === 'true') return 'general'
-    return 'general' // Default to general
-  })()
-  const hasEntityFilters = selectedEntities.characters.length > 0 ||
-                          selectedEntities.arcs.length > 0 ||
-                          selectedEntities.events.length > 0 ||
-                          selectedEntities.gambles.length > 0 ||
-                          selectedEntities.organizations.length > 0
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFilters = { ...filterValues, search: e.target.value || undefined }
@@ -718,9 +706,9 @@ const MediaFilterToolbar = () => {
 
       {/* Status Filters */}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ 
-          color: '#e11d48', 
-          fontWeight: 'bold', 
+        <Typography variant="subtitle2" sx={{
+          color: '#e11d48',
+          fontWeight: 'bold',
           mb: 1,
           fontSize: '0.9rem'
         }}>
@@ -741,45 +729,7 @@ const MediaFilterToolbar = () => {
                 minWidth: '80px',
                 height: '32px',
                 '&:hover': {
-                  backgroundColor: currentStatus === filter.id 
-                    ? filter.color 
-                    : `${filter.color}20`,
-                  borderColor: filter.color
-                }
-              }}
-            >
-              {filter.icon} {filter.name}
-            </MuiButton>
-          ))}
-        </ButtonGroup>
-      </Box>
-
-      {/* Media Type Filters */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{
-          color: '#2196f3',
-          fontWeight: 'bold',
-          mb: 1,
-          fontSize: '0.9rem'
-        }}>
-          📱 Filter by Media Type
-        </Typography>
-        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-          {typeFilters.map((filter) => (
-            <MuiButton
-              key={filter.id}
-              onClick={() => handleTypeFilter(filter.id)}
-              variant={currentMediaType === filter.id ? 'contained' : 'outlined'}
-              size="small"
-              sx={{
-                borderColor: filter.color,
-                color: currentMediaType === filter.id ? '#fff' : filter.color,
-                backgroundColor: currentMediaType === filter.id ? filter.color : 'transparent',
-                fontSize: '0.75rem',
-                minWidth: '80px',
-                height: '32px',
-                '&:hover': {
-                  backgroundColor: currentMediaType === filter.id
+                  backgroundColor: currentStatus === filter.id
                     ? filter.color
                     : `${filter.color}20`,
                   borderColor: filter.color
@@ -792,23 +742,58 @@ const MediaFilterToolbar = () => {
         </ButtonGroup>
       </Box>
 
-      {/* Entity Filters */}
+      {/* Entity Filters - Unified Search */}
       <Box>
-        <Typography variant="subtitle2" sx={{ 
-          color: '#7c3aed', 
-          fontWeight: 'bold', 
+        <Typography variant="subtitle2" sx={{
+          color: '#7c3aed',
+          fontWeight: 'bold',
           mb: 1,
           fontSize: '0.9rem'
         }}>
-          � Filter by Related Entities
+          🔗 Filter by Related Entities
         </Typography>
-        
-        {/* Entity Search */}
-        <Box sx={{ mb: 2 }}>
+
+        {/* Active entity chips */}
+        {hasEntityFilters && (
+          <Box sx={{ mb: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {selectedEntities.characters.map((c: any) => (
+              <Chip key={`char-${c.id}`} label={`👤 ${c.name}`} size="small"
+                onDelete={() => removeEntity('character', c.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+            {selectedEntities.arcs.map((a: any) => (
+              <Chip key={`arc-${a.id}`} label={`📖 ${a.name}`} size="small"
+                onDelete={() => removeEntity('arc', a.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+            {selectedEntities.events.map((e: any) => (
+              <Chip key={`event-${e.id}`} label={`⚡ ${e.title || e.name}`} size="small"
+                onDelete={() => removeEntity('event', e.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+            {selectedEntities.gambles.map((g: any) => (
+              <Chip key={`gamble-${g.id}`} label={`🎲 ${g.name}`} size="small"
+                onDelete={() => removeEntity('gamble', g.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+            {selectedEntities.organizations.map((o: any) => (
+              <Chip key={`org-${o.id}`} label={`⚔️ ${o.name}`} size="small"
+                onDelete={() => removeEntity('organization', o.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+          </Box>
+        )}
+
+        {/* Unified search input + dropdown */}
+        <Box ref={searchRef} sx={{ position: 'relative' }}>
           <MuiTextField
-            label="Search entities..."
+            label="Search characters, arcs, events, gambles, organizations..."
             value={entitySearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEntitySearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setEntitySearch(e.target.value)
+              setShowResults(true)
+            }}
+            onFocus={() => setShowResults(true)}
             fullWidth
             size="small"
             sx={{
@@ -820,403 +805,45 @@ const MediaFilterToolbar = () => {
               }
             }}
           />
-        </Box>
-
-        {/* Active Entity Filters Display */}
-        {(selectedEntities.characters.length > 0 || 
-          selectedEntities.arcs.length > 0 || 
-          selectedEntities.events.length > 0 || 
-          selectedEntities.gambles.length > 0 || 
-          selectedEntities.organizations.length > 0) && (
-          <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(124, 58, 237, 0.05)', borderRadius: 1, border: '1px solid rgba(124, 58, 237, 0.2)' }}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              🎯 Active Filters:
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {selectedEntities.characters.map((character) => (
-                <Chip
-                  key={`char-${character.id}`}
-                  label={`👤 ${character.name}`}
-                  size="small"
-                  onDelete={() => {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      characters: prev.characters.filter(c => c.id !== character.id)
-                    }))
-                  }}
-                  sx={{ 
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    color: '#7c3aed',
-                    fontSize: '0.7rem'
-                  }}
-                />
-              ))}
-              {selectedEntities.arcs.map((arc) => (
-                <Chip
-                  key={`arc-${arc.id}`}
-                  label={`📖 ${arc.name}`}
-                  size="small"
-                  onDelete={() => {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      arcs: prev.arcs.filter(a => a.id !== arc.id)
-                    }))
-                  }}
-                  sx={{ 
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    color: '#7c3aed',
-                    fontSize: '0.7rem'
-                  }}
-                />
-              ))}
-              {selectedEntities.events.map((event) => (
-                <Chip
-                  key={`event-${event.id}`}
-                  label={`⚡ ${event.title}`}
-                  size="small"
-                  onDelete={() => {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      events: prev.events.filter(e => e.id !== event.id)
-                    }))
-                  }}
-                  sx={{ 
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    color: '#7c3aed',
-                    fontSize: '0.7rem'
-                  }}
-                />
-              ))}
-              {selectedEntities.gambles.map((gamble) => (
-                <Chip
-                  key={`gamble-${gamble.id}`}
-                  label={`🎲 ${gamble.name}`}
-                  size="small"
-                  onDelete={() => {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      gambles: prev.gambles.filter(g => g.id !== gamble.id)
-                    }))
-                  }}
-                  sx={{ 
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    color: '#7c3aed',
-                    fontSize: '0.7rem'
-                  }}
-                />
-              ))}
-              {selectedEntities.organizations.map((organization) => (
-                <Chip
-                  key={`organization-${organization.id}`}
-                  label={`⚔️ ${organization.name}`}
-                  size="small"
-                  onDelete={() => {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      organizations: prev.organizations.filter(f => f.id !== organization.id)
-                    }))
-                  }}
-                  sx={{ 
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    color: '#7c3aed',
-                    fontSize: '0.7rem'
-                  }}
-                />
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* Entity Selection Lists */}
-        <Grid container spacing={2}>
-          {/* Characters */}
-          <Grid item xs={12} md={2.4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              👤 Characters ({selectedEntities.characters.length})
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
+          {showResults && flatResults.length > 0 && (
+            <Box sx={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 1000,
+              backgroundColor: 'rgba(15, 15, 15, 0.98)',
+              border: '1px solid rgba(124, 58, 237, 0.3)',
+              borderTop: 'none',
+              borderRadius: '0 0 4px 4px',
+              maxHeight: 200,
+              overflowY: 'auto'
             }}>
-              {filteredEntities.characters.slice(0, 10).map((character) => (
-                <Box key={character.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.characters.find(c => c.id === character.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.characters.find(c => c.id === character.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      characters: prev.characters.filter(c => c.id !== character.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      characters: [...prev.characters, character]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={character.name}
-                    variant={selectedEntities.characters.find(c => c.id === character.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
+              {flatResults.map(result => (
+                <Box
+                  key={`${result.type}-${result.id}`}
+                  onMouseDown={() => addEntity(result)}
+                  sx={{
+                    px: 1.5,
+                    py: 0.75,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.1)' }
+                  }}
+                >
+                  <span style={{ fontSize: '0.9rem' }}>{result.icon}</span>
+                  <Typography variant="body2" sx={{ color: '#fff', flex: 1, fontSize: '0.85rem' }}>
+                    {result.name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                    {result.type}
+                  </Typography>
                 </Box>
               ))}
             </Box>
-          </Grid>
-
-          {/* Arcs */}
-          <Grid item xs={12} md={2.4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              📖 Arcs ({selectedEntities.arcs.length})
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {filteredEntities.arcs.slice(0, 10).map((arc) => (
-                <Box key={arc.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.arcs.find(a => a.id === arc.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.arcs.find(a => a.id === arc.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      arcs: prev.arcs.filter(a => a.id !== arc.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      arcs: [...prev.arcs, arc]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={arc.name}
-                    variant={selectedEntities.arcs.find(a => a.id === arc.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Events */}
-          <Grid item xs={12} md={2.4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              ⚡ Events ({selectedEntities.events.length})
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {filteredEntities.events.slice(0, 10).map((event) => (
-                <Box key={event.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.events.find(e => e.id === event.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.events.find(e => e.id === event.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      events: prev.events.filter(e => e.id !== event.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      events: [...prev.events, event]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={event.title}
-                    variant={selectedEntities.events.find(e => e.id === event.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Gambles */}
-          <Grid item xs={12} md={2.4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              🎲 Gambles ({selectedEntities.gambles.length})
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {filteredEntities.gambles.slice(0, 10).map((gamble) => (
-                <Box key={gamble.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.gambles.find(g => g.id === gamble.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.gambles.find(g => g.id === gamble.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      gambles: prev.gambles.filter(g => g.id !== gamble.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      gambles: [...prev.gambles, gamble]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={gamble.name}
-                    variant={selectedEntities.gambles.find(g => g.id === gamble.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Organizations */}
-          <Grid item xs={12} md={2.4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              🏛️ Organizations ({selectedEntities.organizations.length})
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 150, 
-              overflowY: 'auto', 
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {filteredEntities.organizations.slice(0, 10).map((organization) => (
-                <Box key={organization.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.organizations.find(f => f.id === organization.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.organizations.find(f => f.id === organization.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      organizations: prev.organizations.filter(f => f.id !== organization.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      organizations: [...prev.organizations, organization]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={organization.name}
-                    variant={selectedEntities.organizations.find(f => f.id === organization.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* Filter Actions */}
-        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-          <MuiButton
-            onClick={handleEntityFilter}
-            variant="contained"
-            size="small"
-            disabled={!hasEntityFilters}
-            sx={{
-              backgroundColor: '#7c3aed',
-              '&:hover': { backgroundColor: '#6d28d9' },
-              fontSize: '0.75rem'
-            }}
-          >
-            Apply Entity Filters
-          </MuiButton>
-          <MuiButton
-            onClick={clearEntityFilters}
-            variant="outlined"
-            size="small"
-            disabled={!hasEntityFilters}
-            sx={{
-              borderColor: '#7c3aed',
-              color: '#7c3aed',
-              '&:hover': { 
-                borderColor: '#6d28d9',
-                backgroundColor: 'rgba(124, 58, 237, 0.05)'
-              },
-              fontSize: '0.75rem'
-            }}
-          >
-            Clear Filters
-          </MuiButton>
+          )}
         </Box>
       </Box>
     </Box>
@@ -1857,29 +1484,9 @@ const MediaBulkActionButtons = () => (
   </Box>
 )
 
-// Custom Datagrid that applies client-side filtering
-const FilteredDatagrid = () => {
-  const { filterValues, data, isLoading } = useListContext()
-
-  const filteredData = useMemo(() => {
-    if (!data) return []
-
-    // Apply client-side filtering for excludeVolumes
-    if (filterValues?.excludeVolumes === 'true') {
-      return data.filter((item: any) =>
-        item.ownerType !== 'volume'
-      )
-    }
-
-    return data
-  }, [data, filterValues?.excludeVolumes])
-
-  if (isLoading) return null
-
-  return (
-    <Datagrid
-      data={filteredData}
-      rowClick="show"
+const MediaDatagrid = () => (
+  <Datagrid
+    rowClick="show"
       bulkActionButtons={<MediaBulkActionButtons />}
       sx={{
         marginTop: 0,
@@ -1987,13 +1594,12 @@ const FilteredDatagrid = () => {
         <RejectButton />
       </Box>
     </Datagrid>
-  )
-}
+)
 
 export const MediaList = () => (
   <List
     perPage={25}
-    filterDefaultValues={{ excludeVolumes: 'true', status: 'pending' }}
+    filterDefaultValues={{ status: 'pending' }}
     sx={{
       '& .RaList-content': {
         '& > *:not(:last-child)': {
@@ -2004,7 +1610,7 @@ export const MediaList = () => (
   >
     <MediaApprovalToolbar />
     <MediaFilterToolbar />
-    <FilteredDatagrid />
+    <MediaDatagrid />
   </List>
 )
 

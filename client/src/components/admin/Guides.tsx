@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   List,
   Datagrid,
@@ -354,28 +354,32 @@ const GuideRelatedEntitiesField = () => {
 // Custom Filter Toolbar Component
 const GuideFilterToolbar = () => {
   const { filterValues, setFilters } = useListContext()
-  
+
   const statusFilters = [
     { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
     { id: GuideStatus.PENDING, name: 'Pending Review', color: '#f57c00', icon: '⏳' },
     { id: GuideStatus.APPROVED, name: 'Approved', color: '#4caf50', icon: '✅' },
     { id: GuideStatus.REJECTED, name: 'Rejected', color: '#f44336', icon: '❌' }
   ]
-  
+
   const [entitySearch, setEntitySearch] = useState('')
+  const [showResults, setShowResults] = useState(false)
   const [selectedEntities, setSelectedEntities] = useState<{
     characters: any[]
     arcs: any[]
     gambles: any[]
   }>({ characters: [], arcs: [], gambles: [] })
-  
+
   const [entities, setEntities] = useState<{
     characters: any[]
     arcs: any[]
     gambles: any[]
   }>({ characters: [], arcs: [], gambles: [] })
 
-  // Load entities on mount
+  const searchRef = useRef<HTMLDivElement>(null)
+  const userChangedRef = useRef(false)
+
+  // Load entities on mount and initialize from URL params
   useEffect(() => {
     const loadEntities = async () => {
       try {
@@ -393,30 +397,23 @@ const GuideFilterToolbar = () => {
 
         setEntities(loadedEntities)
 
-        // Initialize selected entities from URL parameters
-        const newSelectedEntities: {
-          characters: any[]
-          arcs: any[]
-          gambles: any[]
-        } = {
+        const newSelectedEntities: typeof selectedEntities = {
           characters: [],
           arcs: [],
           gambles: []
         }
 
         if (filterValues?.characterIds) {
-          const characterIds = filterValues.characterIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.characters = loadedEntities.characters.filter(c => characterIds.includes(c.id))
+          const ids = filterValues.characterIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.characters = loadedEntities.characters.filter(c => ids.includes(c.id))
         }
-
         if (filterValues?.arcIds) {
-          const arcIds = filterValues.arcIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.arcs = loadedEntities.arcs.filter(a => arcIds.includes(a.id))
+          const ids = filterValues.arcIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.arcs = loadedEntities.arcs.filter(a => ids.includes(a.id))
         }
-
         if (filterValues?.gambleIds) {
-          const gambleIds = filterValues.gambleIds.split(',').map((id: string) => parseInt(id.trim()))
-          newSelectedEntities.gambles = loadedEntities.gambles.filter(g => gambleIds.includes(g.id))
+          const ids = filterValues.gambleIds.split(',').map((id: string) => parseInt(id.trim()))
+          newSelectedEntities.gambles = loadedEntities.gambles.filter(g => ids.includes(g.id))
         }
 
         setSelectedEntities(newSelectedEntities)
@@ -426,62 +423,90 @@ const GuideFilterToolbar = () => {
     }
 
     loadEntities()
-  }, [filterValues?.characterIds, filterValues?.arcIds, filterValues?.gambleIds])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Auto-apply entity filters when selection changes (only on user-initiated changes)
+  useEffect(() => {
+    if (!userChangedRef.current) return
+    userChangedRef.current = false
+
+    const newFilters = { ...filterValues }
+    delete newFilters.characterIds
+    delete newFilters.arcIds
+    delete newFilters.gambleIds
+
+    if (selectedEntities.characters.length) newFilters.characterIds = selectedEntities.characters.map((c: any) => c.id).join(',')
+    if (selectedEntities.arcs.length) newFilters.arcIds = selectedEntities.arcs.map((a: any) => a.id).join(',')
+    if (selectedEntities.gambles.length) newFilters.gambleIds = selectedEntities.gambles.map((g: any) => g.id).join(',')
+
+    setFilters(newFilters, filterValues)
+  }, [selectedEntities])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleStatusFilter = (status: string) => {
-    const newFilters = status === 'all' 
+    const newFilters = status === 'all'
       ? { ...filterValues, status: undefined }
       : { ...filterValues, status }
     setFilters(newFilters, filterValues)
   }
 
-  const handleEntityFilter = () => {
-    const newFilters = { ...filterValues }
-    
-    // Remove existing entity filters
-    delete newFilters.characterIds
-    delete newFilters.arcIds
-    delete newFilters.gambleIds
-    
-    // Add selected entity filters
-    if (selectedEntities.characters.length > 0) {
-      newFilters.characterIds = selectedEntities.characters.map(c => c.id).join(',')
-    }
-    if (selectedEntities.arcs.length > 0) {
-      newFilters.arcIds = selectedEntities.arcs.map(a => a.id).join(',')
-    }
-    if (selectedEntities.gambles.length > 0) {
-      newFilters.gambleIds = selectedEntities.gambles.map(g => g.id).join(',')
-    }
-    
-    setFilters(newFilters, filterValues)
+  // Flat results across all entity types for the unified search dropdown
+  const flatResults = useMemo(() => {
+    if (!entitySearch.trim()) return []
+    const q = entitySearch.toLowerCase()
+    const results: { type: string; icon: string; id: number; name: string }[] = []
+
+    entities.characters
+      .filter(c => c.name.toLowerCase().includes(q) && !selectedEntities.characters.find((s: any) => s.id === c.id))
+      .slice(0, 5).forEach(c => results.push({ type: 'character', icon: '👤', id: c.id, name: c.name }))
+    entities.arcs
+      .filter(a => a.name.toLowerCase().includes(q) && !selectedEntities.arcs.find((s: any) => s.id === a.id))
+      .slice(0, 5).forEach(a => results.push({ type: 'arc', icon: '📖', id: a.id, name: a.name }))
+    entities.gambles
+      .filter(g => g.name.toLowerCase().includes(q) && !selectedEntities.gambles.find((s: any) => s.id === g.id))
+      .slice(0, 5).forEach(g => results.push({ type: 'gamble', icon: '🎲', id: g.id, name: g.name }))
+
+    return results.slice(0, 15)
+  }, [entitySearch, entities, selectedEntities])
+
+  const addEntity = (result: { type: string; icon: string; id: number; name: string }) => {
+    userChangedRef.current = true
+    setSelectedEntities(prev => {
+      const key = result.type === 'character' ? 'characters'
+        : result.type === 'arc' ? 'arcs'
+        : 'gambles'
+      return { ...prev, [key]: [...(prev as any)[key], { id: result.id, name: result.name }] }
+    })
+    setEntitySearch('')
+    setShowResults(false)
   }
 
-  const clearEntityFilters = () => {
-    setSelectedEntities({ characters: [], arcs: [], gambles: [] })
-    const newFilters = { ...filterValues }
-    delete newFilters.characterIds
-    delete newFilters.arcIds
-    delete newFilters.gambleIds
-    setFilters(newFilters, filterValues)
+  const removeEntity = (type: string, id: number) => {
+    userChangedRef.current = true
+    setSelectedEntities(prev => {
+      const key = type === 'character' ? 'characters'
+        : type === 'arc' ? 'arcs'
+        : 'gambles'
+      return { ...prev, [key]: (prev as any)[key].filter((e: any) => e.id !== id) }
+    })
   }
 
-  const filteredEntities = {
-    characters: entities.characters.filter(c => 
-      c.name.toLowerCase().includes(entitySearch.toLowerCase())
-    ),
-    arcs: entities.arcs.filter(a => 
-      a.name.toLowerCase().includes(entitySearch.toLowerCase())
-    ),
-    gambles: entities.gambles.filter(g => 
-      g.name.toLowerCase().includes(entitySearch.toLowerCase())
-    )
-  }
+  const hasEntityFilters = selectedEntities.characters.length > 0 ||
+    selectedEntities.arcs.length > 0 ||
+    selectedEntities.gambles.length > 0
 
   const currentStatus = filterValues?.status || 'all'
-  const hasEntityFilters = selectedEntities.characters.length > 0 || 
-                          selectedEntities.arcs.length > 0 || 
-                          selectedEntities.gambles.length > 0
 
   return (
     <Box sx={{
@@ -525,9 +550,9 @@ const GuideFilterToolbar = () => {
 
       {/* Status Filters */}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ 
-          color: '#e11d48', 
-          fontWeight: 'bold', 
+        <Typography variant="subtitle2" sx={{
+          color: '#e11d48',
+          fontWeight: 'bold',
           mb: 1,
           fontSize: '0.9rem'
         }}>
@@ -548,8 +573,8 @@ const GuideFilterToolbar = () => {
                 minWidth: '90px',
                 height: '32px',
                 '&:hover': {
-                  backgroundColor: currentStatus === filter.id 
-                    ? filter.color 
+                  backgroundColor: currentStatus === filter.id
+                    ? filter.color
                     : `${filter.color}20`,
                   borderColor: filter.color
                 }
@@ -561,23 +586,48 @@ const GuideFilterToolbar = () => {
         </ButtonGroup>
       </Box>
 
-      {/* Entity Filters */}
+      {/* Entity Filters - Unified Search */}
       <Box>
-        <Typography variant="subtitle2" sx={{ 
-          color: '#7c3aed', 
-          fontWeight: 'bold', 
+        <Typography variant="subtitle2" sx={{
+          color: '#7c3aed',
+          fontWeight: 'bold',
           mb: 1,
           fontSize: '0.9rem'
         }}>
-          � Filter by Related Entities
+          🔗 Filter by Related Entities
         </Typography>
-        
-        {/* Entity Search */}
-        <Box sx={{ mb: 2 }}>
+
+        {/* Active entity chips */}
+        {hasEntityFilters && (
+          <Box sx={{ mb: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {selectedEntities.characters.map((c: any) => (
+              <Chip key={`char-${c.id}`} label={`👤 ${c.name}`} size="small"
+                onDelete={() => removeEntity('character', c.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+            {selectedEntities.arcs.map((a: any) => (
+              <Chip key={`arc-${a.id}`} label={`📖 ${a.name}`} size="small"
+                onDelete={() => removeEntity('arc', a.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+            {selectedEntities.gambles.map((g: any) => (
+              <Chip key={`gamble-${g.id}`} label={`🎲 ${g.name}`} size="small"
+                onDelete={() => removeEntity('gamble', g.id)}
+                sx={{ backgroundColor: 'rgba(124, 58, 237, 0.1)', color: '#7c3aed', fontSize: '0.7rem' }} />
+            ))}
+          </Box>
+        )}
+
+        {/* Unified search input + dropdown */}
+        <Box ref={searchRef} sx={{ position: 'relative' }}>
           <MuiTextField
-            label="Search entities..."
+            label="Search characters, arcs, gambles..."
             value={entitySearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEntitySearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setEntitySearch(e.target.value)
+              setShowResults(true)
+            }}
+            onFocus={() => setShowResults(true)}
             fullWidth
             size="small"
             sx={{
@@ -589,211 +639,45 @@ const GuideFilterToolbar = () => {
               }
             }}
           />
-        </Box>
-
-        {/* Entity Selection Lists */}
-        <Grid container spacing={2}>
-          {/* Characters */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              👤 Characters ({selectedEntities.characters.length})
-              {filteredEntities.characters.length > 10 && (
-                <Typography component="span" sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 1 }}>
-                  showing 10 of {filteredEntities.characters.length}
-                </Typography>
-              )}
-            </Typography>
+          {showResults && flatResults.length > 0 && (
             <Box sx={{
-              maxHeight: 150,
-              overflowY: 'auto',
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 1000,
+              backgroundColor: 'rgba(15, 15, 15, 0.98)',
+              border: '1px solid rgba(124, 58, 237, 0.3)',
+              borderTop: 'none',
+              borderRadius: '0 0 4px 4px',
+              maxHeight: 200,
+              overflowY: 'auto'
             }}>
-              {filteredEntities.characters.slice(0, 10).map((character) => (
-                <Box key={character.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.characters.find(c => c.id === character.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.characters.find(c => c.id === character.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      characters: prev.characters.filter(c => c.id !== character.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      characters: [...prev.characters, character]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={character.name}
-                    variant={selectedEntities.characters.find(c => c.id === character.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
+              {flatResults.map(result => (
+                <Box
+                  key={`${result.type}-${result.id}`}
+                  onMouseDown={() => addEntity(result)}
+                  sx={{
+                    px: 1.5,
+                    py: 0.75,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.1)' }
+                  }}
+                >
+                  <span style={{ fontSize: '0.9rem' }}>{result.icon}</span>
+                  <Typography variant="body2" sx={{ color: '#fff', flex: 1, fontSize: '0.85rem' }}>
+                    {result.name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                    {result.type}
+                  </Typography>
                 </Box>
               ))}
             </Box>
-          </Grid>
-
-          {/* Arcs */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              📖 Arcs ({selectedEntities.arcs.length})
-              {filteredEntities.arcs.length > 10 && (
-                <Typography component="span" sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 1 }}>
-                  showing 10 of {filteredEntities.arcs.length}
-                </Typography>
-              )}
-            </Typography>
-            <Box sx={{
-              maxHeight: 150,
-              overflowY: 'auto',
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {filteredEntities.arcs.slice(0, 10).map((arc) => (
-                <Box key={arc.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.arcs.find(a => a.id === arc.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.arcs.find(a => a.id === arc.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      arcs: prev.arcs.filter(a => a.id !== arc.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      arcs: [...prev.arcs, arc]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={arc.name}
-                    variant={selectedEntities.arcs.find(a => a.id === arc.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Gambles */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="body2" sx={{ color: '#7c3aed', fontWeight: 'bold', mb: 1 }}>
-              🎲 Gambles ({selectedEntities.gambles.length})
-              {filteredEntities.gambles.length > 10 && (
-                <Typography component="span" sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 1 }}>
-                  showing 10 of {filteredEntities.gambles.length}
-                </Typography>
-              )}
-            </Typography>
-            <Box sx={{
-              maxHeight: 150,
-              overflowY: 'auto',
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 1,
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {filteredEntities.gambles.slice(0, 10).map((gamble) => (
-                <Box key={gamble.id} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 0.5,
-                  cursor: 'pointer',
-                  p: 0.5,
-                  borderRadius: 0.5,
-                  backgroundColor: selectedEntities.gambles.find(g => g.id === gamble.id) 
-                    ? 'rgba(124, 58, 237, 0.1)' 
-                    : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(124, 58, 237, 0.05)' }
-                }}
-                onClick={() => {
-                  const isSelected = selectedEntities.gambles.find(g => g.id === gamble.id)
-                  if (isSelected) {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      gambles: prev.gambles.filter(g => g.id !== gamble.id)
-                    }))
-                  } else {
-                    setSelectedEntities(prev => ({
-                      ...prev,
-                      gambles: [...prev.gambles, gamble]
-                    }))
-                  }
-                }}>
-                  <Chip
-                    size="small"
-                    label={gamble.name}
-                    variant={selectedEntities.gambles.find(g => g.id === gamble.id) ? 'filled' : 'outlined'}
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* Filter Actions */}
-        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-          <MuiButton
-            onClick={handleEntityFilter}
-            variant="contained"
-            size="small"
-            disabled={!hasEntityFilters}
-            sx={{
-              backgroundColor: '#7c3aed',
-              '&:hover': { backgroundColor: '#6d28d9' },
-              fontSize: '0.75rem'
-            }}
-          >
-            Apply Entity Filters
-          </MuiButton>
-          <MuiButton
-            onClick={clearEntityFilters}
-            variant="outlined"
-            size="small"
-            disabled={!hasEntityFilters}
-            sx={{
-              borderColor: '#7c3aed',
-              color: '#7c3aed',
-              '&:hover': { 
-                borderColor: '#6d28d9',
-                backgroundColor: 'rgba(124, 58, 237, 0.05)'
-              },
-              fontSize: '0.75rem'
-            }}
-          >
-            Clear Filters
-          </MuiButton>
+          )}
         </Box>
       </Box>
     </Box>
