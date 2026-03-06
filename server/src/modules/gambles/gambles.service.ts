@@ -244,7 +244,11 @@ export class GamblesService {
     const { page = 1, limit = 20 } = filters;
     const query = this.gamblesRepository
       .createQueryBuilder('gamble')
-      .leftJoinAndSelect('gamble.participants', 'participants');
+      .leftJoinAndSelect('gamble.participants', 'participants')
+      .leftJoinAndSelect('gamble.factions', 'factions')
+      .leftJoinAndSelect('factions.supportedGambler', 'supportedGambler')
+      .leftJoinAndSelect('factions.members', 'factionMembers')
+      .leftJoinAndSelect('factionMembers.character', 'factionMemberChar');
 
     if (filters.gambleName) {
       query.andWhere('LOWER(gamble.name) LIKE LOWER(:gambleName)', {
@@ -299,6 +303,10 @@ export class GamblesService {
     return await this.gamblesRepository
       .createQueryBuilder('gamble')
       .leftJoinAndSelect('gamble.participants', 'participants')
+      .leftJoinAndSelect('gamble.factions', 'factions')
+      .leftJoinAndSelect('factions.supportedGambler', 'supportedGambler')
+      .leftJoinAndSelect('factions.members', 'factionMembers')
+      .leftJoinAndSelect('factionMembers.character', 'factionMemberChar')
       .where('participants.id = :characterId', { characterId })
       .orderBy('gamble.chapterId', 'ASC')
       .addOrderBy('gamble.id', 'ASC')

@@ -448,7 +448,9 @@ export class MediaController {
     // Role-based permission check for usageType
     if (
       uploadData.usageType === MediaUsageType.CHARACTER_IMAGE ||
-      uploadData.usageType === MediaUsageType.VOLUME_IMAGE
+      uploadData.usageType === MediaUsageType.VOLUME_IMAGE ||
+      uploadData.usageType === MediaUsageType.VOLUME_SHOWCASE_BACKGROUND ||
+      uploadData.usageType === MediaUsageType.VOLUME_SHOWCASE_POPOUT
     ) {
       if (user.role !== UserRole.MODERATOR && user.role !== UserRole.ADMIN) {
         throw new BadRequestException(

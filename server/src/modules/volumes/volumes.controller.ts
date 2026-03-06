@@ -24,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { VolumesService } from './volumes.service';
 import { Volume } from '../../entities/volume.entity';
+import { MediaUsageType } from '../../entities/media.entity';
 import { CreateVolumeDto } from './dto/create-volume.dto';
 import { UpdateVolumeDto } from './dto/update-volume.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -220,6 +221,32 @@ export class VolumesController {
       page,
       limit,
     });
+  }
+
+  @Get(':id/showcase/:type')
+  @ApiOperation({
+    summary: 'Get volume showcase image',
+    description:
+      'Retrieve the showcase background or popout image for a volume (R2-hosted)',
+  })
+  @ApiParam({ name: 'id', description: 'Volume ID', type: 'number' })
+  @ApiParam({
+    name: 'type',
+    description: 'Image type: background or popout',
+    enum: ['background', 'popout'],
+  })
+  @ApiResponse({ status: 200, description: 'Showcase media or null if not set' })
+  @ApiResponse({ status: 404, description: 'Volume not found' })
+  async getShowcaseMedia(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('type') type: 'background' | 'popout',
+  ) {
+    const usageType =
+      type === 'background'
+        ? MediaUsageType.VOLUME_SHOWCASE_BACKGROUND
+        : MediaUsageType.VOLUME_SHOWCASE_POPOUT;
+    const media = await this.service.getVolumeShowcaseMedia(id, usageType);
+    return media ?? null;
   }
 
   @Post()

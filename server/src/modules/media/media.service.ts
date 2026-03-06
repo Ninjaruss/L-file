@@ -1164,4 +1164,24 @@ export class MediaService {
       }
     }
   }
+
+  /**
+   * Find the most recent approved media for a specific owner + usageType combination.
+   * Used for showcase images, character images, etc.
+   */
+  async findOneByUsageType(
+    ownerType: MediaOwnerType,
+    ownerId: number,
+    usageType: MediaUsageType,
+  ): Promise<Media | null> {
+    return this.mediaRepo.findOne({
+      where: {
+        ownerType,
+        ownerId,
+        usageType,
+        status: MediaStatus.APPROVED,
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

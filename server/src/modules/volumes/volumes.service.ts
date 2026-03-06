@@ -6,7 +6,7 @@ import { CreateVolumeDto } from './dto/create-volume.dto';
 import { UpdateVolumeDto } from './dto/update-volume.dto';
 
 import { MediaService } from '../media/media.service';
-import { MediaOwnerType } from '../../entities/media.entity';
+import { MediaOwnerType, MediaUsageType } from '../../entities/media.entity';
 
 @Injectable()
 export class VolumesService {
@@ -104,6 +104,18 @@ export class VolumesService {
   /**
    * Get entity display media for a volume
    */
+  async getVolumeShowcaseMedia(
+    volumeId: number,
+    usageType: MediaUsageType,
+  ) {
+    await this.findOne(volumeId); // validate volume exists
+    return this.mediaService.findOneByUsageType(
+      MediaOwnerType.VOLUME,
+      volumeId,
+      usageType,
+    );
+  }
+
   async getVolumeEntityDisplayMedia(
     volumeId: number,
     userProgress?: number,
