@@ -150,11 +150,11 @@ async function main() {
           `INSERT INTO media
              ("ownerType", "ownerId", "usageType", purpose, url, "fileName", key,
               "isUploaded", "mimeType", status, type,
-              "createdAt", "updatedAt")
+              "createdAt")
            VALUES
              ('volume', $1, $2, 'entity_display', $3, $4, $5,
               true, 'image/webp', 'approved', 'image',
-              NOW(), NOW())`,
+              NOW())`,
           [volumeId, usageType, url, fileName, key],
         );
         console.log(`  ✓ Inserted new media record for volume ${volumeNumber} ${type}`);

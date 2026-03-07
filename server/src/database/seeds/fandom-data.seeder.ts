@@ -10,6 +10,7 @@ import {
   MediaStatus,
   MediaPurpose,
   MediaOwnerType,
+  MediaUsageType,
 } from '../../entities/media.entity';
 import { User, UserRole } from '../../entities/user.entity';
 
@@ -157,6 +158,7 @@ export class FandomDataSeeder implements Seeder {
           if (existing.url !== mediaUrl) { existing.url = mediaUrl; changed = true; }
           if (matchedFile && existing.fileName !== matchedFile) { existing.fileName = matchedFile; changed = true; }
           if (matchedFile && !existing.isUploaded) { existing.isUploaded = true; changed = true; }
+          if (!existing.usageType) { existing.usageType = MediaUsageType.VOLUME_IMAGE; changed = true; }
           if (changed) mediaToUpdate.push(existing);
         } else {
           if (!systemUser) {
@@ -168,6 +170,7 @@ export class FandomDataSeeder implements Seeder {
               type: MediaType.IMAGE,
               ownerType: MediaOwnerType.VOLUME,
               ownerId: vol.id,
+              usageType: MediaUsageType.VOLUME_IMAGE,
               status: MediaStatus.APPROVED,
               purpose: MediaPurpose.ENTITY_DISPLAY,
               isUploaded: Boolean(matchedFile),
