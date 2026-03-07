@@ -32,7 +32,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the NestJS application
-RUN yarn build
+RUN NODE_OPTIONS="--max-old-space-size=512" yarn build
 
 # Prune devDependencies after build
 RUN yarn install --frozen-lockfile --production
