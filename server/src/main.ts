@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -14,9 +15,12 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   // Perform database safety checks before starting the application
+  console.log('[Bootstrap] Starting database safety checks...');
   await performDatabaseSafetyChecks();
 
+  console.log('[Bootstrap] Creating NestJS application...');
   const app = await NestFactory.create(AppModule);
+  console.log('[Bootstrap] App created, configuring middleware...');
 
   // Enable graceful shutdown - ensures connections close cleanly
   app.enableShutdownHooks();
@@ -238,9 +242,10 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
+  console.log(`[Bootstrap] Calling app.listen() on port ${port}...`);
   await app.listen(port);
   console.log(
-    `Server running on http://localhost:${port} in ${process.env.NODE_ENV} mode`,
+    `[Bootstrap] Server running on http://localhost:${port} in ${process.env.NODE_ENV} mode`,
   );
 }
 bootstrap();
