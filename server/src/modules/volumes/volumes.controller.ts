@@ -223,20 +223,6 @@ export class VolumesController {
     });
   }
 
-  @Get(':id/showcase/:type')
-  @ApiOperation({
-    summary: 'Get volume showcase image',
-    description:
-      'Retrieve the showcase background or popout image for a volume (R2-hosted)',
-  })
-  @ApiParam({ name: 'id', description: 'Volume ID', type: 'number' })
-  @ApiParam({
-    name: 'type',
-    description: 'Image type: background or popout',
-    enum: ['background', 'popout'],
-  })
-  @ApiResponse({ status: 200, description: 'Showcase media or null if not set' })
-  @ApiResponse({ status: 404, description: 'Volume not found' })
   async getShowcaseMedia(
     @Param('id', ParseIntPipe) id: number,
     @Param('type') type: 'background' | 'popout',

@@ -105,13 +105,14 @@ export class VolumesService {
    * Get entity display media for a volume
    */
   async getVolumeShowcaseMedia(
-    volumeId: number,
+    volumeNumber: number,
     usageType: MediaUsageType,
   ) {
-    await this.findOne(volumeId); // validate volume exists
+    const volume = await this.repo.findOne({ where: { number: volumeNumber } });
+    if (!volume) return null;
     return this.mediaService.findOneByUsageType(
       MediaOwnerType.VOLUME,
-      volumeId,
+      volume.id,
       usageType,
     );
   }
