@@ -223,6 +223,10 @@ export class VolumesController {
     });
   }
 
+  @Get(':id/showcase/:type')
+  @ApiOperation({ summary: 'Get showcase media for a volume' })
+  @ApiParam({ name: 'id', type: 'string' })
+  @ApiParam({ name: 'type', enum: ['background', 'popout'], type: 'string' })
   async getShowcaseMedia(
     @Param('id', ParseIntPipe) id: number,
     @Param('type') type: 'background' | 'popout',
