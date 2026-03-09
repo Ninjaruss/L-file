@@ -24,7 +24,7 @@ export class GambleFaction {
   @Column()
   gambleId: number;
 
-  @ManyToOne(() => require('./gamble.entity').Gamble, (gamble) => gamble.factions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => require('./gamble.entity').Gamble, (gamble: any) => gamble.factions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'gambleId' })
   gamble: Gamble;
 

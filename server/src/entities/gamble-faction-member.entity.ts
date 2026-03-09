@@ -30,7 +30,7 @@ export class GambleFactionMember {
   @Column()
   factionId: number;
 
-  @ManyToOne(() => require('./gamble-faction.entity').GambleFaction, (faction) => faction.members, {
+  @ManyToOne(() => require('./gamble-faction.entity').GambleFaction, (faction: any) => faction.members, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'factionId' })
