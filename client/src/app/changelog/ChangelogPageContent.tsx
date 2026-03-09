@@ -155,10 +155,10 @@ export function ChangelogPageContent() {
         }
       }
 
-      // filterType === 'all': fetch both and merge
+      // filterType === 'all': fetch enough data to cover the current page, merge, then slice
       const [edits, submissions] = await Promise.all([
-        api.getRecentEdits({ page: 1, limit: PAGE_LIMIT, entityType: entityTypeParam }),
-        api.getRecentSubmissions({ page: 1, limit: PAGE_LIMIT }),
+        api.getRecentEdits({ page: 1, limit: page * PAGE_LIMIT, entityType: entityTypeParam }),
+        api.getRecentSubmissions({ page: 1, limit: page * PAGE_LIMIT }),
       ])
       const editEntries: EditEntry[] = (edits?.data ?? []).map((e) => ({
         id: e.id, kind: 'edit' as const,
