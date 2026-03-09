@@ -1612,7 +1612,61 @@ class ApiClient {
         }
         userCount: number
       }>
+      favoriteCharacters: {
+        mostFavorited: Array<{
+          character: { id: number; name: string }
+          totalCount: number
+        }>
+        mostPrimary: Array<{
+          character: { id: number; name: string }
+          primaryCount: number
+        }>
+        mostLoyal: Array<{
+          character: { id: number; name: string }
+          loyaltyRatio: number
+          primaryCount: number
+          totalCount: number
+        }>
+      }
     }>('/favorites')
+  }
+
+  async getMyFavoriteCharacters() {
+    return this.get<Array<{
+      id: number
+      characterId: number
+      userId: number
+      isPrimary: boolean
+      sortOrder: number
+      createdAt: string
+      character: {
+        id: number
+        name: string
+        alternateNames?: string[] | null
+        firstAppearanceChapter?: number | null
+      }
+    }>>('/users/profile/favorite-characters')
+  }
+
+  async setFavoriteCharacters(favorites: Array<{
+    characterId: number
+    isPrimary: boolean
+    sortOrder: number
+  }>) {
+    return this.put<Array<{
+      id: number
+      characterId: number
+      userId: number
+      isPrimary: boolean
+      sortOrder: number
+      createdAt: string
+      character: {
+        id: number
+        name: string
+        alternateNames?: string[] | null
+        firstAppearanceChapter?: number | null
+      }
+    }>>('/users/profile/favorite-characters', { favorites })
   }
 
   async getTrendingPages(params?: { limit?: number; daysBack?: number }) {

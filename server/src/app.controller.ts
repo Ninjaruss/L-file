@@ -243,23 +243,19 @@ export class AppController {
     },
   })
   async getFavoritesData() {
-    // Get top 3 favorite quotes
-    const quoteStats = await this.usersService.getQuotePopularityStats();
-    const favoriteQuotes = quoteStats.slice(0, 3);
-
-    // Get top 3 favorite gambles
-    const gambleStats = await this.usersService.getGamblePopularityStats();
-    const favoriteGambles = gambleStats.slice(0, 3);
-
-    // Get top 3 character media stats
-    const characterMediaStats =
-      await this.usersService.getCharacterMediaPopularityStats();
-    const favoriteCharacterMedia = characterMediaStats.slice(0, 3);
+    const [quoteStats, gambleStats, characterMediaStats, characterFavoriteStats] =
+      await Promise.all([
+        this.usersService.getQuotePopularityStats(),
+        this.usersService.getGamblePopularityStats(),
+        this.usersService.getCharacterMediaPopularityStats(),
+        this.usersService.getCharacterFavoriteStats(),
+      ]);
 
     return {
-      favoriteQuotes,
-      favoriteGambles,
-      favoriteCharacterMedia,
+      favoriteQuotes: quoteStats.slice(0, 3),
+      favoriteGambles: gambleStats.slice(0, 3),
+      favoriteCharacterMedia: characterMediaStats.slice(0, 3),
+      favoriteCharacters: characterFavoriteStats,
     };
   }
 

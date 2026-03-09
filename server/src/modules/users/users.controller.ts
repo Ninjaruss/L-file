@@ -38,6 +38,7 @@ import {
 
 import { BadgesService } from '../badges/badges.service';
 import { UpdateCustomRoleDto } from '../badges/dto/award-badge.dto';
+import { SetFavoriteCharactersDto } from './dto/set-favorite-characters.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -236,6 +237,7 @@ export class UsersController {
       favoriteQuote: user.favoriteQuote,
       favoriteGambleId: user.favoriteGambleId,
       favoriteGamble: user.favoriteGamble,
+      favoriteCharacters: (user as any).favoriteCharacters || [],
       fluxerId: user.fluxerId,
       fluxerAvatar: user.fluxerAvatar,
       userStats,
@@ -719,6 +721,37 @@ export class UsersController {
   async removeCustomRole(@CurrentUser() user: User) {
     await this.service.updateCustomRole(user.id, null);
     return { message: 'Custom role removed successfully' };
+  }
+
+  @Get('profile/favorite-characters')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.EDITOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user favorite characters' })
+  @ApiResponse({ status: 200, description: 'Favorite characters retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMyFavoriteCharacters(@CurrentUser() user: User) {
+    return this.service.getUserFavoriteCharacters(user.id);
+  }
+
+  @Put('profile/favorite-characters')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.EDITOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Set favorite characters',
+    description:
+      'Replace the current user\'s favorite characters list (max 5, exactly one must be primary)',
+  })
+  @ApiBody({ type: SetFavoriteCharactersDto })
+  @ApiResponse({ status: 200, description: 'Favorite characters updated successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async setMyFavoriteCharacters(
+    @CurrentUser() user: User,
+    @Body() dto: SetFavoriteCharactersDto,
+  ) {
+    return this.service.setFavoriteCharacters(user.id, dto.favorites);
   }
 
   @Get(':id')

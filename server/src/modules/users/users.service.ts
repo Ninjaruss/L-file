@@ -17,6 +17,7 @@ import { Guide, GuideStatus } from '../../entities/guide.entity';
 import { GuideLike } from '../../entities/guide-like.entity';
 import { Annotation, AnnotationStatus } from '../../entities/annotation.entity';
 import { Event, EventStatus } from '../../entities/event.entity';
+import { UserFavoriteCharacter } from '../../entities/user-favorite-character.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
 import { createQueryLimiter } from '../../utils/db-query-limiter';
@@ -31,6 +32,8 @@ export class UsersService {
     @InjectRepository(User) private readonly repo: Repository<User>,
     @InjectRepository(Quote) private readonly quoteRepo: Repository<Quote>,
     @InjectRepository(Gamble) private readonly gambleRepo: Repository<Gamble>,
+    @InjectRepository(Character) private readonly characterRepo: Repository<Character>,
+    @InjectRepository(UserFavoriteCharacter) private readonly favoriteCharacterRepo: Repository<UserFavoriteCharacter>,
     private readonly emailService: EmailService,
   ) {}
 
@@ -807,6 +810,8 @@ export class UsersService {
       }
     }
 
+    (user as any).favoriteCharacters = await this.getUserFavoriteCharacters(userId);
+
     return user;
   }
 
@@ -930,6 +935,152 @@ export class UsersService {
     }
 
     return result;
+  }
+
+  async getUserFavoriteCharacters(userId: number): Promise<UserFavoriteCharacter[]> {
+    return this.favoriteCharacterRepo.find({
+      where: { userId },
+      relations: ['character'],
+      order: { sortOrder: 'ASC' },
+    });
+  }
+
+  async setFavoriteCharacters(
+    userId: number,
+    favorites: Array<{ characterId: number; isPrimary: boolean; sortOrder: number }>,
+  ): Promise<UserFavoriteCharacter[]> {
+    if (favorites.length > 5) {
+      throw new BadRequestException('Cannot have more than 5 favorite characters');
+    }
+
+    if (favorites.length > 0) {
+      const primaryCount = favorites.filter((f) => f.isPrimary).length;
+      if (primaryCount !== 1) {
+        throw new BadRequestException('Exactly one character must be designated as primary');
+      }
+
+      const characterIds = favorites.map((f) => f.characterId);
+      const uniqueIds = new Set(characterIds);
+      if (uniqueIds.size !== characterIds.length) {
+        throw new BadRequestException('Duplicate characters are not allowed');
+      }
+
+      const characters = await this.characterRepo.find({
+        where: { id: In(characterIds) },
+        select: ['id'],
+      });
+      if (characters.length !== characterIds.length) {
+        throw new NotFoundException('One or more characters not found');
+      }
+    }
+
+    await this.favoriteCharacterRepo.manager.transaction(async (manager) => {
+      await manager.delete(UserFavoriteCharacter, { userId });
+      if (favorites.length > 0) {
+        const entities = favorites.map((f) =>
+          manager.create(UserFavoriteCharacter, {
+            userId,
+            characterId: f.characterId,
+            isPrimary: f.isPrimary,
+            sortOrder: f.sortOrder,
+          }),
+        );
+        await manager.save(UserFavoriteCharacter, entities);
+      }
+    });
+
+    return this.getUserFavoriteCharacters(userId);
+  }
+
+  async getCharacterFavoriteStats(): Promise<{
+    mostFavorited: Array<{ character: Character; totalCount: number }>;
+    mostPrimary: Array<{ character: Character; primaryCount: number }>;
+    mostLoyal: Array<{
+      character: Character;
+      loyaltyRatio: number;
+      primaryCount: number;
+      totalCount: number;
+    }>;
+  }> {
+    const MINIMUM_THRESHOLD = 3;
+
+    const [totalStats, primaryStats] = await Promise.all([
+      this.favoriteCharacterRepo
+        .createQueryBuilder('ufc')
+        .select('ufc.characterId', 'characterId')
+        .addSelect('COUNT(*)', 'totalcount')
+        .groupBy('ufc.characterId')
+        .orderBy('totalcount', 'DESC')
+        .getRawMany(),
+      this.favoriteCharacterRepo
+        .createQueryBuilder('ufc')
+        .select('ufc.characterId', 'characterId')
+        .addSelect('COUNT(*)', 'primarycount')
+        .where('ufc.isPrimary = true')
+        .groupBy('ufc.characterId')
+        .orderBy('primarycount', 'DESC')
+        .getRawMany(),
+    ]);
+
+    const totalMap = new Map<number, number>(
+      totalStats.map((s) => [s.characterId, parseInt(s.totalcount)]),
+    );
+    const primaryMap = new Map<number, number>(
+      primaryStats.map((s) => [s.characterId, parseInt(s.primarycount)]),
+    );
+
+    const allCharacterIds = [
+      ...new Set([
+        ...totalStats.map((s) => s.characterId),
+        ...primaryStats.map((s) => s.characterId),
+      ]),
+    ];
+
+    if (allCharacterIds.length === 0) {
+      return { mostFavorited: [], mostPrimary: [], mostLoyal: [] };
+    }
+
+    const characters = await this.characterRepo.find({
+      where: { id: In(allCharacterIds) },
+    });
+    const characterMap = new Map<number, Character>(characters.map((c) => [c.id, c]));
+
+    const mostFavorited = totalStats
+      .slice(0, 2)
+      .map((s) => ({
+        character: characterMap.get(s.characterId)!,
+        totalCount: parseInt(s.totalcount),
+      }))
+      .filter((r) => r.character);
+
+    const mostPrimary = primaryStats
+      .slice(0, 2)
+      .map((s) => ({
+        character: characterMap.get(s.characterId)!,
+        primaryCount: parseInt(s.primarycount),
+      }))
+      .filter((r) => r.character);
+
+    const loyaltyRankings = allCharacterIds
+      .map((id) => {
+        const total = totalMap.get(id) || 0;
+        const primary = primaryMap.get(id) || 0;
+        return { characterId: id, total, primary, ratio: total >= MINIMUM_THRESHOLD ? primary / total : 0 };
+      })
+      .filter((r) => r.total >= MINIMUM_THRESHOLD)
+      .sort((a, b) => b.ratio - a.ratio)
+      .slice(0, 2);
+
+    const mostLoyal = loyaltyRankings
+      .map((r) => ({
+        character: characterMap.get(r.characterId)!,
+        loyaltyRatio: r.ratio,
+        primaryCount: r.primary,
+        totalCount: r.total,
+      }))
+      .filter((r) => r.character);
+
+    return { mostFavorited, mostPrimary, mostLoyal };
   }
 
   async getProfileCustomizationStats(): Promise<{

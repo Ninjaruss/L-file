@@ -50,10 +50,21 @@ interface FavoriteCharacterMedia {
   userCount: number
 }
 
+interface CharacterFavoriteEntry {
+  character: { id: number; name: string }
+}
+
+export interface FavoriteCharacterStats {
+  mostFavorited: Array<CharacterFavoriteEntry & { totalCount: number }>
+  mostPrimary: Array<CharacterFavoriteEntry & { primaryCount: number }>
+  mostLoyal: Array<CharacterFavoriteEntry & { loyaltyRatio: number; primaryCount: number; totalCount: number }>
+}
+
 interface FavoritesData {
   favoriteQuotes: FavoriteQuote[]
   favoriteGambles: FavoriteGamble[]
   favoriteCharacterMedia: FavoriteCharacterMedia[]
+  favoriteCharacters: FavoriteCharacterStats
 }
 
 export function useFavoritesData() {

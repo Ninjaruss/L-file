@@ -61,6 +61,7 @@ import UserProfileImage from '../../components/UserProfileImage'
 import QuoteSelectionPopup from '../../components/QuoteSelectionPopup'
 import GambleSelectionPopup from '../../components/GambleSelectionPopup'
 import ProfilePictureSelector from '../../components/ProfilePictureSelector'
+import CharacterFavoritesManager from '../../components/CharacterFavoritesManager'
 import UserBadges from '../../components/UserBadges'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import SubmissionCard from '../../components/SubmissionCard'
@@ -1600,6 +1601,14 @@ export default function ProfilePageClient() {
                     </>
                   )}
                 </Stack>
+              </Stack>
+            </Card>
+
+            {/* Favorite Characters Section */}
+            <Card shadow="sm" padding="md" radius="md" withBorder>
+              <Stack gap="md">
+                <Title order={2} size="h3" c={headerColors.h2}>Favorite Characters</Title>
+                <CharacterFavoritesManager />
               </Stack>
             </Card>
 

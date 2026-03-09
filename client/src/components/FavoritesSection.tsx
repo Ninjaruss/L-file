@@ -19,6 +19,7 @@ import { Quote, Dices, User, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { useFavoritesData } from '../hooks/useFavoritesData'
+import { FavoriteCharactersSection } from './FavoriteCharactersSection'
 
 export function FavoritesSection() {
   const theme = useMantineTheme()
@@ -72,7 +73,7 @@ export function FavoritesSection() {
     return null
   }
 
-  const { favoriteQuotes, favoriteGambles, favoriteCharacterMedia } = favoritesData
+  const { favoriteQuotes, favoriteGambles, favoriteCharacterMedia, favoriteCharacters } = favoritesData
 
   const renderCounter = (count: number) => (
     <Text size="xs" style={{ color: subtleText }}>
@@ -336,6 +337,10 @@ export function FavoritesSection() {
           </Box>
         )}
       </motion.div>
+
+      {favoriteCharacters && (
+        <FavoriteCharactersSection data={favoriteCharacters} />
+      )}
     </Box>
   )
 }

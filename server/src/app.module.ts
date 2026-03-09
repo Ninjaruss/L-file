@@ -39,6 +39,7 @@ import { Media } from './entities/media.entity';
 import { User } from './entities/user.entity';
 import { Annotation } from './entities/annotation.entity';
 import { EditLog } from './entities/edit-log.entity';
+import { UserFavoriteCharacter } from './entities/user-favorite-character.entity';
 import { Logger } from '@nestjs/common';
 
 @Module({
@@ -85,6 +86,7 @@ import { Logger } from '@nestjs/common';
       User,
       Annotation,
       EditLog,
+      UserFavoriteCharacter,
     ]),
 
     ArcsModule,

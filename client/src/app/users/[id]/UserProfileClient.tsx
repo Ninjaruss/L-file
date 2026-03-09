@@ -71,6 +71,13 @@ interface PublicUser {
   }
   favoriteQuote?: any
   favoriteGamble?: any
+  favoriteCharacters?: Array<{
+    id: number
+    characterId: number
+    isPrimary: boolean
+    sortOrder: number
+    character: { id: number; name: string }
+  }>
 }
 
 interface UserGuide {
@@ -485,6 +492,57 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                       </Card>
                     )}
                   </SimpleGrid>
+                </Stack>
+              </>
+            )}
+
+            {/* Favorite Characters */}
+            {user.favoriteCharacters && user.favoriteCharacters.length > 0 && (
+              <>
+                <Divider color={getAlphaColor(accentColor, 0.25)} />
+                <Stack gap="lg">
+                  <Group gap="sm" align="center">
+                    <Star size={20} color={characterColor} />
+                    <Title order={2} size="h3" c={headerColors.h2}>
+                      Favorite Characters
+                    </Title>
+                  </Group>
+                  <Stack gap="xs">
+                    {user.favoriteCharacters
+                      .slice()
+                      .sort((a, b) => a.sortOrder - b.sortOrder)
+                      .map((fav) => (
+                        <Card
+                          key={fav.characterId}
+                          component={Link}
+                          href={`/characters/${fav.characterId}`}
+                          withBorder
+                          radius="md"
+                          padding="sm"
+                          style={{
+                            background: getAlphaColor(characterColor, 0.08),
+                            border: `1px solid ${getAlphaColor(characterColor, 0.25)}`,
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Group gap="sm" align="center">
+                            {fav.isPrimary && (
+                              <Badge
+                                size="xs"
+                                color="yellow"
+                                variant="filled"
+                                leftSection={<Star size={10} fill="currentColor" />}
+                              >
+                                #1
+                              </Badge>
+                            )}
+                            <Text size="sm" fw={fav.isPrimary ? 700 : 400} c={characterColor}>
+                              {fav.character.name}
+                            </Text>
+                          </Group>
+                        </Card>
+                      ))}
+                  </Stack>
                 </Stack>
               </>
             )}
