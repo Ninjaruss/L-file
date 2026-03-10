@@ -308,8 +308,9 @@ const Navigation: React.FC = () => {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        backgroundColor: 'var(--mantine-color-dark-8)',
-        borderBottom: '1px solid var(--mantine-color-dark-6)'
+        background: 'linear-gradient(180deg, var(--mantine-color-dark-9) 0%, var(--mantine-color-dark-8) 100%)',
+        borderBottom: 'none',
+        boxShadow: '0 1px 0 var(--mantine-color-dark-6), 0 1px 12px 0 rgba(225, 29, 72, 0.18)'
       }}
       data-testid="navigation-bar"
     >
@@ -324,7 +325,11 @@ const Navigation: React.FC = () => {
               cursor: 'pointer',
               marginRight: rem(24),
               fontSize: rem(20),
-              transition: 'color 160ms ease, transform 160ms ease'
+              fontFamily: 'var(--font-opti-goudy-text)',
+              transition: 'color 160ms ease, transform 160ms ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: rem(6)
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement
@@ -346,7 +351,8 @@ const Navigation: React.FC = () => {
             }}
             tabIndex={0}
           >
-            L-File
+            <span aria-hidden="true" style={{ color: 'var(--usogui-red)', fontSize: '0.75em', lineHeight: 1, display: 'inline-block', transform: 'translateY(-1px)' }}>◆</span>
+            <span style={{ letterSpacing: '0.04em' }}>L-File</span>
           </Title>
         </Link>
 
@@ -374,20 +380,21 @@ const Navigation: React.FC = () => {
             styles={{
               dropdown: {
                 backgroundColor: theme.colors.dark[8],
-                border: `1px solid ${theme.colors.dark[6]}`,
+                border: '1px solid rgba(225, 29, 72, 0.15)',
+                borderTop: '2px solid rgba(225, 29, 72, 0.35)',
                 borderRadius: theme.radius.md,
                 boxShadow: theme.shadows.xl,
                 minWidth: 'unset',
                 width: 'auto',
                 padding: rem(6),
-                backdropFilter: 'blur(10px)'
+                backdropFilter: 'blur(20px)'
               }
             }}
           >
               <Menu.Target>
                 <Button
-                  variant="subtle"
-                  color="gray"
+                  variant="transparent"
+                  className={`nav-trigger${browseOpened ? ' nav-trigger--active' : ''}`}
                   rightSection={
                     <ChevronDown
                       size={14}
@@ -398,16 +405,19 @@ const Navigation: React.FC = () => {
                     />
                   }
                   style={{
-                    backgroundColor: browseOpened ? (rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)') : 'transparent',
-                    color: browseOpened ? accentColor : theme.colors.gray[0],
-                    fontWeight: 500
+                    backgroundColor: 'transparent',
+                    color: browseOpened ? accentColor : 'rgba(255, 255, 255, 0.88)',
+                    fontWeight: 500,
+                    fontSize: rem(13),
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    padding: '0 8px',
+                    height: '36px'
                   }}
                   styles={{
                     root: {
-                      ...menuHoverStyles,
-                      '&:hover': {
-                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
-                      }
+                      '&:hover': { backgroundColor: 'transparent', color: accentColor },
+                      '&:active': { backgroundColor: 'transparent' }
                     }
                   }}
                 >
@@ -420,11 +430,14 @@ const Navigation: React.FC = () => {
                   <Menu.Label
                     style={{
                       color: category.color,
-                      fontWeight: 'bold',
+                      fontWeight: 600,
                       fontSize: theme.fontSizes.xs,
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      marginBottom: theme.spacing.xs
+                      letterSpacing: '0.06em',
+                      marginBottom: '4px',
+                      marginLeft: rem(4),
+                      paddingLeft: rem(10),
+                      borderLeft: '2px solid currentColor'
                     }}
                   >
                     {category.name}
@@ -441,7 +454,7 @@ const Navigation: React.FC = () => {
                         paddingLeft: theme.spacing.md,
                         color: isActivePath(item.href) ? accentColor : theme.colors.gray[0],
                         backgroundColor: 'transparent',
-                        transition: 'all 200ms ease'
+                        transition: 'background-color 150ms ease, color 150ms ease'
                       }}
                       styles={{
                         itemLabel: {
@@ -450,11 +463,11 @@ const Navigation: React.FC = () => {
                           whiteSpace: 'nowrap'
                         },
                         item: {
-                          ...menuHoverStyles,
+                          transition: 'background-color 150ms ease, color 150ms ease',
                           '&:hover': {
-                            backgroundColor: rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)',
-                            color: accentColor,
-                            boxShadow: `inset 0 0 0 1px ${accentColor}`
+                            backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            boxShadow: 'none'
                           }
                         }
                       }}
@@ -482,20 +495,21 @@ const Navigation: React.FC = () => {
             styles={{
               dropdown: {
                 backgroundColor: theme.colors.dark[8],
-                border: `1px solid ${theme.colors.dark[6]}`,
+                border: '1px solid rgba(225, 29, 72, 0.15)',
+                borderTop: '2px solid rgba(225, 29, 72, 0.35)',
                 borderRadius: theme.radius.md,
                 boxShadow: theme.shadows.xl,
                 minWidth: 'unset',
                 width: 'auto',
                 padding: rem(6),
-                backdropFilter: 'blur(10px)'
+                backdropFilter: 'blur(20px)'
               }
             }}
           >
               <Menu.Target>
                 <Button
-                  variant="subtle"
-                  color="gray"
+                  variant="transparent"
+                  className={`nav-trigger${communityOpened ? ' nav-trigger--active' : ''}`}
                   rightSection={
                     <ChevronDown
                       size={14}
@@ -506,16 +520,19 @@ const Navigation: React.FC = () => {
                     />
                   }
                   style={{
-                    backgroundColor: communityOpened ? (rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)') : 'transparent',
-                    color: communityOpened ? accentColor : theme.colors.gray[0],
-                    fontWeight: 500
+                    backgroundColor: 'transparent',
+                    color: communityOpened ? accentColor : 'rgba(255, 255, 255, 0.88)',
+                    fontWeight: 500,
+                    fontSize: rem(13),
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    padding: '0 8px',
+                    height: '36px'
                   }}
                   styles={{
                     root: {
-                      ...menuHoverStyles,
-                      '&:hover': {
-                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
-                      }
+                      '&:hover': { backgroundColor: 'transparent', color: accentColor },
+                      '&:active': { backgroundColor: 'transparent' }
                     }
                   }}
                 >
@@ -535,7 +552,7 @@ const Navigation: React.FC = () => {
                     paddingLeft: theme.spacing.md,
                     color: isActivePath(item.href) ? accentColor : theme.colors.gray[0],
                     backgroundColor: 'transparent',
-                    transition: 'all 200ms ease'
+                    transition: 'background-color 150ms ease, color 150ms ease'
                   }}
                   styles={{
                     itemLabel: {
@@ -544,11 +561,11 @@ const Navigation: React.FC = () => {
                       whiteSpace: 'nowrap'
                     },
                     item: {
-                      ...menuHoverStyles,
+                      transition: 'background-color 150ms ease, color 150ms ease',
                       '&:hover': {
-                        backgroundColor: rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)',
-                        color: accentColor,
-                        boxShadow: `inset 0 0 0 1px ${accentColor}`
+                        backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                        color: 'rgba(255, 255, 255, 0.95)',
+                        boxShadow: 'none'
                       }
                     }
                   }}
@@ -573,20 +590,21 @@ const Navigation: React.FC = () => {
             styles={{
               dropdown: {
                 backgroundColor: theme.colors.dark[8],
-                border: `1px solid ${theme.colors.dark[6]}`,
+                border: '1px solid rgba(225, 29, 72, 0.15)',
+                borderTop: '2px solid rgba(225, 29, 72, 0.35)',
                 borderRadius: theme.radius.md,
                 boxShadow: theme.shadows.xl,
                 minWidth: 'unset',
                 width: 'auto',
                 padding: rem(6),
-                backdropFilter: 'blur(10px)'
+                backdropFilter: 'blur(20px)'
               }
             }}
           >
               <Menu.Target>
                 <Button
-                  variant="subtle"
-                  color="gray"
+                  variant="transparent"
+                  className={`nav-trigger${submitOpened ? ' nav-trigger--active' : ''}`}
                   rightSection={
                     <ChevronDown
                       size={14}
@@ -597,16 +615,19 @@ const Navigation: React.FC = () => {
                     />
                   }
                   style={{
-                    backgroundColor: submitOpened ? (rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)') : 'transparent',
-                    color: submitOpened ? accentColor : theme.colors.gray[0],
-                    fontWeight: 500
+                    backgroundColor: 'transparent',
+                    color: submitOpened ? accentColor : 'rgba(255, 255, 255, 0.88)',
+                    fontWeight: 500,
+                    fontSize: rem(13),
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    padding: '0 8px',
+                    height: '36px'
                   }}
                   styles={{
                     root: {
-                      ...menuHoverStyles,
-                      '&:hover': {
-                        backgroundColor: rgba(theme.colors.white?.[0], 0.1) ?? 'rgba(255, 255, 255, 0.1)'
-                      }
+                      '&:hover': { backgroundColor: 'transparent', color: accentColor },
+                      '&:active': { backgroundColor: 'transparent' }
                     }
                   }}
                 >
@@ -626,7 +647,7 @@ const Navigation: React.FC = () => {
                     paddingLeft: theme.spacing.md,
                     color: isActivePath(item.href) ? accentColor : theme.colors.gray[0],
                     backgroundColor: 'transparent',
-                    transition: 'all 200ms ease'
+                    transition: 'background-color 150ms ease, color 150ms ease'
                   }}
                   styles={{
                     itemLabel: {
@@ -635,11 +656,11 @@ const Navigation: React.FC = () => {
                       whiteSpace: 'nowrap'
                     },
                     item: {
-                      ...menuHoverStyles,
+                      transition: 'background-color 150ms ease, color 150ms ease',
                       '&:hover': {
-                        backgroundColor: rgba(accentColor, 0.1) ?? 'rgba(225, 29, 72, 0.1)',
-                        color: accentColor,
-                        boxShadow: `inset 0 0 0 1px ${accentColor}`
+                        backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                        color: 'rgba(255, 255, 255, 0.95)',
+                        boxShadow: 'none'
                       }
                     }
                   }}
@@ -661,23 +682,17 @@ const Navigation: React.FC = () => {
               alignItems: 'center'
             }}
           >
-            <Box 
-              component="form" 
-              onSubmit={handleSearchSubmit} 
-              style={{ 
+            <Box
+              component="form"
+              className="nav-search-box"
+              onSubmit={handleSearchSubmit}
+              style={{
                 position: 'relative',
                 borderRadius: rem(4),
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                transition: 'all 0.2s',
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                transition: 'width 0.2s, border-color 200ms ease, box-shadow 200ms ease',
                 width: searchFocused ? '280px' : '180px',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
-              }}
-              onMouseLeave={(e) => {
-                if (!searchFocused) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
-                }
               }}
             >
               <TextInput
@@ -920,22 +935,6 @@ const Navigation: React.FC = () => {
                 </Menu.Item>
                 <Menu.Item
                   component={Link}
-                  href="/changelog"
-                  leftSection={<Activity size={16} />}
-                  style={{
-                    backgroundColor: 'transparent',
-                    borderRadius: 6,
-                    transition: 'box-shadow 0.2s ease',
-                    boxShadow: isActivePath('/changelog') ? `inset 0 0 0 1px ${accentColor}` : undefined,
-                    paddingTop: rem(6),
-                    paddingBottom: rem(6)
-                  }}
-                  styles={{ item: menuHoverStyles }}
-                >
-                  Changelog
-                </Menu.Item>
-                <Menu.Item
-                  component={Link}
                   href="/about"
                   leftSection={<Info size={16} />}
                   style={{
@@ -1018,7 +1017,11 @@ const Navigation: React.FC = () => {
               borderRadius: 0,
               marginTop: '8px',
               maxHeight: '80vh',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              borderTop: '2px solid rgba(225, 29, 72, 0.35)',
+              borderLeft: 'none',
+              borderRight: 'none',
+              borderBottom: '1px solid rgba(225, 29, 72, 0.15)'
             }
           }}
         >
@@ -1037,15 +1040,33 @@ const Navigation: React.FC = () => {
           <Menu.Dropdown className="md:hidden" ref={focusTrapRef}>
             {/* Mobile Search */}
             <Box p="md" pb="sm">
-              <form onSubmit={handleSearchSubmit}>
+              <Box
+                component="form"
+                className="nav-search-box"
+                onSubmit={handleSearchSubmit}
+                style={{
+                  borderRadius: rem(4),
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  transition: 'border-color 200ms ease, box-shadow 200ms ease'
+                }}
+              >
                 <TextInput
                   placeholder="Search (2+ chars)..."
                   aria-label="Search characters, arcs, gambles, and more"
                   value={searchValue}
                   onChange={(e) => handleSearchChange(e)}
                   leftSection={searchLoading ? <Loader size={18} /> : <Search size={18} />}
+                  styles={{
+                    input: {
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      '&:focus': { backgroundColor: 'transparent', borderColor: 'transparent' }
+                    }
+                  }}
                 />
-              </form>
+              </Box>
             </Box>
             <Menu.Divider />
 
@@ -1163,10 +1184,13 @@ const Navigation: React.FC = () => {
                 <Menu.Label
                   style={{
                     color: category.color,
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.06em',
+                    marginLeft: rem(4),
+                    paddingLeft: rem(10),
+                    borderLeft: '2px solid currentColor'
                   }}
                 >
                   {category.name}
@@ -1195,11 +1219,14 @@ const Navigation: React.FC = () => {
             {/* Community Section */}
             <Menu.Label
               style={{
-                color: '#ff7043', // Improved from #ff5722 for 4.6:1 contrast ratio
-                fontWeight: 'bold',
-                fontSize: '0.9rem',
+                color: '#ff7043',
+                fontWeight: 600,
+                fontSize: '0.75rem',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.06em',
+                marginLeft: rem(4),
+                paddingLeft: rem(10),
+                borderLeft: '2px solid currentColor'
               }}
             >
               Community
@@ -1226,11 +1253,14 @@ const Navigation: React.FC = () => {
             {/* Submit Section */}
             <Menu.Label
               style={{
-                color: '#8e24aa', // Improved from #673ab7 for 4.5:1 contrast ratio
-                fontWeight: 'bold',
-                fontSize: '0.9rem',
+                color: '#8e24aa',
+                fontWeight: 600,
+                fontSize: '0.75rem',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.06em',
+                marginLeft: rem(4),
+                paddingLeft: rem(10),
+                borderLeft: '2px solid currentColor'
               }}
             >
               Submit
