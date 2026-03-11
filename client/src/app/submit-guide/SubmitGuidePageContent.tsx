@@ -294,18 +294,46 @@ export default function SubmitGuidePageContent() {
   return (
     <Container size="md" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Stack align="center" gap="sm" mb="xl" ta="center">
-          <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(81, 207, 102, 0.15)', color: guideAccent }}>
-            <FileText size={32} color={guideAccent} />
-          </ThemeIcon>
-          <Title order={1}>{isEditMode ? 'Edit Guide' : 'Write a Guide'}</Title>
-          <Text size="lg" c="dimmed">
-            {isEditMode
-              ? 'Update your guide and resubmit for review'
-              : 'Share your knowledge and insights about Usogui with the community'
-            }
-          </Text>
-        </Stack>
+        <Box
+          mb="xl"
+          style={{
+            borderBottom: `1px solid ${guideAccent}25`,
+            paddingBottom: rem(24),
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Top gradient stripe */}
+          <Box style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0,
+            height: rem(2),
+            background: `linear-gradient(90deg, ${guideAccent}, transparent)`,
+            opacity: 0.8
+          }} />
+
+          <Group gap="md" align="flex-start" mt="md">
+            <ThemeIcon size={48} radius="md" variant="light"
+              style={{ backgroundColor: `${guideAccent}18`, color: guideAccent, flexShrink: 0 }}
+            >
+              <FileText size={24} color={guideAccent} />
+            </ThemeIcon>
+
+            <Box style={{ flex: 1 }}>
+              <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: guideAccent, marginBottom: rem(4) }}>
+                GUIDE SUBMISSION
+              </Text>
+              <Title order={1}
+                style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
+              >
+                {isEditMode ? 'Edit Guide' : 'Write a Guide'}
+              </Title>
+              <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
+                {isEditMode ? 'Update your guide and resubmit for review' : 'Share your knowledge and insights about Usogui with the community'}
+              </Text>
+            </Box>
+          </Group>
+        </Box>
 
         <SubmissionGuidelines type="guide" />
 

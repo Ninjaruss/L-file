@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Container,
+  Group,
   Loader,
   NumberInput,
   Select,
@@ -19,6 +20,7 @@ import {
   Textarea,
   ThemeIcon,
   Title,
+  rem,
   useMantineTheme
 } from '@mantine/core'
 import { getEntityThemeColor, semanticColors, textColors, setTabAccentColors } from '../../lib/mantine-theme'
@@ -437,18 +439,46 @@ export default function SubmitMediaPageContent() {
     <Container size="md" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Stack gap="xl">
-          <Stack align="center" gap="sm" ta="center">
-            <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
-              <Upload size={32} color="#a855f7" />
-            </ThemeIcon>
-            <Title order={1}>{isEditMode ? 'Edit Media Submission' : 'Submit Media'}</Title>
-            <Text size="lg" c="dimmed">
-              {isEditMode
-                ? 'Update your media submission details and optionally replace the file'
-                : 'Share fanart, videos, audio, or other media from YouTube, TikTok, Instagram, Pixiv, DeviantArt, Imgur, SoundCloud, and more'
-              }
-            </Text>
-          </Stack>
+          <Box
+            mb="sm"
+            style={{
+              borderBottom: `1px solid ${mediaAccent}25`,
+              paddingBottom: rem(24),
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Box style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0,
+              height: rem(2),
+              background: `linear-gradient(90deg, ${mediaAccent}, transparent)`,
+              opacity: 0.8
+            }} />
+            <Group gap="md" align="flex-start" mt="md">
+              <ThemeIcon size={48} radius="md" variant="light"
+                style={{ backgroundColor: `${mediaAccent}18`, color: mediaAccent, flexShrink: 0 }}
+              >
+                <Upload size={24} color={mediaAccent} />
+              </ThemeIcon>
+              <Box style={{ flex: 1 }}>
+                <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: mediaAccent, marginBottom: rem(4) }}>
+                  MEDIA SUBMISSION
+                </Text>
+                <Title order={1}
+                  style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
+                >
+                  {isEditMode ? 'Edit Media Submission' : 'Submit Media'}
+                </Title>
+                <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
+                  {isEditMode
+                    ? 'Update your media submission details and optionally replace the file'
+                    : 'Share fanart, videos, audio, or other media from YouTube, TikTok, Instagram, Pixiv, DeviantArt, Imgur, SoundCloud, and more'
+                  }
+                </Text>
+              </Box>
+            </Group>
+          </Box>
 
           <SubmissionGuidelines type="media" />
 
@@ -496,6 +526,12 @@ export default function SubmitMediaPageContent() {
               boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)'
             }}
           >
+            <Box style={{
+              height: rem(3),
+              background: `linear-gradient(90deg, ${mediaAccent}60, transparent)`,
+              borderRadius: `${rem(6)} ${rem(6)} 0 0`,
+              marginBottom: rem(-3)
+            }} />
             <Stack gap="xl">
               {isPrivilegedUser && (
                 <Tabs

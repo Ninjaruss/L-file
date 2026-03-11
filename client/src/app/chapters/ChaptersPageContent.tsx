@@ -41,6 +41,17 @@ interface Chapter {
   }
 }
 
+interface VolumeGroup {
+  volumeNumber: number | null
+  volumeTitle?: string
+  chapters: Chapter[]
+}
+
+interface Segment {
+  group: VolumeGroup | null
+  chapters: Chapter[]
+}
+
 interface ChaptersPageContentProps {
   initialChapters: Chapter[]
   initialTotalPages: number
@@ -63,16 +74,12 @@ export default function ChaptersPageContent({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Load all chapters once - no pagination needed on API level
   const [allChapters, setAllChapters] = useState<Chapter[]>(initialChapters)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
   const [searchQuery, setSearchQuery] = useState(initialSearch || '')
-
-  // Client-side pagination
   const [currentPage, setCurrentPage] = useState<number>(initialPage)
 
-  // Hover modal
   const {
     hoveredItem: hoveredChapter,
     hoverPosition: hoverModalPosition,
@@ -87,13 +94,11 @@ export default function ChaptersPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
-  // Load all chapters once on mount
   const loadAllChapters = useCallback(async () => {
     setLoading(true)
     setError(null)
-
     try {
-      const response = await api.get<any>('/chapters?limit=1000') // Get all chapters
+      const response = await api.get<any>('/chapters?limit=1000')
       setAllChapters(response.data || [])
     } catch (err: any) {
       console.error('Error loading chapters:', err)
@@ -107,22 +112,16 @@ export default function ChaptersPageContent({
     }
   }, [])
 
-  // Client-side filtering and pagination
   const filteredChapters = useMemo(() => {
     if (!searchQuery.trim()) return allChapters
-
     const query = searchQuery.toLowerCase().trim()
     return allChapters.filter(chapter => {
-      // Search by chapter number
       if (!isNaN(Number(query))) {
         return chapter.number.toString().includes(query)
       }
-
-      // Search by title or description
       const title = chapter.title?.toLowerCase() || `chapter ${chapter.number}`
       const description = chapter.description?.toLowerCase() || ''
       const summary = chapter.summary?.toLowerCase() || ''
-
       return title.includes(query) || description.includes(query) || summary.includes(query)
     })
   }, [allChapters, searchQuery])
@@ -135,18 +134,64 @@ export default function ChaptersPageContent({
   const totalPages = Math.ceil(filteredChapters.length / PAGE_SIZE)
   const total = filteredChapters.length
 
-  // Load all chapters on mount if we don't have the expected full set
+  // Build volume groups from ALL filtered chapters (for headers)
+  const volumeGroups = useMemo((): VolumeGroup[] => {
+    const groupMap = new Map<number | null, VolumeGroup>()
+    const order: Array<number | null> = []
+    for (const chapter of filteredChapters) {
+      const volNum = chapter.volume?.number ?? null
+      if (!groupMap.has(volNum)) {
+        groupMap.set(volNum, {
+          volumeNumber: volNum,
+          volumeTitle: chapter.volume?.title,
+          chapters: []
+        })
+        order.push(volNum)
+      }
+      groupMap.get(volNum)!.chapters.push(chapter)
+    }
+    return order.map(k => groupMap.get(k)!)
+  }, [filteredChapters])
+
+  // Build render segments from paginated chapters — inject volume headers at transitions
+  const renderSegments = useMemo((): Segment[] => {
+    if (hasSearchQuery) {
+      return [{ group: null, chapters: paginatedChapters }]
+    }
+    const segments: Segment[] = []
+    let lastVolNum: number | null | undefined = undefined
+    let currentSegment: Segment | null = null
+
+    for (const chapter of paginatedChapters) {
+      const volNum = chapter.volume?.number ?? null
+      if (volNum !== lastVolNum) {
+        if (currentSegment) segments.push(currentSegment)
+        const group = volumeGroups.find(g => g.volumeNumber === volNum) ?? null
+        currentSegment = { group, chapters: [] }
+        lastVolNum = volNum
+      }
+      currentSegment!.chapters.push(chapter)
+    }
+    if (currentSegment) segments.push(currentSegment)
+    return segments
+  }, [paginatedChapters, hasSearchQuery, volumeGroups])
+
+  // Compute stats for hero
+  const latestChapter = allChapters.length > 0 ? Math.max(...allChapters.map(c => c.number)) : 0
+  const volumeCount = useMemo(() => {
+    const vols = new Set(allChapters.map(c => c.volume?.number ?? null).filter(v => v !== null))
+    return vols.size
+  }, [allChapters])
+
   useEffect(() => {
     if (allChapters.length === 0 || (allChapters.length > 0 && allChapters.length < 500)) {
       loadAllChapters()
     }
   }, [allChapters.length, loadAllChapters])
 
-  // Sync with URL parameters - only react to searchParams changes
   useEffect(() => {
     const urlPage = parseInt(searchParams.get('page') || '1', 10)
     const urlSearch = searchParams.get('search') || ''
-
     setCurrentPage(urlPage)
     setSearchQuery(urlSearch)
   }, [searchParams])
@@ -154,15 +199,13 @@ export default function ChaptersPageContent({
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const newSearch = event.target.value
     setSearchQuery(newSearch)
-    setCurrentPage(1) // Reset to first page immediately when search changes
+    setCurrentPage(1)
   }, [])
 
-  // Update URL when search or page changes (no API calls needed)
   useEffect(() => {
     const params = new URLSearchParams()
     if (searchQuery) params.set('search', searchQuery)
     if (currentPage > 1) params.set('page', currentPage.toString())
-
     const newUrl = params.toString() ? `/chapters?${params.toString()}` : '/chapters'
     router.push(newUrl, { scroll: false })
   }, [searchQuery, currentPage, router])
@@ -171,72 +214,129 @@ export default function ChaptersPageContent({
     setSearchQuery('')
     setCurrentPage(1)
     router.push('/chapters', { scroll: false })
-    // No API calls needed!
   }, [router])
 
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page) // Update local state immediately
-    // No API calls needed - everything is client-side now!
+    setCurrentPage(page)
   }, [])
 
   return (
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      {/* Hero Section */}
-      <Box
-        style={getHeroStyles(theme, accentChapter)}
-        p="md"
-      >
-        <Stack align="center" gap="xs">
-          <Box
-            style={{
-              background: `linear-gradient(135deg, ${accentChapter}, ${accentChapter}CC)`,
-              borderRadius: '50%',
-              width: rem(40),
-              height: rem(40),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: `0 4px 16px ${accentChapter}40`
-            }}
-          >
-            <BookOpen size={20} color="white" />
+
+      {/* Editorial Hero Section */}
+      <Box style={{ ...getHeroStyles(theme, accentChapter), paddingBlock: rem(48), paddingInline: rem(24) }}>
+        <Box style={{
+          maxWidth: rem(900),
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: rem(24),
+          flexWrap: 'wrap'
+        }}>
+          {/* Left: Editorial title block */}
+          <Box style={{ position: 'relative' }}>
+            {/* Watermark number */}
+            {allChapters.length > 0 && (
+              <Text
+                aria-hidden="true"
+                style={{
+                  fontFamily: 'var(--font-opti-goudy-text)',
+                  fontSize: rem(88),
+                  fontWeight: 400,
+                  lineHeight: 1,
+                  color: accentChapter,
+                  opacity: 0.12,
+                  position: 'absolute',
+                  top: rem(-16),
+                  left: rem(-8),
+                  userSelect: 'none',
+                  pointerEvents: 'none'
+                }}
+              >
+                {allChapters.length}
+              </Text>
+            )}
+            <Box style={{ position: 'relative' }}>
+              <Text
+                style={{
+                  fontSize: rem(11),
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: accentChapter,
+                  fontWeight: 700,
+                  marginBottom: rem(6)
+                }}
+              >
+                Chapters
+              </Text>
+              <Title order={1}
+                style={{
+                  fontFamily: 'var(--font-opti-goudy-text)',
+                  fontSize: rem(32),
+                  fontWeight: 400,
+                  color: '#ffffff',
+                  lineHeight: 1.1
+                }}
+              >
+                Usogui Chapter Index
+              </Title>
+              <Text size="sm" c="dimmed" mt="xs">
+                Explore the story chapter by chapter through the Usogui universe
+              </Text>
+            </Box>
           </Box>
 
-          <Stack align="center" gap="xs">
-            <Title order={1} size="1.5rem" fw={700} ta="center" c={accentChapter}>
-              Chapters
-            </Title>
-            <Text size="md" style={{ color: theme.colors.gray[6] }} ta="center" maw={400}>
-              Explore the story chapter by chapter through the Usogui universe
-            </Text>
-
-            {allChapters.length > 0 && (
-              <Badge
-                size="md"
-                variant="light"
-                c={getEntityThemeColor(theme, 'guide')}
-                radius="xl"
-                mt="xs"
-                style={{ backgroundColor: `${getEntityThemeColor(theme, 'guide')}20`, borderColor: getEntityThemeColor(theme, 'guide') }}
-              >
-                {searchQuery ? `${total} of ${allChapters.length}` : `${allChapters.length}`} chapter{(searchQuery ? total : allChapters.length) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'available'}
-              </Badge>
-            )}
-          </Stack>
-        </Stack>
+          {/* Right: Stat block */}
+          {allChapters.length > 0 && (
+            <Box style={{ display: 'flex', gap: rem(24), flexShrink: 0 }}>
+              {[
+                { label: 'chapters', value: allChapters.length },
+                { label: 'volumes', value: volumeCount },
+                { label: 'latest', value: latestChapter }
+              ].map(stat => (
+                <Box
+                  key={stat.label}
+                  style={{
+                    borderLeft: `3px solid ${accentChapter}`,
+                    paddingLeft: rem(12)
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: 'var(--font-opti-goudy-text)',
+                      fontSize: rem(28),
+                      fontWeight: 400,
+                      lineHeight: 1,
+                      color: accentChapter
+                    }}
+                  >
+                    {stat.value}
+                  </Text>
+                  <Text size="xs" c="dimmed" style={{ textTransform: 'lowercase', marginTop: rem(2) }}>
+                    {stat.label}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
       </Box>
 
-      {/* Search and Filters */}
-      <Box mb="xl" px="md">
-        <Group justify="center" mb="md">
-          <Box style={{ maxWidth: rem(500), width: '100%' }}>
+      {/* Search Strip */}
+      <Box py="sm" px="md" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <Group justify="center" align="center" gap="sm">
+          <Text size="xs" c="dimmed" style={{ letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+            Filter chapters
+          </Text>
+          <Box style={{ maxWidth: rem(480), width: '100%' }}>
             <TextInput
-              placeholder="Search chapters by number or title..."
+              placeholder="Search by number or title..."
               value={searchQuery}
               onChange={handleSearchChange}
-              leftSection={<Search size={20} />}
-              size="lg"
+              leftSection={<Search size={16} />}
+              size="md"
               radius="xl"
               disabled={loading}
               rightSection={
@@ -245,26 +345,27 @@ export default function ChaptersPageContent({
                     variant="subtle"
                     color="gray"
                     onClick={handleClearSearch}
-                    size="lg"
+                    size="md"
                     title="Clear search"
                     aria-label="Clear search"
-                    style={{ minWidth: 44, minHeight: 44 }}
+                    style={{ minWidth: 36, minHeight: 36 }}
                   >
-                    <X size={18} />
+                    <X size={14} />
                   </ActionIcon>
                 ) : loading ? (
-                  <Loader size="sm" />
+                  <Loader size="xs" />
                 ) : null
               }
               styles={{
-                input: {
-                  fontSize: rem(16),
-                  paddingLeft: rem(50),
-                  paddingRight: (hasSearchQuery || loading) ? rem(50) : rem(20)
-                }
+                input: { fontSize: rem(14) }
               }}
             />
           </Box>
+          {hasSearchQuery && (
+            <Text size="xs" c="dimmed">
+              {total} of {allChapters.length} found
+            </Text>
+          )}
         </Group>
       </Box>
 
@@ -277,6 +378,8 @@ export default function ChaptersPageContent({
           icon={<AlertCircle size={16} />}
           title={error.includes('Rate limit') ? 'Rate Limited' : 'Error loading chapters'}
           variant={error.includes('Rate limit') ? 'light' : 'filled'}
+          mx="md"
+          mt="md"
         >
           {error}
           {error.includes('Rate limit') && (
@@ -289,7 +392,9 @@ export default function ChaptersPageContent({
 
       {/* Loading State */}
       {loading ? (
-        <CardGridSkeleton count={12} cardWidth={200} cardHeight={280} accentColor={accentChapter} />
+        <Box pt="md">
+          <CardGridSkeleton count={12} cardWidth={200} cardHeight={280} accentColor={accentChapter} />
+        </Box>
       ) : (
         <>
           {/* Empty State */}
@@ -301,7 +406,7 @@ export default function ChaptersPageContent({
               </Title>
               <Text size="lg" style={{ color: theme.colors.gray[6] }} mb="xl">
                 {hasSearchQuery
-                  ? 'Try adjusting your search terms or filters'
+                  ? 'Try adjusting your search terms'
                   : 'Check back later for new chapters'}
               </Text>
               {hasSearchQuery && (
@@ -312,124 +417,144 @@ export default function ChaptersPageContent({
             </Box>
           ) : (
             <>
-              {/* Dense Results Grid - aim to fit ~10 small cards per row on wide screens */}
-              <Box
-                px="md"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(110px, 42vw), 1fr))',
-                  gap: rem(10)
-                }}
-              >
-                {paginatedChapters.map((chapter, index) => (
-                  <motion.div
-                    key={chapter.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: index * 0.01 }}
-                    style={{ width: '100%' }}
-                  >
-                    <Card
-                      component={Link}
-                      href={`/chapters/${chapter.id}`}
-                      withBorder
-                      radius="sm"
-                      shadow="xs"
-                      style={{
-                        ...getCardStyles(theme, accentChapter),
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: rem(6),
-                        padding: `${rem(6)} ${rem(6)}`,
-                        minHeight: rem(100),
-                        justifyContent: 'center'
-                      }}
-                      onClick={(e) => {
-                        // On touch devices, first tap shows preview, second tap navigates
-                        if (isTouchDevice) {
-                          // If modal is not showing for this chapter, prevent navigation and show modal
-                          if (hoveredChapter?.id !== chapter.id) {
-                            e.preventDefault()
-                            handleChapterTap(chapter, e)
-                          }
-                          // If modal is already showing, allow navigation (second tap)
-                        }
-                      }}
-                      onMouseEnter={(e) => {
-                        if (isTouchDevice) return // Skip hover on touch devices
-                        e.currentTarget.style.transform = 'translateY(-4px)'
-                        e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.2)'
-                        handleChapterMouseEnter(chapter, e)
-                      }}
-                      onMouseLeave={(e) => {
-                        if (isTouchDevice) return // Skip hover on touch devices
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = theme.shadows.xs
-                        handleChapterMouseLeave()
-                      }}
-                    >
-                      <Badge
-                        variant="filled"
-                        radius="sm"
-                        size="xs"
-                        c="white"
+              {/* Chapter Grid with Volume Headers */}
+              <Box px="md" pt="md">
+                {renderSegments.map((segment, si) => (
+                  <Box key={`seg-${si}`}>
+                    {/* Volume Header */}
+                    {segment.group && (
+                      <Box
                         style={{
-                          backgroundColor: getEntityThemeColor(theme, 'guide'),
-                          fontWeight: 800,
-                          padding: `${rem(4)} ${rem(6)}`,
-                          fontSize: rem(11)
+                          marginTop: si === 0 ? rem(16) : rem(32),
+                          marginBottom: rem(12),
+                          borderLeft: `3px solid ${accentChapter}`,
+                          paddingLeft: rem(12)
                         }}
                       >
-                        {chapter.number}
-                      </Badge>
-
-                      <Text
-                        size="xs"
-                        fw={700}
-                        c={accentChapter}
-                        lineClamp={2}
-                        style={{ fontSize: rem(12), lineHeight: 1.1, wordBreak: 'break-word', textAlign: 'center' }}
-                      >
-                        {chapter.title || `Ch. ${chapter.number}`}
-                      </Text>
-
-                      {/* Touch device hint */}
-                      {isTouchDevice && hoveredChapter?.id !== chapter.id && (
                         <Text
-                          size="xs"
-                          c="dimmed"
-                          ta="center"
                           style={{
-                            fontSize: rem(9),
-                            opacity: 0.7
-                          }}
-                        >
-                          Tap to preview
-                        </Text>
-                      )}
-
-                      {chapter.volume && (
-                        <Badge
-                          variant="filled"
-                          radius="sm"
-                          size="xs"
-                          c="white"
-                          style={{
-                            backgroundColor: getEntityThemeColor(theme, 'media'),
                             fontSize: rem(10),
-                            padding: `${rem(2)} ${rem(6)}`
+                            letterSpacing: '0.15em',
+                            textTransform: 'uppercase',
+                            color: 'rgba(255,255,255,0.35)',
+                            marginBottom: rem(2)
                           }}
                         >
-                          Vol. {chapter.volume.number}
-                        </Badge>
-                      )}
-                    </Card>
-                  </motion.div>
+                          Volume
+                        </Text>
+                        <Title
+                          order={4}
+                          style={{
+                            fontFamily: 'var(--font-opti-goudy-text)',
+                            fontSize: rem(18),
+                            fontWeight: 400,
+                            color: accentChapter,
+                            lineHeight: 1.2
+                          }}
+                        >
+                          {segment.group.volumeNumber !== null
+                            ? `Vol. ${segment.group.volumeNumber}${segment.group.volumeTitle ? ` — ${segment.group.volumeTitle}` : ''}`
+                            : 'Uncollected'
+                          }
+                        </Title>
+                        <Text size="xs" c="dimmed">
+                          {segment.group.chapters.length} chapter{segment.group.chapters.length !== 1 ? 's' : ''}
+                        </Text>
+                      </Box>
+                    )}
+
+                    {/* Chapter Cards Grid */}
+                    <Box style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(min(110px, 42vw), 1fr))',
+                      gap: rem(10)
+                    }}>
+                      {segment.chapters.map((chapter, index) => (
+                        <motion.div
+                          key={chapter.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: index * 0.01 }}
+                          style={{ width: '100%' }}
+                        >
+                          <Card
+                            component={Link}
+                            href={`/chapters/${chapter.id}`}
+                            withBorder
+                            radius="sm"
+                            shadow="xs"
+                            style={{
+                              ...getCardStyles(theme, accentChapter),
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: rem(4),
+                              padding: `${rem(8)} ${rem(6)}`,
+                              minHeight: rem(80),
+                              justifyContent: 'center'
+                            }}
+                            onClick={(e) => {
+                              if (isTouchDevice) {
+                                if (hoveredChapter?.id !== chapter.id) {
+                                  e.preventDefault()
+                                  handleChapterTap(chapter, e)
+                                }
+                              }
+                            }}
+                            onMouseEnter={(e) => {
+                              if (isTouchDevice) return
+                              e.currentTarget.style.transform = 'translateY(-4px)'
+                              e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.2)'
+                              handleChapterMouseEnter(chapter, e)
+                            }}
+                            onMouseLeave={(e) => {
+                              if (isTouchDevice) return
+                              e.currentTarget.style.transform = 'translateY(0)'
+                              e.currentTarget.style.boxShadow = theme.shadows.xs
+                              handleChapterMouseLeave()
+                            }}
+                          >
+                            {/* Chapter number as primary typographic anchor */}
+                            <Text
+                              style={{
+                                fontFamily: 'var(--font-opti-goudy-text)',
+                                fontSize: rem(28),
+                                fontWeight: 400,
+                                lineHeight: 1,
+                                color: accentChapter
+                              }}
+                            >
+                              {chapter.number}
+                            </Text>
+
+                            <Text
+                              size="xs"
+                              c="dimmed"
+                              lineClamp={2}
+                              style={{ fontSize: rem(11), lineHeight: 1.2, wordBreak: 'break-word', textAlign: 'center' }}
+                            >
+                              {chapter.title || `Ch. ${chapter.number}`}
+                            </Text>
+
+                            {isTouchDevice && hoveredChapter?.id !== chapter.id && (
+                              <Text
+                                size="xs"
+                                c="dimmed"
+                                ta="center"
+                                style={{ fontSize: rem(9), opacity: 0.6 }}
+                              >
+                                Tap to preview
+                              </Text>
+                            )}
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </Box>
+                  </Box>
                 ))}
               </Box>
 
-              {/* Pagination Info & Controls */}
+              {/* Pagination */}
               <Box style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -437,15 +562,12 @@ export default function ChaptersPageContent({
                 marginTop: rem(48),
                 gap: rem(12)
               }}>
-                {/* Always show pagination info when we have chapters */}
                 {allChapters.length > 0 && (
                   <Text size="sm" style={{ color: theme.colors.gray[6] }}>
                     Showing {paginatedChapters.length} of {total} chapters
                     {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
                   </Text>
                 )}
-
-                {/* Show pagination controls when we have multiple pages */}
                 {totalPages > 1 && (
                   <Pagination
                     total={totalPages}
@@ -457,7 +579,6 @@ export default function ChaptersPageContent({
                     withEdges
                   />
                 )}
-
                 {loading && <Loader size="sm" color={accentChapter} />}
               </Box>
             </>
@@ -469,16 +590,12 @@ export default function ChaptersPageContent({
       <AnimatePresence>
         {hoveredChapter && hoverModalPosition && (
           <>
-            {/* Backdrop for touch devices */}
             {isTouchDevice && (
               <Box
                 onClick={closeModal}
                 style={{
                   position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
+                  top: 0, left: 0, right: 0, bottom: 0,
                   zIndex: 1000,
                   backgroundColor: 'transparent'
                 }}
@@ -491,9 +608,9 @@ export default function ChaptersPageContent({
               transition={{ duration: 0.2 }}
               style={{
                 position: 'fixed',
-                left: hoverModalPosition.x - 150, // Center horizontally (300px width / 2)
-                top: hoverModalPosition.y, // Use calculated position directly
-                zIndex: 1001, // Higher than navbar (which is 1000)
+                left: hoverModalPosition.x - 150,
+                top: hoverModalPosition.y,
+                zIndex: 1001,
                 pointerEvents: 'auto'
               }}
               onMouseEnter={handleModalMouseEnter}
@@ -512,79 +629,64 @@ export default function ChaptersPageContent({
                   position: 'relative'
                 }}
               >
-                {/* Close button for touch devices */}
                 {isTouchDevice && (
                   <ActionIcon
                     onClick={closeModal}
                     size="xs"
                     variant="subtle"
                     color="gray"
-                    style={{
-                      position: 'absolute',
-                      top: rem(8),
-                      right: rem(8),
-                      zIndex: 10
-                    }}
+                    style={{ position: 'absolute', top: rem(8), right: rem(8), zIndex: 10 }}
                   >
                     <X size={14} />
                   </ActionIcon>
                 )}
-              <Stack gap="sm">
-                {/* Chapter Title */}
-                <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4, textAlign: 'center' }}>
-                  Chapter
-                </Text>
-                <Title
-                  order={4}
-                  size="md"
-                  fw={400}
-                  ta="center"
-                  lineClamp={2}
-                  style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontSize: '1.4rem', color: accentChapter }}
-                >
-                  {hoveredChapter.title || `Chapter ${hoveredChapter.number}`}
-                </Title>
-
-                {/* Chapter Info */}
-                <Group justify="center" gap="xs">
-                  <Badge
-                    variant="light"
-                    c={getEntityThemeColor(theme, 'guide')}
-                    size="sm"
-                    fw={600}
-                    style={{ backgroundColor: `${getEntityThemeColor(theme, 'guide')}20`, borderColor: getEntityThemeColor(theme, 'guide') }}
+                <Stack gap="sm">
+                  <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4, textAlign: 'center' }}>
+                    Chapter
+                  </Text>
+                  <Title
+                    order={4}
+                    size="md"
+                    fw={400}
+                    ta="center"
+                    lineClamp={2}
+                    style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: '1.4rem', color: accentChapter }}
                   >
-                    Chapter #{hoveredChapter.number}
-                  </Badge>
-                  {hoveredChapter.volume && (
+                    {hoveredChapter.title || `Chapter ${hoveredChapter.number}`}
+                  </Title>
+                  <Group justify="center" gap="xs">
                     <Badge
-                      variant="filled"
-                      c="white"
+                      variant="light"
+                      c={getEntityThemeColor(theme, 'guide')}
                       size="sm"
                       fw={600}
-                      style={{ backgroundColor: getEntityThemeColor(theme, 'media') }}
+                      style={{ backgroundColor: `${getEntityThemeColor(theme, 'guide')}20`, borderColor: getEntityThemeColor(theme, 'guide') }}
                     >
-                      Vol. {hoveredChapter.volume.number}
+                      Chapter #{hoveredChapter.number}
                     </Badge>
+                    {hoveredChapter.volume && (
+                      <Badge
+                        variant="filled"
+                        c="white"
+                        size="sm"
+                        fw={600}
+                        style={{ backgroundColor: getEntityThemeColor(theme, 'media') }}
+                      >
+                        Vol. {hoveredChapter.volume.number}
+                      </Badge>
+                    )}
+                  </Group>
+                  {(hoveredChapter.description || hoveredChapter.summary) && (
+                    <Text
+                      size="sm"
+                      ta="center"
+                      lineClamp={3}
+                      style={{ color: theme.colors.gray[6], lineHeight: 1.4, maxHeight: rem(60) }}
+                    >
+                      {hoveredChapter.description || hoveredChapter.summary}
+                    </Text>
                   )}
-                </Group>
-
-                {/* Description */}
-                {(hoveredChapter.description || hoveredChapter.summary) && (
-                  <Text
-                    size="sm"
-                    ta="center"
-                    lineClamp={3}
-                    style={{
-                      color: theme.colors.gray[6],
-                      lineHeight: 1.4,
-                      maxHeight: rem(60)
-                    }}
-                  >
-                    {hoveredChapter.description || hoveredChapter.summary}
-                  </Text>
-                )}
-              </Stack>
+                </Stack>
               </Paper>
             </motion.div>
           </>

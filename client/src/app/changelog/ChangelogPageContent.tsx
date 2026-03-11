@@ -2,20 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Container,
-  Title,
-  Text,
-  Box,
-  Group,
-  Badge,
   Avatar,
-  Stack,
   Anchor,
-  SegmentedControl,
-  Pagination,
+  Badge,
+  Box,
+  Button,
+  Container,
+  Group,
   Skeleton,
+  Stack,
+  Text,
+  Title,
+  Pagination,
+  rem,
 } from '@mantine/core'
-import { Clock, Activity } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../lib/api'
 import { textColors } from '../../lib/mantine-theme'
@@ -83,12 +84,6 @@ function entityColor(entityType: string): string {
   return map[entityType.toLowerCase()] ?? textColors.secondary
 }
 
-function actionBadgeColor(action: string): string {
-  if (action === 'create') return 'green'
-  if (action === 'delete') return 'red'
-  return 'blue'
-}
-
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -108,6 +103,12 @@ const ENTITY_FILTER_OPTIONS = [
   { label: 'Arcs', value: 'arc' },
   { label: 'Orgs', value: 'organization' },
   { label: 'Events', value: 'event' },
+]
+
+const TYPE_FILTER_OPTIONS: { label: string; value: FilterType }[] = [
+  { label: 'All Activity', value: 'all' },
+  { label: 'Wiki Edits', value: 'edits' },
+  { label: 'Submissions', value: 'submissions' },
 ]
 
 const PAGE_LIMIT = 20
@@ -155,7 +156,6 @@ export function ChangelogPageContent() {
         }
       }
 
-      // filterType === 'all': fetch enough data to cover the current page, merge, then slice
       const [edits, submissions] = await Promise.all([
         api.getRecentEdits({ page: 1, limit: page * PAGE_LIMIT, entityType: entityTypeParam }),
         api.getRecentSubmissions({ page: 1, limit: page * PAGE_LIMIT }),
@@ -189,81 +189,147 @@ export function ChangelogPageContent() {
     load()
   }, [load])
 
-  const handleFilterType = (val: string) => {
-    setFilterType(val as FilterType)
+  const handleFilterType = (val: FilterType) => {
+    setFilterType(val)
     setPage(1)
   }
 
-  const handleEntityFilter = (val: string) => {
-    setEntityFilter(val as EntityFilter)
+  const handleEntityFilter = (val: EntityFilter) => {
+    setEntityFilter(val)
     setPage(1)
   }
 
   return (
     <Container size="md" py="xl">
-      {/* Header */}
-      <Box mb="xl">
-        <Group gap="sm" mb="xs">
-          <Activity size={28} style={{ color: textColors.character }} />
-          <Title
-            order={1}
+      <style>{`
+        @keyframes pulse-ring {
+          0% { transform: scale(1); opacity: 0.8; }
+          70% { transform: scale(2.4); opacity: 0; }
+          100% { transform: scale(2.4); opacity: 0; }
+        }
+      `}</style>
+
+      {/* Editorial Header */}
+      <Box
+        mb="xl"
+        style={{
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          paddingBottom: rem(32),
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Faint diagonal texture */}
+        <Box style={{
+          position: 'absolute', inset: 0, opacity: 0.025,
+          backgroundImage: 'repeating-linear-gradient(45deg, white 0px, white 1px, transparent 1px, transparent 8px)',
+          pointerEvents: 'none'
+        }} />
+
+        <Group gap="sm" align="center" mb="xs">
+          {/* Pulsing live dot */}
+          <Box style={{ position: 'relative', width: rem(10), height: rem(10), flexShrink: 0 }}>
+            <Box style={{
+              width: rem(10), height: rem(10), borderRadius: '50%',
+              backgroundColor: textColors.character,
+              position: 'absolute'
+            }} />
+            <Box style={{
+              width: rem(10), height: rem(10), borderRadius: '50%',
+              border: `2px solid ${textColors.character}`,
+              position: 'absolute',
+              animation: 'pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite'
+            }} />
+          </Box>
+          <Text
             style={{
-              background: `linear-gradient(45deg, ${textColors.character}, ${textColors.arc})`,
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent',
-              fontWeight: 'bold',
+              fontFamily: 'var(--font-opti-goudy-text)',
+              fontSize: rem(40),
+              fontWeight: 400,
+              lineHeight: 1,
+              color: '#ffffff'
             }}
           >
             Changelog
-          </Title>
+          </Text>
         </Group>
-        <Text c="dimmed" size="md">
-          Recent wiki edits by contributors and approved community submissions.
+        <Text size="sm" c="dimmed" style={{ maxWidth: rem(480) }}>
+          Live record of wiki edits by contributors and approved community submissions.
         </Text>
       </Box>
 
       {/* Filters */}
       <Stack gap="sm" mb="lg">
-        <SegmentedControl
-          value={filterType}
-          onChange={handleFilterType}
-          data={[
-            { label: 'All Activity', value: 'all' },
-            { label: 'Wiki Edits', value: 'edits' },
-            { label: 'Submissions', value: 'submissions' },
-          ]}
-          styles={{
-            root: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem' },
-          }}
-        />
+        {/* Type filter pills */}
+        <Group gap="xs">
+          {TYPE_FILTER_OPTIONS.map(opt => (
+            <Button
+              key={opt.value}
+              size="xs"
+              onClick={() => handleFilterType(opt.value)}
+              style={{
+                backgroundColor: filterType === opt.value ? 'rgba(255,255,255,0.12)' : 'transparent',
+                border: `1px solid ${filterType === opt.value ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.07)'}`,
+                color: filterType === opt.value ? '#ffffff' : 'rgba(255,255,255,0.45)',
+                borderRadius: rem(4),
+                fontWeight: filterType === opt.value ? 600 : 400,
+                fontSize: rem(12),
+                height: rem(28),
+                padding: `0 ${rem(10)}`
+              }}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </Group>
+
+        {/* Entity filter pills (colored) */}
         {filterType !== 'submissions' && (
-          <SegmentedControl
-            value={entityFilter}
-            onChange={handleEntityFilter}
-            data={ENTITY_FILTER_OPTIONS}
-            size="xs"
-            styles={{
-              root: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem' },
-            }}
-          />
+          <Group gap="xs">
+            {ENTITY_FILTER_OPTIONS.map(opt => {
+              const color = opt.value === 'all' ? 'rgba(255,255,255,0.5)' : entityColor(opt.value)
+              const isActive = entityFilter === opt.value
+              return (
+                <Button
+                  key={opt.value}
+                  size="xs"
+                  onClick={() => handleEntityFilter(opt.value as EntityFilter)}
+                  style={{
+                    backgroundColor: isActive ? `${color}22` : 'transparent',
+                    border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.06)'}`,
+                    color: isActive ? color : 'rgba(255,255,255,0.35)',
+                    borderRadius: rem(4),
+                    fontSize: rem(11),
+                    height: rem(24),
+                    padding: `0 ${rem(8)}`
+                  }}
+                >
+                  {opt.label}
+                </Button>
+              )
+            })}
+          </Group>
         )}
       </Stack>
 
       {/* Feed */}
-      <Stack gap="xs" mb="xl">
+      <Stack gap={0} mb="xl">
         {loading ? (
           Array.from({ length: 10 }).map((_, i) => (
-            <Box key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.75rem' }}>
-              <Skeleton circle height={40} width={40} />
+            <Box key={i} style={{
+              display: 'flex', gap: rem(12), alignItems: 'center',
+              padding: rem(12),
+              borderBottom: '1px solid rgba(255,255,255,0.04)'
+            }}>
+              <Skeleton circle height={32} width={32} />
               <Box style={{ flex: 1 }}>
-                <Skeleton height={16} width="55%" mb={6} radius="sm" />
-                <Skeleton height={12} width="30%" radius="sm" />
+                <Skeleton height={14} width="55%" mb={6} radius="sm" />
+                <Skeleton height={11} width="30%" radius="sm" />
               </Box>
             </Box>
           ))
         ) : entries.length === 0 ? (
-          <Box style={{ textAlign: 'center', padding: '3rem' }}>
+          <Box style={{ textAlign: 'center', padding: rem(48) }}>
             <Text c="dimmed" size="lg">No activity found.</Text>
           </Box>
         ) : (
@@ -273,20 +339,27 @@ export function ChangelogPageContent() {
               const link = entityLink(entry.entityType, entry.entityId)
               const displayName = entry.entityName ?? `#${entry.entityId}`
               const entityTypeLabel = entry.entityType.charAt(0).toUpperCase() + entry.entityType.slice(1).toLowerCase()
+              const eColor = entityColor(entry.entityType)
               return (
                 <Box
                   key={`edit-${entry.id}`}
                   style={{
                     display: 'flex',
-                    gap: '0.75rem',
+                    gap: rem(12),
                     alignItems: 'flex-start',
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    padding: rem(12),
+                    borderLeft: `4px solid ${eColor}`,
+                    borderRadius: '0 0.5rem 0.5rem 0',
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    borderBottom: '1px solid rgba(255,255,255,0.04)',
                   }}
                 >
-                  <Avatar src={avatarUrl(user)} size={40} radius="xl" style={{ flexShrink: 0 }}>
+                  <Avatar
+                    src={avatarUrl(user)}
+                    size={32}
+                    radius="xl"
+                    style={{ flexShrink: 0, outline: `2px solid ${eColor}40` }}
+                  >
                     {user?.username?.[0]?.toUpperCase() ?? '?'}
                   </Avatar>
                   <Box style={{ flex: 1, minWidth: 0 }}>
@@ -294,7 +367,12 @@ export function ChangelogPageContent() {
                       <Anchor component={Link} href={`/users/${user?.id}`} fw={600} style={{ color: textColors.primary, flexShrink: 0 }}>
                         {user?.username ?? 'Unknown'}
                       </Anchor>
-                      <Badge size="sm" color={actionBadgeColor(entry.action)} variant="light" style={{ textTransform: 'capitalize', flexShrink: 0 }}>
+                      <Badge
+                        size="sm"
+                        variant="light"
+                        color={entry.action === 'create' ? 'green' : entry.action === 'delete' ? 'red' : 'blue'}
+                        style={{ textTransform: 'capitalize', flexShrink: 0 }}
+                      >
                         {entry.action}
                       </Badge>
                       <Anchor
@@ -303,7 +381,7 @@ export function ChangelogPageContent() {
                         size="sm"
                         fw={500}
                         style={{
-                          color: entityColor(entry.entityType),
+                          color: eColor,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -313,12 +391,10 @@ export function ChangelogPageContent() {
                       </Anchor>
                     </Group>
                     <Group gap={4}>
-                      <Text size="xs" c="dimmed">{entityTypeLabel}</Text>
-                      <Text size="xs" c="dimmed">·</Text>
-                      <Clock size={11} style={{ color: textColors.tertiary }} />
-                      <Text size="xs" c="dimmed">{relativeTime(entry.createdAt)}</Text>
-                      <Text size="xs" c="dimmed">·</Text>
-                      <Text size="xs" c="dimmed">{new Date(entry.createdAt).toLocaleString()}</Text>
+                      <Text size="xs" style={{ color: eColor, fontWeight: 600 }}>{entityTypeLabel}</Text>
+                      <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>·</Text>
+                      <Clock size={11} style={{ color: textColors.tertiary, opacity: 0.5 }} />
+                      <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>{relativeTime(entry.createdAt)}</Text>
                     </Group>
                   </Box>
                 </Box>
@@ -333,21 +409,28 @@ export function ChangelogPageContent() {
               ? entityLink(sub.entityType, sub.entityId)
               : '#'
             const subTypeLabel = sub.type.charAt(0).toUpperCase() + sub.type.slice(1)
+            const subColor = entityColor(sub.type)
 
             return (
               <Box
                 key={`sub-${sub.id}`}
                 style={{
                   display: 'flex',
-                  gap: '0.75rem',
+                  gap: rem(12),
                   alignItems: 'flex-start',
-                  padding: '0.75rem',
-                  borderRadius: '0.5rem',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  padding: rem(12),
+                  borderLeft: `4px solid ${subColor}`,
+                  borderRadius: '0 0.5rem 0.5rem 0',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  borderBottom: '1px solid rgba(255,255,255,0.04)',
                 }}
               >
-                <Avatar src={avatarUrl(submitter)} size={40} radius="xl" style={{ flexShrink: 0 }}>
+                <Avatar
+                  src={avatarUrl(submitter)}
+                  size={32}
+                  radius="xl"
+                  style={{ flexShrink: 0, outline: `2px solid ${subColor}40` }}
+                >
                   {submitter?.username?.[0]?.toUpperCase() ?? '?'}
                 </Avatar>
                 <Box style={{ flex: 1, minWidth: 0 }}>
@@ -365,7 +448,7 @@ export function ChangelogPageContent() {
                         size="sm"
                         fw={500}
                         style={{
-                          color: entityColor(sub.type),
+                          color: subColor,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -376,11 +459,11 @@ export function ChangelogPageContent() {
                     )}
                   </Group>
                   <Group gap={4}>
-                    <Text size="xs" c="dimmed">{subTypeLabel}</Text>
+                    <Text size="xs" style={{ color: subColor, fontWeight: 600 }}>{subTypeLabel}</Text>
                     {sub.entityName && sub.entityType && (
                       <>
-                        <Text size="xs" c="dimmed">·</Text>
-                        <Text size="xs" c="dimmed">
+                        <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>·</Text>
+                        <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>
                           for{' '}
                           <span style={{ color: entityColor(sub.entityType) }}>
                             {sub.entityType.charAt(0).toUpperCase() + sub.entityType.slice(1).toLowerCase()}: {sub.entityName}
@@ -388,11 +471,9 @@ export function ChangelogPageContent() {
                         </Text>
                       </>
                     )}
-                    <Text size="xs" c="dimmed">·</Text>
-                    <Clock size={11} style={{ color: textColors.tertiary }} />
-                    <Text size="xs" c="dimmed">{relativeTime(sub.createdAt)}</Text>
-                    <Text size="xs" c="dimmed">·</Text>
-                    <Text size="xs" c="dimmed">{new Date(sub.createdAt).toLocaleString()}</Text>
+                    <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>·</Text>
+                    <Clock size={11} style={{ color: textColors.tertiary, opacity: 0.5 }} />
+                    <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>{relativeTime(sub.createdAt)}</Text>
                   </Group>
                 </Box>
               </Box>

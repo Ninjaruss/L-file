@@ -21,6 +21,7 @@ import {
   Textarea,
   ThemeIcon,
   Title,
+  rem,
   useMantineTheme
 } from '@mantine/core'
 import { setTabAccentColors } from '../../lib/mantine-theme'
@@ -349,15 +350,43 @@ export default function SubmitEventPageContent() {
     return (
       <Container size="md" py="xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Stack align="center" gap="sm" mb="xl" ta="center">
-            <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(250, 176, 5, 0.15)', color: eventAccent }}>
-              <Zap size={32} color={eventAccent} />
-            </ThemeIcon>
-            <Title order={1}>Edit Event</Title>
-            <Text size="lg" c="dimmed">
-              Update your event submission details
-            </Text>
-          </Stack>
+          <Box
+            mb="xl"
+            style={{
+              borderBottom: `1px solid ${eventAccent}25`,
+              paddingBottom: rem(24),
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Box style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0,
+              height: rem(2),
+              background: `linear-gradient(90deg, ${eventAccent}, transparent)`,
+              opacity: 0.8
+            }} />
+            <Group gap="md" align="flex-start" mt="md">
+              <ThemeIcon size={48} radius="md" variant="light"
+                style={{ backgroundColor: `${eventAccent}18`, color: eventAccent, flexShrink: 0 }}
+              >
+                <Zap size={24} color={eventAccent} />
+              </ThemeIcon>
+              <Box style={{ flex: 1 }}>
+                <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: eventAccent, marginBottom: rem(4) }}>
+                  EVENT SUBMISSION
+                </Text>
+                <Title order={1}
+                  style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
+                >
+                  Edit Event
+                </Title>
+                <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
+                  Update your event submission details
+                </Text>
+              </Box>
+            </Group>
+          </Box>
 
           {error && (
             <Alert variant="light" mb="md" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}>
@@ -374,6 +403,12 @@ export default function SubmitEventPageContent() {
           <FormProgressIndicator steps={progressSteps} accentColor={eventAccent} />
 
           <Card className="event-card" shadow="lg" radius="md" withBorder style={{ backgroundColor: theme.colors.dark?.[7] ?? '#070707', color: theme.colors.gray?.[0] ?? '#fff', borderColor: `${eventAccent}40` }}>
+            <Box style={{
+              height: rem(3),
+              background: `linear-gradient(90deg, ${eventAccent}60, transparent)`,
+              borderRadius: `${rem(6)} ${rem(6)} 0 0`,
+              marginBottom: rem(-3)
+            }} />
             <form onSubmit={handleSingleSubmit}>
               <Stack gap="xl" p="xl">
                 <FormSection title="Basic Information" description="Core details about the event" icon={<FileText size={20} color={eventAccent} />} accentColor={eventAccent} required>
@@ -426,15 +461,43 @@ export default function SubmitEventPageContent() {
   return (
     <Container size="xl" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Stack align="center" gap="sm" mb="xl" ta="center">
-          <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(250, 176, 5, 0.15)', color: eventAccent }}>
-            <Zap size={32} color={eventAccent} />
-          </ThemeIcon>
-          <Title order={1}>Submit Events</Title>
-          <Text size="lg" c="dimmed">
-            Document key moments, decisions, and revelations from the Usogui story
-          </Text>
-        </Stack>
+        <Box
+          mb="xl"
+          style={{
+            borderBottom: `1px solid ${eventAccent}25`,
+            paddingBottom: rem(24),
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <Box style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0,
+            height: rem(2),
+            background: `linear-gradient(90deg, ${eventAccent}, transparent)`,
+            opacity: 0.8
+          }} />
+          <Group gap="md" align="flex-start" mt="md">
+            <ThemeIcon size={48} radius="md" variant="light"
+              style={{ backgroundColor: `${eventAccent}18`, color: eventAccent, flexShrink: 0 }}
+            >
+              <Zap size={24} color={eventAccent} />
+            </ThemeIcon>
+            <Box style={{ flex: 1 }}>
+              <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: eventAccent, marginBottom: rem(4) }}>
+                EVENT SUBMISSION
+              </Text>
+              <Title order={1}
+                style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
+              >
+                Submit Events
+              </Title>
+              <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
+                Document key moments, decisions, and revelations from the Usogui story
+              </Text>
+            </Box>
+          </Group>
+        </Box>
 
         <SubmissionGuidelines type="event" />
 

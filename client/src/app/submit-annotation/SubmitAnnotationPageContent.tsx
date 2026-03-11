@@ -9,6 +9,7 @@ import {
   Card,
   Checkbox,
   Container,
+  Group,
   Loader,
   NumberInput,
   Select,
@@ -18,6 +19,7 @@ import {
   Textarea,
   ThemeIcon,
   Title,
+  rem,
   useMantineTheme
 } from '@mantine/core'
 import { MessageSquare, Send, FileText, Info, AlertTriangle } from 'lucide-react'
@@ -223,15 +225,43 @@ export default function SubmitAnnotationPageContent() {
   return (
     <Container size="md" py="xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Stack align="center" gap="sm" mb="xl" ta="center">
-          <ThemeIcon size={64} radius="xl" variant="light" style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: annotationAccent }}>
-            <MessageSquare size={32} color={annotationAccent} />
-          </ThemeIcon>
-          <Title order={1}>Submit an Annotation</Title>
-          <Text size="lg" c="dimmed">
-            Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs
-          </Text>
-        </Stack>
+        <Box
+          mb="xl"
+          style={{
+            borderBottom: `1px solid ${annotationAccent}25`,
+            paddingBottom: rem(24),
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <Box style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0,
+            height: rem(2),
+            background: `linear-gradient(90deg, ${annotationAccent}, transparent)`,
+            opacity: 0.8
+          }} />
+          <Group gap="md" align="flex-start" mt="md">
+            <ThemeIcon size={48} radius="md" variant="light"
+              style={{ backgroundColor: `${annotationAccent}18`, color: annotationAccent, flexShrink: 0 }}
+            >
+              <MessageSquare size={24} color={annotationAccent} />
+            </ThemeIcon>
+            <Box style={{ flex: 1 }}>
+              <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: annotationAccent, marginBottom: rem(4) }}>
+                ANNOTATION SUBMISSION
+              </Text>
+              <Title order={1}
+                style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
+              >
+                Submit an Annotation
+              </Title>
+              <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
+                Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs
+              </Text>
+            </Box>
+          </Group>
+        </Box>
 
         <SubmissionGuidelines type="annotation" />
 
@@ -277,6 +307,12 @@ export default function SubmitAnnotationPageContent() {
             boxShadow: `0 4px 12px rgba(139, 92, 246, 0.1)`
           }}
         >
+          <Box style={{
+            height: rem(3),
+            background: `linear-gradient(90deg, ${annotationAccent}60, transparent)`,
+            borderRadius: `${rem(6)} ${rem(6)} 0 0`,
+            marginBottom: rem(-3)
+          }} />
           <form onSubmit={handleSubmit}>
             <Stack gap="xl" p="xl">
               {/* Entity Selection Section */}

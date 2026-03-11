@@ -9,11 +9,11 @@ import {
   Divider,
   Grid,
   Group,
-  List,
   Stack,
   Text,
   Title,
-  useMantineTheme
+  useMantineTheme,
+  rem
 } from '@mantine/core'
 import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
 import { Heart, Mail, Coffee, Github } from 'lucide-react'
@@ -96,8 +96,6 @@ export function AboutPageContent() {
     boxShadow: `0 30px 60px -28px ${hexToRgba(accentRedHex, 0.6)}`
   } as const
 
-  const mutedTextColor = hexToRgba(mutedHex, 0.9)
-
   const user = 'contact'
   const domain = 'ninjaruss.net'
 
@@ -105,33 +103,68 @@ export function AboutPageContent() {
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <Container size="lg" py="xl">
       <Stack gap="xl">
-        <Box ta="center">
-          <Title order={2} mb="sm" c={whiteHex}>
-            About L-File
-          </Title>
+
+        {/* Magazine Masthead */}
+        <Box
+          style={{
+            borderBottom: `2px solid ${accentRedHex}`,
+            paddingBottom: rem(24),
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            flexWrap: 'wrap',
+            gap: rem(16)
+          }}
+        >
+          <Box>
+            <Text
+              style={{
+                fontFamily: 'var(--font-opti-goudy-text)',
+                fontSize: rem(56),
+                lineHeight: 1,
+                color: '#ffffff',
+                fontWeight: 400
+              }}
+            >
+              L-File
+            </Text>
+            <Text size="xs" c="dimmed" style={{ letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: rem(4) }}>
+              Fan Database — Usogui
+            </Text>
+          </Box>
+          <Text size="sm" c="dimmed" style={{ maxWidth: rem(280), textAlign: 'right' }}>
+            Non-profit fan project. Free and ad-free, maintained by the community.
+          </Text>
         </Box>
 
         <Grid gutter="xl">
-          {/* Support Section - Prominent at top */}
+          {/* Support Section */}
           <Grid.Col span={12}>
-            <Card
-              radius="xl"
-              p="xl"
-              style={accentCardStyle}>
-              <Grid gutter="xl" align="center">
-                <Grid.Col span={{ base: 12, md: 7 }}>
+            <Card radius="xl" p={0} style={accentCardStyle}>
+              <Grid gutter={0}>
+                <Grid.Col
+                  span={{ base: 12, md: 8 }}
+                  style={{
+                    padding: rem(40),
+                    borderRight: `1px solid ${hexToRgba(accentRedHex, 0.15)}`
+                  }}
+                >
                   <Stack gap="md">
-                    <Group gap="sm">
-                      <Heart size={28} color={accentRedHex} />
-                      <Title order={3} c={accentRedHex}>
-                        Support L-File
-                      </Title>
-                    </Group>
-                    <Text size="md" c={hexToRgba(whiteHex, 0.85)}>
+                    <Text
+                      style={{
+                        fontFamily: 'var(--font-opti-goudy-text)',
+                        fontSize: rem(44),
+                        lineHeight: 1.1,
+                        color: accentRedHex,
+                        fontWeight: 400
+                      }}
+                    >
+                      Support the project.
+                    </Text>
+                    <Text size="md" c={hexToRgba(whiteHex, 0.75)} style={{ maxWidth: rem(480) }}>
                       L-File is an independent fan project built in spare time by someone who genuinely loves Usogui.
                       Support helps cover hosting and development costs, keeping the site free and ad-free for the community.
                     </Text>
-
                     <Group gap="sm" mt="sm">
                       <Button
                         component="a"
@@ -141,7 +174,8 @@ export function AboutPageContent() {
                         size="lg"
                         variant="gradient"
                         gradient={{ from: accentRedHex, to: accentPurpleHex }}
-                        leftSection={<Coffee size={20} />}>
+                        leftSection={<Coffee size={20} />}
+                      >
                         Support on Ko-fi
                       </Button>
                       <Button
@@ -155,29 +189,25 @@ export function AboutPageContent() {
                           color: hexToRgba(whiteHex, 0.9),
                           borderColor: hexToRgba(whiteHex, 0.3)
                         }}
-                        leftSection={<Github size={20} />}>
+                        leftSection={<Github size={20} />}
+                      >
                         GitHub
                       </Button>
                     </Group>
                   </Stack>
                 </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 5 }}>
-                  <Stack gap="xs">
+                <Grid.Col span={{ base: 12, md: 4 }} style={{ padding: rem(40) }}>
+                  <Stack gap="lg">
                     {supportItems.slice(0, 3).map((item) => (
                       <Box
                         key={item.primary}
                         style={{
-                          background: hexToRgba(surfaceUpperHex, 0.5),
-                          borderRadius: theme.radius.md,
-                          border: `1px solid ${hexToRgba(accentPurpleHex, 0.2)}`,
-                          padding: `${theme.spacing.sm} ${theme.spacing.md}`
-                        }}>
-                        <Text fw={600} size="sm" c={whiteHex}>
-                          {item.primary}
-                        </Text>
-                        <Text size="xs" c={hexToRgba(whiteHex, 0.6)}>
-                          {item.secondary}
-                        </Text>
+                          borderLeft: `2px solid ${hexToRgba(accentPurpleHex, 0.5)}`,
+                          paddingLeft: rem(16)
+                        }}
+                      >
+                        <Text fw={700} size="sm" c={whiteHex} mb={2}>{item.primary}</Text>
+                        <Text size="xs" c={hexToRgba(whiteHex, 0.5)}>{item.secondary}</Text>
                       </Box>
                     ))}
                   </Stack>
@@ -188,25 +218,48 @@ export function AboutPageContent() {
 
           {/* About Section */}
           <Grid.Col span={12}>
-            <Card radius="xl" p="xl" style={cardBaseStyle}>
-              <Stack gap="md">
-                <Title order={3} c={accentRedHex}>
-                  About
-                </Title>
-                <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
-                  L-File is a fan-made database and community hub dedicated to <i>Usogui (The Lie Eater)</i>.
-                  It organizes information about characters, story arcs, gambles, and events to help readers explore the series’ complex world.
+            <Card radius="xl" p={0} style={cardBaseStyle}>
+              <Box style={{ padding: `${rem(40)} ${rem(48)}` }}>
+                {/* Decorative quote mark */}
+                <Text
+                  aria-hidden="true"
+                  style={{
+                    fontFamily: 'var(--font-opti-goudy-text)',
+                    fontSize: rem(96),
+                    lineHeight: 0.8,
+                    color: accentRedHex,
+                    opacity: 0.15,
+                    marginBottom: rem(-20),
+                    display: 'block',
+                    userSelect: 'none'
+                  }}
+                >
+                  "
                 </Text>
-
-                <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
+                {/* Pull-quote first paragraph */}
+                <Text
+                  style={{
+                    fontFamily: 'var(--font-opti-goudy-text)',
+                    fontSize: rem(20),
+                    fontWeight: 400,
+                    lineHeight: 1.55,
+                    color: hexToRgba(whiteHex, 0.9),
+                    borderLeft: `3px solid ${accentRedHex}`,
+                    paddingLeft: rem(24),
+                    marginBottom: rem(24)
+                  }}
+                >
+                  L-File is a fan-made database and community hub dedicated to <em>Usogui (The Lie Eater)</em>.
+                  It organizes information about characters, story arcs, gambles, and events to help readers explore the series' complex world.
+                </Text>
+                <Text size="md" c={hexToRgba(whiteHex, 0.7)} mb="md">
                   Usogui is dense, strategic, and detail-heavy, and existing resources can be difficult to navigate.
                   L-File exists to present information in a clearer, more structured way while preserving the depth that makes the series special.
                 </Text>
-
-                <Text size="md" c={hexToRgba(whiteHex, 0.82)}>
+                <Text size="md" c={hexToRgba(whiteHex, 0.7)}>
                   This is a non-profit fan project. Content is created by fans, for fans, and community contributions help the database continue to grow over time.
                 </Text>
-              </Stack>
+              </Box>
             </Card>
           </Grid.Col>
 
@@ -214,9 +267,19 @@ export function AboutPageContent() {
           <Grid.Col span={12}>
             <Card radius="xl" p="xl" style={cardBaseStyle}>
               <Stack gap="md">
-                <Title order={3} c={accentPurpleHex}>
-                  Supporters
-                </Title>
+                <Box style={{ borderTop: `1px solid ${hexToRgba(accentPurpleHex, 0.3)}`, paddingTop: rem(12) }}>
+                  <Title
+                    order={3}
+                    style={{
+                      fontFamily: 'var(--font-opti-goudy-text)',
+                      color: accentPurpleHex,
+                      fontSize: rem(28),
+                      fontWeight: 400
+                    }}
+                  >
+                    Supporters
+                  </Title>
+                </Box>
                 <Text size="md" c={hexToRgba(whiteHex, 0.8)}>
                   Thank you to everyone who has supported L-File through contributions, feedback, and sharing the project with other readers.
                 </Text>
@@ -227,9 +290,26 @@ export function AboutPageContent() {
             </Card>
           </Grid.Col>
 
+          {/* Contact Section */}
           <Grid.Col span={12}>
-            <Card radius="xl" p="xl" style={cardBaseStyle}>
-              <Stack gap="md">
+            <Card radius="xl" p="xl" style={{ ...cardBaseStyle, overflow: 'hidden', position: 'relative' }}>
+              {/* Decorative envelope glyph */}
+              <Text
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  right: rem(-16),
+                  bottom: rem(-24),
+                  fontSize: rem(128),
+                  lineHeight: 1,
+                  opacity: 0.04,
+                  userSelect: 'none',
+                  pointerEvents: 'none'
+                }}
+              >
+                ✉
+              </Text>
+              <Stack gap="md" style={{ position: 'relative' }}>
                 <Title order={3} c={accentRedHex}>
                   Contact
                 </Title>

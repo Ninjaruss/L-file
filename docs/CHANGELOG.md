@@ -3,7 +3,7 @@
 ## TODO
 
 ## 2026-03-10
-- Noticable frontend improvements using frontend design skill; used on landing page, navbar, and footer
+- Noticable frontend improvements using frontend design skill; used on landing page, list/detail pages, navbar, and footer
 
 ## 2026-03-09
 - Favorite characters selection added

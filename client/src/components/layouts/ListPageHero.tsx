@@ -87,17 +87,6 @@ export function ListPageHero({
         <div className="hero-scan-line" aria-hidden="true" />
         <div className="hero-scan-line hero-scan-line--delayed" aria-hidden="true" />
 
-        {/* Eyebrow label */}
-        <motion.div {...heroTitle}>
-          <Text
-            className="eyebrow-label"
-            c={accentColor}
-            style={{ opacity: 0.75 }}
-          >
-            {title} Records
-          </Text>
-        </motion.div>
-
         {/* Icon circle */}
         <motion.div {...heroTitle}>
           <Box
