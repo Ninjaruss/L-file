@@ -97,15 +97,30 @@ export function SearchToolbar({
             ? {
                 backgroundColor: 'rgba(12, 8, 8, 0.94)',
                 backdropFilter: 'blur(12px)',
-                borderBottom: `1px solid ${accentColor}20`,
-                borderLeft: `3px solid ${accentColor}55`,
-                boxShadow: `0 4px 16px rgba(0, 0, 0, 0.3)`
+                borderLeft: `3px solid ${accentColor}80`,
+                boxShadow: `0 4px 16px rgba(0, 0, 0, 0.4), -4px 0 16px ${accentColor}15`
               }
             : {
                 backgroundColor: 'transparent'
               })
         }}
       >
+        {/* Gradient bottom line when stuck */}
+        {isStuck && (
+          <Box
+            aria-hidden
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 1,
+              background: `linear-gradient(90deg, transparent, ${accentColor}40, transparent)`,
+              pointerEvents: 'none'
+            }}
+          />
+        )}
+
         <Group justify="center" gap="md" wrap="wrap">
           {/* Search input */}
           <Box style={{ maxWidth: rem(500), width: '100%', flex: '1 1 300px' }}>
@@ -139,7 +154,7 @@ export function SearchToolbar({
                   paddingRight: rem(50),
                   '&:focus': {
                     borderColor: accentColor,
-                    boxShadow: `0 0 0 2px ${accentColor}18`
+                    boxShadow: `0 0 0 2px ${accentColor}28, 0 0 12px ${accentColor}15`
                   }
                 }
               }}

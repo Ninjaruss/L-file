@@ -74,10 +74,10 @@ export function HoverModal({
             />
           )}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, scale: 0.94, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: -8 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             style={{
               position: 'fixed',
               left: position.x - width / 2,
@@ -94,13 +94,33 @@ export function HoverModal({
               p="md"
               style={{
                 backgroundColor: backgroundStyles.modal,
-                border: `2px solid ${accentColor}`,
+                border: `1px solid ${accentColor}CC`,
                 backdropFilter: 'blur(10px)',
                 width: rem(width),
                 maxWidth: '90vw',
-                position: 'relative'
+                position: 'relative',
+                boxShadow: `0 24px 48px rgba(0,0,0,0.7), 0 0 0 1px ${accentColor}30, inset 0 0 0 1px ${accentColor}18`
               }}
             >
+              {/* Horizontal scan-line texture */}
+              <Box
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 3px,
+                    rgba(255,255,255,0.012) 3px,
+                    rgba(255,255,255,0.012) 4px
+                  )`,
+                  borderRadius: 'inherit',
+                  pointerEvents: 'none',
+                  zIndex: 0
+                }}
+              />
+
               {/* Close button for touch devices */}
               {showCloseButton && onClose && (
                 <ActionIcon
@@ -122,9 +142,11 @@ export function HoverModal({
                   <X size={16} />
                 </ActionIcon>
               )}
-              <Stack gap="sm">
-                {children}
-              </Stack>
+              <Box style={{ position: 'relative', zIndex: 1 }}>
+                <Stack gap="sm">
+                  {children}
+                </Stack>
+              </Box>
             </Paper>
           </motion.div>
         </>

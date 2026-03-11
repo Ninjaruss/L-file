@@ -94,7 +94,8 @@ export function PlayingCard({
         ...getPlayingCardStyles(theme, accentColor),
         position: 'relative',
         transform: 'perspective(700px) rotateY(0deg) translateY(0px)',
-        transition: 'transform 250ms ease, box-shadow 250ms ease'
+        transition: 'transform 250ms ease, box-shadow 250ms ease',
+        boxShadow: `inset 0 0 0 1px ${accentColor}18, 0 2px 10px rgba(0,0,0,0.4)`
       }}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -109,10 +110,10 @@ export function PlayingCard({
           top: 8,
           left: 8,
           color: accentColor,
-          background: `${accentColor}15`,
+          background: `${accentColor}20`,
           padding: '2px 5px',
           borderRadius: 2,
-          border: `1px solid ${accentColor}28`,
+          border: `1px solid ${accentColor}40`,
           fontSize: '0.55rem',
           letterSpacing: '0.18em',
           zIndex: 2,
@@ -130,7 +131,7 @@ export function PlayingCard({
           top: rem(6),
           right: rem(6),
           zIndex: 5,
-          opacity: 0.12,
+          opacity: 0.18,
           width: rem(16),
           height: rem(16)
         }}
@@ -220,8 +221,8 @@ export function PlayingCard({
           bottom: 0,
           left: 0,
           right: 0,
-          height: '40%',
-          background: `linear-gradient(0deg, ${accentColor}16 0%, transparent 100%)`,
+          height: '55%',
+          background: `linear-gradient(0deg, ${accentColor}24 0%, transparent 100%)`,
           pointerEvents: 'none',
           zIndex: 1,
         }}
@@ -265,11 +266,11 @@ export function PlayingCard({
             fontSize: rem(15),
             color: '#ffffff',
             textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-            background: `linear-gradient(135deg, ${accentColor}dd, ${accentColor}aa)`,
+            background: `linear-gradient(135deg, ${accentColor}ee 0%, ${accentColor}cc 60%, ${accentColor}aa 100%)`,
             backdropFilter: 'blur(4px)',
             borderRadius: rem(6),
             padding: `${rem(6)} ${rem(10)}`,
-            border: `1px solid ${accentColor}40`,
+            border: `1px solid ${accentColor}60`,
             fontFamily: 'var(--font-opti-goudy-text), serif',
             fontWeight: 400,
           }}

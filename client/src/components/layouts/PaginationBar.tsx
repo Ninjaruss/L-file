@@ -62,14 +62,14 @@ export function PaginationBar({
           gap: rem(12)
         }}
       >
-        {/* Accent gradient rule */}
+        {/* Top accent gradient rule */}
         <Box
           aria-hidden
           style={{
             width: '100%',
-            maxWidth: 400,
+            maxWidth: 500,
             height: 1,
-            background: `linear-gradient(90deg, transparent, ${accentColor}28, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${accentColor}45, transparent)`,
             marginBottom: rem(12),
           }}
         />
@@ -77,7 +77,7 @@ export function PaginationBar({
         {/* Results info */}
         <Text
           className="eyebrow-label"
-          style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.65rem' }}
+          style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.68rem' }}
         >
           {start}–{end} of {total} {entityName.toUpperCase()}
         </Text>
@@ -112,6 +112,18 @@ export function PaginationBar({
             }}
           />
         )}
+
+        {/* Bottom accent gradient rule */}
+        <Box
+          aria-hidden
+          style={{
+            width: '100%',
+            maxWidth: 500,
+            height: 1,
+            background: `linear-gradient(90deg, transparent, ${accentColor}25, transparent)`,
+            marginTop: rem(4),
+          }}
+        />
       </Box>
     </motion.div>
   )

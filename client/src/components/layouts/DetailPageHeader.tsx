@@ -8,7 +8,7 @@ import {
   type EntityAccentKey
 } from '../../lib/mantine-theme'
 import { mangaPatterns } from '../../lib/manga-decorations'
-import { EntitySuitWatermark } from '../decorative/MangaPatterns'
+import { EntitySuitWatermark, SpeedLines } from '../decorative/MangaPatterns'
 import MediaThumbnail from '../MediaThumbnail'
 import ErrorBoundary from '../ErrorBoundary'
 
@@ -52,15 +52,15 @@ export function DetailPageHeader({
         border: `2px solid ${accentColor}`,
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: `0 20px 56px ${accentColor}16, 0 6px 20px rgba(0,0,0,0.5)`
+        boxShadow: `0 24px 64px ${accentColor}22, 0 8px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)`
       }}
     >
       {/* Top accent stripe */}
       <Box
         aria-hidden
         style={{
-          height: 3,
-          background: `linear-gradient(90deg, ${accentColor}, ${accentColor}55, transparent)`,
+          height: 4,
+          background: `linear-gradient(90deg, ${accentColor}FF 0%, ${accentColor}88 40%, transparent 100%)`,
         }}
       />
 
@@ -70,25 +70,28 @@ export function DetailPageHeader({
         style={{
           position: 'absolute',
           inset: 0,
-          ...mangaPatterns.halftoneBackground(`${accentColor}16`, 12),
+          ...mangaPatterns.halftoneBackground(`${accentColor}20`, 12),
           pointerEvents: 'none'
         }}
       />
+
+      {/* Speed lines overlay */}
+      <SpeedLines color={`${accentColor}05`} angle={-20} />
 
       {/* Suit watermark */}
       <EntitySuitWatermark
         entityType={entityType}
         color={accentColor}
-        size={120}
+        size={150}
         style={{
           bottom: -20,
           right: -20,
-          opacity: 0.06
+          opacity: 0.09
         }}
       />
 
       {/* Content */}
-      <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1, borderLeft: `3px solid ${accentColor}45` }}>
+      <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1, borderLeft: `4px solid ${accentColor}60` }}>
         <Group gap={theme.spacing.lg} align="flex-start" wrap="wrap" justify="center">
           {showImage && (
             <Box style={{ flexShrink: 0 }}>
@@ -99,7 +102,7 @@ export function DetailPageHeader({
                   borderRadius: theme.radius.md,
                   overflow: 'hidden',
                   border: `3px solid ${accentColor}`,
-                  boxShadow: theme.shadows.xl,
+                  boxShadow: `0 12px 40px ${accentColor}30, 0 4px 12px rgba(0,0,0,0.5), inset 0 0 0 1px ${accentColor}50`,
                   transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`,
                   position: 'relative'
                 }}
@@ -120,7 +123,7 @@ export function DetailPageHeader({
                     inset: 0,
                     zIndex: 1,
                     pointerEvents: 'none',
-                    background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.3) 100%)',
+                    background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%)',
                     borderRadius: theme.radius.md,
                   }}
                 />

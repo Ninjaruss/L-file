@@ -3,7 +3,7 @@
 import React from 'react'
 import { Breadcrumbs, Anchor, Text, Group, useMantineTheme, rem } from '@mantine/core'
 import {
-  ChevronRight, Home, User, Crown, BookOpen, Book,
+  Home, User, BookOpen, Book,
   Dice6, CalendarSearch, Shield, FileText
 } from 'lucide-react'
 import Link from 'next/link'
@@ -79,7 +79,7 @@ export function BreadcrumbNav({ items, showHome = true, entityType }: Breadcrumb
 
   return (
     <Breadcrumbs
-      separator={<ChevronRight size={14} color={theme.colors.gray[6]} />}
+      separator={<Text aria-hidden style={{ color: `${accentColor}45`, fontSize: rem(9), lineHeight: 1 }}>◆</Text>}
       mb="md"
       styles={{
         root: {
@@ -108,7 +108,8 @@ export function BreadcrumbNav({ items, showHome = true, entityType }: Breadcrumb
                 maxWidth: rem(200),
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                letterSpacing: '0.01em'
               }}
             >
               {item.label}
@@ -125,7 +126,7 @@ export function BreadcrumbNav({ items, showHome = true, entityType }: Breadcrumb
             c={textColors.secondary}
             style={{
               textDecoration: 'none',
-              transition: 'color 150ms ease',
+              transition: 'color 150ms ease, background-color 150ms ease',
               display: 'flex',
               alignItems: 'center',
               gap: rem(4),
@@ -134,9 +135,11 @@ export function BreadcrumbNav({ items, showHome = true, entityType }: Breadcrumb
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = accentColor
+              e.currentTarget.style.backgroundColor = `${accentColor}12`
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = textColors.secondary
+              e.currentTarget.style.backgroundColor = 'transparent'
             }}
           >
             {isHome && <Home size={14} />}

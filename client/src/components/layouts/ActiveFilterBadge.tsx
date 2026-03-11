@@ -19,8 +19,17 @@ export function ActiveFilterBadge({ label, value, onClear, accentColor }: Active
     <Badge
       size="lg"
       variant="filled"
-      radius="xl"
-      style={{ backgroundColor: accentColor }}
+      radius="xs"
+      style={{
+        backgroundColor: accentColor,
+        transform: 'rotate(-0.5deg)',
+        border: `1px solid rgba(255,255,255,0.18)`,
+        letterSpacing: '0.08em',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        fontSize: rem(11),
+        boxShadow: `0 2px 8px ${accentColor}50, inset 0 1px 0 rgba(255,255,255,0.12)`
+      }}
       rightSection={
         <ActionIcon
           size="md"

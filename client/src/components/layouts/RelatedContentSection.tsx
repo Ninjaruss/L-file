@@ -55,7 +55,12 @@ export function RelatedContentSection<T>({
   return (
     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, accentColor)}>
       <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-        <Group justify="space-between" align="center">
+        <Group
+          justify="space-between"
+          align="center"
+          pb={theme.spacing.sm}
+          style={{ borderBottom: `1px solid ${accentColor}25` }}
+        >
           <Group gap={theme.spacing.sm}>
             {icon}
             <Title order={4} c={titleColor}>{title}</Title>
@@ -72,6 +77,14 @@ export function RelatedContentSection<T>({
                 fontWeight: 600,
                 border: `2px solid ${accentColor}`,
                 transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`
+              }}
+              styles={{
+                root: {
+                  '&:hover': {
+                    boxShadow: `0 0 10px ${accentColor}30`,
+                    transform: 'translateY(-1px)'
+                  }
+                }
               }}
             >
               View All ({items.length})

@@ -52,19 +52,40 @@ export function ListPageHero({
       }}
       p="md"
     >
+      {/* Inset frame */}
+      <Box
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: '8px',
+          border: `1px solid ${accentColor}10`,
+          borderRadius: rem(8),
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+      />
+
       {/* Decorative overlays */}
-      <HalftoneOverlay color={`${accentColor}08`} spacing={16} />
+      <HalftoneOverlay color={`${accentColor}12`} spacing={12} />
       <SuitWatermark
         suit={suit}
         color={accentColor}
-        size={140}
-        opacity={0.05}
+        size={180}
+        opacity={0.07}
         position="top-right"
+      />
+      <SuitWatermark
+        suit={suit}
+        color={accentColor}
+        size={90}
+        opacity={0.03}
+        position="bottom-left"
       />
 
       {/* Content */}
       <Stack align="center" gap="xs" style={{ position: 'relative', zIndex: 1 }}>
         <div className="hero-scan-line" aria-hidden="true" />
+        <div className="hero-scan-line hero-scan-line--delayed" aria-hidden="true" />
 
         {/* Eyebrow label */}
         <motion.div {...heroTitle}>
@@ -75,15 +96,6 @@ export function ListPageHero({
           >
             {title} Records
           </Text>
-        </motion.div>
-
-        {/* Suit divider */}
-        <motion.div {...heroSubtitle}>
-          <Group justify="center" gap="sm">
-            <Box style={{ height: 1, width: 60, background: `linear-gradient(to right, transparent, ${accentColor}50)` }} />
-            <Text style={{ color: `${accentColor}B0`, fontSize: '0.85rem' }}>{suit}</Text>
-            <Box style={{ height: 1, width: 60, background: `linear-gradient(to left, transparent, ${accentColor}50)` }} />
-          </Group>
         </motion.div>
 
         {/* Icon circle */}
@@ -97,8 +109,8 @@ export function ListPageHero({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: `0 4px 20px ${accentColor}50`,
-              border: `2px solid ${accentColor}40`
+              boxShadow: `0 8px 32px ${accentColor}60, 0 0 64px ${accentColor}20`,
+              border: `2px solid ${accentColor}60`
             }}
           >
             {icon}
@@ -116,7 +128,7 @@ export function ListPageHero({
             style={{
               fontFamily: 'var(--font-opti-goudy-text), serif',
               fontWeight: 400,
-              textShadow: `0 2px 12px ${accentColor}30`,
+              textShadow: `0 2px 16px ${accentColor}50, 0 0 48px ${accentColor}18`,
               letterSpacing: '-0.01em'
             }}
           >
@@ -139,9 +151,9 @@ export function ListPageHero({
         {/* Decorative diamond rule */}
         <motion.div {...heroSubtitle}>
           <Group justify="center" gap="sm">
-            <Box style={{ height: 1, width: 80, background: `linear-gradient(to right, transparent, ${accentColor}30)` }} />
-            <Text style={{ color: `${accentColor}60`, fontSize: '0.7rem' }}>♦</Text>
-            <Box style={{ height: 1, width: 80, background: `linear-gradient(to left, transparent, ${accentColor}30)` }} />
+            <Box style={{ height: 1, width: 100, background: `linear-gradient(to right, transparent, ${accentColor}30)` }} />
+            <Text style={{ color: `${accentColor}90`, fontSize: '0.85rem' }}>♦</Text>
+            <Box style={{ height: 1, width: 100, background: `linear-gradient(to left, transparent, ${accentColor}30)` }} />
           </Group>
         </motion.div>
 
@@ -156,13 +168,14 @@ export function ListPageHero({
               mt={4}
               className="stamp-reveal"
               style={{
-                background: `${accentColor}0d`,
-                border: `1px solid ${accentColor}30`,
+                background: `${accentColor}18`,
+                border: `1px solid ${accentColor}45`,
                 borderRadius: '4px',
                 transform: 'rotate(-0.5deg)',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.14em',
                 fontWeight: 700,
                 fontFamily: 'var(--font-noto-sans)',
+                textShadow: `0 0 12px ${accentColor}60`,
               }}
             >
               {count} {(countLabel || title).toUpperCase()} {hasActiveSearch ? 'FOUND' : 'ON FILE'}

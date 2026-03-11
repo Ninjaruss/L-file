@@ -108,11 +108,12 @@ export function EmptyState({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: rem(80),
-              height: rem(80),
+              width: rem(96),
+              height: rem(96),
               borderRadius: '50%',
-              background: `linear-gradient(135deg, ${color}15, ${color}08)`,
-              border: `2px dashed ${color}30`
+              background: `linear-gradient(135deg, ${color}20, ${color}08)`,
+              border: `2px solid ${color}35`,
+              boxShadow: `0 0 32px ${color}18, inset 0 0 16px ${color}0a`
             }}
           >
             {icon || getDefaultIcon()}
@@ -124,8 +125,16 @@ export function EmptyState({
           initial="initial"
           animate="animate"
         >
+          <Box style={{ width: rem(40), height: 1, background: `linear-gradient(90deg, transparent, ${color}40, transparent)`, margin: '0 auto' }} />
+        </motion.div>
+
+        <motion.div
+          variants={textVariants}
+          initial="initial"
+          animate="animate"
+        >
           <Stack gap="xs" align="center">
-            <Title order={3} c={color} fw={600}>
+            <Title order={3} c={color} fw={700} style={{ fontFamily: 'var(--font-opti-goudy-text), serif' }}>
               {title}
             </Title>
             <Text size="md" c="dimmed" maw={320}>
@@ -144,16 +153,16 @@ export function EmptyState({
               <Button
                 component={Link}
                 href={actionHref}
-                variant="light"
-                style={{ color }}
+                variant="outline"
+                style={{ borderColor: color, color }}
                 radius="xl"
               >
                 {actionLabel}
               </Button>
             ) : (
               <Button
-                variant="light"
-                style={{ color }}
+                variant="outline"
+                style={{ borderColor: color, color }}
                 radius="xl"
                 onClick={onAction}
               >

@@ -1,10 +1,12 @@
 .control:hover {
   background-color: var(--pagination-accent-hover-bg);
   border-color: var(--pagination-accent-hover-border);
+  box-shadow: 0 0 6px var(--pagination-accent-hover-border);
 }
 
 .control[data-active] {
   background-color: var(--pagination-accent);
   border-color: var(--pagination-accent);
   color: #ffffff;
+  box-shadow: 0 0 12px var(--pagination-accent), 0 0 4px var(--pagination-accent);
 }

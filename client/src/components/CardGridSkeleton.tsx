@@ -35,10 +35,12 @@ export function CardGridSkeleton({
             borderRadius: rem(12),
             overflow: 'hidden',
             backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: `1px solid ${accentColor}18`,
             display: 'flex',
-            flexDirection: 'column'
-          }}
+            flexDirection: 'column',
+            animation: 'skeleton-card-pulse 2.4s ease-in-out infinite',
+            animationDelay: `${index * 0.08}s`
+          } as React.CSSProperties}
         >
           {/* Chapter badge skeleton */}
           <Box style={{ padding: rem(8), position: 'relative' }}>
