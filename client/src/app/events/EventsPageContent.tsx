@@ -435,12 +435,12 @@ export default function EventsPageContent({
           value={accordionValue}
           style={{ border: `1px solid ${theme.colors.dark?.[4] ?? theme.colors.gray?.[3]}`, borderRadius: theme.radius.lg }}
         >
-          <Accordion.Control style={{ padding: rem(16), fontSize: rem(16), fontWeight: 600 }}>
+          <Accordion.Control style={{ padding: rem(16), fontSize: rem(16), fontWeight: 600, borderLeft: '3px solid currentColor', paddingLeft: 12 }}>
             <Group gap="sm" align="center">
               {group.arc ? (
-                <Text size="lg" fw={600} c={accentEvent}>{group.arc.name}</Text>
+                <Text size="xl" fw={600} c={accentEvent}>{group.arc.name}</Text>
               ) : (
-                <Text size="lg" fw={600} style={{ color: theme.colors.gray[6] }}>Other Events</Text>
+                <Text size="xl" fw={600} style={{ color: theme.colors.gray[6] }}>Other Events</Text>
               )}
               <Badge c={badgeAccent} variant="light" radius="xl" style={{ backgroundColor: `${badgeAccent}20`, borderColor: badgeAccent }}>
                 {group.events.length} event{group.events.length !== 1 ? 's' : ''}
@@ -574,7 +574,10 @@ export default function EventsPageContent({
                 }}
               >
                 <Stack gap="sm">
-                  <Title order={4} size="md" fw={700} c={accentEvent} ta="center" lineClamp={2}>
+                  <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                    Story Event
+                  </Text>
+                  <Title order={4} size="md" c={accentEvent} ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400, fontSize: '1.3rem' }}>
                     {hoveredEvent.title}
                   </Title>
                   <Group justify="center" gap="xs" wrap="wrap">

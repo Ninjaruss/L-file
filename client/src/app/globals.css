@@ -396,64 +396,65 @@ textarea:focus-visible {
 
 /* Base hoverable card - works on all devices including touch */
 .hoverable-card {
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition: transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
   will-change: transform;
+  transform: perspective(700px) rotateY(0deg) translateY(0px);
 }
 
 .hoverable-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  transform: perspective(700px) rotateY(2deg) translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 /* Entity-specific hoverable cards with accent colors */
 .hoverable-card-character:hover {
   border-color: var(--color-character);
-  box-shadow: 0 12px 32px rgba(77, 171, 247, 0.2);
+  box-shadow: 0 12px 40px rgba(77, 171, 247, 0.30), 0 0 0 1px rgba(77, 171, 247, 0.22);
 }
 
 .hoverable-card-gamble:hover {
   border-color: var(--color-gamble);
-  box-shadow: 0 12px 32px rgba(255, 85, 85, 0.2);
+  box-shadow: 0 12px 40px rgba(255, 85, 85, 0.30), 0 0 0 1px rgba(255, 85, 85, 0.22);
 }
 
 .hoverable-card-arc:hover {
   border-color: var(--color-arc);
-  box-shadow: 0 12px 32px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 12px 40px rgba(249, 115, 22, 0.30), 0 0 0 1px rgba(249, 115, 22, 0.22);
 }
 
 .hoverable-card-event:hover {
   border-color: var(--color-event);
-  box-shadow: 0 12px 32px rgba(243, 156, 18, 0.2);
+  box-shadow: 0 12px 40px rgba(243, 156, 18, 0.30), 0 0 0 1px rgba(243, 156, 18, 0.22);
 }
 
 .hoverable-card-guide:hover {
   border-color: var(--color-guide);
-  box-shadow: 0 12px 32px rgba(81, 207, 102, 0.2);
+  box-shadow: 0 12px 40px rgba(81, 207, 102, 0.30), 0 0 0 1px rgba(81, 207, 102, 0.22);
 }
 
 .hoverable-card-media:hover {
   border-color: var(--color-media);
-  box-shadow: 0 12px 32px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 12px 40px rgba(168, 85, 247, 0.30), 0 0 0 1px rgba(168, 85, 247, 0.22);
 }
 
 .hoverable-card-quote:hover {
   border-color: var(--color-quote);
-  box-shadow: 0 12px 32px rgba(32, 201, 151, 0.2);
+  box-shadow: 0 12px 40px rgba(32, 201, 151, 0.30), 0 0 0 1px rgba(32, 201, 151, 0.22);
 }
 
 .hoverable-card-volume:hover {
   border-color: var(--color-volume);
-  box-shadow: 0 12px 32px rgba(255, 105, 180, 0.2);
+  box-shadow: 0 12px 40px rgba(255, 105, 180, 0.30), 0 0 0 1px rgba(255, 105, 180, 0.22);
 }
 
 .hoverable-card-chapter:hover {
   border-color: var(--color-chapter);
-  box-shadow: 0 12px 32px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 12px 40px rgba(56, 189, 248, 0.30), 0 0 0 1px rgba(56, 189, 248, 0.22);
 }
 
 .hoverable-card-organization:hover {
   border-color: var(--color-organization);
-  box-shadow: 0 12px 32px rgba(192, 132, 252, 0.2);
+  box-shadow: 0 12px 40px rgba(192, 132, 252, 0.30), 0 0 0 1px rgba(192, 132, 252, 0.22);
 }
 
 /* Hoverable badge - for tags and small interactive elements */
@@ -674,4 +675,73 @@ textarea:focus-visible {
   .nav-search-box:focus-within {
     box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.4) !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIST & DETAIL PAGE DESIGN SYSTEM
+   Extends the home page / navbar / footer aesthetic to all
+   public-facing list and detail pages.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ───── Keyframe Animations ───── */
+
+@keyframes ledger-enter {
+  from { transform: translateY(-10px) rotateX(-4deg); opacity: 0; }
+  to   { transform: translateY(0) rotateX(0deg);      opacity: 1; }
+}
+
+@keyframes stamp-reveal {
+  0%   { transform: scale(1.6) rotate(-8deg); opacity: 0; }
+  65%  { transform: scale(0.93) rotate(1deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg);    opacity: 1; }
+}
+
+@keyframes hero-scan {
+  from { transform: translateY(-100%); opacity: 0.5; }
+  to   { transform: translateY(600%);  opacity: 0;   }
+}
+
+/* ───── Utility Classes ───── */
+
+/* Ledger-paper line texture — subtle horizontal rules on cards */
+.ledger-lines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 23px,
+    rgba(255, 255, 255, 0.018) 23px,
+    rgba(255, 255, 255, 0.018) 24px
+  );
+}
+
+/* Small-caps eyebrow / section label — matches home page pattern exactly */
+.eyebrow-label {
+  font-family: var(--font-noto-sans), 'Noto Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* One-shot scanning line for hero sections */
+.hero-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: hero-scan 1.2s ease-out 0.2s both;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Stamp-reveal animation — for count badges in hero sections */
+.stamp-reveal {
+  animation: stamp-reveal 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.35s both;
+}
+
+/* Reduced motion: disable scan and stamp animations */
+@media (prefers-reduced-motion: reduce) {
+  .hero-scan-line { animation: none; }
+  .stamp-reveal   { animation: none; }
 }

@@ -177,7 +177,8 @@ export default function CharacterPageClient({
             style={{
               lineHeight: 1.1,
               textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-              letterSpacing: '-0.02em'
+              letterSpacing: '-0.02em',
+              fontFamily: 'var(--font-opti-goudy-text), serif'
             }}
           >
             {character.name}
@@ -303,7 +304,16 @@ export default function CharacterPageClient({
                 <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                   <Group gap={theme.spacing.sm} align="center">
                     <User size={24} color={entityColors.character} />
-                    <Title order={3} c={headerColors.h3}>About {character.name}</Title>
+                  </Group>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 4 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.character}40)` }} />
+                    <Text
+                      className="eyebrow-label"
+                      style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                    >
+                      ABOUT {character.name.toUpperCase()}
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.character}20)` }} />
                   </Group>
                   {character.description ? (
                     <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
@@ -325,7 +335,16 @@ export default function CharacterPageClient({
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                     <Group gap={theme.spacing.sm} align="center">
                       <BookOpen size={24} color={entityColors.character} />
-                      <Title order={3} c={headerColors.h3}>History & Background</Title>
+                    </Group>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.character}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        HISTORY & BACKGROUND
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.character}20)` }} />
                     </Group>
                     <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
                       <Box style={{ lineHeight: 1.6 }}>
@@ -345,7 +364,16 @@ export default function CharacterPageClient({
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group gap={theme.spacing.sm}>
                       <Building2 size={20} color={entityColors.organization} />
-                      <Title order={4} c={textColors.primary}>Organizations</Title>
+                    </Group>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 4, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.organization}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        ORGANIZATIONS
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.organization}20)` }} />
                     </Group>
                     <CharacterOrganizationMemberships characterId={character.id} characterName={character.name} />
                   </Stack>

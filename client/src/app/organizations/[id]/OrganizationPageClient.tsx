@@ -116,12 +116,13 @@ export default function OrganizationPageClient({
             <Title
               order={1}
               size="2.8rem"
-              fw={800}
+              fw={400}
               c={headerColors.h1}
               style={{
                 lineHeight: 1.1,
                 textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                letterSpacing: '-0.02em'
+                letterSpacing: '-0.02em',
+                fontFamily: 'var(--font-opti-goudy-text), serif',
               }}
             >
               {initialOrganization.name}
@@ -167,9 +168,12 @@ export default function OrganizationPageClient({
               {initialOrganization.description && (
                 <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.organization)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
-                    <Group gap={theme.spacing.sm} align="center">
-                      <Shield size={24} color={entityColors.organization} />
-                      <Title order={3} c={headerColors.h3}>About {initialOrganization.name}</Title>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.organization}40)` }} />
+                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                        ORGANIZATION OVERVIEW
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.organization}20)` }} />
                     </Group>
                     <TimelineSpoilerWrapper chapterNumber={1}>
                       <Box style={{ lineHeight: 1.6 }}>
@@ -187,9 +191,12 @@ export default function OrganizationPageClient({
               {!initialOrganization.description && (
                 <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.organization)}>
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
-                    <Group gap={theme.spacing.sm} align="center">
-                      <Shield size={24} color={entityColors.organization} />
-                      <Title order={3} c={headerColors.h3}>About {initialOrganization.name}</Title>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.organization}40)` }} />
+                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                        ORGANIZATION OVERVIEW
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.organization}20)` }} />
                     </Group>
                     <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
                       No description available for this organization yet. Check back later for updates!

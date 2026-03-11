@@ -457,7 +457,7 @@ export default function MediaPageContent({
   }, [searchValue, selectedType, selectedOwnerType, selectedPurpose])
 
   const hasActiveFilters = activeFilters.length > 0
-  const totalLabel = total === 1 ? 'item' : 'items'
+  const totalLabel = total === 1 ? 'media file' : 'media files'
   const rangeStart = media.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0
   const rangeEnd = rangeStart ? rangeStart + media.length - 1 : 0
 
@@ -902,6 +902,7 @@ export default function MediaPageContent({
             <ActionIcon
               variant="subtle"
               size="lg"
+              color="white"
               onClick={handleCloseViewer}
               style={{
                 position: 'absolute',
@@ -920,6 +921,7 @@ export default function MediaPageContent({
               <ActionIcon
                 variant="subtle"
                 size="lg"
+                color="white"
                 onClick={handlePrevious}
                 style={{
                   position: 'absolute',
@@ -940,6 +942,7 @@ export default function MediaPageContent({
               <ActionIcon
                 variant="subtle"
                 size="lg"
+                color="white"
                 onClick={handleNext}
                 style={{
                   position: 'absolute',

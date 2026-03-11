@@ -765,18 +765,6 @@ export default function ProfilePageClient() {
               </Box>
               <Stack gap="xs" style={{ flex: 1 }}>
                 {/* Case file micro-label */}
-                <Text
-                  style={{
-                    fontSize: '10px',
-                    letterSpacing: '0.25em',
-                    textTransform: 'uppercase',
-                    color: 'rgba(225, 29, 72, 0.65)',
-                    fontFamily: 'var(--font-noto-sans)',
-                    marginBottom: 2
-                  }}
-                >
-                  L-File · Operative Record
-                </Text>
                 <Group align="center" gap="md" wrap="wrap">
                   {editingUsername ? (
                     <Group gap="xs">

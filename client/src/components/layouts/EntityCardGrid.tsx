@@ -28,13 +28,15 @@ const gridStyles: Record<GridLayout, React.CSSProperties> = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 220px))',
     gap: rem(20),
-    justifyContent: 'center'
+    justifyContent: 'center',
+    transformStyle: 'preserve-3d'
   },
   landscape: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: rem(20),
-    justifyContent: 'center'
+    justifyContent: 'center',
+    transformStyle: 'preserve-3d'
   },
   list: {
     display: 'flex',
@@ -74,7 +76,7 @@ export function EntityCardGrid<T>({
       style={{
         ...gridStyles[effectiveLayout],
         // Subtle 3D perspective on the grid for hover depth effect
-        perspective: effectiveLayout !== 'list' ? '1200px' : undefined
+        perspective: effectiveLayout !== 'list' ? '1800px' : undefined
       }}
     >
       {items.map((item, index) => (

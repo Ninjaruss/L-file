@@ -531,13 +531,16 @@ export default function ChaptersPageContent({
                 )}
               <Stack gap="sm">
                 {/* Chapter Title */}
+                <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4, textAlign: 'center' }}>
+                  Chapter
+                </Text>
                 <Title
                   order={4}
                   size="md"
-                  fw={700}
-                  c={accentChapter}
+                  fw={400}
                   ta="center"
                   lineClamp={2}
+                  style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontSize: '1.4rem', color: accentChapter }}
                 >
                   {hoveredChapter.title || `Chapter ${hoveredChapter.number}`}
                 </Title>

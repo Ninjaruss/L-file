@@ -110,18 +110,39 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
             entityId={initialVolume.id}
             entityName={`Volume ${initialVolume.number}`}
           >
+            <Box style={{ position: 'relative' }}>
+              <Text
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  top: -16,
+                  right: -8,
+                  fontSize: '5rem',
+                  fontFamily: 'var(--font-opti-goudy-text), serif',
+                  fontWeight: 400,
+                  color: `${entityColors.volume}10`,
+                  lineHeight: 1,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  zIndex: 0,
+                }}
+              >
+                {initialVolume.number}
+              </Text>
+              <Box style={{ position: 'relative', zIndex: 1 }}>
             <Stack gap={theme.spacing.sm}>
               <Group gap={theme.spacing.sm} align="center">
                 <Book size={28} color={entityColors.volume} />
                 <Title
                   order={1}
                   size="2.8rem"
-                  fw={800}
+                  fw={400}
                   c={headerColors.h1}
                   style={{
                     lineHeight: 1.1,
                     textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                    letterSpacing: '-0.02em'
+                    letterSpacing: '-0.02em',
+                    fontFamily: 'var(--font-opti-goudy-text), serif',
                   }}
                 >
                   Volume {initialVolume.number}
@@ -153,6 +174,8 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
                 Chapters {initialVolume.startChapter} - {initialVolume.endChapter}
               </Badge>
             </Stack>
+              </Box>
+            </Box>
 
             <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
               {/* Content Stats */}
@@ -236,9 +259,12 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
                     {/* Volume Summary Section */}
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.volume)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
-                        <Group gap={theme.spacing.sm} align="center">
-                          <FileText size={24} color={entityColors.volume} />
-                          <Title order={3} c={headerColors.h3}>Volume Summary</Title>
+                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.volume}40)` }} />
+                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                            VOLUME SUMMARY
+                          </Text>
+                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.volume}20)` }} />
                         </Group>
                         {initialVolume.description ? (
                           <TimelineSpoilerWrapper chapterNumber={initialVolume.startChapter}>
@@ -257,9 +283,12 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
                     {/* Chapter Navigation Section */}
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.volume)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                        <Group gap={theme.spacing.sm}>
-                          <BookOpen size={20} color={entityColors.volume} />
-                          <Title order={4} c={textColors.volume}>Chapter Navigation</Title>
+                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.volume}40)` }} />
+                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                            CHAPTER NAVIGATION
+                          </Text>
+                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.volume}20)` }} />
                         </Group>
                         <Group gap={theme.spacing.md} wrap="wrap">
                           <Button
@@ -305,9 +334,12 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.chapter)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                         <Group justify="space-between" align="center">
-                          <Group gap={theme.spacing.sm}>
-                            <BookOpen size={20} color={entityColors.chapter} />
-                            <Title order={4} c={textColors.chapter}>Chapters in this Volume</Title>
+                          <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                            <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.chapter}40)` }} />
+                            <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                              CHAPTERS IN THIS VOLUME
+                            </Text>
+                            <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.chapter}20)` }} />
                           </Group>
                           <Badge
                             variant="light"

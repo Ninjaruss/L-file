@@ -13,7 +13,6 @@ import {
   Tabs,
   Text,
   Textarea,
-  ThemeIcon,
   Title,
   useMantineTheme
 } from '@mantine/core'
@@ -506,11 +505,21 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                   <AuthorProfileImage author={guide.author} size={40} showFallback />
                   <Stack gap={2}>
                     <Text
-                      size="md"
-                      c={textColors.secondary}
+                      className="eyebrow-label"
+                      style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}
+                    >
+                      Written by
+                    </Text>
+                    <Text
                       component={Link}
                       href={`/users/${guide.author.id}`}
-                      style={{ textDecoration: 'none', fontWeight: 600 }}
+                      style={{
+                        textDecoration: 'none',
+                        fontFamily: 'var(--font-opti-goudy-text), serif',
+                        fontWeight: 400,
+                        fontSize: '1.1rem',
+                        color: textColors.secondary as string,
+                      }}
                     >
                       {guide.author.username}
                     </Text>
@@ -551,34 +560,34 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                   >
                     {new Date(guide.createdAt).toLocaleDateString()}
                   </Badge>
-                  <Badge
-                    size="lg"
-                    variant="light"
-                    c={textColors.character}
-                    leftSection={<Eye size={14} />}
-                    style={{
-                      fontSize: fontSize.xs,
-                      fontWeight: 600,
-                      background: getAlphaColor(entityColors.character, 0.2),
-                      border: `1px solid ${getAlphaColor(entityColors.character, 0.4)}`
-                    }}
-                  >
-                    {guide.viewCount} view{guide.viewCount !== 1 ? 's' : ''}
-                  </Badge>
-                  <Badge
-                    size="lg"
-                    variant="light"
-                    c={textColors.gamble}
-                    leftSection={<Heart size={14} />}
-                    style={{
-                      fontSize: fontSize.xs,
-                      fontWeight: 600,
-                      background: getAlphaColor(entityColors.gamble, 0.2),
-                      border: `1px solid ${getAlphaColor(entityColors.gamble, 0.4)}`
-                    }}
-                  >
-                    {guide.likeCount} like{guide.likeCount !== 1 ? 's' : ''}
-                  </Badge>
+                  <Box style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: `${entityColors.character}08`,
+                    border: `1px solid ${entityColors.character}20`,
+                    borderRadius: 4, padding: '2px 8px',
+                  }}>
+                    <Eye size={12} color={entityColors.character} />
+                    <Text style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontSize: '1rem', fontWeight: 400, color: entityColors.character }}>
+                      {guide.viewCount}
+                    </Text>
+                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem' }}>
+                      {guide.viewCount !== 1 ? 'VIEWS' : 'VIEW'}
+                    </Text>
+                  </Box>
+                  <Box style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: `${entityColors.gamble}08`,
+                    border: `1px solid ${entityColors.gamble}20`,
+                    borderRadius: 4, padding: '2px 8px',
+                  }}>
+                    <Heart size={12} color={entityColors.gamble} />
+                    <Text style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontSize: '1rem', fontWeight: 400, color: entityColors.gamble }}>
+                      {guide.likeCount}
+                    </Text>
+                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem' }}>
+                      {guide.likeCount !== 1 ? 'LIKES' : 'LIKE'}
+                    </Text>
+                  </Box>
                 </Group>
 
                 {/* Related Entities - Consolidated */}
@@ -690,6 +699,13 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                 <Tabs.Panel value="content" pt={theme.spacing.md}>
                   <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.guide)}>
                     <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                      <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
+                        <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.guide}40)` }} />
+                        <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                          GUIDE CONTENT
+                        </Text>
+                        <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.guide}20)` }} />
+                      </Group>
                       <TimelineSpoilerWrapper chapterNumber={undefined}>
                         <EnhancedSpoilerMarkdown
                           content={guide.content}
@@ -706,6 +722,13 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                   <Tabs.Panel value="edit" pt={theme.spacing.md}>
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.guide)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
+                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.guide}40)` }} />
+                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                            EDIT GUIDE
+                          </Text>
+                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.guide}20)` }} />
+                        </Group>
                         <EntityEmbedHelperWithSearch onInsertEmbed={(embed) => {
                           const textarea = textareaRef.current
                           if (!textarea) {

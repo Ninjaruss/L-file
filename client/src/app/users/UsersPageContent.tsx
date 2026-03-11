@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Alert,
+  Badge,
   Box,
   Card,
   Container,
@@ -301,9 +302,30 @@ export default function UsersPageContent() {
                                 ...getCardStyles(theme, accentCommunity),
                                 height: '100%',
                                 textDecoration: 'none',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                position: 'relative'
                               }}
                             >
+                              {(user.role === 'admin' || user.role === 'moderator') && (
+                                <Badge
+                                  size="xs"
+                                  style={{
+                                    position: 'absolute',
+                                    top: rem(8),
+                                    right: rem(8),
+                                    zIndex: 10,
+                                    backgroundColor: user.role === 'admin'
+                                      ? 'rgba(225, 29, 72, 0.15)'
+                                      : 'rgba(77, 171, 247, 0.12)',
+                                    border: user.role === 'admin'
+                                      ? '1px solid rgba(225, 29, 72, 0.4)'
+                                      : '1px solid rgba(77, 171, 247, 0.35)',
+                                    color: user.role === 'admin' ? '#e11d48' : '#4dabf7'
+                                  }}
+                                >
+                                  {user.role === 'admin' ? 'Admin' : 'Mod'}
+                                </Badge>
+                              )}
                               <Stack gap="xs" align="center" style={{ height: '100%' }}>
                                 <UserProfileImage
                                   user={user}

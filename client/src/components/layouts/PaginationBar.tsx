@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { motion } from 'motion/react'
 import { Box, Group, Pagination, Text, rem, useMantineTheme } from '@mantine/core'
 import type { EntityAccentKey } from '../../lib/mantine-theme'
 import { getEntityThemeColor } from '../../lib/mantine-theme'
@@ -46,58 +47,73 @@ export function PaginationBar({
   }
 
   return (
-    <Box
-      px="md"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginTop: rem(48),
-        gap: rem(12)
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.4 }}
     >
-      {/* Results info */}
-      <Text size="sm" c="dimmed">
-        Showing {start}–{end} of {total} {entityName}
-      </Text>
-
-      {/* Pagination controls */}
-      {totalPages > 1 && (
-        <Pagination
-          total={totalPages}
-          value={currentPage}
-          onChange={handlePageChange}
-          radius="xl"
-          size="md"
-          classNames={{ control: classes.control }}
-          styles={{
-            root: {
-              '--pagination-accent': accentColor,
-              '--pagination-accent-hover-bg': `${accentColor}20`,
-              '--pagination-accent-hover-border': `${accentColor}40`
-            } as React.CSSProperties,
-            control: {
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              color: '#ffffff',
-              transition: 'all 200ms ease',
-              minWidth: rem(36),
-              height: rem(36)
-            },
-            dots: {
-              color: 'rgba(255, 255, 255, 0.3)'
-            }
+      <Box
+        px="md"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginTop: rem(48),
+          gap: rem(12)
+        }}
+      >
+        {/* Accent gradient rule */}
+        <Box
+          aria-hidden
+          style={{
+            width: '100%',
+            maxWidth: 400,
+            height: 1,
+            background: `linear-gradient(90deg, transparent, ${accentColor}28, transparent)`,
+            marginBottom: rem(12),
           }}
         />
-      )}
 
-      {/* Page indicator */}
-      {totalPages > 1 && (
-        <Text size="xs" c="dimmed" style={{ opacity: 0.6 }}>
-          Page {currentPage} of {totalPages}
+        {/* Results info */}
+        <Text
+          className="eyebrow-label"
+          style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.65rem' }}
+        >
+          {start}–{end} of {total} {entityName.toUpperCase()}
         </Text>
-      )}
-    </Box>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <Pagination
+            total={totalPages}
+            value={currentPage}
+            onChange={handlePageChange}
+            radius="xl"
+            size="md"
+            classNames={{ control: classes.control }}
+            styles={{
+              root: {
+                '--pagination-accent': accentColor,
+                '--pagination-accent-hover-bg': `${accentColor}20`,
+                '--pagination-accent-hover-border': `${accentColor}40`
+              } as React.CSSProperties,
+              control: {
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: '#ffffff',
+                transition: 'all 200ms ease',
+                minWidth: rem(36),
+                height: rem(36),
+                borderRadius: '4px'
+              },
+              dots: {
+                color: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          />
+        )}
+      </Box>
+    </motion.div>
   )
 }
 

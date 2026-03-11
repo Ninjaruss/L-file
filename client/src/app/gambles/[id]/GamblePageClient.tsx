@@ -260,7 +260,8 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
               style={{
                 lineHeight: 1.1,
                 textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                letterSpacing: '-0.02em'
+                letterSpacing: '-0.02em',
+                fontFamily: 'var(--font-opti-goudy-text), serif'
               }}
             >
               {initialGamble.name}
@@ -372,7 +373,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                 <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                   <Group gap={theme.spacing.sm} align="center">
                     <Crown size={24} color={gambleColor} />
-                    <Title order={3} c={headerColors.h3}>About {initialGamble.name}</Title>
+                  </Group>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 4 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${gambleColor}40)` }} />
+                    <Text
+                      className="eyebrow-label"
+                      style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                    >
+                      ABOUT THIS GAMBLE
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${gambleColor}20)` }} />
                   </Group>
                   {initialGamble.description ? (
                     <TimelineSpoilerWrapper chapterNumber={initialGamble.chapter?.number ?? initialGamble.chapterId}>
@@ -396,7 +406,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                 <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                   <Group gap={theme.spacing.sm} align="center">
                     <BookOpen size={24} color={gambleColor} />
-                    <Title order={3} c={headerColors.h3}>Rules</Title>
+                  </Group>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 4 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${gambleColor}40)` }} />
+                    <Text
+                      className="eyebrow-label"
+                      style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                    >
+                      RULES
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${gambleColor}20)` }} />
                   </Group>
                   <Box style={{ lineHeight: 1.6 }}>
                     <EnhancedSpoilerMarkdown content={initialGamble.rules} className="gamble-rules" enableEntityEmbeds compactEntityCards={false} />
@@ -413,9 +432,29 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                     <Group gap={theme.spacing.sm} align="center">
                       <Trophy size={24} color={gambleColor} />
-                      <Title order={3} c={headerColors.h3}>Win Condition</Title>
                     </Group>
-                    <Box style={{ lineHeight: 1.6 }}>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 4, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${gambleColor}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        WIN CONDITION
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${gambleColor}20)` }} />
+                    </Group>
+                    <Box
+                      className="manga-panel-border"
+                      style={{
+                        position: 'relative',
+                        padding: '1rem 1.25rem',
+                        background: `${getAlphaColor(gambleColor, 0.05)}`,
+                        border: `1px solid ${gambleColor}30`,
+                        borderRadius: '0.5rem',
+                        marginTop: 12,
+                        lineHeight: 1.6
+                      }}
+                    >
                       <EnhancedSpoilerMarkdown content={initialGamble.winCondition} className="gamble-win-condition" enableEntityEmbeds compactEntityCards={false} />
                     </Box>
                   </Stack>
@@ -431,7 +470,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                     <Group gap={theme.spacing.sm} align="center">
                       <Lightbulb size={24} color={gambleColor} />
-                      <Title order={3} c={headerColors.h3}>Explanation & Analysis</Title>
+                    </Group>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${gambleColor}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        EXPLANATION & ANALYSIS
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${gambleColor}20)` }} />
                     </Group>
                     <Box style={{ lineHeight: 1.6 }}>
                       <EnhancedSpoilerMarkdown content={initialGamble.explanation} className="gamble-explanation" enableEntityEmbeds compactEntityCards={false} />
@@ -450,8 +498,113 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group gap={theme.spacing.sm}>
                       <Users size={20} color={characterColor} />
-                      <Title order={4} c={textColors.character}>Participants</Title>
                     </Group>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 4, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${characterColor}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        PARTICIPANTS
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${characterColor}20)` }} />
+                    </Group>
+                    {initialGamble.factions.length === 2 ? (
+                      <Group align="stretch" gap={0} wrap="nowrap" style={{ width: '100%' }}>
+                        {initialGamble.factions
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((faction, idx) => {
+                            const factionName = faction.name || (faction.supportedGambler ? `${faction.supportedGambler.name}'s Side` : 'Faction')
+                            return (
+                              <React.Fragment key={faction.id}>
+                                <Box style={{ flex: 1, minWidth: 0 }}>
+                                  <Paper withBorder radius="lg" p={theme.spacing.md} shadow="md" style={{
+                                    border: `1px solid ${getAlphaColor(gambleColor, 0.3)}`,
+                                    background: getAlphaColor(theme.colors.dark[7], 0.5),
+                                    height: '100%'
+                                  }}>
+                                    <Stack gap={theme.spacing.sm}>
+                                      <Group gap={theme.spacing.xs} align="center">
+                                        <Text fw={700} size="md" c={textColors.gamble}>{factionName}</Text>
+                                        {faction.supportedGambler && faction.name && (
+                                          <Badge variant="light" size="sm" radius="md" style={{
+                                            background: getAlphaColor(gambleColor, 0.2),
+                                            border: `1px solid ${getAlphaColor(gambleColor, 0.4)}`
+                                          }} c={textColors.gamble}>
+                                            Supporting {faction.supportedGambler.name}
+                                          </Badge>
+                                        )}
+                                      </Group>
+                                      <Stack gap={theme.spacing.xs}>
+                                        {faction.members
+                                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                                          .map((member) => (
+                                            <Link key={member.id} href={`/characters/${member.character.id}`} style={{ textDecoration: 'none' }}>
+                                              <Paper withBorder radius="md" p={theme.spacing.sm} style={{
+                                                border: `1px solid ${getAlphaColor(characterColor, 0.2)}`,
+                                                transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
+                                                cursor: 'pointer'
+                                              }}
+                                              onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = 'translateX(4px)'
+                                                e.currentTarget.style.borderColor = getAlphaColor(characterColor, 0.5)
+                                              }}
+                                              onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'translateX(0)'
+                                                e.currentTarget.style.borderColor = getAlphaColor(characterColor, 0.2)
+                                              }}>
+                                                <Group justify="space-between" align="center">
+                                                  <Group gap={theme.spacing.xs}>
+                                                    <Text fw={600} size="sm" c={textColors.character}>{member.character.name}</Text>
+                                                    {member.role && (
+                                                      <Badge variant="outline" size="xs" radius="sm" c={textColors.secondary} style={{
+                                                        borderColor: getAlphaColor(theme.colors.gray[5], 0.5),
+                                                        textTransform: 'capitalize'
+                                                      }}>
+                                                        {member.role}
+                                                      </Badge>
+                                                    )}
+                                                  </Group>
+                                                </Group>
+                                                {member.character.alternateNames && member.character.alternateNames.length > 0 && (
+                                                  <Group gap={theme.spacing.xs} wrap="wrap" mt={spacing.xs}>
+                                                    {member.character.alternateNames.slice(0, 2).map((name) => (
+                                                      <Badge key={name} variant="light" size="xs" radius="md" style={{
+                                                        background: `${theme.colors.dark[5]}80`,
+                                                        border: `1px solid ${theme.colors.dark[4]}`,
+                                                        fontWeight: 500
+                                                      }} c={textColors.secondary}>
+                                                        {name}
+                                                      </Badge>
+                                                    ))}
+                                                  </Group>
+                                                )}
+                                              </Paper>
+                                            </Link>
+                                          ))}
+                                      </Stack>
+                                    </Stack>
+                                  </Paper>
+                                </Box>
+                                {idx === 0 && (
+                                  <Box style={{ display: 'flex', alignItems: 'center', padding: '0 8px', flexShrink: 0 }}>
+                                    <Text style={{
+                                      fontFamily: 'var(--font-opti-goudy-text), serif',
+                                      fontSize: '1.75rem',
+                                      fontWeight: 400,
+                                      color: '#e11d48',
+                                      textAlign: 'center',
+                                      textShadow: '0 0 20px rgba(225,29,72,0.4)',
+                                      padding: '0 16px',
+                                      flexShrink: 0,
+                                    }}>VS</Text>
+                                  </Box>
+                                )}
+                              </React.Fragment>
+                            )
+                          })}
+                      </Group>
+                    ) : (
                     <Grid gutter={theme.spacing.md}>
                       {initialGamble.factions
                         .sort((a, b) => a.displayOrder - b.displayOrder)
@@ -530,6 +683,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                           )
                         })}
                     </Grid>
+                    )}
                   </Stack>
                 </Card>
               ) : initialGamble.participants && initialGamble.participants.length > 0 ? (
@@ -541,7 +695,16 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                   <Stack gap={theme.spacing.md} p={theme.spacing.md}>
                     <Group gap={theme.spacing.sm}>
                       <Users size={20} color={characterColor} />
-                      <Title order={4} c={textColors.character}>Participants</Title>
+                    </Group>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 4, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${characterColor}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        PARTICIPANTS
+                      </Text>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${characterColor}20)` }} />
                     </Group>
                     <Stack gap={theme.spacing.sm}>
                       {initialGamble.participants.map((participant) => (

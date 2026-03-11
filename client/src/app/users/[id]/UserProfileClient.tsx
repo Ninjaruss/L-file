@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react'
 import {
-  Alert,
   Anchor,
   Badge,
   Box,
@@ -23,7 +22,7 @@ import {
 } from '@mantine/core'
 import { getAlphaColor, getEntityThemeColor, headerColors, outlineStyles, textColors } from '../../../lib/mantine-theme'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
-import { BookOpen, Camera, Dices, Eye, FileText, Heart, Quote, Star } from 'lucide-react'
+import { Camera, Dices, Eye, FileText, Heart, Quote, Star } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { api } from '../../../lib/api'
@@ -169,6 +168,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
   const quoteColor = getEntityThemeColor(theme, 'quote')
   const eventColor = getEntityThemeColor(theme, 'event')
   const arcColor = getEntityThemeColor(theme, 'arc')
+  const likesColor = '#e11d48'
   const accentColor = outlineStyles.accentColor
   const accentBorderColor = getAlphaColor(accentColor, 0.4)
   const accentHoverColor = getAlphaColor(accentColor, 0.18)
@@ -193,8 +193,8 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     {
       label: 'Likes Received',
       value: userStats?.likesReceived ?? 0,
-      icon: <Heart size={22} color={eventColor} />,
-      color: eventColor,
+      icon: <Heart size={22} color={likesColor} />,
+      color: likesColor,
       isLoading: dataLoading && !userStats
     }
   ]
@@ -227,7 +227,12 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
           <Stack gap="xl">
             {/* Profile Header Section */}
             <Group align="flex-start" gap="xl" wrap="nowrap">
-              <Box style={{ flexShrink: 0 }}>
+              <Box style={{
+                flexShrink: 0,
+                borderRadius: '50%',
+                border: `3px solid ${accentColor}50`,
+                boxShadow: `0 0 16px ${accentColor}20`,
+              }}>
                 <UserProfileImage user={user} size={140} showFallback showHoverInfo className="user-profile-avatar-large" />
               </Box>
 
@@ -265,38 +270,39 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                 </Stack>
 
                 {/* Quick Stats Row */}
-                <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="md">
+                <Group gap="md" wrap="wrap">
                   {stats.map((stat) => (
-                    <Card
+                    <Box
                       key={stat.label}
-                      shadow="md"
-                      radius="md"
-                      padding="md"
-                      withBorder
                       style={{
-                        background: getAlphaColor(stat.color, 0.12),
-                        border: `1px solid ${getAlphaColor(stat.color, 0.35)}`,
-                        textAlign: 'center'
+                        padding: '1rem 0.75rem',
+                        background: `${stat.color}08`,
+                        border: `1px solid ${stat.color}22`,
+                        borderRadius: '0.5rem',
+                        textAlign: 'center',
+                        minWidth: 80,
                       }}
                     >
-                      <Stack gap="xs" align="center">
-                        {stat.icon}
-                        <Stack gap={2} align="center">
-                          {stat.isLoading ? (
-                            <Skeleton height={28} width={40} radius="sm" />
-                          ) : (
-                            <Text size="xl" fw={700} c={stat.color}>
-                              {stat.value}
-                            </Text>
-                          )}
-                          <Text size="xs" c={textColors.tertiary} fw={500}>
-                            {stat.label}
-                          </Text>
-                        </Stack>
-                      </Stack>
-                    </Card>
+                      {stat.isLoading ? (
+                        <Skeleton height={28} width={40} radius="sm" style={{ margin: '0 auto 4px' }} />
+                      ) : (
+                        <Text style={{
+                          fontFamily: 'var(--font-opti-goudy-text), serif',
+                          fontSize: '1.75rem',
+                          fontWeight: 400,
+                          color: stat.color,
+                          lineHeight: 1,
+                          marginBottom: 4,
+                        }}>
+                          {stat.value}
+                        </Text>
+                      )}
+                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.6rem' }}>
+                        {stat.label.toUpperCase()}
+                      </Text>
+                    </Box>
                   ))}
-                </SimpleGrid>
+                </Group>
               </Stack>
             </Group>
 
@@ -314,21 +320,44 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
               }}
             >
               <Stack gap="md">
-                <Group gap="sm" align="center">
-                  <BookOpen size={24} color={arcColor} />
-                  <Text fw={600} size="lg">
-                    Reading Progress
+                <Group justify="flex-start" gap="sm" style={{ marginBottom: 4 }}>
+                  <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${arcColor}40)` }} />
+                  <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                    READING PROGRESS
                   </Text>
+                  <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${arcColor}20)` }} />
                 </Group>
 
                 <Stack gap="sm">
                   <Group justify="space-between" align="center">
-                    <Text size="sm" c={textColors.tertiary}>
-                      Current Chapter
-                    </Text>
-                    <Text fw={600}>
-                      {user.userProgress} / {MAX_CHAPTER}
-                    </Text>
+                    <Stack gap={2}>
+                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
+                        Current Chapter
+                      </Text>
+                      <Text style={{
+                        fontFamily: 'var(--font-opti-goudy-text), serif',
+                        fontSize: '1.5rem',
+                        fontWeight: 400,
+                        color: arcColor,
+                        lineHeight: 1,
+                      }}>
+                        {user.userProgress}
+                      </Text>
+                    </Stack>
+                    <Stack gap={2} style={{ textAlign: 'right' }}>
+                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
+                        Total Chapters
+                      </Text>
+                      <Text style={{
+                        fontFamily: 'var(--font-opti-goudy-text), serif',
+                        fontSize: '1.5rem',
+                        fontWeight: 400,
+                        color: 'rgba(255,255,255,0.5)',
+                        lineHeight: 1,
+                      }}>
+                        {MAX_CHAPTER}
+                      </Text>
+                    </Stack>
                   </Group>
 
                   <Progress
@@ -360,11 +389,12 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
               <>
                 <Divider color={getAlphaColor(accentColor, 0.25)} />
                 <Stack gap="lg">
-                  <Group gap="sm" align="center">
-                    <Star size={20} color={characterColor} />
-                    <Title order={2} size="h3" c={headerColors.h2}>
-                      Favorites
-                    </Title>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${characterColor}40)` }} />
+                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                      FAVORITES
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${characterColor}20)` }} />
                   </Group>
                   
                   <SimpleGrid cols={{ base: 1, sm: favoriteQuote && favoriteGamble ? 2 : 1 }} spacing="lg">
@@ -501,11 +531,12 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
               <>
                 <Divider color={getAlphaColor(accentColor, 0.25)} />
                 <Stack gap="lg">
-                  <Group gap="sm" align="center">
-                    <Star size={20} color={characterColor} />
-                    <Title order={2} size="h3" c={headerColors.h2}>
-                      Favorite Characters
-                    </Title>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${characterColor}40)` }} />
+                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                      FAVORITE CHARACTERS
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${characterColor}20)` }} />
                   </Group>
                   <Stack gap="xs">
                     {user.favoriteCharacters
@@ -564,24 +595,23 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             }}
           >
             <Stack gap="lg">
-              <Group justify="space-between" align="center" wrap="wrap">
-                <Group gap="sm" align="center">
-                  <FileText size={24} color={guideColor} />
-                  <Title order={2} size="h3" c={headerColors.h2}>
-                    Contributions by {user.username}
-                  </Title>
-                  <Badge
-                    variant="light"
-                    size="lg"
-                    style={{
-                      background: getAlphaColor(guideColor, 0.2),
-                      border: `1px solid ${getAlphaColor(guideColor, 0.4)}`,
-                      color: guideColor
-                    }}
-                  >
-                    {submissions.length}
-                  </Badge>
-                </Group>
+              <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
+                <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${guideColor}40)` }} />
+                <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                  CONTRIBUTIONS BY {user.username.toUpperCase()}
+                </Text>
+                <Badge
+                  variant="light"
+                  size="sm"
+                  style={{
+                    background: getAlphaColor(guideColor, 0.2),
+                    border: `1px solid ${getAlphaColor(guideColor, 0.4)}`,
+                    color: guideColor
+                  }}
+                >
+                  {submissions.length}
+                </Badge>
+                <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${guideColor}20)` }} />
               </Group>
 
               {/* Filter Controls */}
@@ -669,14 +699,14 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
           >
             <Stack gap="lg">
               <Group justify="space-between" align="center" wrap="wrap">
-                <Group gap="sm" align="center">
-                  <FileText size={24} color={guideColor} />
-                  <Title order={2} size="h3" c={headerColors.h2}>
-                    Guides by {user.username}
-                  </Title>
+                <Group justify="flex-start" gap="sm" style={{ marginBottom: 4 }}>
+                  <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${guideColor}40)` }} />
+                  <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                    GUIDES BY {user.username.toUpperCase()}
+                  </Text>
                   <Badge
                     variant="light"
-                    size="lg"
+                    size="sm"
                     style={{
                       background: getAlphaColor(guideColor, 0.2),
                       border: `1px solid ${getAlphaColor(guideColor, 0.4)}`,
@@ -685,8 +715,9 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
                   >
                     {guides.length}
                   </Badge>
+                  <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${guideColor}20)` }} />
                 </Group>
-                
+
                 <Button
                   component={Link}
                   href={`/guides?author=${user.id}&authorName=${encodeURIComponent(user.username)}`}

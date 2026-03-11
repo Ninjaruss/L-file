@@ -281,7 +281,9 @@ export default function ArcsPageContent({
                     borderColor: `${accentArc}40`,
                     backgroundColor: backgroundStyles.card,
                     transition: 'all 0.2s ease',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    borderLeft: '2px solid currentColor',
+                    paddingLeft: 8
                   }}
                   className="hoverable-card"
                   onMouseEnter={(e) => {
@@ -386,7 +388,10 @@ export default function ArcsPageContent({
           >
             {hoveredArc && (
               <>
-                <Title order={4} size="md" fw={700} c={accentArc} ta="center" lineClamp={2}>
+                <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                  Story Arc
+                </Text>
+                <Title order={4} size="md" ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400, fontSize: '1.4rem', color: accentArc }}>
                   {hoveredArc.name}
                 </Title>
 

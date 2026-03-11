@@ -11,6 +11,7 @@ import {
   Group,
   Stack,
   Tabs,
+  Text,
   Title,
   useMantineTheme
 } from '@mantine/core'
@@ -196,7 +197,8 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
             style={{
               lineHeight: 1.1,
               textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-              letterSpacing: '-0.02em'
+              letterSpacing: '-0.02em',
+              fontFamily: 'var(--font-opti-goudy-text), serif'
             }}
           >
             {initialArc.name}
@@ -317,7 +319,16 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                 <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                   <Group gap={theme.spacing.sm} align="center">
                     <BookOpen size={24} color={arcColor} />
-                    <Title order={3} c={headerColors.h3}>About {initialArc.name}</Title>
+                  </Group>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 4 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${arcColor}40)` }} />
+                    <Text
+                      className="eyebrow-label"
+                      style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                    >
+                      ABOUT THIS ARC
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${arcColor}20)` }} />
                   </Group>
                   <TimelineSpoilerWrapper chapterNumber={initialArc.startChapter}>
                     <Box style={{ lineHeight: 1.6 }}>
@@ -342,8 +353,17 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                   <Group justify="space-between" align="center">
                     <Group gap={theme.spacing.sm}>
                       <BookOpen size={20} color={arcColor} />
-                      <Title order={4} c={textColors.arc}>Chapter Navigation</Title>
                     </Group>
+                  </Group>
+                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 4, marginTop: 4 }}>
+                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${arcColor}40)` }} />
+                    <Text
+                      className="eyebrow-label"
+                      style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                    >
+                      CHAPTER NAVIGATION
+                    </Text>
+                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${arcColor}20)` }} />
                   </Group>
                   <Group gap={theme.spacing.md} wrap="wrap">
                     <Button
@@ -354,11 +374,13 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                       size="md"
                       radius="xl"
                       style={{
-                        fontWeight: 600,
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-opti-goudy-text), serif',
                         border: `2px solid ${arcColor}`,
                         transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
                         flex: 1,
-                        minWidth: '200px'
+                        minWidth: '200px',
+                        letterSpacing: '0.02em'
                       }}
                     >
                       Start: Chapter {initialArc.startChapter}
@@ -370,9 +392,11 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                       style={{
                         background: `linear-gradient(135deg, ${arcColor} 0%, ${arcColor}dd 100%)`,
                         border: `1px solid ${arcColor}`,
-                        fontWeight: 600,
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-opti-goudy-text), serif',
                         flex: 1,
-                        minWidth: '200px'
+                        minWidth: '200px',
+                        letterSpacing: '0.02em'
                       }}
                     >
                       End: Chapter {initialArc.endChapter}
@@ -390,10 +414,19 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                   <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
                     <Group gap={theme.spacing.sm} align="center">
                       <Layers size={24} color={arcColor} />
-                      <Title order={3} c={headerColors.h3}>Sub-arcs</Title>
-                      <Badge size="md" variant="light" c={arcColor}>
+                    </Group>
+                    <Group justify="flex-start" gap="sm" style={{ marginBottom: 4, marginTop: 4 }}>
+                      <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${arcColor}40)` }} />
+                      <Text
+                        className="eyebrow-label"
+                        style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}
+                      >
+                        SUB-ARCS
+                      </Text>
+                      <Badge size="xs" variant="light" c={arcColor} style={{ marginLeft: 4 }}>
                         {initialArc.children.length}
                       </Badge>
+                      <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${arcColor}20)` }} />
                     </Group>
                     <Box
                       style={{

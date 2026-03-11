@@ -317,7 +317,7 @@ export default function GamblesPageContent({
       renderCard={renderGambleCard}
       getKey={(g) => g.id}
       onPageChange={handlePageChange}
-      entityNamePlural="gambles"
+      entityNamePlural="match records"
       emptyIcon={<Dices size={48} />}
       activeFilterBadges={
         characterFilter ? (
@@ -350,7 +350,10 @@ export default function GamblesPageContent({
         >
           {hoveredGamble && (
             <>
-              <Title order={4} size="md" fw={700} c={accentGamble} ta="center" lineClamp={2}>
+              <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                Match Record
+              </Text>
+              <Title order={4} size="md" ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400, fontSize: '1.4rem', color: accentGamble }}>
                 {hoveredGamble.name}
               </Title>
 
@@ -387,33 +390,58 @@ export default function GamblesPageContent({
                 })()}
               </Group>
 
-              {hoveredGamble.factions && hoveredGamble.factions.length > 0 ? (
-                <Stack gap="xs">
-                  {hoveredGamble.factions.sort((a, b) => a.displayOrder - b.displayOrder).slice(0, 2).map((faction) => {
-                    const factionName = faction.name || (faction.supportedGambler ? `${faction.supportedGambler.name}'s Side` : 'Faction')
-                    return (
-                      <Box key={faction.id}>
-                        <Text size="xs" fw={600} c={accentGamble} ta="center" mb={2}>{factionName}</Text>
-                        <Group justify="center" gap="xs" wrap="wrap">
-                          {faction.members.slice(0, 3).map((member) => (
-                            <Badge key={member.id} variant="outline" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs" fw={500}>
-                              {member.character.name}
-                            </Badge>
-                          ))}
-                          {faction.members.length > 3 && (
-                            <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs" fw={500}>
-                              +{faction.members.length - 3}
-                            </Badge>
-                          )}
-                        </Group>
+              {hoveredGamble.factions && hoveredGamble.factions.length > 0 ? (() => {
+                const sortedFactions = hoveredGamble.factions.slice().sort((a, b) => a.displayOrder - b.displayOrder)
+                const renderFactionBox = (faction: GambleFaction) => {
+                  const factionName = faction.name || (faction.supportedGambler ? `${faction.supportedGambler.name}'s Side` : 'Faction')
+                  return (
+                    <Box key={faction.id} style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="xs" fw={600} c={accentGamble} ta="center" mb={2}>{factionName}</Text>
+                      <Group justify="center" gap="xs" wrap="wrap">
+                        {faction.members.slice(0, 3).map((member) => (
+                          <Badge key={member.id} variant="outline" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs" fw={500}>
+                            {member.character.name}
+                          </Badge>
+                        ))}
+                        {faction.members.length > 3 && (
+                          <Badge variant="outline" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs" fw={500}>
+                            +{faction.members.length - 3}
+                          </Badge>
+                        )}
+                      </Group>
+                    </Box>
+                  )
+                }
+
+                if (sortedFactions.length >= 2) {
+                  return (
+                    <Stack gap="xs">
+                      <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 8 }}>
+                        {renderFactionBox(sortedFactions[0])}
+                        <Text style={{
+                          fontFamily: 'var(--font-opti-goudy-text), serif',
+                          fontSize: '1.1rem',
+                          fontWeight: 400,
+                          color: '#e11d48',
+                          flexShrink: 0,
+                          padding: '0 4px',
+                          marginTop: 2
+                        }}>VS</Text>
+                        {renderFactionBox(sortedFactions[1])}
                       </Box>
-                    )
-                  })}
-                  {hoveredGamble.factions.length > 2 && (
-                    <Text size="xs" c="dimmed" ta="center">+{hoveredGamble.factions.length - 2} more faction{hoveredGamble.factions.length - 2 !== 1 ? 's' : ''}</Text>
-                  )}
-                </Stack>
-              ) : hoveredGamble.participants && hoveredGamble.participants.length > 0 ? (
+                      {sortedFactions.length > 2 && (
+                        <Text size="xs" c="dimmed" ta="center">+{sortedFactions.length - 2} more faction{sortedFactions.length - 2 !== 1 ? 's' : ''}</Text>
+                      )}
+                    </Stack>
+                  )
+                }
+
+                return (
+                  <Stack gap="xs">
+                    {sortedFactions.map(renderFactionBox)}
+                  </Stack>
+                )
+              })() : hoveredGamble.participants && hoveredGamble.participants.length > 0 ? (
                 <Group justify="center" gap="xs" wrap="wrap">
                   {hoveredGamble.participants.slice(0, 3).map((p) => (
                     <Badge key={p.id} variant="outline" style={{ color: getEntityThemeColor(theme, 'character') }} size="xs" fw={500}>{p.name}</Badge>

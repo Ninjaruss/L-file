@@ -89,15 +89,39 @@ export function PlayingCard({
       withBorder={false}
       radius="lg"
       shadow="sm"
-      className={`hoverable-card hoverable-card-${entityType} ${classes.card}`}
+      className={`hoverable-card hoverable-card-${entityType} ledger-lines ${classes.card}`}
       style={{
         ...getPlayingCardStyles(theme, accentColor),
-        position: 'relative'
+        position: 'relative',
+        transform: 'perspective(700px) rotateY(0deg) translateY(0px)',
+        transition: 'transform 250ms ease, box-shadow 250ms ease'
       }}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
+      {/* Entity type eyebrow label */}
+      <Box
+        aria-hidden
+        className="eyebrow-label"
+        style={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          color: accentColor,
+          background: `${accentColor}15`,
+          padding: '2px 5px',
+          borderRadius: 2,
+          border: `1px solid ${accentColor}28`,
+          fontSize: '0.55rem',
+          letterSpacing: '0.18em',
+          zIndex: 2,
+          pointerEvents: 'none',
+        }}
+      >
+        {entityType}
+      </Box>
+
       {/* Suit icon in top-right corner */}
       <Box
         aria-hidden="true"
@@ -188,6 +212,21 @@ export function PlayingCard({
         />
       </Box>
 
+      {/* Bottom gradient overlay */}
+      <Box
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '40%',
+          background: `linear-gradient(0deg, ${accentColor}16 0%, transparent 100%)`,
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      />
+
       {/* Name at Bottom with diagonal stripe accent */}
       <Box
         p={rem(6)}
@@ -217,7 +256,7 @@ export function PlayingCard({
 
         <Text
           size="sm"
-          fw={700}
+          fw={400}
           ta="center"
           className={noTruncate ? undefined : classes.name}
           style={{
@@ -230,7 +269,9 @@ export function PlayingCard({
             backdropFilter: 'blur(4px)',
             borderRadius: rem(6),
             padding: `${rem(6)} ${rem(10)}`,
-            border: `1px solid ${accentColor}40`
+            border: `1px solid ${accentColor}40`,
+            fontFamily: 'var(--font-opti-goudy-text), serif',
+            fontWeight: 400,
           }}
         >
           {name}

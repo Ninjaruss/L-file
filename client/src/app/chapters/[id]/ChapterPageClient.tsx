@@ -129,19 +129,21 @@ export default function ChapterPageClient({
             <Stack gap={theme.spacing.sm}>
               <Group gap={theme.spacing.sm} align="center">
                 <BookOpen size={28} color={entityColors.chapter} />
-                <Title
-                  order={1}
-                  size="2.8rem"
-                  fw={800}
-                  c={headerColors.h1}
-                  style={{
-                    lineHeight: 1.1,
-                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                    letterSpacing: '-0.02em'
-                  }}
-                >
-                  Chapter {initialChapter.number}
-                </Title>
+                <Stack gap={2}>
+                  <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                    CHAPTER
+                  </Text>
+                  <Text style={{
+                    fontFamily: 'var(--font-opti-goudy-text), serif',
+                    fontSize: '3rem',
+                    fontWeight: 400,
+                    color: entityColors.chapter,
+                    lineHeight: 1,
+                    textShadow: `0 2px 20px ${entityColors.chapter}30`,
+                  }}>
+                    {initialChapter.number}
+                  </Text>
+                </Stack>
               </Group>
 
               {initialChapter.title && (
@@ -314,9 +316,12 @@ export default function ChapterPageClient({
                     {/* Chapter Summary Section */}
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.chapter)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
-                        <Group gap={theme.spacing.sm} align="center">
-                          <FileText size={24} color={entityColors.chapter} />
-                          <Title order={3} c={headerColors.h3}>Chapter Summary</Title>
+                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.chapter}40)` }} />
+                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                            CHAPTER SUMMARY
+                          </Text>
+                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.chapter}20)` }} />
                         </Group>
                         {(initialChapter.description || initialChapter.summary) ? (
                           <TimelineSpoilerWrapper chapterNumber={initialChapter.number}>
@@ -336,9 +341,12 @@ export default function ChapterPageClient({
                     {initialCharacters.length > 0 && (
                       <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.character)}>
                         <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                          <Group gap={theme.spacing.sm}>
-                            <Users size={20} color={entityColors.character} />
-                            <Title order={4} c={textColors.character}>Featured Characters</Title>
+                          <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                            <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.character}40)` }} />
+                            <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                              FEATURED CHARACTERS
+                            </Text>
+                            <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.character}20)` }} />
                           </Group>
                           <Group gap={theme.spacing.sm} wrap="wrap">
                             {initialCharacters.map((character) => (
@@ -373,9 +381,12 @@ export default function ChapterPageClient({
                   <Stack gap={theme.spacing.lg}>
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.event)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                        <Group gap={theme.spacing.sm}>
-                          <CalendarSearch size={20} color={entityColors.event} />
-                          <Title order={4} c={textColors.event}>Chapter Events</Title>
+                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.event}40)` }} />
+                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                            CHAPTER EVENTS
+                          </Text>
+                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.event}20)` }} />
                         </Group>
                         <Stack gap={theme.spacing.sm}>
                           {Array.isArray(initialEvents) && initialEvents.map((event) => (
@@ -416,9 +427,12 @@ export default function ChapterPageClient({
                   <Stack gap={theme.spacing.lg}>
                     <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.quote)}>
                       <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                        <Group gap={theme.spacing.sm}>
-                          <MessageSquareQuote size={20} color={entityColors.quote} />
-                          <Title order={4} c={textColors.quote}>Memorable Quotes</Title>
+                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.quote}40)` }} />
+                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                            MEMORABLE QUOTES
+                          </Text>
+                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.quote}20)` }} />
                         </Group>
                         <Stack gap={theme.spacing.sm}>
                           {Array.isArray(initialQuotes) && initialQuotes.map((quote) => (

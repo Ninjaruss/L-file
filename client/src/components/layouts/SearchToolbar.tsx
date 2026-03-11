@@ -95,9 +95,10 @@ export function SearchToolbar({
           transition: 'all 200ms ease',
           ...(isStuck
             ? {
-                backgroundColor: 'rgba(10, 10, 10, 0.92)',
+                backgroundColor: 'rgba(12, 8, 8, 0.94)',
                 backdropFilter: 'blur(12px)',
                 borderBottom: `1px solid ${accentColor}20`,
+                borderLeft: `3px solid ${accentColor}55`,
                 boxShadow: `0 4px 16px rgba(0, 0, 0, 0.3)`
               }
             : {
@@ -135,7 +136,11 @@ export function SearchToolbar({
                 input: {
                   fontSize: rem(16),
                   paddingLeft: rem(50),
-                  paddingRight: rem(50)
+                  paddingRight: rem(50),
+                  '&:focus': {
+                    borderColor: accentColor,
+                    boxShadow: `0 0 0 2px ${accentColor}18`
+                  }
                 }
               }}
             />

@@ -116,6 +116,13 @@ export default function OrganizationMembers({
 
   return (
     <Stack gap={spacing.md}>
+      <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
+        <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColor}40)` }} />
+        <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+          MEMBER REGISTRY
+        </Text>
+        <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColor}20)` }} />
+      </Group>
       {Object.entries(groupedByCharacter).map(([charId, charMemberships]) => {
         const character = charMemberships[0]?.character
         if (!character) return null
@@ -186,6 +193,7 @@ export default function OrganizationMembers({
                           size="xs"
                           variant="light"
                           color="violet"
+                          className="eyebrow-label"
                           style={{
                             backgroundColor: getAlphaColor('#8b5cf6', 0.15),
                             color: '#8b5cf6'

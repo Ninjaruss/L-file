@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Badge,
+  Box,
   Group,
   Stack,
   Text,
@@ -217,7 +218,7 @@ export default function OrganizationsPageContent({
       renderCard={renderOrganizationCard}
       getKey={(o) => o.id}
       onPageChange={handlePageChange}
-      entityNamePlural="organizations"
+      entityNamePlural="factions"
       emptyIcon={<Shield size={48} />}
       hoverModal={
         <HoverModal
@@ -231,22 +232,33 @@ export default function OrganizationsPageContent({
         >
           {hoveredOrganization && (
             <>
-              <Title order={4} size="md" fw={700} c={accentOrganization} ta="center" lineClamp={2}>
+              <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                Faction
+              </Text>
+
+              <Title order={4} size="md" fw={400} ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontSize: '1.4rem', color: accentOrganization }}>
                 {hoveredOrganization.name}
               </Title>
 
               {hoveredOrganization.memberCount !== undefined && (
                 <Group justify="center" gap="xs">
-                  <Badge
-                    variant="filled"
-                    c="white"
-                    size="sm"
-                    fw={600}
-                    leftSection={<Users size={12} />}
-                    style={{ backgroundColor: getEntityThemeColor(theme, 'organization') }}
-                  >
-                    {hoveredOrganization.memberCount} members
-                  </Badge>
+                  <Box style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'rgba(168, 85, 247, 0.08)',
+                    border: '1px solid rgba(168, 85, 247, 0.25)',
+                    borderRadius: 4,
+                    padding: '3px 10px',
+                    marginTop: 6,
+                  }}>
+                    <Text style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontSize: '1.1rem', fontWeight: 400, color: '#a855f7' }}>
+                      {hoveredOrganization.memberCount}
+                    </Text>
+                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem' }}>
+                      members
+                    </Text>
+                  </Box>
                 </Group>
               )}
 

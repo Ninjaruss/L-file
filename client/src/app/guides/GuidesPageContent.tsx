@@ -530,7 +530,9 @@ export default function GuidesPageContent({
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            maxWidth: rem(120)
+                            maxWidth: rem(120),
+                            fontFamily: 'var(--font-opti-goudy-text), serif',
+                            fontWeight: 400
                           }}
                         >
                           {guide.author.username}
@@ -601,7 +603,8 @@ export default function GuidesPageContent({
                                   border: `1px solid ${getEntityThemeColor(theme, 'organization')}40`,
                                   fontSize: rem(11),
                                   height: rem(24),
-                                  paddingInline: rem(8)
+                                  paddingInline: rem(8),
+                                  borderRadius: 3
                                 }}
                                 onClick={(e) => {
                                   e.preventDefault()
@@ -623,7 +626,8 @@ export default function GuidesPageContent({
                                   border: `1px solid ${getEntityThemeColor(theme, 'organization')}40`,
                                   fontSize: rem(11),
                                   height: rem(24),
-                                  paddingInline: rem(8)
+                                  paddingInline: rem(8),
+                                  borderRadius: 3
                                 }}
                               >
                                 +{guide.tags.length - 3}
@@ -782,13 +786,15 @@ export default function GuidesPageContent({
                 )}
               <Stack gap="sm">
                 {/* Guide Title */}
+                <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                  Strategy Guide
+                </Text>
                 <Title
                   order={4}
-                  size="md"
-                  fw={700}
                   c={accentGuide}
                   ta="center"
                   lineClamp={2}
+                  style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400, fontSize: '1.4rem' }}
                 >
                   {hoveredGuide.title}
                 </Title>

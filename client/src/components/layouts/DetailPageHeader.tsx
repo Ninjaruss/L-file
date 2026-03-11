@@ -51,16 +51,26 @@ export function DetailPageHeader({
         ...getCardStyles(theme, accentColor),
         border: `2px solid ${accentColor}`,
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        boxShadow: `0 20px 56px ${accentColor}16, 0 6px 20px rgba(0,0,0,0.5)`
       }}
     >
+      {/* Top accent stripe */}
+      <Box
+        aria-hidden
+        style={{
+          height: 3,
+          background: `linear-gradient(90deg, ${accentColor}, ${accentColor}55, transparent)`,
+        }}
+      />
+
       {/* Halftone pattern overlay */}
       <Box
         aria-hidden="true"
         style={{
           position: 'absolute',
           inset: 0,
-          ...mangaPatterns.halftoneBackground(`${accentColor}0a`, 12),
+          ...mangaPatterns.halftoneBackground(`${accentColor}16`, 12),
           pointerEvents: 'none'
         }}
       />
@@ -73,12 +83,12 @@ export function DetailPageHeader({
         style={{
           bottom: -20,
           right: -20,
-          opacity: 0.04
+          opacity: 0.06
         }}
       />
 
       {/* Content */}
-      <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1 }}>
+      <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1, borderLeft: `3px solid ${accentColor}45` }}>
         <Group gap={theme.spacing.lg} align="flex-start" wrap="wrap" justify="center">
           {showImage && (
             <Box style={{ flexShrink: 0 }}>
@@ -90,7 +100,8 @@ export function DetailPageHeader({
                   overflow: 'hidden',
                   border: `3px solid ${accentColor}`,
                   boxShadow: theme.shadows.xl,
-                  transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`
+                  transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`,
+                  position: 'relative'
                 }}
               >
                 <ErrorBoundary>
@@ -102,6 +113,17 @@ export function DetailPageHeader({
                     maxHeight={imageHeight}
                   />
                 </ErrorBoundary>
+                <Box
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 1,
+                    pointerEvents: 'none',
+                    background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.3) 100%)',
+                    borderRadius: theme.radius.md,
+                  }}
+                />
               </Box>
             </Box>
           )}

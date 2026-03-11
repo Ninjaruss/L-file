@@ -294,10 +294,9 @@ export default function QuotesPageContent({
             {/* Speaker */}
             <Text
               size="md"
-              fw={700}
               c={accentQuote}
               ta="center"
-              style={{ fontSize: rem(15) }}
+              style={{ fontSize: rem(15), fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400 }}
             >
               —{' '}
               {quote.speakerId ? (
@@ -420,14 +419,17 @@ export default function QuotesPageContent({
         >
           {hoveredQuote && (
             <>
-              <Title order={4} size="md" fw={700} c={accentQuote} ta="center" lineClamp={2}>
+              <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                Quote
+              </Text>
+              <Title order={4} size="md" c={accentQuote} ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400 }}>
                 {hoveredQuote.speakerId ? (
                   <Text
                     component={Link}
                     href={`/characters/${hoveredQuote.speakerId}`}
                     inherit
                     c={accentQuote}
-                    style={{ textDecoration: 'none' }}
+                    style={{ textDecoration: 'none', fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400 }}
                     onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
                     onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
                   >
@@ -437,6 +439,32 @@ export default function QuotesPageContent({
                   hoveredQuote.speaker
                 )}
               </Title>
+
+              <Box style={{ position: 'relative' }}>
+                <Text
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    left: -4,
+                    fontSize: '4rem',
+                    fontFamily: 'var(--font-opti-goudy-text), serif',
+                    color: 'rgba(32, 201, 151, 0.12)',
+                    lineHeight: 1,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  }}
+                >&quot;</Text>
+                <Text
+                  size="sm"
+                  ta="center"
+                  lineClamp={4}
+                  fs="italic"
+                  style={{ lineHeight: 1.4, paddingTop: rem(8), paddingLeft: rem(12), paddingRight: rem(12) }}
+                >
+                  &ldquo;{hoveredQuote.text}&rdquo;
+                </Text>
+              </Box>
 
               {hoveredQuote.context && (
                 <Box>

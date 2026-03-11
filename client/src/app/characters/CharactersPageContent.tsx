@@ -411,7 +411,10 @@ export default function CharactersPageContent({
               (!shouldHideSpoiler(hoveredCharacter.firstAppearanceChapter, userProgress, spoilerSettings) ||
                 revealedCharacters.has(hoveredCharacter.id)) && (
               <>
-                <Title order={4} size="md" fw={700} c={accentCharacter} ta="center" lineClamp={2}>
+                <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                  Character
+                </Text>
+                <Title order={4} size="md" ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400, fontSize: '1.4rem', color: accentCharacter }}>
                   {hoveredCharacter.name}
                 </Title>
 
