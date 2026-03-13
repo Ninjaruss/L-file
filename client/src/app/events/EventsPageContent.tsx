@@ -514,7 +514,15 @@ export default function EventsPageContent({
             clearable
             size="md"
             style={{ minWidth: rem(140), flex: '1 1 140px' }}
-            styles={{ input: { '&:focus': { borderColor: accentEvent } } }}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(15, 10, 10, 0.65)',
+                border: `1px solid ${accentEvent}35`,
+                backdropFilter: 'blur(8px)',
+                fontSize: rem(14),
+                '&:focus': { borderColor: accentEvent }
+              }
+            }}
           />
           <Select
             placeholder="All Statuses"
@@ -524,7 +532,15 @@ export default function EventsPageContent({
             clearable
             size="md"
             style={{ minWidth: rem(140), flex: '1 1 140px' }}
-            styles={{ input: { '&:focus': { borderColor: accentEvent } } }}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(15, 10, 10, 0.65)',
+                border: `1px solid ${accentEvent}35`,
+                backdropFilter: 'blur(8px)',
+                fontSize: rem(14),
+                '&:focus': { borderColor: accentEvent }
+              }
+            }}
           />
         </Group>
       }

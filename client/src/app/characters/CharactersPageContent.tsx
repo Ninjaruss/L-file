@@ -378,7 +378,15 @@ export default function CharactersPageContent({
             placeholder="Filter by organization"
             clearable
             disabled={organizationsLoading}
-            styles={{ input: { fontSize: rem(14), '&:focus': { borderColor: accentCharacter } } }}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(15, 10, 10, 0.65)',
+                border: `1px solid ${accentCharacter}35`,
+                backdropFilter: 'blur(8px)',
+                fontSize: rem(14),
+                '&:focus': { borderColor: accentCharacter }
+              }
+            }}
           />
         }
         activeFilterBadges={

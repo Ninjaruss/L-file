@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, Grid, Box, Typography, Chip } from '@mui
 import { useTheme } from '@mui/material/styles'
 import { useGetList, usePermissions } from 'react-admin'
 import { Link } from 'react-router-dom'
-import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Shield, Plus, ChevronRight } from 'lucide-react'
+import { Users, BookOpen, Crown, Zap, FileText, Image, Quote, Shield, Plus, ChevronRight, CheckCircle } from 'lucide-react'
 import { usePendingCounts } from '../../hooks/usePendingCounts'
 
 interface StatCardProps {
@@ -21,18 +21,21 @@ const StatCard = ({ title, count, icon: Icon, color, resource, pendingCount }: S
       height: '100%',
       cursor: 'pointer',
       transition: 'all 0.2s ease-in-out',
+      borderBottom: `3px solid ${color}`,
       '&:hover': {
         transform: 'translateY(-4px)',
         boxShadow: `0 8px 25px ${color}40`,
+        background: `linear-gradient(135deg, ${color}10, transparent)`,
         borderColor: color
       },
-      border: '1px solid transparent'
+      border: '1px solid transparent',
+      borderBottomColor: color
     }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" sx={{ color: color, fontWeight: 'bold' }}>
-              {count || 0}
+            <Typography variant="h4" sx={{ color: color, fontWeight: 'bold', fontSize: '2rem' }}>
+              {count ?? '—'}
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {title}
@@ -67,7 +70,6 @@ interface QuickActionProps {
 }
 
 const QuickActionItem = ({ text, to, filter, icon: Icon = ChevronRight, count }: QuickActionProps) => {
-  // Build the path with proper React Admin filter format
   const getPath = () => {
     if (filter) {
       const filterParam = encodeURIComponent(JSON.stringify(filter))
@@ -104,9 +106,25 @@ const QuickActionItem = ({ text, to, filter, icon: Icon = ChevronRight, count }:
           }
         }}
       >
-        <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 500 }}>
-          {text}{count !== undefined && ` (${count})`}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 500 }}>
+            {text}
+          </Typography>
+          {count !== undefined && count > 0 && (
+            <Chip
+              label={count}
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                color: '#ff9800',
+                fontWeight: 'bold',
+                fontSize: '0.7rem',
+                height: 20,
+                ml: 0.5
+              }}
+            />
+          )}
+        </Box>
         <Icon size={20} />
       </Box>
     </Link>
@@ -125,16 +143,37 @@ export const Dashboard = () => {
   const { total: guidesCount } = useGetList('guides', { pagination: { page: 1, perPage: 1 } })
   const { total: mediaCount } = useGetList('media', { pagination: { page: 1, perPage: 1 } })
   const { total: quotesCount } = useGetList('quotes', { pagination: { page: 1, perPage: 1 } })
-  // Only fetch users count for admins (the endpoint is admin-only)
   const { total: usersCount } = useGetList('users', { pagination: { page: 1, perPage: 1 } }, { enabled: permissions === 'admin' })
 
   const isModerator = permissions === 'moderator' || permissions === 'editor'
 
+  const totalContentItems =
+    (charactersCount || 0) +
+    (arcsCount || 0) +
+    (gamblesCount || 0) +
+    (eventsCount || 0) +
+    (guidesCount || 0) +
+    (mediaCount || 0) +
+    (quotesCount || 0)
+
+  const roleChipSx = isModerator
+    ? { backgroundColor: 'rgba(16,185,129,0.2)', color: '#10b981' }
+    : { backgroundColor: 'rgba(124,58,237,0.2)', color: '#7c3aed' }
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Welcome to the L-file Admin Dashboard
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+        <Typography variant="h4">
+          Welcome to the L-file Admin Dashboard
+        </Typography>
+        {permissions && (
+          <Chip
+            label={permissions}
+            size="small"
+            sx={{ ...roleChipSx, fontWeight: 'bold', textTransform: 'capitalize' }}
+          />
+        )}
+      </Box>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         {isModerator
           ? 'Review pending submissions and manage content for the Usogui database.'
@@ -161,30 +200,49 @@ export const Dashboard = () => {
                 }}
               />
               <CardContent>
-                <QuickActionItem
-                  text="Review pending guides"
-                  to="/guides"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.guides}
-                />
-                <QuickActionItem
-                  text="Moderate media submissions"
-                  to="/media"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.media}
-                />
-                <QuickActionItem
-                  text="Review pending events"
-                  to="/events"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.events}
-                />
-                <QuickActionItem
-                  text="Review pending annotations"
-                  to="/annotations"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.annotations}
-                />
+                {pendingCounts.total === 0 ? (
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 2,
+                    borderRadius: 1,
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <CheckCircle size={18} color="#10b981" />
+                    <Typography sx={{ color: '#10b981', fontWeight: 500 }}>
+                      All caught up! No pending items.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <>
+                    <QuickActionItem
+                      text="Review pending guides"
+                      to="/guides"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.guides}
+                    />
+                    <QuickActionItem
+                      text="Moderate media submissions"
+                      to="/media"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.media}
+                    />
+                    <QuickActionItem
+                      text="Review pending events"
+                      to="/events"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.events}
+                    />
+                    <QuickActionItem
+                      text="Review pending annotations"
+                      to="/annotations"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.annotations}
+                    />
+                  </>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -290,30 +348,50 @@ export const Dashboard = () => {
                 }}
               />
               <CardContent>
-                <QuickActionItem
-                  text="Review pending guides"
-                  to="/guides"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.guides}
-                />
-                <QuickActionItem
-                  text="Moderate media submissions"
-                  to="/media"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.media}
-                />
-                <QuickActionItem
-                  text="Review pending events"
-                  to="/events"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.events}
-                />
-                <QuickActionItem
-                  text="Review pending annotations"
-                  to="/annotations"
-                  filter={{ status: 'pending' }}
-                  count={pendingCounts.annotations}
-                />
+                {pendingCounts.total === 0 ? (
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 2,
+                    mb: 1,
+                    borderRadius: 1,
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <CheckCircle size={18} color="#10b981" />
+                    <Typography sx={{ color: '#10b981', fontWeight: 500 }}>
+                      All caught up! No pending items.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <>
+                    <QuickActionItem
+                      text="Review pending guides"
+                      to="/guides"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.guides}
+                    />
+                    <QuickActionItem
+                      text="Moderate media submissions"
+                      to="/media"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.media}
+                    />
+                    <QuickActionItem
+                      text="Review pending events"
+                      to="/events"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.events}
+                    />
+                    <QuickActionItem
+                      text="Review pending annotations"
+                      to="/annotations"
+                      filter={{ status: 'pending' }}
+                      count={pendingCounts.annotations}
+                    />
+                  </>
+                )}
                 <QuickActionItem
                   text="Add new character"
                   to="/characters/create"
@@ -383,6 +461,23 @@ export const Dashboard = () => {
                   </Typography>
                   <Typography variant="h5" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
                     {pendingCounts.total}
+                  </Typography>
+                </Box>
+                <Box sx={{
+                  p: 2,
+                  mb: 2,
+                  borderRadius: 1,
+                  backgroundColor: 'rgba(225, 29, 72, 0.05)',
+                  border: '1px solid rgba(225, 29, 72, 0.1)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 500 }}>
+                    Total Content Items
+                  </Typography>
+                  <Typography variant="h5" sx={{ color: '#e11d48', fontWeight: 'bold' }}>
+                    {totalContentItems}
                   </Typography>
                 </Box>
                 <QuickActionItem

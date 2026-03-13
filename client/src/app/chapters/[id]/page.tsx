@@ -1,4 +1,4 @@
-import React from 'react'
+import { cache } from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { api } from '../../../lib/api'
@@ -10,7 +10,7 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-async function getChapterData(id: string): Promise<Chapter | null> {
+const getChapterData = cache(async (id: string): Promise<Chapter | null> => {
   try {
     if (!id || isNaN(Number(id))) {
       throw new Error('Invalid chapter ID')
@@ -24,7 +24,7 @@ async function getChapterData(id: string): Promise<Chapter | null> {
     console.error('Error fetching chapter data:', error)
     return null
   }
-}
+})
 
 async function getChapterEvents(chapterNumber: number) {
   try {

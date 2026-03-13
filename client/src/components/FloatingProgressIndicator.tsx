@@ -10,6 +10,7 @@ import {
   Group,
   Modal,
   NumberInput,
+  Paper,
   Progress,
   Slider,
   Stack,
@@ -19,8 +20,8 @@ import {
   useMantineTheme,
   Loader
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
-import { BookOpen, Edit3, Check, X, User } from 'lucide-react'
+import { getEntityThemeColor } from '../lib/mantine-theme'
+import { BookOpen, Check, X, User, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'motion/react'
 import { useProgress } from '../providers/ProgressProvider'
@@ -28,6 +29,7 @@ import { useAuth } from '../providers/AuthProvider'
 import api from '../lib/api'
 
 const MAX_CHAPTER = 539
+const CIRCUMFERENCE = 2 * Math.PI * 30
 const successAnimationDuration = 1500
 
 const defaultPalette = {
@@ -39,8 +41,18 @@ const defaultPalette = {
   purple: '#7c3aed'
 }
 
+const sliderMarks = [
+  { value: 0, label: '0' },
+  { value: 100, label: '100' },
+  { value: 200, label: '200' },
+  { value: 300, label: '300' },
+  { value: 400, label: '400' },
+  { value: 539, label: '539' }
+]
+
 export const FloatingProgressIndicator: React.FC = () => {
   const theme = useMantineTheme()
+
   const palette = {
     red: theme.other?.usogui?.red ?? theme.colors.red?.[5] ?? defaultPalette.red,
     guide: theme.other?.usogui?.guide ?? theme.colors.green?.[6] ?? defaultPalette.guide,
@@ -65,12 +77,8 @@ export const FloatingProgressIndicator: React.FC = () => {
 
   const progressPercentage = Math.round((userProgress / MAX_CHAPTER) * 100)
   const modalProgressPercentage = Math.round((tempProgress / MAX_CHAPTER) * 100)
+  const progressDashoffset = CIRCUMFERENCE * (1 - progressPercentage / 100)
 
-  // Use white for the update button to distinguish from the red floating trigger
-  const updateButtonColor = '#ffffff'
-  const updateButtonTextColor = '#000000'
-  const successColor = palette.guide
-  // Keep red for the floating action button
   const solidRed = theme.colors.red[6]
 
   useEffect(() => {
@@ -94,7 +102,6 @@ export const FloatingProgressIndicator: React.FC = () => {
         setCurrentChapterTitle(title)
       }
     }
-
     run()
   }, [fetchChapterByNumber, userProgress])
 
@@ -105,7 +112,6 @@ export const FloatingProgressIndicator: React.FC = () => {
         setChapterTitle(title)
       }
     }
-
     run()
   }, [fetchChapterByNumber, tempProgress])
 
@@ -133,7 +139,6 @@ export const FloatingProgressIndicator: React.FC = () => {
       handleProgressChange(value)
       return
     }
-
     if (value === '') {
       setTempProgress(1)
     }
@@ -204,9 +209,8 @@ export const FloatingProgressIndicator: React.FC = () => {
     ? `Reading Progress: Chapter ${userProgress} - ${currentChapterTitle} (${progressPercentage}%)`
     : `Reading Progress: Chapter ${userProgress} (${progressPercentage}%)`
 
-  // Use dark mode by default (Mantine 7 uses CSS variables for theming)
-  const isDark = true // Always use dark mode for this component
-  
+  const isChanged = tempProgress !== userProgress
+
   return (
     <>
       <motion.div
@@ -217,13 +221,46 @@ export const FloatingProgressIndicator: React.FC = () => {
           position: 'fixed',
           bottom: 24,
           right: 24,
-          zIndex: 1000
+          zIndex: 1000,
+          width: 64,
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
+        {/* Circular progress ring */}
+        <svg
+          width={64}
+          height={64}
+          style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}
+        >
+          <circle
+            cx={32}
+            cy={32}
+            r={30}
+            fill="none"
+            stroke="rgba(255,255,255,0.15)"
+            strokeWidth={3}
+          />
+          <circle
+            cx={32}
+            cy={32}
+            r={30}
+            fill="none"
+            stroke={solidRed}
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={progressDashoffset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+        </svg>
+
         <Tooltip label={tooltipLabel} position="left" withinPortal>
           <ActionIcon
             aria-label="Open reading progress"
-            size={56}
+            size={52}
             radius="xl"
             onClick={handleOpen}
             styles={{
@@ -249,20 +286,20 @@ export const FloatingProgressIndicator: React.FC = () => {
                 justifyContent: 'center'
               }}
             >
-              <BookOpen size={24} />
+              <BookOpen size={22} />
               <Box
                 style={{
                   position: 'absolute',
-                  bottom: -4,
-                  right: -6,
+                  bottom: -5,
+                  right: -8,
                   minWidth:
                     userProgress > 999 ? 32 : userProgress > 99 ? 28 : userProgress > 9 ? 24 : 22,
                   height: 18,
-                  paddingLeft: 6,
-                  paddingRight: 6,
+                  paddingLeft: 5,
+                  paddingRight: 5,
                   borderRadius: 12,
-                  backgroundColor: solidRed,
-                  border: `2px solid ${theme.colors.dark[9]}`,
+                  backgroundColor: '#0a0a0a',
+                  border: `1.5px solid ${solidRed}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -270,7 +307,7 @@ export const FloatingProgressIndicator: React.FC = () => {
                     userProgress > 999 ? '9px' : userProgress > 99 ? '10px' : userProgress > 9 ? '11px' : '12px',
                   fontWeight: 'bold',
                   color: 'white',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)'
                 }}
               >
                 {userProgress}
@@ -319,26 +356,29 @@ export const FloatingProgressIndicator: React.FC = () => {
         radius="lg"
         centered
         transitionProps={{ transition: 'slide-up', duration: transitionDuration, timingFunction: transitionTimingFunction }}
-        overlayProps={{ color: theme.colors.dark[9], opacity: 0.65, blur: 4 }}
+        overlayProps={{ color: '#000000', opacity: 0.72, blur: 6 }}
         styles={{
           content: {
-            backgroundColor: isDark
-              ? 'rgba(16, 16, 16, 0.95)'
-              : 'rgba(255, 255, 255, 0.95)',
-            border: `1px solid ${theme.colors.red[5]}4d`,
-            backdropFilter: 'blur(16px)',
+            backgroundColor: 'rgba(10, 7, 7, 0.97)',
+            border: `1px solid ${theme.colors.red[7]}40`,
+            backdropFilter: 'blur(20px)',
+            boxShadow: `0 0 0 1px rgba(255,255,255,0.04) inset, 0 24px 64px rgba(0,0,0,0.6), 0 0 40px ${theme.colors.red[9]}30`,
             marginTop: '80px',
-            color: isDark ? theme.white : theme.colors.dark[8]
+            color: '#fff'
           },
           header: {
             backgroundColor: 'transparent',
-            borderBottom: `1px solid ${theme.colors.red[5]}33`,
+            borderBottom: `1px solid ${theme.colors.red[8]}30`,
             marginBottom: theme.spacing.sm,
             paddingBottom: theme.spacing.sm
           },
           title: {
             width: '100%',
-            color: isDark ? theme.white : theme.colors.dark[8]
+            color: '#fff'
+          },
+          close: {
+            color: 'rgba(255,255,255,0.5)',
+            '&:hover': { color: '#fff', backgroundColor: 'rgba(255,255,255,0.08)' }
           },
           body: {
             padding: `0 ${theme.spacing.lg}`
@@ -347,17 +387,30 @@ export const FloatingProgressIndicator: React.FC = () => {
         title={
           <Group justify="space-between" gap="md">
             <Group gap="sm">
-              <BookOpen size={24} color={theme.colors.red[5]} />
-              <Text fw={600} size="lg" c={isDark ? undefined : 'dark.8'}>
+              <BookOpen size={22} color={theme.colors.red[4]} />
+              <Text
+                fw={600}
+                size="lg"
+                style={{
+                  color: '#fff',
+                  letterSpacing: '0.01em'
+                }}
+              >
                 Reading Progress
               </Text>
             </Group>
             {user && (
               <Badge
-                style={{ color: getEntityThemeColor(theme, 'gamble') }}
                 variant="light"
                 radius="sm"
-                leftSection={<User size={14} />}
+                leftSection={<User size={12} />}
+                styles={{
+                  root: {
+                    backgroundColor: `${getEntityThemeColor(theme, 'gamble')}18`,
+                    border: `1px solid ${getEntityThemeColor(theme, 'gamble')}35`,
+                    color: getEntityThemeColor(theme, 'gamble')
+                  }
+                }}
               >
                 {user.username}
               </Badge>
@@ -366,94 +419,231 @@ export const FloatingProgressIndicator: React.FC = () => {
         }
       >
         <Stack gap="md" pb="xs">
-          <Stack gap="xs" align="center">
-            <Text component="p" size="lg" fw={700} c="red.5">
-              Chapter {tempProgress}
+
+          {/* Chapter info card */}
+          <Paper
+            radius="md"
+            p="md"
+            style={{
+              backgroundColor: 'rgba(225, 29, 72, 0.10)',
+              border: `1px solid ${theme.colors.red[7]}40`,
+              borderTop: `2px solid ${theme.colors.red[5]}80`,
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Subtle radial glow behind chapter number */}
+            <Box
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 120,
+                height: 120,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${theme.colors.red[9]}50 0%, transparent 70%)`,
+                pointerEvents: 'none'
+              }}
+            />
+            <Text
+              fw={800}
+              style={{
+                fontSize: rem(44),
+                lineHeight: 1,
+                color: theme.colors.red[4],
+                position: 'relative',
+                textShadow: `0 0 20px ${theme.colors.red[6]}60`
+              }}
+            >
+              {tempProgress}
             </Text>
             {chapterTitle && (
-              <Text size="sm" fw={500} c={isDark ? 'gray.1' : 'dark.6'} ta="center" lineClamp={2}>
+              <Text
+                size="sm"
+                fw={500}
+                lineClamp={2}
+                mt={6}
+                style={{ color: 'rgba(255,255,255,0.75)', position: 'relative' }}
+              >
                 {chapterTitle}
               </Text>
             )}
-            <Text size="xs" c="dimmed">
-              Volume {volumeInfo.volume}, Chapter {volumeInfo.chapterInVolume} • {modalProgressPercentage}%
-            </Text>
+            <Group justify="center" gap="xs" mt="sm" style={{ position: 'relative' }}>
+              <Badge
+                variant="outline"
+                size="sm"
+                radius="sm"
+                styles={{
+                  root: {
+                    borderColor: `${theme.colors.red[6]}60`,
+                    color: theme.colors.red[4]
+                  }
+                }}
+              >
+                Vol. {volumeInfo.volume} · Ch. {volumeInfo.chapterInVolume}/11
+              </Badge>
+              <Badge
+                variant="outline"
+                size="sm"
+                radius="sm"
+                styles={{
+                  root: {
+                    borderColor: 'rgba(255,255,255,0.18)',
+                    color: 'rgba(255,255,255,0.55)'
+                  }
+                }}
+              >
+                {modalProgressPercentage}% complete
+              </Badge>
+            </Group>
             <Progress
               value={modalProgressPercentage}
-              size={12}
+              size={6}
               radius="xl"
-              w="100%"
-              color={solidRed}
+              mt="sm"
+              style={{ position: 'relative' }}
+              styles={{
+                root: { backgroundColor: 'rgba(255,255,255,0.08)' },
+                section: {
+                  background: `linear-gradient(90deg, ${theme.colors.red[9]}, ${theme.colors.red[5]}, ${theme.colors.red[3]})`
+                }
+              }}
+            />
+          </Paper>
+
+          {/* Inline chapter selector */}
+          <Stack gap="xs">
+            <Group gap="sm" justify="center" align="flex-end">
+              <ActionIcon
+                variant="subtle"
+                size="lg"
+                radius="md"
+                onClick={() => handleProgressChange(tempProgress - 1)}
+                disabled={tempProgress <= 1 || isUpdating}
+                aria-label="Previous chapter"
+                styles={{
+                  root: {
+                    color: 'rgba(255,255,255,0.6)',
+                    '&:hover:not(:disabled)': {
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      color: '#fff'
+                    },
+                    '&:disabled': { color: 'rgba(255,255,255,0.2)' }
+                  }
+                }}
+              >
+                <ChevronLeft size={20} />
+              </ActionIcon>
+              <NumberInput
+                value={tempProgress}
+                onChange={handleNumberInputChange}
+                min={1}
+                max={MAX_CHAPTER}
+                disabled={isUpdating}
+                hideControls
+                radius="md"
+                size="md"
+                w={100}
+                label="Chapter"
+                styles={{
+                  input: {
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: `1.5px solid rgba(255,255,255,0.14)`,
+                    color: '#fff',
+                    fontSize: rem(16),
+                    textAlign: 'center',
+                    fontWeight: 700,
+                    '&:focus': {
+                      borderColor: theme.colors.red[5],
+                      boxShadow: `0 0 0 2px ${theme.colors.red[7]}40`
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      color: 'rgba(255,255,255,0.3)'
+                    }
+                  },
+                  label: {
+                    color: 'rgba(255,255,255,0.45)',
+                    fontWeight: 500,
+                    fontSize: rem(12),
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                    display: 'block'
+                  }
+                }}
+              />
+              <ActionIcon
+                variant="subtle"
+                size="lg"
+                radius="md"
+                onClick={() => handleProgressChange(tempProgress + 1)}
+                disabled={tempProgress >= MAX_CHAPTER || isUpdating}
+                aria-label="Next chapter"
+                styles={{
+                  root: {
+                    color: 'rgba(255,255,255,0.6)',
+                    '&:hover:not(:disabled)': {
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      color: '#fff'
+                    },
+                    '&:disabled': { color: 'rgba(255,255,255,0.2)' }
+                  }
+                }}
+              >
+                <ChevronRight size={20} />
+              </ActionIcon>
+            </Group>
+
+            <Slider
+              value={tempProgress}
+              onChange={handleProgressChange}
+              min={1}
+              max={MAX_CHAPTER}
+              step={1}
+              disabled={isUpdating}
+              color="red"
+              marks={sliderMarks}
+              styles={{
+                track: { backgroundColor: 'rgba(255,255,255,0.10)' },
+                bar: {
+                  background: `linear-gradient(90deg, ${theme.colors.red[8]}, ${theme.colors.red[5]})`
+                },
+                thumb: {
+                  backgroundColor: theme.colors.red[4],
+                  border: `2px solid ${theme.colors.red[6]}`,
+                  boxShadow: `0 0 8px ${theme.colors.red[6]}60`
+                },
+                markLabel: {
+                  fontSize: rem(10),
+                  color: 'rgba(255,255,255,0.35)',
+                  marginTop: 4
+                },
+                mark: {
+                  borderColor: 'rgba(255,255,255,0.15)',
+                  backgroundColor: 'rgba(255,255,255,0.15)'
+                }
+              }}
+              mb="md"
             />
           </Stack>
 
-          <NumberInput
-            value={tempProgress}
-            onChange={handleNumberInputChange}
-            min={1}
-            max={MAX_CHAPTER}
-            disabled={isUpdating}
-            hideControls
-            radius="md"
-            size="md"
-            label="Enter chapter number"
-            styles={{
-              input: {
-                backgroundColor: isDark
-                  ? theme.colors.dark[7]
-                  : theme.white,
-                border: `2px solid ${isDark ? theme.colors.dark[4] : theme.colors.gray[3]}`,
-                color: isDark ? theme.white : theme.colors.dark[8],
-                fontSize: rem(16),
-                textAlign: 'center',
-                '&:focus': {
-                  borderColor: theme.colors.red[5],
-                  boxShadow: `0 0 0 2px ${theme.colors.red[5]}33`
-                }
-              },
-              label: {
-                color: isDark ? theme.colors.gray[1] : theme.colors.dark[6],
-                fontWeight: 500,
-                fontSize: rem(13)
-              }
-            }}
-          />
-
-          <Group gap="xs" justify="center">
-            <Button
-              size="compact-sm"
-              variant="outline"
-              color="gray"
-              onClick={() => handleProgressChange(tempProgress - 1)}
-              disabled={tempProgress <= 1 || isUpdating}
-            >
-              Previous
-            </Button>
-            <Button
-              size="compact-sm"
-              variant="outline"
-              color="gray"
-              onClick={() => handleProgressChange(tempProgress + 1)}
-              disabled={tempProgress >= MAX_CHAPTER || isUpdating}
-            >
-              Next
-            </Button>
-          </Group>
-
           {error && (
             <Alert
-              style={{ color: getEntityThemeColor(theme, 'gamble') }}
               variant="light"
-              icon={<X size={14} />}
+              icon={<X size={14} color={theme.colors.red[4]} />}
               radius="sm"
               py="xs"
               styles={{
                 root: {
-                  backgroundColor: isDark
-                    ? `${theme.colors.red[9]}33`
-                    : `${theme.colors.red[0]}80`,
-                  border: `1px solid ${theme.colors.red[5]}66`
-                }
+                  backgroundColor: `${theme.colors.red[9]}45`,
+                  border: `1px solid ${theme.colors.red[7]}60`
+                },
+                message: { color: theme.colors.red[3] },
+                icon: { color: theme.colors.red[4] }
               }}
             >
               {error}
@@ -461,7 +651,7 @@ export const FloatingProgressIndicator: React.FC = () => {
           )}
 
           {!user && !error && (
-            <Text size="xs" c="dimmed" ta="center">
+            <Text size="xs" ta="center" style={{ color: 'rgba(255,255,255,0.30)' }}>
               Progress saved locally. Sign in to sync across devices.
             </Text>
           )}
@@ -470,25 +660,35 @@ export const FloatingProgressIndicator: React.FC = () => {
             <Button
               component={Link}
               href={`/chapters/${tempProgress}`}
-              variant="outline"
-              color="gray"
+              variant="subtle"
               leftSection={<BookOpen size={14} />}
               onClick={handleClose}
               fullWidth
               size="sm"
               radius="md"
+              styles={{
+                root: {
+                  color: 'rgba(255,255,255,0.60)',
+                  border: `1px solid rgba(255,255,255,0.10)`,
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    borderColor: 'rgba(255,255,255,0.20)'
+                  }
+                }
+              }}
             >
               Read Chapter {tempProgress}
             </Button>
 
             <Button
               variant="filled"
-              color={tempProgress === userProgress ? 'gray' : undefined}
               onClick={handleSave}
-              disabled={isUpdating || tempProgress === userProgress}
+              disabled={isUpdating || !isChanged}
               leftSection={
                 isUpdating ? (
-                  <Loader size="xs" color={updateButtonTextColor} />
+                  <Loader size="xs" color="white" />
                 ) : (
                   <Check size={14} />
                 )
@@ -499,17 +699,26 @@ export const FloatingProgressIndicator: React.FC = () => {
               styles={{
                 root: {
                   fontWeight: 600,
-                  backgroundColor: tempProgress !== userProgress ? updateButtonColor : undefined,
-                  color: tempProgress !== userProgress ? updateButtonTextColor : undefined,
-                  '&:hover': {
-                    backgroundColor: tempProgress !== userProgress ? '#f5f5f5' : undefined
+                  backgroundColor: isChanged ? theme.colors.red[6] : 'rgba(255,255,255,0.07)',
+                  color: isChanged ? '#fff' : 'rgba(255,255,255,0.30)',
+                  border: isChanged ? `1px solid ${theme.colors.red[5]}60` : '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: isChanged ? `0 4px 16px ${theme.colors.red[8]}50` : 'none',
+                  transition: 'all 200ms ease',
+                  '&:hover:not(:disabled)': {
+                    backgroundColor: theme.colors.red[5],
+                    boxShadow: `0 6px 20px ${theme.colors.red[7]}60`
+                  },
+                  '&:disabled': {
+                    backgroundColor: 'rgba(255,255,255,0.07)',
+                    color: 'rgba(255,255,255,0.30)',
+                    border: '1px solid rgba(255,255,255,0.08)'
                   }
                 }
               }}
             >
               {isUpdating
                 ? 'Updating...'
-                : tempProgress !== userProgress
+                : isChanged
                   ? 'Update Progress'
                   : 'Progress Saved'}
             </Button>

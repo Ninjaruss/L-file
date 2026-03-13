@@ -101,7 +101,10 @@ export function SearchToolbar({
                 boxShadow: `0 4px 16px rgba(0, 0, 0, 0.4), -4px 0 16px ${accentColor}15`
               }
             : {
-                backgroundColor: 'transparent'
+                backgroundColor: 'rgba(12, 8, 8, 0.40)',
+          backdropFilter: 'blur(6px)',
+          borderRadius: rem(12),
+          border: `1px solid ${accentColor}15`
               })
         }}
       >
@@ -149,14 +152,21 @@ export function SearchToolbar({
               }
               styles={{
                 input: {
+                  backgroundColor: 'rgba(15, 10, 10, 0.65)',
+                  border: `1px solid ${accentColor}35`,
+                  color: '#fff',
                   fontSize: rem(16),
                   paddingLeft: rem(50),
                   paddingRight: rem(50),
+                  backdropFilter: 'blur(8px)',
+                  transition: 'border-color 200ms ease, box-shadow 200ms ease',
                   '&:focus': {
                     borderColor: accentColor,
-                    boxShadow: `0 0 0 2px ${accentColor}28, 0 0 12px ${accentColor}15`
-                  }
-                }
+                    boxShadow: `0 0 0 2px ${accentColor}20, 0 0 16px ${accentColor}18`
+                  },
+                  '&::placeholder': { color: `${accentColor}60` }
+                },
+                section: { color: `${accentColor}90` }
               }}
             />
           </Box>
@@ -173,6 +183,10 @@ export function SearchToolbar({
               radius="xl"
               styles={{
                 input: {
+                  backgroundColor: 'rgba(15, 10, 10, 0.65)',
+                  border: `1px solid ${accentColor}35`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
                   fontSize: rem(14),
                   '&:focus': { borderColor: accentColor }
                 }
@@ -181,7 +195,21 @@ export function SearchToolbar({
           )}
 
           {/* Entity-specific filters */}
-          {children}
+          {children && (
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: rem(8),
+                paddingLeft: rem(12),
+                borderLeft: `2px solid ${accentColor}30`,
+                flexWrap: 'wrap',
+                flex: '1 1 auto'
+              }}
+            >
+              {children}
+            </Box>
+          )}
 
           {/* View mode toggle */}
           {onViewModeChange && (

@@ -257,22 +257,24 @@ export function PlayingCard({
 
         <Text
           size="sm"
-          fw={400}
+          fw={600}
           ta="center"
           className={noTruncate ? undefined : classes.name}
           style={{
             position: 'relative',
-            lineHeight: 1.3,
+            lineHeight: 1.4,
             fontSize: rem(15),
             color: '#ffffff',
-            textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-            background: `linear-gradient(135deg, ${accentColor}ee 0%, ${accentColor}cc 60%, ${accentColor}aa 100%)`,
+            textShadow: '0 1px 0 rgba(0,0,0,1), 0 2px 6px rgba(0,0,0,0.9)',
+            background: 'linear-gradient(180deg, rgba(6,4,4,0.85) 0%, rgba(12,8,8,0.92) 100%)',
             backdropFilter: 'blur(4px)',
             borderRadius: rem(6),
             padding: `${rem(6)} ${rem(10)}`,
-            border: `1px solid ${accentColor}60`,
+            border: `1px solid ${accentColor}55`,
+            boxShadow: `0 0 10px ${accentColor}25, inset 0 1px 0 rgba(255,255,255,0.06)`,
             fontFamily: 'var(--font-opti-goudy-text), serif',
-            fontWeight: 400,
+            fontWeight: 600,
+            letterSpacing: '0.025em',
           }}
         >
           {name}
