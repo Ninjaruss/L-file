@@ -235,31 +235,31 @@ export const FloatingProgressIndicator: React.FC = () => {
         {/* Dashed outer orbit ring */}
         <div className="fpi-outer-ring" aria-hidden="true" />
 
-        {/* Circular progress ring */}
+        {/* Circular progress ring — rendered above button via z-index */}
         <svg
           width={64}
           height={64}
-          style={{ position: 'absolute', top: 5, left: 5, transform: 'rotate(-90deg)' }}
+          style={{ position: 'absolute', top: 5, left: 5, transform: 'rotate(-90deg)', zIndex: 1, pointerEvents: 'none' }}
         >
           <circle
             cx={32}
             cy={32}
             r={RING_RADIUS}
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={3}
+            stroke="rgba(0,0,0,0.5)"
+            strokeWidth={4}
           />
           <circle
             cx={32}
             cy={32}
             r={RING_RADIUS}
             fill="none"
-            stroke={solidRed}
-            strokeWidth={3.5}
+            stroke="#ffffff"
+            strokeWidth={3}
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={progressDashoffset}
-            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+            style={{ transition: 'stroke-dashoffset 0.5s ease', opacity: 0.9 }}
           />
         </svg>
 
@@ -279,42 +279,38 @@ export const FloatingProgressIndicator: React.FC = () => {
               }
             }}
           >
-            <Box
-              style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <BookOpen size={22} />
-              <Box
-                style={{
-                  position: 'absolute',
-                  bottom: -5,
-                  right: -8,
-                  height: 18,
-                  paddingLeft: 5,
-                  paddingRight: 5,
-                  borderRadius: 12,
-                  backgroundColor: 'rgba(7,7,7,0.95)',
-                  border: `1.5px solid ${solidRed}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: userProgress > 99 ? '10px' : '12px',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  letterSpacing: '0.05em',
-                  fontFamily: 'var(--font-opti-goudy-text)',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)'
-                }}
-              >
-                {userProgress}
-              </Box>
-            </Box>
+            <BookOpen size={22} />
           </ActionIcon>
         </Tooltip>
+
+        {/* Chapter badge — positioned outside ActionIcon to avoid circular clip */}
+        <Box
+          style={{
+            position: 'absolute',
+            bottom: 2,
+            right: 0,
+            height: 18,
+            minWidth: 22,
+            paddingLeft: 5,
+            paddingRight: 5,
+            borderRadius: 10,
+            backgroundColor: 'rgba(7,7,7,0.96)',
+            border: `1.5px solid ${solidRed}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: userProgress > 99 ? '9px' : '11px',
+            fontWeight: 700,
+            fontFamily: 'var(--font-noto-sans)',
+            color: '#ffffff',
+            letterSpacing: '0.02em',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
+            pointerEvents: 'none',
+            zIndex: 2
+          }}
+        >
+          {userProgress}
+        </Box>
       </motion.div>
 
       <AnimatePresence>
