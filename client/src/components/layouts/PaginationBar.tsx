@@ -77,7 +77,7 @@ export function PaginationBar({
         {/* Results info */}
         <Text
           className="eyebrow-label"
-          style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.68rem' }}
+          style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.68rem', textShadow: `0 0 12px ${accentColor}30` }}
         >
           {start}–{end} of {total} {entityName.toUpperCase()}
         </Text>
@@ -94,6 +94,9 @@ export function PaginationBar({
             styles={{
               root: {
                 '--pagination-accent': accentColor,
+                '--pagination-accent-start': `${accentColor}50`,
+                '--pagination-accent-end': `${accentColor}25`,
+                '--pagination-glow': `${accentColor}35`,
                 '--pagination-accent-hover-bg': `${accentColor}20`,
                 '--pagination-accent-hover-border': `${accentColor}40`
               } as React.CSSProperties,
@@ -104,7 +107,7 @@ export function PaginationBar({
                 transition: 'all 200ms ease',
                 minWidth: rem(36),
                 height: rem(36),
-                borderRadius: '4px'
+                borderRadius: '6px',
               },
               dots: {
                 color: 'rgba(255, 255, 255, 0.3)'
