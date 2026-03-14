@@ -3,11 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Card,
-  CloseButton,
   Container,
   Grid,
   Group,
@@ -20,23 +18,25 @@ import {
   Text,
   TextInput,
   Textarea,
-  ThemeIcon,
   Title,
   rem,
   useMantineTheme
 } from '@mantine/core'
 import { setTabAccentColors } from '../../lib/mantine-theme'
-import { FileText, Send, Plus, BookOpen, Eye, Check } from 'lucide-react'
+import { FileText, Send, BookOpen, Eye, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../providers/AuthProvider'
 import { FormProgressIndicator, FormStep } from '../../components/FormProgressIndicator'
+import { FormSection } from '../../components/FormSection'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import EntityEmbedHelperWithSearch from '../../components/EntityEmbedHelperWithSearch'
 import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
 import SubmissionGuidelines from '../../components/SubmissionGuidelines'
 import SubmissionSuccess from '../../components/SubmissionSuccess'
+import SubmitPageHeader from '../../components/SubmitPageHeader'
+import { getInputStyles, getMultiSelectStyles, getDimmedInputStyles } from '../../lib/submitFormStyles'
 
 const MIN_TITLE_LENGTH = 5
 const MIN_DESCRIPTION_LENGTH = 20
@@ -81,41 +81,25 @@ export default function SubmitGuidePageContent() {
   const [loadingData, setLoadingData] = useState(true)
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write')
 
-  // Set tab accent colors for guide entity (since we're submitting guides)
-  useEffect(() => {
-    setTabAccentColors('guide')
-  }, [])
+  useEffect(() => { setTabAccentColors('guide') }, [])
   const contentRef = useRef<HTMLTextAreaElement | null>(null)
 
-  const guideAccent = theme.other?.usogui?.guide ?? theme.colors.green[6]
+  const accentColor = theme.other?.usogui?.guide ?? theme.colors.green[6]
+  const inputStyles = getInputStyles(theme, accentColor)
+  const multiSelectStyles = getMultiSelectStyles(theme, accentColor)
+  const dimmedInputStyles = getDimmedInputStyles(theme)
 
   const handleInputChange = (field: string, value: unknown) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-
   const validateForm = () => {
-    if (!formData.title.trim()) {
-      return 'Title is required'
-    }
-    if (formData.title.trim().length < MIN_TITLE_LENGTH) {
-      return 'Please provide a more descriptive title'
-    }
-    if (!formData.description.trim()) {
-      return 'Description is required'
-    }
-    if (formData.description.trim().length < MIN_DESCRIPTION_LENGTH) {
-      return 'Please add more detail to your description'
-    }
-    if (!formData.content.trim()) {
-      return 'Content is required'
-    }
-    if (formData.content.trim().length < MIN_CONTENT_LENGTH) {
-      return 'Your guide content needs more detail'
-    }
+    if (!formData.title.trim()) return 'Title is required'
+    if (formData.title.trim().length < MIN_TITLE_LENGTH) return 'Please provide a more descriptive title'
+    if (!formData.description.trim()) return 'Description is required'
+    if (formData.description.trim().length < MIN_DESCRIPTION_LENGTH) return 'Please add more detail to your description'
+    if (!formData.content.trim()) return 'Content is required'
+    if (formData.content.trim().length < MIN_CONTENT_LENGTH) return 'Your guide content needs more detail'
     return null
   }
 
@@ -125,10 +109,7 @@ export default function SubmitGuidePageContent() {
     setShowSuccess(false)
 
     const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+    if (validationError) { setError(validationError); return }
 
     setLoading(true)
     try {
@@ -143,43 +124,23 @@ export default function SubmitGuidePageContent() {
       }
 
       if (isEditMode && editGuideId) {
-        // Edit mode: update existing guide
         await api.updateGuide(Number(editGuideId), guideData)
         setShowSuccess(true)
       } else {
-        // Create mode: submit new guide
         await api.createGuide({
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          content: formData.content.trim(),
-          characterIds: formData.characterIds.length ? formData.characterIds : undefined,
-          arcId: formData.arcId ?? undefined,
-          gambleIds: formData.gambleIds.length ? formData.gambleIds : undefined,
+          ...guideData,
           tags: formData.tags.length ? formData.tags : undefined
         })
         setShowSuccess(true)
-        setFormData({
-          title: '',
-          description: '',
-          content: '',
-          characterIds: [],
-          arcId: null,
-          gambleIds: [],
-          tags: []
-        })
+        setFormData({ title: '', description: '', content: '', characterIds: [], arcId: null, gambleIds: [], tags: [] })
         setActiveTab('write')
       }
     } catch (submissionError: unknown) {
-      if (submissionError instanceof Error) {
-        setError(submissionError.message)
-      } else {
-        setError(isEditMode ? 'Failed to update guide. Please try again.' : 'Failed to submit guide. Please try again.')
-      }
+      setError(submissionError instanceof Error ? submissionError.message : (isEditMode ? 'Failed to update guide. Please try again.' : 'Failed to submit guide. Please try again.'))
     } finally {
       setLoading(false)
     }
   }
-
 
   const handleInsertEmbed = (embedCode: string) => {
     const textarea = contentRef.current
@@ -187,12 +148,10 @@ export default function SubmitGuidePageContent() {
       setFormData((prev) => ({ ...prev, content: prev.content + embedCode }))
       return
     }
-
     const currentValue = formData.content
     const cursorPosition = textarea.selectionStart ?? currentValue.length
     const newValue = `${currentValue.slice(0, cursorPosition)}${embedCode}${currentValue.slice(cursorPosition)}`
     setFormData((prev) => ({ ...prev, content: newValue }))
-
     requestAnimationFrame(() => {
       textarea.focus()
       const offset = cursorPosition + embedCode.length
@@ -220,18 +179,15 @@ export default function SubmitGuidePageContent() {
         setLoadingData(false)
       }
     }
-
     loadData()
   }, [])
 
-  // Fetch existing guide data when in edit mode
   useEffect(() => {
     if (isEditMode && editGuideId) {
       const fetchGuideData = async () => {
         try {
           const guide = await api.getMyGuideSubmission(Number(editGuideId))
           setExistingGuide(guide)
-          // Populate form with existing data
           setFormData({
             title: guide.title || '',
             description: guide.description || '',
@@ -253,9 +209,11 @@ export default function SubmitGuidePageContent() {
   if (authLoading || loadingData) {
     return (
       <Container size="md" py="xl">
-        <Box style={{ display: 'flex', justifyContent: 'center' }}>
-          <Loader size="lg" />
-        </Box>
+        <Stack align="center" gap="md" py="xl">
+          <Box style={{ color: accentColor }}><FileText size={32} /></Box>
+          <Loader size="sm" color={accentColor} />
+          <Text size="sm" c="dimmed">Loading…</Text>
+        </Stack>
       </Container>
     )
   }
@@ -263,377 +221,255 @@ export default function SubmitGuidePageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert
-          variant="light"
+        <Box
           style={{
-            backgroundColor: 'rgba(245, 124, 0, 0.1)',
-            borderColor: 'rgba(245, 124, 0, 0.3)',
-            color: '#ffb74d'
+            backgroundColor: `${accentColor}0d`,
+            border: `1px solid ${accentColor}35`,
+            borderRadius: rem(12),
+            padding: rem(32),
+            textAlign: 'center'
           }}
         >
-          <Text c="#ffb74d">Please log in to submit a guide.</Text>
-        </Alert>
+          <Box mb="md" style={{ color: accentColor }}><FileText size={36} /></Box>
+          <Title order={4} style={{ fontFamily: 'var(--font-opti-goudy-text)', fontWeight: 400 }} mb="xs">
+            Sign in to submit a guide
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            You need to be logged in to share your knowledge.
+          </Text>
+          <Button component={Link} href="/login" style={{ backgroundColor: accentColor, color: '#fff' }}>
+            Log In
+          </Button>
+        </Box>
       </Container>
     )
   }
 
   const isFormValid = !validateForm()
 
-  // Calculate progress steps for the indicator
   const progressSteps: FormStep[] = [
     { label: 'Title', completed: formData.title.trim().length >= MIN_TITLE_LENGTH, required: true },
     { label: 'Description', completed: formData.description.trim().length >= MIN_DESCRIPTION_LENGTH, required: true },
     { label: 'Content', completed: formData.content.trim().length >= MIN_CONTENT_LENGTH, required: true }
   ]
 
-  const characterOptions = characters.map((character) => ({ value: character.id.toString(), label: character.name }))
-  const arcOptions = arcs.map((arc) => ({ value: arc.id.toString(), label: arc.name }))
-  const gambleOptions = gambles.map((gamble) => ({ value: gamble.id.toString(), label: gamble.name }))
-  const tagOptions = tags.map((tag) => ({ value: tag.name, label: tag.name }))
+  const characterOptions = characters.map((c) => ({ value: c.id.toString(), label: c.name }))
+  const arcOptions = arcs.map((a) => ({ value: a.id.toString(), label: a.name }))
+  const gambleOptions = gambles.map((g) => ({ value: g.id.toString(), label: g.name }))
+  const tagOptions = tags.map((t) => t.name)
 
   return (
     <Container size="md" py="xl">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Box
-          mb="xl"
+      <SubmitPageHeader
+        label="Guide Submission"
+        title={isEditMode ? 'Edit Guide' : 'Write a Guide'}
+        description={isEditMode ? 'Update your guide and resubmit for review' : 'Share your knowledge and insights about Usogui with the community'}
+        icon={<FileText size={22} />}
+        accentColor={accentColor}
+        editMode={isEditMode}
+      />
+
+      <SubmissionGuidelines type="guide" accentColor={accentColor} />
+
+      {isEditMode && existingGuide?.status === 'rejected' && existingGuide?.rejectionReason && (
+        <Alert
+          variant="light"
+          mb="md"
+          icon={<AlertTriangle size={16} />}
           style={{
-            borderBottom: `1px solid ${guideAccent}25`,
-            paddingBottom: rem(24),
-            position: 'relative',
-            overflow: 'hidden'
+            backgroundColor: 'rgba(245, 124, 0, 0.08)',
+            borderColor: 'rgba(245, 124, 0, 0.3)'
           }}
         >
-          {/* Top gradient stripe */}
-          <Box style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0,
-            height: rem(2),
-            background: `linear-gradient(90deg, ${guideAccent}, transparent)`,
-            opacity: 0.8
-          }} />
+          <Text size="sm" c="#ffb74d" fw={600} mb={4}>Rejection Reason</Text>
+          <Text size="sm" c="#ffb74d">{existingGuide.rejectionReason}</Text>
+        </Alert>
+      )}
 
-          <Group gap="md" align="flex-start" mt="md">
-            <ThemeIcon size={48} radius="md" variant="light"
-              style={{ backgroundColor: `${guideAccent}18`, color: guideAccent, flexShrink: 0 }}
-            >
-              <FileText size={24} color={guideAccent} />
-            </ThemeIcon>
-
-            <Box style={{ flex: 1 }}>
-              <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: guideAccent, marginBottom: rem(4) }}>
-                GUIDE SUBMISSION
-              </Text>
-              <Title order={1}
-                style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
-              >
-                {isEditMode ? 'Edit Guide' : 'Write a Guide'}
-              </Title>
-              <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
-                {isEditMode ? 'Update your guide and resubmit for review' : 'Share your knowledge and insights about Usogui with the community'}
-              </Text>
-            </Box>
-          </Group>
-        </Box>
-
-        <SubmissionGuidelines type="guide" />
-
-        {isEditMode && existingGuide?.status === 'rejected' && existingGuide?.rejectionReason && (
-          <Alert
-            variant="light"
-            mb="md"
-            style={{
-              backgroundColor: 'rgba(245, 124, 0, 0.1)',
-              borderColor: 'rgba(245, 124, 0, 0.3)',
-              color: '#ffb74d'
-            }}
-          >
-            <Text size="sm" c="#ffb74d" fw={600} mb={4}>Rejection Reason:</Text>
-            <Text size="sm" c="#ffb74d">{existingGuide.rejectionReason}</Text>
-          </Alert>
-        )}
-
-        {error && (
-          <Alert
-            variant="light"
-            mb="md"
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderColor: 'rgba(239, 68, 68, 0.3)',
-              color: '#fca5a5'
-            }}
-          >
-            <Text size="sm" c="#f87171">{error}</Text>
-          </Alert>
-        )}
-
-        {showSuccess && (
-          <SubmissionSuccess
-            type="guide"
-            isEdit={isEditMode}
-            onSubmitAnother={() => {
-              setShowSuccess(false)
-              setFormData({
-                title: '',
-                description: '',
-                content: '',
-                characterIds: [],
-                arcId: null,
-                gambleIds: [],
-                tags: []
-              })
-              window.scrollTo({ top: 0, behavior: 'smooth' })
-            }}
-          />
-        )}
-
-        <FormProgressIndicator steps={progressSteps} accentColor={guideAccent} />
-
-        <Card
-          className="guide-card"
-          shadow="lg"
-          radius="md"
-          withBorder
+      {error && (
+        <Alert
+          variant="light"
+          mb="md"
+          icon={<AlertTriangle size={16} />}
           style={{
-            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-            color: theme.colors.gray?.[0] ?? '#fff',
-            borderColor: `${guideAccent}40`,
-            boxShadow: `0 4px 12px rgba(81, 207, 102, 0.1)`
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            borderColor: 'rgba(239, 68, 68, 0.3)'
           }}
         >
-          <form onSubmit={handleSubmit}>
-            <Stack gap="xl" p="xl">
-              <Stack gap="md">
-                <TextInput
-                  label="Guide Title"
-                  placeholder="e.g., 'Understanding the Rules of Air Poker' or 'Character Analysis: Baku Madarame'"
-                  value={formData.title}
-                  onChange={(event) => handleInputChange('title', event.currentTarget.value)}
+          <Text size="sm" c="#f87171">{error}</Text>
+        </Alert>
+      )}
+
+      {showSuccess && (
+        <SubmissionSuccess
+          type="guide"
+          isEdit={isEditMode}
+          accentColor={accentColor}
+          onSubmitAnother={() => {
+            setShowSuccess(false)
+            setFormData({ title: '', description: '', content: '', characterIds: [], arcId: null, gambleIds: [], tags: [] })
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        />
+      )}
+
+      {!showSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+        >
+          <FormProgressIndicator steps={progressSteps} accentColor={accentColor} />
+
+          <Card
+            shadow="lg"
+            radius="md"
+            withBorder
+            style={{
+              backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+              borderColor: `${accentColor}35`,
+              boxShadow: `0 4px 24px ${accentColor}12`
+            }}
+          >
+            <Box
+              style={{
+                height: rem(3),
+                background: `linear-gradient(90deg, ${accentColor}70, transparent)`,
+                borderRadius: `${rem(6)} ${rem(6)} 0 0`,
+                marginBottom: rem(-3)
+              }}
+            />
+            <form onSubmit={handleSubmit}>
+              <Stack gap="xl" p="xl">
+                <FormSection
+                  title="Guide Details"
+                  description="Provide a clear title and description for your guide"
+                  icon={<FileText size={18} color={accentColor} />}
+                  accentColor={accentColor}
                   required
-                  error={
-                    formData.title.length > 0 && formData.title.trim().length < MIN_TITLE_LENGTH
-                      ? 'Please provide a more descriptive title'
-                      : undefined
-                  }
-                  description="Choose a clear, descriptive title for your guide"
-                  styles={{
-                    input: {
-                      backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                      color: theme.colors.gray?.[0] ?? '#fff',
-                      borderColor: 'rgba(255,255,255,0.06)',
-                      '&:focus': {
-                        borderColor: guideAccent,
-                        boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                      }
-                    },
-                    label: {
-                      color: guideAccent,
-                      fontWeight: 600
-                    }
-                  }}
-                />
-
-                <Textarea
-                  label="Guide Description"
-                  placeholder="Provide a brief summary of what your guide covers. This will be shown in guide listings to help readers understand what they'll learn."
-                  value={formData.description}
-                  onChange={(event) => handleInputChange('description', event.currentTarget.value)}
-                  required
-                  minRows={3}
-                  autosize
-                  error={
-                    formData.description.length > 0 && formData.description.trim().length < MIN_DESCRIPTION_LENGTH
-                      ? 'Please add more detail to your description'
-                      : undefined
-                  }
-                  description="Write a compelling description that summarizes your guide"
-                  styles={{
-                    input: {
-                      backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                      color: theme.colors.gray?.[0] ?? '#fff',
-                      borderColor: 'rgba(255,255,255,0.06)',
-                      '&:focus': {
-                        borderColor: guideAccent,
-                        boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                      }
-                    },
-                    label: {
-                      color: guideAccent,
-                      fontWeight: 600
-                    }
-                  }}
-                />
-              </Stack>
-
-              <Stack gap="md">
-                <EntityEmbedHelperWithSearch
-                  onInsertEmbed={handleInsertEmbed}
-                />
-
-                <Box
-                  style={{
-                    backgroundColor: theme.colors.dark?.[6] ?? '#0a0a0a',
-                    color: theme.colors.gray?.[0] ?? '#fff',
-                    borderRadius: rem(12),
-                    border: `1px solid ${guideAccent}40`,
-                    padding: rem(16)
-                  }}
+                  stepNumber={1}
                 >
-                  <Tabs
-                    value={activeTab}
-                    onChange={(value) => setActiveTab(value as 'write' | 'preview')}
-                    styles={{
-                      tab: {
-                        padding: rem(12),
-                        fontSize: rem(14),
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        borderRadius: rem(6),
-                        transition: 'all 150ms ease',
-                        '&:hover': {
-                          backgroundColor: 'rgba(81, 207, 102, 0.08)',
-                          color: 'rgba(255, 255, 255, 0.95)',
-                          borderColor: 'rgba(81, 207, 102, 0.4)'
-                        },
-                        '&[dataActive="true"]': {
-                          color: '#ffffff',
-                          backgroundColor: 'rgba(81, 207, 102, 0.12)',
-                          borderColor: 'rgba(81, 207, 102, 0.8)',
-                          fontWeight: 600
-                        }
-                      },
-                    }}
-                  >
-                    <Tabs.List>
-                      <Tabs.Tab value="write" leftSection={<FileText size={16} />}>
-                        Write
-                      </Tabs.Tab>
-                      <Tabs.Tab value="preview" leftSection={<Eye size={16} />}>
-                        Preview
-                      </Tabs.Tab>
-                    </Tabs.List>
+                  <Stack gap="md">
+                    <TextInput
+                      label="Guide Title"
+                      placeholder="e.g., 'Understanding the Rules of Air Poker'"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.currentTarget.value)}
+                      required
+                      error={formData.title.length > 0 && formData.title.trim().length < MIN_TITLE_LENGTH ? 'Please provide a more descriptive title' : undefined}
+                      description="Choose a clear, descriptive title"
+                      styles={inputStyles}
+                    />
+                    <Textarea
+                      label="Guide Description"
+                      placeholder="Provide a brief summary of what your guide covers…"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.currentTarget.value)}
+                      required
+                      minRows={3}
+                      autosize
+                      error={formData.description.length > 0 && formData.description.trim().length < MIN_DESCRIPTION_LENGTH ? 'Please add more detail to your description' : undefined}
+                      description="Write a compelling description that summarizes your guide"
+                      styles={inputStyles}
+                    />
+                  </Stack>
+                </FormSection>
 
-                    <Tabs.Panel value="write" p="xl">
-                      <Textarea
-                        label="Guide Content"
-                        placeholder="Write your guide here. Use Markdown for formatting and embed entities using {{entity_type:entity_id}} syntax."
-                        value={formData.content}
-                        onChange={(event) => handleInputChange('content', event.currentTarget.value)}
-                        required
-                        minRows={16}
-                        autosize
-                        error={
-                          formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH
-                            ? 'Your guide content needs more detail'
-                            : undefined
-                        }
-                        description="Write your detailed guide content with entity embeds"
-                        ref={contentRef}
-                        styles={{
-                          input: {
-                            padding: rem(12),
-                            fontSize: rem(14),
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)'
-                          }
-                        }}
-                      />
-                    </Tabs.Panel>
+                <FormSection
+                  title="Guide Content"
+                  description="Write your guide using Markdown. Use entity embeds to reference characters, arcs, gambles."
+                  icon={<BookOpen size={18} color={accentColor} />}
+                  accentColor={accentColor}
+                  required
+                  stepNumber={2}
+                >
+                  <Stack gap="md">
+                    <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
 
-                    <Tabs.Panel value="preview" p="xl">
-                      <Stack gap="md">
-                        <Title order={4}>Preview</Title>
-                        <Box
-                          style={{
-                            border: `1px solid ${theme.other?.usogui?.guide ? `${theme.other.usogui.guide}40` : 'rgba(255,255,255,0.06)'}`,
-                            borderRadius: rem(12),
-                            padding: rem(16),
-                            minHeight: rem(320),
-                            backgroundColor: theme.colors.dark?.[7] ?? 'rgba(10, 10, 10, 0.6)'
-                          }}
-                        >
-                          {formData.content ? (
-                            <EnhancedSpoilerMarkdown content={formData.content} compactEntityCards={false} />
-                          ) : (
-                            <Text c="dimmed" fs="italic">
-                              Start writing your guide to see the preview with entity embeds...
-                            </Text>
-                          )}
-                        </Box>
-                      </Stack>
-                    </Tabs.Panel>
-                  </Tabs>
-                </Box>
-              </Stack>
+                    <Box
+                      style={{
+                        backgroundColor: theme.colors.dark?.[6] ?? '#0a0a0a',
+                        borderRadius: rem(10),
+                        border: `1px solid ${accentColor}35`,
+                        padding: rem(16)
+                      }}
+                    >
+                      <Tabs
+                        value={activeTab}
+                        onChange={(value) => setActiveTab(value as 'write' | 'preview')}
+                      >
+                        <Tabs.List>
+                          <Tabs.Tab value="write" leftSection={<FileText size={15} />}>Write</Tabs.Tab>
+                          <Tabs.Tab value="preview" leftSection={<Eye size={15} />}>Preview</Tabs.Tab>
+                        </Tabs.List>
 
-              <Box
-                style={{
-                  padding: rem(24),
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  borderRadius: rem(12),
-                  border: `1px solid ${guideAccent}33`
-                }}
-              >
-                <Stack gap="md">
-                  <Group gap="sm">
-                    <BookOpen size={20} color={guideAccent} />
-                    <Text fw={600} c={guideAccent}>
-                      Related Content (Optional)
-                    </Text>
-                  </Group>
+                        <Tabs.Panel value="write" p="md">
+                          <Textarea
+                            label="Guide Content"
+                            placeholder="Write your guide here. Use Markdown for formatting and embed entities using {{entity_type:entity_id}} syntax."
+                            value={formData.content}
+                            onChange={(e) => handleInputChange('content', e.currentTarget.value)}
+                            required
+                            minRows={16}
+                            autosize
+                            error={formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH ? 'Your guide content needs more detail' : undefined}
+                            description={`${formData.content.length}/${MIN_CONTENT_LENGTH}+ characters`}
+                            ref={contentRef}
+                            styles={{
+                              input: { ...inputStyles.input, padding: rem(12), fontSize: rem(14) },
+                              label: inputStyles.label
+                            }}
+                          />
+                        </Tabs.Panel>
 
-                  <Grid gutter="lg">
-                    <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                        <Tabs.Panel value="preview" p="md">
+                          <Stack gap="md">
+                            <Title order={5} c="dimmed">Preview</Title>
+                            <Box
+                              style={{
+                                border: `1px solid rgba(255,255,255,0.06)`,
+                                borderRadius: rem(10),
+                                padding: rem(16),
+                                minHeight: rem(280),
+                                backgroundColor: theme.colors.dark?.[7] ?? '#0a0a0a'
+                              }}
+                            >
+                              {formData.content ? (
+                                <EnhancedSpoilerMarkdown content={formData.content} compactEntityCards={false} />
+                              ) : (
+                                <Text c="dimmed" fs="italic" size="sm">Start writing your guide to see the preview…</Text>
+                              )}
+                            </Box>
+                          </Stack>
+                        </Tabs.Panel>
+                      </Tabs>
+                    </Box>
+                  </Stack>
+                </FormSection>
+
+                <FormSection
+                  title="Related Content"
+                  description="Optionally link your guide to relevant characters, arcs, gambles, and tags"
+                  icon={<BookOpen size={18} color={accentColor} />}
+                  accentColor={accentColor}
+                  stepNumber={3}
+                >
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <MultiSelect
                         label="Characters"
                         placeholder="Select related characters"
                         data={characterOptions}
                         value={formData.characterIds.map(String)}
-                        onChange={(values) => handleInputChange('characterIds', values.map((v) => Number(v)))}
+                        onChange={(values) => handleInputChange('characterIds', values.map(Number))}
                         searchable
                         clearable
                         nothingFoundMessage="No characters"
-                        description="Link to characters featured in your guide"
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: guideAccent,
-                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                            }
-                          },
-                          dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                            borderColor: guideAccent,
-                            border: `1px solid ${guideAccent}`
-                          },
-                          option: {
-                            color: '#ffffff',
-                            backgroundColor: 'transparent',
-                            '&:hover': {
-                              backgroundColor: guideAccent,
-                              color: '#000000'
-                            },
-                            '&[dataSelected="true"]': {
-                              backgroundColor: `${guideAccent}dd`,
-                              color: '#000000'
-                            }
-                          },
-                          pill: {
-                            backgroundColor: 'rgba(81, 207, 102, 0.2)',
-                            color: guideAccent,
-                            border: `1px solid ${guideAccent}50`
-                          },
-                          label: {
-                            color: guideAccent,
-                            fontWeight: 600
-                          }
-                        }}
+                        description="Link characters featured in your guide"
+                        styles={multiSelectStyles}
                       />
                     </Grid.Col>
-
-                    <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <Select
                         label="Arc"
                         placeholder="Select related arc"
@@ -644,228 +480,60 @@ export default function SubmitGuidePageContent() {
                         clearable
                         nothingFoundMessage="No arcs"
                         description="Link to the story arc your guide covers"
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: guideAccent,
-                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                            }
-                          },
-                          dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                            borderColor: guideAccent,
-                            border: `1px solid ${guideAccent}`
-                          },
-                          option: {
-                            color: '#ffffff',
-                            backgroundColor: 'transparent',
-                            '&:hover': {
-                              backgroundColor: guideAccent,
-                              color: '#000000'
-                            },
-                            '&[dataSelected="true"]': {
-                              backgroundColor: `${guideAccent}dd`,
-                              color: '#000000'
-                            }
-                          },
-                          label: {
-                            color: guideAccent,
-                            fontWeight: 600
-                          }
-                        }}
+                        styles={dimmedInputStyles}
                       />
                     </Grid.Col>
-
-                    <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <MultiSelect
                         label="Gambles"
                         placeholder="Select related gambles"
                         data={gambleOptions}
                         value={formData.gambleIds.map(String)}
-                        onChange={(values) => handleInputChange('gambleIds', values.map((v) => Number(v)))}
+                        onChange={(values) => handleInputChange('gambleIds', values.map(Number))}
                         searchable
                         clearable
                         nothingFoundMessage="No gambles"
-                        description="Link to gambles analyzed in your guide"
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: guideAccent,
-                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                            }
-                          },
-                          dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                            borderColor: guideAccent,
-                            border: `1px solid ${guideAccent}`
-                          },
-                          option: {
-                            color: '#ffffff',
-                            backgroundColor: 'transparent',
-                            '&:hover': {
-                              backgroundColor: guideAccent,
-                              color: '#000000'
-                            },
-                            '&[dataSelected="true"]': {
-                              backgroundColor: `${guideAccent}dd`,
-                              color: '#000000'
-                            }
-                          },
-                          pill: {
-                            backgroundColor: 'rgba(81, 207, 102, 0.2)',
-                            color: guideAccent,
-                            border: `1px solid ${guideAccent}50`
-                          },
-                          label: {
-                            color: guideAccent,
-                            fontWeight: 600
-                          }
-                        }}
+                        description="Link gambles analyzed in your guide"
+                        styles={multiSelectStyles}
                       />
                     </Grid.Col>
-
-                    <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <TagsInput
                         label="Tags"
                         placeholder="Type and press Enter to add tags"
-                        data={tagOptions.map(t => t.value)}
+                        data={tagOptions}
                         value={formData.tags}
                         onChange={(values) => handleInputChange('tags', values)}
                         clearable
                         maxTags={5}
                         description="Add tags to categorize your guide (max 5)"
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: guideAccent,
-                              boxShadow: `0 0 0 2px rgba(81, 207, 102, 0.2)`
-                            }
-                          },
-                          dropdown: {
-                            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                            borderColor: guideAccent,
-                            border: `1px solid ${guideAccent}`
-                          },
-                          option: {
-                            color: '#ffffff',
-                            backgroundColor: 'transparent',
-                            '&:hover': {
-                              backgroundColor: guideAccent,
-                              color: '#000000'
-                            }
-                          },
-                          pill: {
-                            backgroundColor: 'rgba(81, 207, 102, 0.2)',
-                            color: guideAccent,
-                            border: `1px solid ${guideAccent}50`
-                          },
-                          label: {
-                            color: guideAccent,
-                            fontWeight: 600
-                          }
-                        }}
+                        styles={multiSelectStyles}
                       />
                     </Grid.Col>
                   </Grid>
-                </Stack>
-              </Box>
+                </FormSection>
 
-              {/* Validation hints when form is incomplete */}
-              {!isFormValid && !loading && (
-                <Alert
-                  variant="light"
-                  radius="md"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    padding: '12px 16px'
-                  }}
-                >
-                  <Stack gap={4}>
-                    <Text size="sm" fw={500} c="dimmed">Complete the following to submit:</Text>
-                    <Stack gap={2}>
-                      {!formData.title.trim() && (
-                        <Text size="xs" c="dimmed">• Enter a guide title</Text>
-                      )}
-                      {formData.title.trim() && formData.title.trim().length < MIN_TITLE_LENGTH && (
-                        <Text size="xs" c="dimmed">• Add a more descriptive title</Text>
-                      )}
-                      {!formData.description.trim() && (
-                        <Text size="xs" c="dimmed">• Enter a description</Text>
-                      )}
-                      {formData.description.trim() && formData.description.trim().length < MIN_DESCRIPTION_LENGTH && (
-                        <Text size="xs" c="dimmed">• Add more detail to your description</Text>
-                      )}
-                      {!formData.content.trim() && (
-                        <Text size="xs" c="dimmed">• Write your guide content</Text>
-                      )}
-                      {formData.content.trim() && formData.content.trim().length < MIN_CONTENT_LENGTH && (
-                        <Text size="xs" c="dimmed">• Your guide content needs more detail</Text>
-                      )}
-                    </Stack>
-                  </Stack>
-                </Alert>
-              )}
-
-              <Button
-                type="submit"
-                size="lg"
-                fullWidth
-                loading={loading}
-                leftSection={loading ? undefined : <Send size={18} />}
-                disabled={!isFormValid}
-                styles={{
-                  root: {
-                    backgroundColor: guideAccent,
-                    color: '#ffffff',
-                    '&:hover': {
-                      backgroundColor: theme.other?.usogui?.guide ? `${theme.other.usogui.guide}dd` : '#45c55a'
-                    },
-                    '&:disabled': {
-                      backgroundColor: 'rgba(81, 207, 102, 0.3)',
-                      color: 'rgba(255, 255, 255, 0.5)'
-                    }
-                  }
-                }}
-              >
-                {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update & Resubmit' : 'Submit Guide')}
-              </Button>
-            </Stack>
-          </form>
-        </Card>
-
-        <Alert
-          variant="light"
-          mt="xl"
-          style={{
-            backgroundColor: 'rgba(77, 171, 247, 0.08)',
-            borderColor: 'rgba(77, 171, 247, 0.25)',
-            color: '#93c5fd'
-          }}
-        >
-          <Text size="sm" c="#bfdbfe">
-            <strong style={{ color: '#4dabf7' }}>Guide Writing Tips:</strong>
-            <br />• Be thorough and informative
-            <br />• Use clear headings and structure
-            <br />• Use entity embeds to reference characters, arcs, gambles, etc. (e.g., <code style={{ backgroundColor: 'rgba(77, 171, 247, 0.1)', padding: '2px 4px', borderRadius: '4px' }}>{'{{character:1}}'}</code>)
-            <br />• Add custom text to embeds for context (e.g., <code style={{ backgroundColor: 'rgba(77, 171, 247, 0.1)', padding: '2px 4px', borderRadius: '4px' }}>{'{{character:1:the protagonist}}'}</code>)
-            <br />• Avoid major spoilers unless clearly marked
-            <br />• Cite sources when referencing specific chapters
-            <br />• Use the Preview tab to see how your entity embeds will look
-            <br />• Proofread before submitting
-            <br />• Guides will be reviewed before publication
-          </Text>
-        </Alert>
-      </motion.div>
+                <Group justify="space-between" align="center">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    loading={loading}
+                    disabled={!isFormValid}
+                    leftSection={!loading && <Send size={18} />}
+                    style={{
+                      backgroundColor: isFormValid ? accentColor : undefined,
+                      color: isFormValid ? '#fff' : undefined
+                    }}
+                  >
+                    {loading ? (isEditMode ? 'Updating…' : 'Submitting…') : (isEditMode ? 'Update & Resubmit' : 'Submit Guide')}
+                  </Button>
+                  <Text size="xs" c="dimmed">Reviewed by a moderator before publishing</Text>
+                </Group>
+              </Stack>
+            </form>
+          </Card>
+        </motion.div>
+      )}
     </Container>
   )
 }

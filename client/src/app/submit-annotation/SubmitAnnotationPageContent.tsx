@@ -17,7 +17,6 @@ import {
   Text,
   TextInput,
   Textarea,
-  ThemeIcon,
   Title,
   rem,
   useMantineTheme
@@ -29,8 +28,11 @@ import { FormSection } from '../../components/FormSection'
 import { api } from '../../lib/api'
 import { AnnotationOwnerType } from '../../types'
 import SubmissionGuidelines from '../../components/SubmissionGuidelines'
-import { motion } from 'motion/react'
+import SubmissionSuccess from '../../components/SubmissionSuccess'
+import SubmitPageHeader from '../../components/SubmitPageHeader'
+import { getInputStyles, getDimmedInputStyles } from '../../lib/submitFormStyles'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 const MIN_TITLE_LENGTH = 3
 const MIN_CONTENT_LENGTH = 10
@@ -58,57 +60,38 @@ export default function SubmitAnnotationPageContent() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
   const [characters, setCharacters] = useState<Array<{ id: number; name: string }>>([])
   const [gambles, setGambles] = useState<Array<{ id: number; name: string }>>([])
   const [chapters, setChapters] = useState<Array<{ id: number; number: number }>>([])
   const [arcs, setArcs] = useState<Array<{ id: number; name: string }>>([])
   const [loadingData, setLoadingData] = useState(true)
 
-  const annotationAccent = theme.colors.violet[5]
+  const accentColor = theme.colors.violet[5]
+  const inputStyles = getInputStyles(theme, accentColor)
+  const dimmedInputStyles = getDimmedInputStyles(theme)
 
   const handleInputChange = (field: string, value: unknown) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const validateForm = () => {
-    if (!formData.ownerType) {
-      return 'Owner type is required'
-    }
-    if (!formData.ownerId) {
-      return 'Please select an entity to annotate'
-    }
-    if (!formData.title.trim()) {
-      return 'Title is required'
-    }
-    if (formData.title.trim().length < MIN_TITLE_LENGTH) {
-      return `Title must be at least ${MIN_TITLE_LENGTH} characters long`
-    }
-    if (!formData.content.trim()) {
-      return 'Content is required'
-    }
-    if (formData.content.trim().length < MIN_CONTENT_LENGTH) {
-      return `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
-    }
-    if (formData.isSpoiler && (!formData.spoilerChapter || formData.spoilerChapter < 1)) {
-      return 'Spoiler chapter is required when marking as spoiler'
-    }
+    if (!formData.ownerType) return 'Owner type is required'
+    if (!formData.ownerId) return 'Please select an entity to annotate'
+    if (!formData.title.trim()) return 'Title is required'
+    if (formData.title.trim().length < MIN_TITLE_LENGTH) return `Title must be at least ${MIN_TITLE_LENGTH} characters long`
+    if (!formData.content.trim()) return 'Content is required'
+    if (formData.content.trim().length < MIN_CONTENT_LENGTH) return `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
+    if (formData.isSpoiler && (!formData.spoilerChapter || formData.spoilerChapter < 1)) return 'Spoiler chapter is required when marking as spoiler'
     return null
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
-    setSuccess('')
 
     const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+    if (validationError) { setError(validationError); return }
 
     setLoading(true)
     try {
@@ -122,26 +105,26 @@ export default function SubmitAnnotationPageContent() {
         isSpoiler: formData.isSpoiler,
         spoilerChapter: formData.isSpoiler ? formData.spoilerChapter as number : undefined
       })
-      setSuccess('Annotation submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
-      setFormData({
-        ownerType: '',
-        ownerId: null,
-        title: '',
-        content: '',
-        sourceUrl: '',
-        chapterReference: '',
-        isSpoiler: false,
-        spoilerChapter: ''
-      })
+      setShowSuccess(true)
     } catch (submissionError: unknown) {
-      if (submissionError instanceof Error) {
-        setError(submissionError.message)
-      } else {
-        setError('Failed to submit annotation. Please try again.')
-      }
+      setError(submissionError instanceof Error ? submissionError.message : 'Failed to submit annotation. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSubmitAnother = () => {
+    setShowSuccess(false)
+    setFormData({
+      ownerType: '',
+      ownerId: null,
+      title: '',
+      content: '',
+      sourceUrl: '',
+      chapterReference: '',
+      isSpoiler: false,
+      spoilerChapter: ''
+    })
   }
 
   useEffect(() => {
@@ -164,16 +147,17 @@ export default function SubmitAnnotationPageContent() {
         setLoadingData(false)
       }
     }
-
     loadData()
   }, [])
 
   if (authLoading || loadingData) {
     return (
       <Container size="md" py="xl">
-        <Box style={{ display: 'flex', justifyContent: 'center' }}>
-          <Loader size="lg" />
-        </Box>
+        <Stack align="center" gap="md" py="xl">
+          <Box style={{ color: accentColor }}><MessageSquare size={32} /></Box>
+          <Loader size="sm" color={accentColor} />
+          <Text size="sm" c="dimmed">Loading…</Text>
+        </Stack>
       </Container>
     )
   }
@@ -181,23 +165,32 @@ export default function SubmitAnnotationPageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert
-          variant="light"
+        <Box
           style={{
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            borderColor: 'rgba(139, 92, 246, 0.3)',
-            color: '#c4b5fd'
+            backgroundColor: `${accentColor}0d`,
+            border: `1px solid ${accentColor}35`,
+            borderRadius: rem(12),
+            padding: rem(32),
+            textAlign: 'center'
           }}
         >
-          <Text c="#c4b5fd">Please log in to submit an annotation.</Text>
-        </Alert>
+          <Box mb="md" style={{ color: accentColor }}><MessageSquare size={36} /></Box>
+          <Title order={4} style={{ fontFamily: 'var(--font-opti-goudy-text)', fontWeight: 400 }} mb="xs">
+            Sign in to submit an annotation
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            You need to be logged in to share your insights.
+          </Text>
+          <Button component={Link} href="/login" style={{ backgroundColor: accentColor, color: '#fff' }}>
+            Log In
+          </Button>
+        </Box>
       </Container>
     )
   }
 
   const isFormValid = !validateForm()
 
-  // Calculate progress steps for the indicator
   const progressSteps: FormStep[] = [
     { label: 'Annotation Type', completed: !!formData.ownerType, required: true },
     { label: 'Entity Selection', completed: !!formData.ownerId, required: true },
@@ -206,15 +199,14 @@ export default function SubmitAnnotationPageContent() {
     { label: 'Spoiler Chapter', completed: !formData.isSpoiler || (formData.spoilerChapter !== '' && Number(formData.spoilerChapter) >= 1), required: formData.isSpoiler }
   ]
 
-  // Generate options based on owner type
   const getOwnerOptions = () => {
     switch (formData.ownerType) {
       case AnnotationOwnerType.CHARACTER:
-        return characters.map((character) => ({ value: character.id.toString(), label: character.name }))
+        return characters.map((c) => ({ value: c.id.toString(), label: c.name }))
       case AnnotationOwnerType.GAMBLE:
-        return gambles.map((gamble) => ({ value: gamble.id.toString(), label: gamble.name }))
+        return gambles.map((g) => ({ value: g.id.toString(), label: g.name }))
       case AnnotationOwnerType.ARC:
-        return arcs.map((arc) => ({ value: arc.id.toString(), label: arc.name }))
+        return arcs.map((a) => ({ value: a.id.toString(), label: a.name }))
       default:
         return []
     }
@@ -224,371 +216,219 @@ export default function SubmitAnnotationPageContent() {
 
   return (
     <Container size="md" py="xl">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Box
-          mb="xl"
+      <SubmitPageHeader
+        label="Annotation Submission"
+        title="Submit an Annotation"
+        description="Share your insights, analysis, and commentary on characters, gambles, and story arcs"
+        icon={<MessageSquare size={22} />}
+        accentColor={accentColor}
+      />
+
+      <SubmissionGuidelines type="annotation" accentColor={accentColor} />
+
+      {showSuccess && (
+        <SubmissionSuccess
+          type="annotation"
+          accentColor={accentColor}
+          onSubmitAnother={handleSubmitAnother}
+        />
+      )}
+
+      {error && (
+        <Alert
+          variant="light"
+          mb="md"
+          icon={<AlertTriangle size={16} />}
           style={{
-            borderBottom: `1px solid ${annotationAccent}25`,
-            paddingBottom: rem(24),
-            position: 'relative',
-            overflow: 'hidden'
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+            color: '#fca5a5'
           }}
         >
-          <Box style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0,
-            height: rem(2),
-            background: `linear-gradient(90deg, ${annotationAccent}, transparent)`,
-            opacity: 0.8
-          }} />
-          <Group gap="md" align="flex-start" mt="md">
-            <ThemeIcon size={48} radius="md" variant="light"
-              style={{ backgroundColor: `${annotationAccent}18`, color: annotationAccent, flexShrink: 0 }}
-            >
-              <MessageSquare size={24} color={annotationAccent} />
-            </ThemeIcon>
-            <Box style={{ flex: 1 }}>
-              <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: annotationAccent, marginBottom: rem(4) }}>
-                ANNOTATION SUBMISSION
-              </Text>
-              <Title order={1}
-                style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
-              >
-                Submit an Annotation
-              </Title>
-              <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
-                Share your insights, analysis, and commentary on characters, gambles, chapters, and story arcs
-              </Text>
-            </Box>
-          </Group>
-        </Box>
+          <Text size="sm" c="#f87171">{error}</Text>
+        </Alert>
+      )}
 
-        <SubmissionGuidelines type="annotation" />
+      {!showSuccess && (
+        <>
+          <FormProgressIndicator steps={progressSteps} accentColor={accentColor} />
 
-        {error && (
-          <Alert
-            variant="light"
-            mb="md"
+          <Card
+            shadow="lg"
+            radius="md"
+            withBorder
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderColor: 'rgba(239, 68, 68, 0.3)',
-              color: '#fca5a5'
+              backgroundColor: theme.colors.dark?.[7] ?? '#070707',
+              borderColor: `${accentColor}35`,
+              boxShadow: `0 4px 24px ${accentColor}12`
             }}
           >
-            <Text size="sm" c="#f87171">{error}</Text>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert
-            variant="light"
-            mb="md"
-            style={{
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-              borderColor: 'rgba(139, 92, 246, 0.3)',
-              color: '#c4b5fd'
-            }}
-          >
-            <Text size="sm" c={annotationAccent}>{success}</Text>
-          </Alert>
-        )}
-
-        <FormProgressIndicator steps={progressSteps} accentColor={annotationAccent} />
-
-        <Card
-          className="annotation-card"
-          shadow="lg"
-          radius="md"
-          withBorder
-          style={{
-            backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-            color: theme.colors.gray?.[0] ?? '#fff',
-            borderColor: `${annotationAccent}40`,
-            boxShadow: `0 4px 12px rgba(139, 92, 246, 0.1)`
-          }}
-        >
-          <Box style={{
-            height: rem(3),
-            background: `linear-gradient(90deg, ${annotationAccent}60, transparent)`,
-            borderRadius: `${rem(6)} ${rem(6)} 0 0`,
-            marginBottom: rem(-3)
-          }} />
-          <form onSubmit={handleSubmit}>
-            <Stack gap="xl" p="xl">
-              {/* Entity Selection Section */}
-              <FormSection
-                title="Entity Selection"
-                description="Choose what you want to annotate"
-                icon={<MessageSquare size={20} color={annotationAccent} />}
-                accentColor={annotationAccent}
-                required
-              >
-                <Stack gap="md">
-                  <Select
-                    label="Annotation Type"
-                    placeholder="Select what you want to annotate"
-                    value={formData.ownerType}
-                    onChange={(value) => {
-                      handleInputChange('ownerType', value || '')
-                      handleInputChange('ownerId', null)
-                    }}
-                    data={OWNER_TYPE_OPTIONS}
-                    required
-                    clearable
-                    styles={{
-                      input: {
-                        backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                        color: theme.colors.gray?.[0] ?? '#fff',
-                        borderColor: 'rgba(255,255,255,0.06)',
-                        '&:focus': {
-                          borderColor: annotationAccent,
-                          boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                        }
-                      },
-                      label: {
-                        color: annotationAccent,
-                        fontWeight: 600
-                      },
-                      dropdown: {
-                        backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a',
-                        borderColor: 'rgba(255,255,255,0.1)'
-                      }
-                    }}
-                    classNames={{ option: styles.selectOption }}
-                  />
-
-                  {formData.ownerType && (
+            <Box
+              style={{
+                height: rem(3),
+                background: `linear-gradient(90deg, ${accentColor}70, transparent)`,
+                borderRadius: `${rem(6)} ${rem(6)} 0 0`,
+                marginBottom: rem(-3)
+              }}
+            />
+            <form onSubmit={handleSubmit}>
+              <Stack gap="xl" p="xl">
+                <FormSection
+                  title="Entity Selection"
+                  description="Choose what you want to annotate"
+                  icon={<MessageSquare size={18} color={accentColor} />}
+                  accentColor={accentColor}
+                  required
+                  stepNumber={1}
+                >
+                  <Stack gap="md">
                     <Select
-                      label={`Select ${formData.ownerType.charAt(0).toUpperCase() + formData.ownerType.slice(1)}`}
-                      placeholder={`Choose a ${formData.ownerType}`}
-                      value={formData.ownerId?.toString() || null}
-                      onChange={(value) => handleInputChange('ownerId', value ? parseInt(value) : null)}
-                      data={ownerOptions}
+                      label="Annotation Type"
+                      placeholder="Select what you want to annotate"
+                      value={formData.ownerType}
+                      onChange={(value) => {
+                        handleInputChange('ownerType', value || '')
+                        handleInputChange('ownerId', null)
+                      }}
+                      data={OWNER_TYPE_OPTIONS}
                       required
                       clearable
-                      searchable
-                      styles={{
-                        input: {
-                          backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                          color: theme.colors.gray?.[0] ?? '#fff',
-                          borderColor: 'rgba(255,255,255,0.06)',
-                          '&:focus': {
-                            borderColor: annotationAccent,
-                            boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                          }
-                        },
-                        label: {
-                          color: annotationAccent,
-                          fontWeight: 600
-                        },
-                        dropdown: {
-                          backgroundColor: theme.colors.dark?.[7] ?? '#1a1a1a',
-                          borderColor: 'rgba(255,255,255,0.1)'
-                        }
-                      }}
+                      styles={inputStyles}
                       classNames={{ option: styles.selectOption }}
                     />
-                  )}
-                </Stack>
-              </FormSection>
+                    {formData.ownerType && (
+                      <Select
+                        label={`Select ${formData.ownerType.charAt(0).toUpperCase() + formData.ownerType.slice(1)}`}
+                        placeholder={`Choose a ${formData.ownerType}`}
+                        value={formData.ownerId?.toString() || null}
+                        onChange={(value) => handleInputChange('ownerId', value ? parseInt(value) : null)}
+                        data={ownerOptions}
+                        required
+                        clearable
+                        searchable
+                        styles={inputStyles}
+                        classNames={{ option: styles.selectOption }}
+                      />
+                    )}
+                  </Stack>
+                </FormSection>
 
-              {/* Content Section */}
-              <FormSection
-                title="Annotation Content"
-                description="Write your analysis, insights, or commentary"
-                icon={<FileText size={20} color={annotationAccent} />}
-                accentColor={annotationAccent}
-                required
-              >
-                <Stack gap="md">
-                  <TextInput
-                    label="Title"
-                    placeholder="e.g., 'Analysis of Baku's strategy' or 'Character development in this arc'"
-                    value={formData.title}
-                    onChange={(event) => handleInputChange('title', event.currentTarget.value)}
-                    required
-                    error={
-                      formData.title.length > 0 && formData.title.trim().length < MIN_TITLE_LENGTH
-                        ? `Title must be at least ${MIN_TITLE_LENGTH} characters long`
-                        : undefined
-                    }
-                    description={`Minimum ${MIN_TITLE_LENGTH} characters`}
-                    styles={{
-                      input: {
-                        backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                        color: theme.colors.gray?.[0] ?? '#fff',
-                        borderColor: 'rgba(255,255,255,0.06)',
-                        '&:focus': {
-                          borderColor: annotationAccent,
-                          boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                        }
-                      },
-                      label: {
-                        color: annotationAccent,
-                        fontWeight: 600
-                      }
-                    }}
-                  />
-
-                  <Textarea
-                    label="Content"
-                    placeholder="Share your insights, analysis, theories, or commentary. You can use markdown formatting."
-                    value={formData.content}
-                    onChange={(event) => handleInputChange('content', event.currentTarget.value)}
-                    required
-                    minRows={6}
-                    autosize
-                    error={
-                      formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH
-                        ? `Content must be at least ${MIN_CONTENT_LENGTH} characters long`
-                        : undefined
-                    }
-                    description={`${formData.content.length}/${MIN_CONTENT_LENGTH}+ characters`}
-                    styles={{
-                      input: {
-                        backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                        color: theme.colors.gray?.[0] ?? '#fff',
-                        borderColor: 'rgba(255,255,255,0.06)',
-                        '&:focus': {
-                          borderColor: annotationAccent,
-                          boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                        }
-                      },
-                      label: {
-                        color: annotationAccent,
-                        fontWeight: 600
-                      }
-                    }}
-                  />
-                </Stack>
-              </FormSection>
-
-              {/* Additional Details Section */}
-              <FormSection
-                title="Additional Details"
-                description="Optional references and sources"
-                icon={<Info size={20} color={annotationAccent} />}
-                accentColor={annotationAccent}
-              >
-                <Stack gap="md">
-                  <TextInput
-                    label="Source URL"
-                    placeholder="https://example.com/source"
-                    value={formData.sourceUrl}
-                    onChange={(event) => handleInputChange('sourceUrl', event.currentTarget.value)}
-                    description="Link to external source or reference (if applicable)"
-                    styles={{
-                      input: {
-                        backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                        color: theme.colors.gray?.[0] ?? '#fff',
-                        borderColor: 'rgba(255,255,255,0.06)',
-                        '&:focus': {
-                          borderColor: annotationAccent,
-                          boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                        }
-                      },
-                      label: {
-                        color: 'rgba(255,255,255,0.7)',
-                        fontWeight: 500
-                      }
-                    }}
-                  />
-
-                  <NumberInput
-                    label="Chapter Reference"
-                    placeholder="Enter chapter number"
-                    value={formData.chapterReference}
-                    onChange={(value) => handleInputChange('chapterReference', value)}
-                    min={1}
-                    description="Reference a specific chapter if your annotation relates to a particular point in the story"
-                    styles={{
-                      input: {
-                        backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                        color: theme.colors.gray?.[0] ?? '#fff',
-                        borderColor: 'rgba(255,255,255,0.06)',
-                        '&:focus': {
-                          borderColor: annotationAccent,
-                          boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                        }
-                      },
-                      label: {
-                        color: 'rgba(255,255,255,0.7)',
-                        fontWeight: 500
-                      }
-                    }}
-                  />
-                </Stack>
-              </FormSection>
-
-              {/* Spoiler Settings Section */}
-              <FormSection
-                title="Spoiler Settings"
-                description="Mark if this annotation contains story spoilers"
-                icon={<AlertTriangle size={20} color={annotationAccent} />}
-                accentColor={annotationAccent}
-              >
-                <Stack gap="md">
-                  <Checkbox
-                    label="This annotation contains spoilers"
-                    checked={formData.isSpoiler}
-                    onChange={(event) => handleInputChange('isSpoiler', event.currentTarget.checked)}
-                    styles={{
-                      label: {
-                        color: theme.colors.gray?.[3] ?? '#ddd'
-                      }
-                    }}
-                  />
-
-                  {formData.isSpoiler && (
-                    <NumberInput
-                      label="Spoiler Chapter"
-                      placeholder="Enter chapter number"
-                      value={formData.spoilerChapter}
-                      onChange={(value) => handleInputChange('spoilerChapter', value)}
+                <FormSection
+                  title="Annotation Content"
+                  description="Write your analysis, insights, or commentary"
+                  icon={<FileText size={18} color={accentColor} />}
+                  accentColor={accentColor}
+                  required
+                  stepNumber={2}
+                >
+                  <Stack gap="md">
+                    <TextInput
+                      label="Title"
+                      placeholder="e.g., 'Analysis of Baku's strategy'"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.currentTarget.value)}
                       required
-                      min={1}
-                      description="Readers who have not reached this chapter will see a spoiler warning"
-                      styles={{
-                        input: {
-                          backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                          color: theme.colors.gray?.[0] ?? '#fff',
-                          borderColor: 'rgba(255,255,255,0.06)',
-                          '&:focus': {
-                            borderColor: annotationAccent,
-                            boxShadow: `0 0 0 2px rgba(139, 92, 246, 0.2)`
-                          }
-                        },
-                        label: {
-                          color: annotationAccent,
-                          fontWeight: 600
-                        }
-                      }}
+                      error={formData.title.length > 0 && formData.title.trim().length < MIN_TITLE_LENGTH
+                        ? `Title must be at least ${MIN_TITLE_LENGTH} characters long` : undefined}
+                      description={`Minimum ${MIN_TITLE_LENGTH} characters`}
+                      styles={inputStyles}
                     />
-                  )}
-                </Stack>
-              </FormSection>
+                    <Textarea
+                      label="Content"
+                      placeholder="Share your insights, analysis, theories, or commentary. You can use markdown formatting."
+                      value={formData.content}
+                      onChange={(e) => handleInputChange('content', e.currentTarget.value)}
+                      required
+                      minRows={6}
+                      autosize
+                      error={formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH
+                        ? `Content must be at least ${MIN_CONTENT_LENGTH} characters long` : undefined}
+                      description={`${formData.content.length}/${MIN_CONTENT_LENGTH}+ characters`}
+                      styles={inputStyles}
+                    />
+                  </Stack>
+                </FormSection>
 
-              <Button
-                type="submit"
-                size="lg"
-                loading={loading}
-                disabled={!isFormValid}
-                leftSection={<Send size={20} />}
-                style={{
-                  backgroundColor: isFormValid ? annotationAccent : undefined,
-                  color: isFormValid ? '#fff' : undefined
-                }}
-              >
-                Submit Annotation for Review
-              </Button>
+                <FormSection
+                  title="Additional Details"
+                  description="Optional references and sources"
+                  icon={<Info size={18} color={accentColor} />}
+                  accentColor={accentColor}
+                  stepNumber={3}
+                >
+                  <Stack gap="md">
+                    <TextInput
+                      label="Source URL"
+                      placeholder="https://example.com/source"
+                      value={formData.sourceUrl}
+                      onChange={(e) => handleInputChange('sourceUrl', e.currentTarget.value)}
+                      description="Link to external source or reference (if applicable)"
+                      styles={dimmedInputStyles}
+                    />
+                    <NumberInput
+                      label="Chapter Reference"
+                      placeholder="Enter chapter number"
+                      value={formData.chapterReference}
+                      onChange={(value) => handleInputChange('chapterReference', value)}
+                      min={1}
+                      description="Reference a specific chapter if your annotation relates to a particular point in the story"
+                      styles={dimmedInputStyles}
+                    />
+                  </Stack>
+                </FormSection>
 
-              <Text size="sm" c="dimmed" ta="center">
-                Your annotation will be reviewed by a moderator before being published.
-              </Text>
-            </Stack>
-          </form>
-        </Card>
-      </motion.div>
+                <FormSection
+                  title="Spoiler Settings"
+                  description="Mark if this annotation contains story spoilers"
+                  icon={<AlertTriangle size={18} color={accentColor} />}
+                  accentColor={accentColor}
+                  stepNumber={4}
+                >
+                  <Stack gap="md">
+                    <Checkbox
+                      label="This annotation contains spoilers"
+                      checked={formData.isSpoiler}
+                      onChange={(e) => handleInputChange('isSpoiler', e.currentTarget.checked)}
+                      styles={{ label: { color: 'rgba(255,255,255,0.75)' } }}
+                    />
+                    {formData.isSpoiler && (
+                      <NumberInput
+                        label="Spoiler Chapter"
+                        placeholder="Enter chapter number"
+                        value={formData.spoilerChapter}
+                        onChange={(value) => handleInputChange('spoilerChapter', value)}
+                        required
+                        min={1}
+                        description="Readers who have not reached this chapter will see a spoiler warning"
+                        styles={inputStyles}
+                      />
+                    )}
+                  </Stack>
+                </FormSection>
+
+                <Group justify="space-between" align="center">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    loading={loading}
+                    disabled={!isFormValid}
+                    leftSection={<Send size={18} />}
+                    style={{
+                      backgroundColor: isFormValid ? accentColor : undefined,
+                      color: isFormValid ? '#fff' : undefined
+                    }}
+                  >
+                    Submit Annotation for Review
+                  </Button>
+                  <Text size="xs" c="dimmed">
+                    Reviewed by a moderator before publishing
+                  </Text>
+                </Group>
+              </Stack>
+            </form>
+          </Card>
+        </>
+      )}
     </Container>
   )
 }

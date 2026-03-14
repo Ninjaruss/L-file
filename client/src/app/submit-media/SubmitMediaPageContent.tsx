@@ -18,48 +18,32 @@ import {
   Text,
   TextInput,
   Textarea,
-  ThemeIcon,
   Title,
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, semanticColors, textColors, setTabAccentColors } from '../../lib/mantine-theme'
-import { Upload, Link as LinkIcon, Image, Video, Music } from 'lucide-react'
+import { setTabAccentColors } from '../../lib/mantine-theme'
+import { Upload, Link as LinkIcon, Image, Video, Music, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
 import { useAuth } from '../../providers/AuthProvider'
 import { FormProgressIndicator, FormStep } from '../../components/FormProgressIndicator'
+import { FormSection } from '../../components/FormSection'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
 import MediaUploadForm from '../../components/MediaUploadForm'
 import SubmissionGuidelines from '../../components/SubmissionGuidelines'
+import SubmissionSuccess from '../../components/SubmissionSuccess'
+import SubmitPageHeader from '../../components/SubmitPageHeader'
+import { getInputStyles, getDimmedInputStyles } from '../../lib/submitFormStyles'
 
 type MediaOwnerType = 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
-
 type MediaType = 'image' | 'video' | 'audio'
 
-interface Character {
-  id: number
-  name: string
-}
-
-interface Arc {
-  id: number
-  name: string
-}
-
-interface Event {
-  id: number
-  title: string
-}
-
-interface Gamble {
-  id: number
-  name: string
-}
-
-interface Organization {
-  id: number
-  name: string
-}
+interface Character { id: number; name: string }
+interface Arc { id: number; name: string }
+interface Event { id: number; title: string }
+interface Gamble { id: number; name: string }
+interface Organization { id: number; name: string }
 
 interface SubmitMediaFormState {
   url: string
@@ -93,23 +77,21 @@ export default function SubmitMediaPageContent() {
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
   const [activeTab, setActiveTab] = useState<'url' | 'upload'>('url')
 
-  // Set tab accent colors for media entity (since we're submitting media)
-  useEffect(() => {
-    setTabAccentColors('media')
-  }, [])
+  useEffect(() => { setTabAccentColors('media') }, [])
 
-  // Fetch existing media data when in edit mode
+  const accentColor = '#a855f7'
+  const inputStyles = getInputStyles(theme, accentColor)
+  const dimmedInputStyles = getDimmedInputStyles(theme)
+
   useEffect(() => {
     if (isEditMode && editMediaId) {
       const fetchMediaData = async () => {
         try {
           const media = await api.getMyMediaSubmission(editMediaId)
           setExistingMedia(media)
-
-          // Pre-populate form with existing data
           setFormData({
             url: media.url || '',
             description: media.description || '',
@@ -117,11 +99,7 @@ export default function SubmitMediaPageContent() {
             ownerId: media.ownerId || null,
             chapterNumber: media.chapterNumber || null
           })
-
-          // Set active tab based on media type
-          if (media.isUploaded) {
-            setActiveTab('upload')
-          }
+          if (media.isUploaded) setActiveTab('upload')
         } catch (fetchError) {
           console.error('Failed to fetch media data:', fetchError)
           setError('Failed to load media data for editing.')
@@ -132,10 +110,11 @@ export default function SubmitMediaPageContent() {
   }, [isEditMode, editMediaId])
 
   useEffect(() => {
+    if (!user) return
     const fetchData = async () => {
       try {
         setDataLoading(true)
-        const [charactersResponse, arcsResponse, eventsResponse, gamblesResponse, organizationsResponse, usersResponse] = await Promise.all([
+        const [cRes, aRes, eRes, gRes, oRes, uRes] = await Promise.all([
           api.getCharacters({ limit: 500 }),
           api.getArcs({ limit: 200 }),
           api.getEvents({ limit: 200 }),
@@ -143,12 +122,12 @@ export default function SubmitMediaPageContent() {
           api.getOrganizations({ limit: 100 }),
           api.getPublicUsers({ limit: 200 })
         ])
-        setCharacters(charactersResponse.data || [])
-        setArcs(arcsResponse.data || [])
-        setEvents(eventsResponse.data || [])
-        setGambles(gamblesResponse.data || [])
-        setOrganizations(organizationsResponse.data || [])
-        setUsers(usersResponse.data || [])
+        setCharacters(cRes.data || [])
+        setArcs(aRes.data || [])
+        setEvents(eRes.data || [])
+        setGambles(gRes.data || [])
+        setOrganizations(oRes.data || [])
+        setUsers(uRes.data || [])
       } catch (fetchError) {
         console.error('Failed to fetch data:', fetchError)
         setError('Failed to load form data. Please refresh the page.')
@@ -156,72 +135,56 @@ export default function SubmitMediaPageContent() {
         setDataLoading(false)
       }
     }
-
-    if (user) {
-      fetchData()
-    }
+    fetchData()
   }, [user])
 
   const handleInputChange = <K extends keyof SubmitMediaFormState>(field: K, value: SubmitMediaFormState[K]) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const isValidUrl = (url: string) => { try { new URL(url); return true } catch { return false } }
+
   const validateForm = () => {
-    if (!formData.url.trim()) {
-      return 'Media URL is required'
-    }
-
-    if (!isValidUrl(formData.url)) {
-      return 'Please enter a valid URL'
-    }
-
-    if (!formData.ownerType) {
-      return 'Please select an entity type'
-    }
-
-    if (!formData.ownerId) {
-      return 'Please select a specific entity'
-    }
-
+    if (!formData.url.trim()) return 'Media URL is required'
+    if (!isValidUrl(formData.url)) return 'Please enter a valid URL'
+    if (!formData.ownerType) return 'Please select an entity type'
+    if (!formData.ownerId) return 'Please select a specific entity'
     return null
   }
 
-  const isValidUrl = (url: string) => {
-    try {
-       
-      new URL(url)
-      return true
-    } catch {
-      return false
-    }
+  const getMediaType = (url: string): MediaType => {
+    const lowerUrl = url.toLowerCase()
+    if (['youtube.com', 'youtu.be', 'tiktok.com', 'vm.tiktok.com', 'vimeo.com', 'twitch.tv'].some(d => lowerUrl.includes(d))) return 'video'
+    if (['soundcloud.com', 'spotify.com', 'apple.com/music'].some(d => lowerUrl.includes(d))) return 'audio'
+    if (['twitter.com', 'x.com', 'instagram.com', 'deviantart.com', 'pixiv.net', 'imgur.com', 'artstation.com', 'pinterest.com'].some(d => lowerUrl.includes(d))) return 'image'
+    if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i)) return 'image'
+    if (lowerUrl.match(/\.(mp4|mov|avi|webm|mkv|flv)(\?|$)/i)) return 'video'
+    if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac|m4a)(\?|$)/i)) return 'audio'
+    return 'image'
+  }
+
+  const mediaTypeIcon = (url: string) => {
+    const type = getMediaType(url)
+    if (type === 'video') return <Video size={16} />
+    if (type === 'audio') return <Music size={16} />
+    return <Image size={16} />
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
-    setSuccess('')
 
     const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+    if (validationError) { setError(validationError); return }
 
     setLoading(true)
-
     try {
       const mediaType = getMediaType(formData.url)
-
-      // Check if trying to submit image URL
       if (mediaType === 'image') {
         setError('Image URLs are not allowed. Please use the "Upload File" tab to upload images directly (max 5MB). Only video and audio URLs are accepted via URL submission.')
         setLoading(false)
         return
       }
-
       await api.submitMediaPolymorphic({
         url: formData.url.trim(),
         type: mediaType,
@@ -230,23 +193,13 @@ export default function SubmitMediaPageContent() {
         chapterNumber: formData.chapterNumber || undefined,
         description: formData.description.trim() || undefined
       })
-
-      setSuccess('Media submitted! It is now pending review and you\'ll be notified when it\'s approved. Track your submissions on your profile page.')
-      setFormData({
-        url: '',
-        description: '',
-        ownerType: '',
-        ownerId: null,
-        chapterNumber: null
-      })
+      setShowSuccess(true)
+      setFormData({ url: '', description: '', ownerType: '', ownerId: null, chapterNumber: null })
     } catch (submitError: unknown) {
-      const errorMessage = submitError instanceof Error ? submitError.message : 'Failed to submit media. Please try again.'
-      // Enhance error message if it's about image URLs
-      if (errorMessage.includes('Image') || errorMessage.includes('image') || errorMessage.includes('/media/upload')) {
-        setError('Image URLs are not allowed. Please use the "Upload File" tab to upload images directly.')
-      } else {
-        setError(errorMessage)
-      }
+      const msg = submitError instanceof Error ? submitError.message : 'Failed to submit media. Please try again.'
+      setError(msg.includes('Image') || msg.includes('image') || msg.includes('/media/upload')
+        ? 'Image URLs are not allowed. Please use the "Upload File" tab to upload images directly.'
+        : msg)
     } finally {
       setLoading(false)
     }
@@ -265,41 +218,21 @@ export default function SubmitMediaPageContent() {
     }
   ) => {
     setError('')
-    setSuccess('')
     setLoading(true)
-
     try {
       if (isEditMode && editMediaId) {
-        // Edit mode: update existing media
-        const formData = new FormData()
-
-        // Add file if provided (optional in edit mode)
-        if (file) {
-          formData.append('file', file)
-        }
-
-        // Add metadata fields
-        if (uploadData.description) {
-          formData.append('description', uploadData.description)
-        }
-        formData.append('ownerType', uploadData.ownerType)
-        formData.append('ownerId', uploadData.ownerId.toString())
-        if (uploadData.chapterNumber) {
-          formData.append('chapterNumber', uploadData.chapterNumber.toString())
-        }
-
-        await api.updateOwnMedia(editMediaId, formData)
-        setSuccess('Media updated successfully! Your submission is pending review.')
+        const fd = new FormData()
+        if (file) fd.append('file', file)
+        if (uploadData.description) fd.append('description', uploadData.description)
+        fd.append('ownerType', uploadData.ownerType)
+        fd.append('ownerId', uploadData.ownerId.toString())
+        if (uploadData.chapterNumber) fd.append('chapterNumber', uploadData.chapterNumber.toString())
+        await api.updateOwnMedia(editMediaId, fd)
+        setShowSuccess(true)
       } else {
-        // Create mode: upload new media
-        if (!file) {
-          throw new Error('File is required')
-        }
+        if (!file) throw new Error('File is required')
         await api.uploadMedia(file, uploadData)
-        const approvalMessage = (user?.role === 'moderator' || user?.role === 'admin')
-          ? 'Media uploaded successfully! It has been automatically approved.'
-          : 'Media uploaded successfully! It is pending review and will be visible once approved.'
-        setSuccess(approvalMessage)
+        setShowSuccess(true)
       }
     } catch (uploadError: unknown) {
       setError(uploadError instanceof Error ? uploadError.message : 'Failed to upload media. Please try again.')
@@ -309,96 +242,25 @@ export default function SubmitMediaPageContent() {
     }
   }
 
-  const getMediaType = (url: string): MediaType => {
-    const lowerUrl = url.toLowerCase()
-
-    if (
-      lowerUrl.includes('youtube.com') ||
-      lowerUrl.includes('youtu.be') ||
-      lowerUrl.includes('tiktok.com') ||
-      lowerUrl.includes('vm.tiktok.com') ||
-      lowerUrl.includes('vimeo.com') ||
-      lowerUrl.includes('twitch.tv')
-    ) {
-      return 'video'
-    }
-
-    if (
-      lowerUrl.includes('soundcloud.com') ||
-      lowerUrl.includes('spotify.com') ||
-      lowerUrl.includes('apple.com/music')
-    ) {
-      return 'audio'
-    }
-
-    if (
-      lowerUrl.includes('twitter.com') ||
-      lowerUrl.includes('x.com') ||
-      lowerUrl.includes('instagram.com') ||
-      lowerUrl.includes('deviantart.com') ||
-      lowerUrl.includes('pixiv.net') ||
-      lowerUrl.includes('imgur.com') ||
-      lowerUrl.includes('artstation.com') ||
-      lowerUrl.includes('pinterest.com')
-    ) {
-      return 'image'
-    }
-
-    if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i)) {
-      return 'image'
-    }
-    if (lowerUrl.match(/\.(mp4|mov|avi|webm|mkv|flv)(\?|$)/i)) {
-      return 'video'
-    }
-    if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac|m4a)(\?|$)/i)) {
-      return 'audio'
-    }
-
-    return 'image'
-  }
-
-  const mediaTypeIcon = (url: string) => {
-    const type = getMediaType(url)
-    switch (type) {
-      case 'video':
-        return <Video size={18} />
-      case 'audio':
-        return <Music size={18} />
-      case 'image':
-        return <Image size={18} />
-      default:
-        return <LinkIcon size={18} />
-    }
-  }
-
   const entityOptions = useMemo(() => {
-    if (!formData.ownerType) {
-      return []
-    }
-
     switch (formData.ownerType) {
-      case 'character':
-        return characters.map((item) => ({ value: String(item.id), label: item.name }))
-      case 'arc':
-        return arcs.map((item) => ({ value: String(item.id), label: item.name }))
-      case 'event':
-        return events.map((item) => ({ value: String(item.id), label: item.title }))
-      case 'gamble':
-        return gambles.map((item) => ({ value: String(item.id), label: item.name }))
-      case 'organization':
-        return organizations.map((item) => ({ value: String(item.id), label: item.name }))
-      case 'user':
-        return users.map((item) => ({ value: String(item.id), label: item.username }))
-      default:
-        return []
+      case 'character': return characters.map((i) => ({ value: String(i.id), label: i.name }))
+      case 'arc': return arcs.map((i) => ({ value: String(i.id), label: i.name }))
+      case 'event': return events.map((i) => ({ value: String(i.id), label: i.title }))
+      case 'gamble': return gambles.map((i) => ({ value: String(i.id), label: i.name }))
+      case 'organization': return organizations.map((i) => ({ value: String(i.id), label: i.name }))
+      case 'user': return users.map((i) => ({ value: String(i.id), label: i.username }))
+      default: return []
     }
   }, [formData.ownerType, characters, arcs, events, gambles, organizations, users])
 
   if (authLoading) {
     return (
       <Container size="md" py="xl">
-        <Stack align="center" justify="center" miw="100%">
-          <Loader size="lg" />
+        <Stack align="center" gap="md" py="xl">
+          <Box style={{ color: accentColor }}><Upload size={32} /></Box>
+          <Loader size="sm" color={accentColor} />
+          <Text size="sm" c="dimmed">Loading…</Text>
         </Stack>
       </Container>
     )
@@ -407,17 +269,24 @@ export default function SubmitMediaPageContent() {
   if (!user) {
     return (
       <Container size="md" py="xl">
-        <Alert
-          variant="light"
-          radius="md"
+        <Box
           style={{
-            backgroundColor: 'rgba(245, 124, 0, 0.1)',
-            borderColor: 'rgba(245, 124, 0, 0.3)',
-            color: '#ffb74d'
+            backgroundColor: `${accentColor}0d`,
+            border: `1px solid ${accentColor}35`,
+            borderRadius: rem(12),
+            padding: rem(32),
+            textAlign: 'center'
           }}
         >
-          <Text c="#ffb74d">Please log in to submit media.</Text>
-        </Alert>
+          <Box mb="md" style={{ color: accentColor }}><Upload size={36} /></Box>
+          <Title order={4} style={{ fontFamily: 'var(--font-opti-goudy-text)', fontWeight: 400 }} mb="xs">
+            Sign in to submit media
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">You need to be logged in to share media.</Text>
+          <Button component={Link} href="/login" style={{ backgroundColor: accentColor, color: '#fff' }}>
+            Log In
+          </Button>
+        </Box>
       </Container>
     )
   }
@@ -426,182 +295,135 @@ export default function SubmitMediaPageContent() {
   const urlError = formData.url.length > 0 && !isValidUrl(formData.url) ? 'Please enter a valid URL' : null
   const isFormValid = !validateForm()
 
-  // Calculate progress steps for the indicator (URL mode only)
   const progressSteps: FormStep[] = [
     { label: 'Media URL', completed: formData.url.trim().length > 0 && isValidUrl(formData.url), required: true },
     { label: 'Entity Type', completed: !!formData.ownerType, required: true },
     { label: 'Specific Entity', completed: !!formData.ownerId, required: true }
   ]
 
-  const mediaAccent = '#a855f7'
-
   return (
     <Container size="md" py="xl">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Stack gap="xl">
-          <Box
-            mb="sm"
-            style={{
-              borderBottom: `1px solid ${mediaAccent}25`,
-              paddingBottom: rem(24),
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-          >
-            <Box style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0,
-              height: rem(2),
-              background: `linear-gradient(90deg, ${mediaAccent}, transparent)`,
-              opacity: 0.8
-            }} />
-            <Group gap="md" align="flex-start" mt="md">
-              <ThemeIcon size={48} radius="md" variant="light"
-                style={{ backgroundColor: `${mediaAccent}18`, color: mediaAccent, flexShrink: 0 }}
-              >
-                <Upload size={24} color={mediaAccent} />
-              </ThemeIcon>
-              <Box style={{ flex: 1 }}>
-                <Text size="xs" style={{ letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: mediaAccent, marginBottom: rem(4) }}>
-                  MEDIA SUBMISSION
-                </Text>
-                <Title order={1}
-                  style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: rem(36), fontWeight: 400, lineHeight: 1.1 }}
-                >
-                  {isEditMode ? 'Edit Media Submission' : 'Submit Media'}
-                </Title>
-                <Text size="sm" c="dimmed" mt="xs" style={{ maxWidth: rem(520) }}>
-                  {isEditMode
-                    ? 'Update your media submission details and optionally replace the file'
-                    : 'Share fanart, videos, audio, or other media from YouTube, TikTok, Instagram, Pixiv, DeviantArt, Imgur, SoundCloud, and more'
-                  }
-                </Text>
-              </Box>
-            </Group>
-          </Box>
+      <SubmitPageHeader
+        label="Media Submission"
+        title={isEditMode ? 'Edit Media Submission' : 'Submit Media'}
+        description={isEditMode
+          ? 'Update your media submission details and optionally replace the file'
+          : 'Share fanart, videos, audio, and more from YouTube, TikTok, DeviantArt, Pixiv, SoundCloud, and beyond'}
+        icon={<Upload size={22} />}
+        accentColor={accentColor}
+        editMode={isEditMode}
+      />
 
-          <SubmissionGuidelines type="media" />
+      <SubmissionGuidelines type="media" accentColor={accentColor} />
 
-          {error && (
-            <Alert
-              variant="light"
-              radius="md"
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                borderColor: 'rgba(239, 68, 68, 0.3)',
-                color: '#fca5a5'
-              }}
-            >
-              <Text size="sm" c="#f87171">{error}</Text>
-            </Alert>
-          )}
+      {error && (
+        <Alert
+          variant="light"
+          mb="md"
+          icon={<AlertTriangle size={16} />}
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            borderColor: 'rgba(239, 68, 68, 0.3)'
+          }}
+        >
+          <Text size="sm" c="#f87171">{error}</Text>
+        </Alert>
+      )}
 
-          {success && (
-            <Alert
-              variant="light"
-              radius="md"
-              style={{
-                backgroundColor: 'rgba(81, 207, 102, 0.1)',
-                borderColor: 'rgba(81, 207, 102, 0.3)',
-                color: '#86efac'
-              }}
-            >
-              <Text size="sm" c="#51cf66">{success}</Text>
-            </Alert>
-          )}
+      {showSuccess && (
+        <SubmissionSuccess
+          type="media"
+          isEdit={isEditMode}
+          accentColor={accentColor}
+          onSubmitAnother={() => {
+            setShowSuccess(false)
+            setFormData({ url: '', description: '', ownerType: '', ownerId: null, chapterNumber: null })
+          }}
+        />
+      )}
 
+      {!showSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+        >
           {activeTab === 'url' && (
-            <FormProgressIndicator steps={progressSteps} accentColor={mediaAccent} />
+            <FormProgressIndicator steps={progressSteps} accentColor={accentColor} />
           )}
 
           <Card
             withBorder
             radius="md"
             shadow="md"
-            className="media-card"
             style={{
               backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-              color: theme.colors.gray?.[0] ?? '#fff',
-              borderColor: 'rgba(168, 85, 247, 0.4)',
-              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)'
+              borderColor: `${accentColor}35`,
+              boxShadow: `0 4px 24px ${accentColor}12`
             }}
           >
-            <Box style={{
-              height: rem(3),
-              background: `linear-gradient(90deg, ${mediaAccent}60, transparent)`,
-              borderRadius: `${rem(6)} ${rem(6)} 0 0`,
-              marginBottom: rem(-3)
-            }} />
-            <Stack gap="xl">
+            <Box
+              style={{
+                height: rem(3),
+                background: `linear-gradient(90deg, ${accentColor}70, transparent)`,
+                borderRadius: `${rem(6)} ${rem(6)} 0 0`,
+                marginBottom: rem(-3)
+              }}
+            />
+            <Stack gap="xl" p="xl">
               {isPrivilegedUser && (
                 <Tabs
                   value={activeTab}
                   onChange={(value) => setActiveTab((value as 'url' | 'upload') ?? 'url')}
-                  styles={{
-                    tab: {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      borderRadius: '6px',
-                      transition: 'all 150ms ease',
-                      '&:hover': {
-                        backgroundColor: 'rgba(168, 85, 247, 0.08)',
-                        color: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(168, 85, 247, 0.4)'
-                      },
-                      '&[dataActive="true"]': {
-                        color: '#ffffff',
-                        backgroundColor: 'rgba(168, 85, 247, 0.12)',
-                        borderColor: 'rgba(168, 85, 247, 0.8)',
-                        fontWeight: 600
-                      }
-                    },
-                  }}
                 >
                   <Tabs.List>
-                    <Tabs.Tab value="url">Submit URL</Tabs.Tab>
-                    <Tabs.Tab value="upload">Upload File</Tabs.Tab>
+                    <Tabs.Tab value="url" leftSection={<LinkIcon size={15} />}>Submit URL</Tabs.Tab>
+                    <Tabs.Tab value="upload" leftSection={<Upload size={15} />}>Upload File</Tabs.Tab>
                   </Tabs.List>
                 </Tabs>
               )}
 
-              <Stack gap="lg">
-                {activeTab === 'url' && (
-                  <form onSubmit={handleSubmit}>
-                    <Stack gap="lg">
+              {activeTab === 'url' && (
+                <form onSubmit={handleSubmit}>
+                  <Stack gap="lg">
+                    <FormSection
+                      title="Media Link"
+                      description="Paste the URL to a video, audio track, or media post"
+                      icon={<LinkIcon size={18} color={accentColor} />}
+                      accentColor={accentColor}
+                      required
+                      stepNumber={1}
+                    >
                       <TextInput
                         label="Media URL"
-                        placeholder="https://..."
+                        placeholder="https://…"
                         value={formData.url}
-                        onChange={(event) => handleInputChange('url', event.currentTarget.value)}
+                        onChange={(e) => handleInputChange('url', e.currentTarget.value)}
                         required
-                        description={urlError ? undefined : 'Link to fanart, video, or other media (YouTube, TikTok, Instagram, Twitter, DeviantArt, Pixiv, Imgur, SoundCloud, direct links, etc.)'}
+                        description={urlError ? undefined : 'YouTube, TikTok, Instagram, DeviantArt, Pixiv, SoundCloud, direct links, etc.'}
                         error={urlError}
                         leftSection={
                           <Box style={{ display: 'flex', alignItems: 'center' }}>
-                            {formData.url ? mediaTypeIcon(formData.url) : <LinkIcon size={18} />}
+                            {formData.url ? mediaTypeIcon(formData.url) : <LinkIcon size={16} />}
                           </Box>
                         }
                         leftSectionPointerEvents="none"
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: '#a855f7',
-                              boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
-                            }
-                          },
-                          label: {
-                            color: '#a855f7',
-                            fontWeight: 600
-                          }
-                        }}
+                        styles={inputStyles}
                       />
+                    </FormSection>
 
+                    <FormSection
+                      title="Related Entity"
+                      description="Link this media to a character, arc, gamble, or other entity"
+                      icon={<Image size={18} color={accentColor} />}
+                      accentColor={accentColor}
+                      required
+                      stepNumber={2}
+                    >
                       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                         <Select
-                          label="Related Entity"
-                          placeholder="Select entity type..."
+                          label="Entity Type"
+                          placeholder="Select entity type…"
                           data={[
                             { value: 'character', label: 'Character' },
                             { value: 'arc', label: 'Arc' },
@@ -619,253 +441,110 @@ export default function SubmitMediaPageContent() {
                           clearable
                           withAsterisk
                           nothingFoundMessage="No matches"
-                          styles={{
-                            input: {
-                              backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                              color: theme.colors.gray?.[0] ?? '#fff',
-                              borderColor: 'rgba(255,255,255,0.06)',
-                              '&:focus': {
-                                borderColor: '#a855f7',
-                                boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
-                              }
-                            },
-                            dropdown: {
-                              backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                              borderColor: '#a855f7',
-                              border: '1px solid #a855f7'
-                            },
-                            option: {
-                              color: '#ffffff',
-                              backgroundColor: 'transparent',
-                              '&:hover': {
-                                backgroundColor: '#a855f7',
-                                color: '#000000'
-                              },
-                              '&[dataSelected="true"]': {
-                                backgroundColor: '#9333ea',
-                                color: '#ffffff'
-                              }
-                            },
-                            label: {
-                              color: '#a855f7',
-                              fontWeight: 600
-                            }
-                          }}
+                          styles={inputStyles}
                         />
-
                         <Select
                           label="Specific Entity"
-                          placeholder={!formData.ownerType ? 'Select entity type first' : `Choose ${formData.ownerType}...`}
+                          placeholder={!formData.ownerType ? 'Select entity type first' : `Choose ${formData.ownerType}…`}
                           data={entityOptions}
                           value={formData.ownerId ? String(formData.ownerId) : null}
                           onChange={(value) => handleInputChange('ownerId', value ? Number(value) : null)}
                           disabled={dataLoading || !formData.ownerType}
                           searchable
                           withAsterisk
-                          nothingFoundMessage={dataLoading ? 'Loading...' : 'No matches found'}
-                          styles={{
-                            input: {
-                              backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                              color: theme.colors.gray?.[0] ?? '#fff',
-                              borderColor: 'rgba(255,255,255,0.06)',
-                              '&:focus': {
-                                borderColor: '#a855f7',
-                                boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
-                              }
-                            },
-                            dropdown: {
-                              backgroundColor: theme.colors.dark?.[7] ?? '#070707',
-                              borderColor: '#a855f7',
-                              border: '1px solid #a855f7'
-                            },
-                            option: {
-                              color: '#ffffff',
-                              backgroundColor: 'transparent',
-                              '&:hover': {
-                                backgroundColor: '#a855f7',
-                                color: '#000000'
-                              },
-                              '&[dataSelected="true"]': {
-                                backgroundColor: '#9333ea',
-                                color: '#ffffff'
-                              }
-                            },
-                            label: {
-                              color: '#a855f7',
-                              fontWeight: 600
-                            }
-                          }}
+                          nothingFoundMessage={dataLoading ? 'Loading…' : 'No matches found'}
+                          styles={inputStyles}
                         />
                       </SimpleGrid>
+                    </FormSection>
 
-                      <NumberInput
-                        label="Chapter Number (Optional)"
-                        placeholder="e.g., 45"
-                        value={formData.chapterNumber ?? ''}
-                        onChange={(value) => handleInputChange('chapterNumber', typeof value === 'number' ? value : null)}
-                        min={1}
-                        description="Associate with a specific chapter if relevant"
-                        hideControls
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: '#a855f7',
-                              boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
-                            }
-                          },
-                          label: {
-                            color: '#a855f7',
-                            fontWeight: 600
-                          }
-                        }}
-                      />
+                    <FormSection
+                      title="Additional Details"
+                      description="Optional context and chapter reference"
+                      icon={<Video size={18} color={accentColor} />}
+                      accentColor={accentColor}
+                      stepNumber={3}
+                    >
+                      <Stack gap="md">
+                        <NumberInput
+                          label="Chapter Number"
+                          placeholder="e.g., 45"
+                          value={formData.chapterNumber ?? ''}
+                          onChange={(value) => handleInputChange('chapterNumber', typeof value === 'number' ? value : null)}
+                          min={1}
+                          description="Associate with a specific chapter if relevant"
+                          hideControls
+                          styles={dimmedInputStyles}
+                        />
+                        <Textarea
+                          label="Description"
+                          placeholder="Describe this media, credit the artist if known, or provide context…"
+                          value={formData.description}
+                          onChange={(e) => handleInputChange('description', e.currentTarget.value)}
+                          description="Please credit the original artist if known"
+                          autosize
+                          minRows={3}
+                          styles={dimmedInputStyles}
+                        />
+                      </Stack>
+                    </FormSection>
 
-                      <Textarea
-                        label="Description (Optional)"
-                        placeholder="Describe this media, credit the artist if known, or provide context..."
-                        value={formData.description}
-                        onChange={(event) => handleInputChange('description', event.currentTarget.value)}
-                        description="Please provide credit to the original artist if known"
-                        autosize
-                        minRows={4}
-                        styles={{
-                          input: {
-                            backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                            color: theme.colors.gray?.[0] ?? '#fff',
-                            borderColor: 'rgba(255,255,255,0.06)',
-                            '&:focus': {
-                              borderColor: '#a855f7',
-                              boxShadow: '0 0 0 2px rgba(168, 85, 247, 0.2)'
-                            }
-                          },
-                          label: {
-                            color: '#a855f7',
-                            fontWeight: 600
-                          }
-                        }}
-                      />
-
-                      {/* Validation hints when form is incomplete */}
-                      {!isFormValid && !loading && (
-                        <Alert
-                          variant="light"
-                          radius="md"
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
-                            padding: '12px 16px'
-                          }}
-                        >
-                          <Stack gap={4}>
-                            <Text size="sm" fw={500} c="dimmed">Complete the following to submit:</Text>
-                            <Stack gap={2}>
-                              {!formData.url.trim() && (
-                                <Text size="xs" c="dimmed">• Enter a media URL</Text>
-                              )}
-                              {formData.url.trim() && !isValidUrl(formData.url) && (
-                                <Text size="xs" c="dimmed">• Enter a valid URL</Text>
-                              )}
-                              {!formData.ownerType && (
-                                <Text size="xs" c="dimmed">• Select an entity type</Text>
-                              )}
-                              {formData.ownerType && !formData.ownerId && (
-                                <Text size="xs" c="dimmed">• Select a specific {formData.ownerType}</Text>
-                              )}
-                            </Stack>
-                          </Stack>
-                        </Alert>
-                      )}
-
+                    <Group justify="space-between" align="center">
                       <Button
                         type="submit"
                         size="lg"
-                        fullWidth
                         loading={loading}
                         disabled={loading || !isFormValid}
-                        leftSection={!loading ? <Upload size={18} /> : undefined}
-                        styles={{
-                          root: {
-                            backgroundColor: '#a855f7',
-                            color: '#ffffff',
-                            '&:hover': {
-                              backgroundColor: '#9333ea'
-                            },
-                            '&:disabled': {
-                              backgroundColor: 'rgba(168, 85, 247, 0.3)',
-                              color: 'rgba(255, 255, 255, 0.5)'
-                            }
-                          }
+                        leftSection={!loading && <Upload size={18} />}
+                        style={{
+                          backgroundColor: isFormValid ? accentColor : undefined,
+                          color: isFormValid ? '#fff' : undefined
                         }}
                       >
-                        {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Media' : 'Submit Media')}
+                        {loading ? (isEditMode ? 'Updating…' : 'Submitting…') : (isEditMode ? 'Update Media' : 'Submit Media')}
                       </Button>
-                    </Stack>
-                  </form>
-                )}
-
-                {activeTab === 'upload' && isPrivilegedUser && (
-                  <Stack gap="lg">
-                    <Alert
-                      variant="light"
-                      radius="md"
-                      style={{
-                        backgroundColor: 'rgba(77, 171, 247, 0.08)',
-                        borderColor: 'rgba(77, 171, 247, 0.25)',
-                        color: '#93c5fd'
-                      }}
-                    >
-                      <Text size="sm" c="#bfdbfe">
-                        <strong style={{ color: '#4dabf7' }}>Direct Upload (Moderators/Admins)</strong>
-                        <br />• Moderator/admin uploads are automatically approved
-                        <br />• Regular user uploads require moderation
-                        <br />• Uploaded to Backblaze B2 storage
-                        <br />• Supports JPEG, PNG, WebP, GIF (max 5MB)
-                      </Text>
-                    </Alert>
-                    <MediaUploadForm
-                      onUpload={handleUpload}
-                      characters={characters}
-                      arcs={arcs}
-                      events={events}
-                      gambles={gambles}
-                      organizations={organizations}
-                      users={users}
-                      loading={loading}
-                      dataLoading={dataLoading}
-                      error={error}
-                      userRole={(user?.role as 'user' | 'moderator' | 'admin') || 'user'}
-                      isEditMode={isEditMode}
-                      existingMedia={existingMedia}
-                    />
+                      <Text size="xs" c="dimmed">Reviewed by a moderator before publishing</Text>
+                    </Group>
                   </Stack>
-                )}
-              </Stack>
+                </form>
+              )}
+
+              {activeTab === 'upload' && isPrivilegedUser && (
+                <Stack gap="lg">
+                  <Alert
+                    variant="light"
+                    style={{
+                      backgroundColor: 'rgba(77, 171, 247, 0.08)',
+                      borderColor: 'rgba(77, 171, 247, 0.25)'
+                    }}
+                  >
+                    <Text size="sm" c="#bfdbfe">
+                      <strong style={{ color: '#4dabf7' }}>Direct Upload (Moderators/Admins)</strong>
+                      <br />• Moderator/admin uploads are automatically approved
+                      <br />• Supports JPEG, PNG, WebP, GIF (max 5MB)
+                    </Text>
+                  </Alert>
+                  <MediaUploadForm
+                    onUpload={handleUpload}
+                    characters={characters}
+                    arcs={arcs}
+                    events={events}
+                    gambles={gambles}
+                    organizations={organizations}
+                    users={users}
+                    loading={loading}
+                    dataLoading={dataLoading}
+                    error={error}
+                    userRole={(user?.role as 'user' | 'moderator' | 'admin') || 'user'}
+                    isEditMode={isEditMode}
+                    existingMedia={existingMedia}
+                  />
+                </Stack>
+              )}
             </Stack>
           </Card>
-
-          <Alert
-            variant="light"
-            radius="md"
-            style={{
-              backgroundColor: 'rgba(77, 171, 247, 0.08)',
-              borderColor: 'rgba(77, 171, 247, 0.25)',
-              color: '#93c5fd'
-            }}
-          >
-            <Text size="sm" c="#bfdbfe">
-              <strong style={{ color: '#4dabf7' }}>Submission Guidelines:</strong>
-              <br />• Only submit media you have permission to share
-              <br />• Always credit the original artist when possible
-              <br />• Media will be reviewed by moderators before appearing on the site
-              <br />• Inappropriate or copyrighted content will be removed
-              <br />• Supported platforms: YouTube, TikTok, Instagram, Twitter/X, DeviantArt, Pixiv, Imgur, SoundCloud, and direct file links
-            </Text>
-          </Alert>
-        </Stack>
-      </motion.div>
+        </motion.div>
+      )}
     </Container>
   )
 }
