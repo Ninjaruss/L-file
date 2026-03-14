@@ -95,10 +95,10 @@ export function SearchToolbar({
           transition: 'all 200ms ease',
           ...(isStuck
             ? {
-                backgroundColor: 'rgba(12, 8, 8, 0.94)',
+                backgroundColor: 'rgba(8, 8, 16, 0.97)',
                 backdropFilter: 'blur(12px)',
-                borderLeft: `3px solid ${accentColor}80`,
-                boxShadow: `0 4px 16px rgba(0, 0, 0, 0.4), -4px 0 16px ${accentColor}15`
+                borderLeft: `3px solid ${accentColor}`,
+                boxShadow: `0 4px 16px rgba(0, 0, 0, 0.5), -4px 0 24px ${accentColor}20`
               }
             : {
                 backgroundColor: 'rgba(12, 8, 8, 0.40)',
@@ -118,7 +118,7 @@ export function SearchToolbar({
               left: 0,
               right: 0,
               height: 1,
-              background: `linear-gradient(90deg, transparent, ${accentColor}40, transparent)`,
+              background: `linear-gradient(90deg, transparent, ${accentColor}55, transparent)`,
               pointerEvents: 'none'
             }}
           />
@@ -162,7 +162,7 @@ export function SearchToolbar({
                   transition: 'border-color 200ms ease, box-shadow 200ms ease',
                   '&:focus': {
                     borderColor: accentColor,
-                    boxShadow: `0 0 0 2px ${accentColor}20, 0 0 16px ${accentColor}18`
+                    boxShadow: `0 0 0 2px ${accentColor}20, 0 0 20px ${accentColor}22`
                   },
                   '&::placeholder': { color: `${accentColor}60` }
                 },
