@@ -95,7 +95,7 @@ export function PlayingCard({
         position: 'relative',
         transform: 'perspective(700px) rotateY(0deg) translateY(0px)',
         transition: 'transform 250ms ease, box-shadow 250ms ease',
-        boxShadow: `inset 0 0 0 1px ${accentColor}18, 0 2px 10px rgba(0,0,0,0.4)`
+        boxShadow: `inset 0 0 0 1px ${accentColor}35, 0 0 20px ${accentColor}40, 0 4px 20px rgba(0,0,0,0.6)`
       }}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -118,6 +118,7 @@ export function PlayingCard({
           letterSpacing: '0.18em',
           zIndex: 2,
           pointerEvents: 'none',
+          textShadow: `0 0 8px ${accentColor}60`,
         }}
       >
         {entityType}
@@ -131,9 +132,10 @@ export function PlayingCard({
           top: rem(6),
           right: rem(6),
           zIndex: 5,
-          opacity: 0.18,
+          opacity: 0.32,
           width: rem(16),
-          height: rem(16)
+          height: rem(16),
+          filter: `drop-shadow(0 0 4px ${accentColor}80)`
         }}
       >
         <svg viewBox="0 0 24 24" width={16} height={16} fill={accentColor}>
@@ -211,20 +213,42 @@ export function PlayingCard({
           priority={imagePriority}
           initialMedia={initialMedia}
         />
+        {/* Scan-line texture */}
+        <Box aria-hidden style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px)',
+          pointerEvents: 'none', zIndex: 1,
+        }} />
+        {/* Radial top-center glow */}
+        <Box aria-hidden style={{
+          position: 'absolute', inset: 0,
+          background: `radial-gradient(ellipse at 50% 30%, ${accentColor}07, transparent 65%)`,
+          pointerEvents: 'none', zIndex: 1,
+        }} />
       </Box>
 
-      {/* Bottom gradient overlay */}
+      {/* Layer 1: Deep black gradient */}
       <Box
         aria-hidden
         style={{
           position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '55%',
-          background: `linear-gradient(0deg, ${accentColor}24 0%, transparent 100%)`,
+          bottom: 0, left: 0, right: 0,
+          height: '70%',
+          background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
           pointerEvents: 'none',
           zIndex: 1,
+        }}
+      />
+      {/* Layer 2: Accent tint */}
+      <Box
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
+          height: '30%',
+          background: `linear-gradient(0deg, ${accentColor}15 0%, transparent 100%)`,
+          pointerEvents: 'none',
+          zIndex: 2,
         }}
       />
 
@@ -266,12 +290,12 @@ export function PlayingCard({
             fontSize: rem(15),
             color: '#ffffff',
             textShadow: '0 1px 0 rgba(0,0,0,1), 0 2px 6px rgba(0,0,0,0.9)',
-            background: 'linear-gradient(180deg, rgba(6,4,4,0.85) 0%, rgba(12,8,8,0.92) 100%)',
+            background: 'linear-gradient(180deg, rgba(4,2,2,0.92) 0%, rgba(8,5,5,0.97) 100%)',
             backdropFilter: 'blur(4px)',
             borderRadius: rem(6),
             padding: `${rem(6)} ${rem(10)}`,
-            border: `1px solid ${accentColor}55`,
-            boxShadow: `0 0 10px ${accentColor}25, inset 0 1px 0 rgba(255,255,255,0.06)`,
+            border: `1px solid ${accentColor}65`,
+            boxShadow: `0 0 14px ${accentColor}28, inset 0 1px 0 rgba(255,255,255,0.07)`,
             fontFamily: 'var(--font-opti-goudy-text), serif',
             fontWeight: 600,
             letterSpacing: '0.025em',
