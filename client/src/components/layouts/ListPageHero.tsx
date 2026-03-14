@@ -65,6 +65,18 @@ export function ListPageHero({
         }}
       />
 
+      {/* Scan-line texture */}
+      <Box
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
       {/* Decorative overlays */}
       <HalftoneOverlay color={`${accentColor}12`} spacing={12} />
       <SuitWatermark
@@ -98,7 +110,7 @@ export function ListPageHero({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: `0 8px 32px ${accentColor}60, 0 0 64px ${accentColor}20`,
+              boxShadow: `0 8px 40px ${accentColor}70, 0 0 80px ${accentColor}28, inset 0 1px 0 rgba(255,255,255,0.20)`,
               border: `2px solid ${accentColor}60`
             }}
           >
@@ -140,9 +152,9 @@ export function ListPageHero({
         {/* Decorative diamond rule */}
         <motion.div {...heroSubtitle}>
           <Group justify="center" gap="sm">
-            <Box style={{ height: 1, width: 100, background: `linear-gradient(to right, transparent, ${accentColor}30)` }} />
-            <Text style={{ color: `${accentColor}90`, fontSize: '0.85rem' }}>♦</Text>
-            <Box style={{ height: 1, width: 100, background: `linear-gradient(to left, transparent, ${accentColor}30)` }} />
+            <Box style={{ height: 1, width: 100, background: `linear-gradient(to right, transparent, ${accentColor}50)` }} />
+            <Text style={{ color: accentColor, fontSize: '0.85rem' }}>♦</Text>
+            <Box style={{ height: 1, width: 100, background: `linear-gradient(to left, transparent, ${accentColor}50)` }} />
           </Group>
         </motion.div>
 
@@ -165,6 +177,7 @@ export function ListPageHero({
                 fontWeight: 700,
                 fontFamily: 'var(--font-noto-sans)',
                 textShadow: `0 0 12px ${accentColor}60`,
+                boxShadow: `0 0 16px ${accentColor}12`,
               }}
             >
               {count} {(countLabel || title).toUpperCase()} {hasActiveSearch ? 'FOUND' : 'ON FILE'}
