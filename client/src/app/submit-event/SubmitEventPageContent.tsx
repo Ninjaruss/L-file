@@ -385,7 +385,7 @@ export default function SubmitEventPageContent() {
   ).length
 
   return (
-    <Container size="xl" py="xl">
+    <Container size="md" py="xl">
       <SubmitPageHeader
         label="Event Submission"
         title="Submit Events"
