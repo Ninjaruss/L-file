@@ -492,14 +492,16 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                             </Text>
                             <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.guide}20)` }} />
                           </Group>
-                          <TimelineSpoilerWrapper chapterNumber={undefined}>
-                            <EnhancedSpoilerMarkdown
-                              content={guide.content}
-                              enableEntityEmbeds
-                              compactEntityCards={false}
-                              className="guide-content"
-                            />
-                          </TimelineSpoilerWrapper>
+                          <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                            <TimelineSpoilerWrapper chapterNumber={undefined}>
+                              <EnhancedSpoilerMarkdown
+                                content={guide.content}
+                                enableEntityEmbeds
+                                compactEntityCards={false}
+                                className="guide-content"
+                              />
+                            </TimelineSpoilerWrapper>
+                          </Box>
                         </Stack>
                       </Card>
                     </Stack>
