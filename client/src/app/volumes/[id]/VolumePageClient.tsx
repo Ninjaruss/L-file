@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react'
 import {
-  Badge,
   Box,
   Button,
   Card,
@@ -33,6 +32,7 @@ import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { usePageView } from '../../../hooks/usePageView'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
+import { RelatedContentSection } from '../../../components/layouts/RelatedContentSection'
 
 interface Volume {
   id: number
@@ -86,8 +86,6 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
     arc: getEntityThemeColor(theme, 'arc')
   }
 
-  const chapterCount = initialVolume.endChapter - initialVolume.startChapter + 1
-
   return (
     <Box style={{
       backgroundColor: backgroundStyles.page(theme),
@@ -107,109 +105,14 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
             entityType="volume"
             entityId={initialVolume.id}
             entityName={`Volume ${initialVolume.number}`}
-          >
-            <Box style={{ position: 'relative' }}>
-              <Text
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  top: -16,
-                  right: -8,
-                  fontSize: '5rem',
-                  fontFamily: 'var(--font-opti-goudy-text), serif',
-                  fontWeight: 400,
-                  color: `${entityColors.volume}10`,
-                  lineHeight: 1,
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  zIndex: 0,
-                }}
-              >
-                {initialVolume.number}
-              </Text>
-              <Box style={{ position: 'relative', zIndex: 1 }}>
-                <Stack gap={theme.spacing.sm}>
-                  {initialVolume.title && (
-                    <Text size="lg" c={textColors.secondary} fw={500}>
-                      {initialVolume.title}
-                    </Text>
-                  )}
-
-                  {/* Chapter Range Badge */}
-                  <Badge
-                    variant="filled"
-                    size="lg"
-                    radius="md"
-                    leftSection={<Hash size={14} />}
-                    style={{
-                      background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
-                      border: `1px solid ${entityColors.volume}`,
-                      boxShadow: theme.shadows.md,
-                      fontSize: fontSize.sm,
-                      color: textColors.primary,
-                      fontWeight: 600,
-                      alignSelf: 'flex-start'
-                    }}
-                  >
-                    Chapters {initialVolume.startChapter} - {initialVolume.endChapter}
-                  </Badge>
-                </Stack>
-              </Box>
-            </Box>
-
-            <Stack gap={theme.spacing.md} style={{ flex: 1, justifyContent: 'center' }}>
-              {/* Content Stats */}
-              <Group gap={theme.spacing.md} wrap="wrap" mt={theme.spacing.sm}>
-                <Badge
-                  size="lg"
-                  variant="light"
-                  c={textColors.volume}
-                  leftSection={<BookOpen size={14} />}
-                  style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.volume, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
-                  }}
-                >
-                  {chapterCount} Chapters
-                </Badge>
-                <Badge
-                  size="lg"
-                  variant="light"
-                  c={textColors.volume}
-                  style={{
-                    fontSize: fontSize.xs,
-                    fontWeight: 600,
-                    background: getAlphaColor(entityColors.volume, 0.2),
-                    border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
-                  }}
-                >
-                  Volume #{initialVolume.number}
-                </Badge>
-                {initialArcs.map(arc => (
-                  <Badge
-                    key={arc.id}
-                    component={Link}
-                    href={`/arcs/${arc.id}`}
-                    size="lg"
-                    variant="light"
-                    c={textColors.arc}
-                    style={{
-                      fontSize: fontSize.xs,
-                      fontWeight: 600,
-                      background: getAlphaColor(entityColors.arc, 0.2),
-                      border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`,
-                      textDecoration: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {arc.name}
-                  </Badge>
-                ))}
-              </Group>
-            </Stack>
-          </DetailPageHeader>
+            stats={[
+              { value: initialChapters?.length ?? 0, label: 'Chapters' },
+              ...(initialVolume.startChapter != null && initialVolume.endChapter != null
+                ? [{ value: `Ch. ${initialVolume.startChapter}–${initialVolume.endChapter}`, label: 'Range' }]
+                : []),
+              { value: initialArcs?.length ?? 0, label: 'Arcs' },
+            ].slice(0, 3)}
+          />
 
           <motion.div {...pageEnter}>
             <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
@@ -235,78 +138,154 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
                 </Tabs.List>
 
                 <Tabs.Panel value="overview" pt={theme.spacing.md}>
-                  <Stack gap={theme.spacing.lg}>
-                    {/* Volume Summary Section */}
-                    <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.volume)}>
-                      <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
-                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
-                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.volume}40)` }} />
-                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
-                            VOLUME SUMMARY
-                          </Text>
-                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.volume}20)` }} />
-                        </Group>
-                        {initialVolume.description ? (
-                          <TimelineSpoilerWrapper chapterNumber={initialVolume.startChapter}>
-                            <Box style={{ lineHeight: 1.7 }}>
-                              <Text size="md">{initialVolume.description}</Text>
-                            </Box>
-                          </TimelineSpoilerWrapper>
-                        ) : (
-                          <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
-                            No summary available for this volume yet. Check back later for updates!
-                          </Text>
-                        )}
-                      </Stack>
-                    </Card>
+                  <Box
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(0, 1fr) 260px',
+                      gap: 12,
+                      alignItems: 'start',
+                    }}
+                    className="detail-editorial-grid"
+                  >
+                    {/* Main column */}
+                    <Stack gap={theme.spacing.md}>
+                      {/* Volume Summary Section */}
+                      <Card
+                        withBorder
+                        radius="lg"
+                        shadow="lg"
+                        style={{
+                          ...getCardStyles(theme, entityColors.volume),
+                          borderLeft: `3px solid ${entityColors.volume}`,
+                        }}
+                      >
+                        <Stack gap={theme.spacing.md} p={theme.spacing.lg}>
+                          <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                            <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.volume}40)` }} />
+                            <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                              VOLUME SUMMARY
+                            </Text>
+                            <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.volume}20)` }} />
+                          </Group>
+                          {initialVolume.description ? (
+                            <TimelineSpoilerWrapper chapterNumber={initialVolume.startChapter}>
+                              <Box style={{ lineHeight: 1.6 }}>
+                                <Text style={{ fontSize: 14, lineHeight: 1.6 }}>{initialVolume.description}</Text>
+                              </Box>
+                            </TimelineSpoilerWrapper>
+                          ) : (
+                            <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
+                              No summary available for this volume yet. Check back later for updates!
+                            </Text>
+                          )}
+                        </Stack>
+                      </Card>
 
-                    {/* Chapter Navigation Section */}
-                    <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.volume)}>
-                      <Stack gap={theme.spacing.md} p={theme.spacing.md}>
-                        <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
-                          <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.volume}40)` }} />
-                          <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
-                            CHAPTER NAVIGATION
-                          </Text>
-                          <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.volume}20)` }} />
-                        </Group>
-                        <Group gap={theme.spacing.md} wrap="wrap">
-                          <Button
-                            component={Link}
-                            href={`/chapters/${initialVolume.startChapter}`}
-                            variant="outline"
-                            c={entityColors.volume}
-                            size="md"
-                            radius="xl"
-                            style={{
-                              fontWeight: 600,
-                              border: `2px solid ${entityColors.volume}`,
-                              transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
-                              flex: 1,
-                              minWidth: '200px'
-                            }}
-                          >
-                            Start: Chapter {initialVolume.startChapter}
-                          </Button>
-                          <Button
-                            component={Link}
-                            href={`/chapters/${initialVolume.endChapter}`}
-                            variant="filled"
-                            style={{
-                              background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
-                              border: `1px solid ${entityColors.volume}`,
-                              fontWeight: 600,
-                              flex: 1,
-                              minWidth: '200px'
-                            }}
-                          >
-                            End: Chapter {initialVolume.endChapter}
-                          </Button>
-                        </Group>
-                      </Stack>
-                    </Card>
+                      {/* Chapter Navigation Section */}
+                      <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.volume)}>
+                        <Stack gap={theme.spacing.md} p={theme.spacing.md}>
+                          <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 24 }}>
+                            <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${entityColors.volume}40)` }} />
+                            <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
+                              CHAPTER NAVIGATION
+                            </Text>
+                            <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.volume}20)` }} />
+                          </Group>
+                          <Group gap={theme.spacing.md} wrap="wrap">
+                            <Button
+                              component={Link}
+                              href={`/chapters/${initialVolume.startChapter}`}
+                              variant="outline"
+                              c={entityColors.volume}
+                              size="md"
+                              radius="xl"
+                              style={{
+                                fontWeight: 600,
+                                border: `2px solid ${entityColors.volume}`,
+                                transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease`,
+                                flex: 1,
+                                minWidth: '200px'
+                              }}
+                            >
+                              Start: Chapter {initialVolume.startChapter}
+                            </Button>
+                            <Button
+                              component={Link}
+                              href={`/chapters/${initialVolume.endChapter}`}
+                              variant="filled"
+                              style={{
+                                background: `linear-gradient(135deg, ${entityColors.volume} 0%, ${entityColors.volume}dd 100%)`,
+                                border: `1px solid ${entityColors.volume}`,
+                                fontWeight: 600,
+                                flex: 1,
+                                minWidth: '200px'
+                              }}
+                            >
+                              End: Chapter {initialVolume.endChapter}
+                            </Button>
+                          </Group>
+                        </Stack>
+                      </Card>
+                    </Stack>
 
-                  </Stack>
+                    {/* Aside column */}
+                    <Stack gap={theme.spacing.sm}>
+                      {/* Details card */}
+                      <Card withBorder radius="lg" shadow="lg" style={getCardStyles(theme, entityColors.volume)}>
+                        <Stack gap={theme.spacing.sm} p={theme.spacing.md}>
+                          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            Details
+                          </Text>
+                          {initialVolume.startChapter != null && initialVolume.endChapter != null && (
+                            <Group justify="space-between">
+                              <Text size="xs" c={textColors.secondary}>Chapter Range</Text>
+                              <Text size="xs" fw={600} c={entityColors.volume}>
+                                Ch. {initialVolume.startChapter}–{initialVolume.endChapter}
+                              </Text>
+                            </Group>
+                          )}
+                          <Group justify="space-between">
+                            <Text size="xs" c={textColors.secondary}>Chapter Count</Text>
+                            <Text size="xs" fw={600} c={entityColors.volume}>
+                              {initialChapters?.length ?? 0}
+                            </Text>
+                          </Group>
+                          <Group justify="space-between">
+                            <Text size="xs" c={textColors.secondary}>Arc Count</Text>
+                            <Text size="xs" fw={600} c={entityColors.volume}>
+                              {initialArcs?.length ?? 0}
+                            </Text>
+                          </Group>
+                        </Stack>
+                      </Card>
+
+                      {/* Chapters compact list */}
+                      <RelatedContentSection
+                        entityType="chapter"
+                        title="Chapters"
+                        items={initialChapters ?? []}
+                        previewCount={4}
+                        getKey={(c) => c.id}
+                        variant="compact"
+                        getLabel={(c) => `Chapter ${c.number}`}
+                        getHref={(c) => `/chapters/${c.id}`}
+                        itemDotColor={entityColors.chapter}
+                      />
+
+                      {/* Arcs compact list */}
+                      <RelatedContentSection
+                        entityType="arc"
+                        title="Arcs"
+                        items={initialArcs ?? []}
+                        previewCount={4}
+                        getKey={(a) => a.id}
+                        variant="compact"
+                        getLabel={(a) => a.name}
+                        getHref={(a) => `/arcs/${a.id}`}
+                        itemDotColor={entityColors.arc}
+                      />
+                    </Stack>
+                  </Box>
                 </Tabs.Panel>
 
                 <Tabs.Panel value="chapters" pt={theme.spacing.md}>
@@ -321,17 +300,19 @@ export default function VolumePageClient({ initialVolume, initialChapters, initi
                             </Text>
                             <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.chapter}20)` }} />
                           </Group>
-                          <Badge
-                            variant="light"
-                            c={textColors.volume}
-                            size="lg"
+                          <Box
                             style={{
+                              padding: '2px 10px',
+                              borderRadius: 4,
+                              fontSize: fontSize.xs,
+                              fontWeight: 600,
                               backgroundColor: getAlphaColor(entityColors.volume, 0.2),
-                              border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`
+                              border: `1px solid ${getAlphaColor(entityColors.volume, 0.4)}`,
+                              color: textColors.volume,
                             }}
                           >
                             {initialChapters.length} chapters
-                          </Badge>
+                          </Box>
                         </Group>
 
                         <Grid gutter="md">
