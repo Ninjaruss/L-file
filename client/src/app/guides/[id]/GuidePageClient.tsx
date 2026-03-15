@@ -20,14 +20,13 @@ import { notifications } from '@mantine/notifications'
 import {
   getEntityThemeColor,
   textColors,
-  headerColors,
   getAlphaColor,
   fontSize,
   setTabAccentColors,
   backgroundStyles,
   getCardStyles
 } from '../../../lib/mantine-theme'
-import { FileText, Calendar, Heart, Edit, Save, X, Users, BookOpen, Dice6, Eye, Tag } from 'lucide-react'
+import { FileText, Heart, Edit, Save, X, Users, BookOpen, Dice6, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '../../../lib/api'
 import { useAuth } from '../../../providers/AuthProvider'

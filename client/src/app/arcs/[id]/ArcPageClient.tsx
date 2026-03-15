@@ -24,7 +24,7 @@ import {
   backgroundStyles,
   getCardStyles
 } from '../../../lib/mantine-theme'
-import { ArrowUp, BookOpen, Calendar, Image as ImageIcon, Layers, MessageSquare } from 'lucide-react'
+import { ArrowUp, BookOpen, Calendar, Image as ImageIcon, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
