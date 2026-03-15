@@ -5,7 +5,7 @@ import { Card, Box, Badge, Text, ActionIcon, rem, useMantineTheme } from '@manti
 import Link from 'next/link'
 import { Camera } from 'lucide-react'
 import { getPlayingCardStyles, getEntityThemeColor, type EntityAccentKey } from '../../lib/mantine-theme'
-import { entitySuit, suitPaths, mangaPatterns } from '../../lib/manga-decorations'
+import { mangaPatterns } from '../../lib/manga-decorations'
 import MediaThumbnail, { type MediaItem } from '../MediaThumbnail'
 import classes from './PlayingCard.module.css'
 
@@ -79,7 +79,6 @@ export function PlayingCard({
 }: PlayingCardProps) {
   const theme = useMantineTheme()
   const accentColor = getEntityThemeColor(theme, entityType)
-  const suit = entitySuit[entityType]
   const dims = variantDimensions[variant]
 
   return (
@@ -101,47 +100,6 @@ export function PlayingCard({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* Entity type eyebrow label */}
-      <Box
-        aria-hidden
-        className="eyebrow-label"
-        style={{
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          color: accentColor,
-          background: `${accentColor}20`,
-          padding: '2px 5px',
-          borderRadius: 2,
-          border: `1px solid ${accentColor}40`,
-          fontSize: '0.55rem',
-          letterSpacing: '0.18em',
-          zIndex: 2,
-          pointerEvents: 'none',
-          textShadow: `0 0 8px ${accentColor}60`,
-        }}
-      >
-        {entityType}
-      </Box>
-
-      {/* Suit icon in top-right corner */}
-      <Box
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: rem(6),
-          right: rem(6),
-          zIndex: 5,
-          opacity: 0.32,
-          width: rem(16),
-          height: rem(16),
-          filter: `drop-shadow(0 0 4px ${accentColor}80)`
-        }}
-      >
-        <svg viewBox="0 0 24 24" width={16} height={16} fill={accentColor}>
-          <path d={suitPaths[suit]} />
-        </svg>
-      </Box>
 
       {/* Chapter Badge at Top Left */}
       {chapterBadge && (
@@ -289,8 +247,8 @@ export function PlayingCard({
             lineHeight: 1.4,
             fontSize: rem(15),
             color: '#ffffff',
-            textShadow: '0 1px 0 rgba(0,0,0,1), 0 2px 6px rgba(0,0,0,0.9)',
-            background: 'linear-gradient(180deg, rgba(4,2,2,0.92) 0%, rgba(8,5,5,0.97) 100%)',
+            textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+            background: 'linear-gradient(180deg, rgba(4,2,2,0.72) 0%, rgba(8,5,5,0.82) 100%)',
             backdropFilter: 'blur(4px)',
             borderRadius: rem(6),
             padding: `${rem(6)} ${rem(10)}`,

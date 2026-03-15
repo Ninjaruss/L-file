@@ -4,9 +4,9 @@ import React from 'react'
 import { Box, Group, Stack, Title, Text, Badge, rem, useMantineTheme } from '@mantine/core'
 import { motion } from 'motion/react'
 import { getHeroStyles, type EntityAccentKey, getEntityThemeColor } from '../../lib/mantine-theme'
-import { mangaPatterns, clipPaths, entitySuit } from '../../lib/manga-decorations'
+import { mangaPatterns, clipPaths } from '../../lib/manga-decorations'
 import { heroTitle, heroSubtitle } from '../../lib/motion-presets'
-import { HalftoneOverlay, SuitWatermark } from '../decorative/MangaPatterns'
+import { HalftoneOverlay } from '../decorative/MangaPatterns'
 
 interface ListPageHeroProps {
   /** Lucide icon element to display */
@@ -39,7 +39,6 @@ export function ListPageHero({
 }: ListPageHeroProps) {
   const theme = useMantineTheme()
   const accentColor = getEntityThemeColor(theme, entityType)
-  const suit = entitySuit[entityType]
 
   return (
     <Box
@@ -79,20 +78,6 @@ export function ListPageHero({
 
       {/* Decorative overlays */}
       <HalftoneOverlay color={`${accentColor}12`} spacing={12} />
-      <SuitWatermark
-        suit={suit}
-        color={accentColor}
-        size={180}
-        opacity={0.07}
-        position="top-right"
-      />
-      <SuitWatermark
-        suit={suit}
-        color={accentColor}
-        size={90}
-        opacity={0.03}
-        position="bottom-left"
-      />
 
       {/* Content */}
       <Stack align="center" gap="xs" style={{ position: 'relative', zIndex: 1 }}>
