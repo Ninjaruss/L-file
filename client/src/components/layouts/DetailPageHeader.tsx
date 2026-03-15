@@ -1,9 +1,10 @@
 'use client'
 
 import React from 'react'
-import { Box, Card, Group, Stack, useMantineTheme } from '@mantine/core'
+import { Box, Card, Group, Stack, Title, Text, useMantineTheme } from '@mantine/core'
 import {
   getEntityThemeColor,
+  backgroundStyles,
   getCardStyles,
   type EntityAccentKey
 } from '../../lib/mantine-theme'
@@ -19,14 +20,18 @@ interface DetailPageHeaderProps {
   entityId: number
   /** Entity display name */
   entityName: string
-  /** Right-side content (title, badges, stats) */
-  children: React.ReactNode
+  /** Below-portrait content (badges, stats, etc.) */
+  children?: React.ReactNode
   /** Image width (default 200px) */
   imageWidth?: string
   /** Image height (default 280px) */
   imageHeight?: string
   /** Whether to show the entity image */
   showImage?: boolean
+  /** Chapter number for spoiler protection */
+  spoilerChapter?: number | null
+  /** Callback when spoiler is revealed */
+  onSpoilerRevealed?: () => void
 }
 
 export function DetailPageHeader({
@@ -36,7 +41,9 @@ export function DetailPageHeader({
   children,
   imageWidth = '200px',
   imageHeight = '280px',
-  showImage = true
+  showImage = true,
+  spoilerChapter,
+  onSpoilerRevealed,
 }: DetailPageHeaderProps) {
   const theme = useMantineTheme()
   const accentColor = getEntityThemeColor(theme, entityType)
@@ -90,51 +97,72 @@ export function DetailPageHeader({
         }}
       />
 
-      {/* Content */}
-      <Box p={theme.spacing.lg} style={{ position: 'relative', zIndex: 1, borderLeft: `4px solid ${accentColor}60` }}>
-        <Group gap={theme.spacing.lg} align="flex-start" wrap="wrap" justify="center">
-          {showImage && (
-            <Box style={{ flexShrink: 0 }}>
-              <Box
-                style={{
-                  width: imageWidth,
-                  height: imageHeight,
-                  borderRadius: theme.radius.md,
-                  overflow: 'hidden',
-                  border: `3px solid ${accentColor}`,
-                  boxShadow: `0 12px 40px ${accentColor}30, 0 4px 12px rgba(0,0,0,0.5), inset 0 0 0 1px ${accentColor}50`,
-                  transition: `all ${theme.other?.transitions?.durationStandard || 250}ms ${theme.other?.transitions?.easingStandard || 'ease-in-out'}`,
-                  position: 'relative'
-                }}
-              >
-                <ErrorBoundary>
-                  <MediaThumbnail
-                    entityType={entityType}
-                    entityId={entityId}
-                    entityName={entityName}
-                    maxWidth={imageWidth}
-                    maxHeight={imageHeight}
-                  />
-                </ErrorBoundary>
-                <Box
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 1,
-                    pointerEvents: 'none',
-                    background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%)',
-                    borderRadius: theme.radius.md,
-                  }}
-                />
-              </Box>
-            </Box>
-          )}
+      {/* Cinematic centered layout */}
+      <Box style={{ position: 'relative', zIndex: 1 }}>
+        {/* Page-colored fade at bottom */}
+        <Box
+          aria-hidden
+          style={{
+            position: 'absolute',
+            bottom: 0, left: 0, right: 0,
+            height: '40%',
+            background: `linear-gradient(0deg, ${backgroundStyles.page(theme)} 0%, transparent 100%)`,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
 
-          <Stack gap={theme.spacing.md} style={{ flex: 1, minWidth: '280px' }} justify="space-between">
-            {children}
-          </Stack>
-        </Group>
+        {/* Portrait */}
+        {showImage && (
+          <Box style={{ display: 'flex', justifyContent: 'center', paddingTop: theme.spacing.xl, position: 'relative', zIndex: 1 }}>
+            <Card
+              style={{
+                ...getCardStyles(theme, accentColor),
+                width: imageWidth,
+                height: imageHeight,
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+              p={0}
+              radius="md"
+            >
+              <MediaThumbnail
+                entityType={entityType}
+                entityId={entityId}
+                entityName={entityName}
+                allowCycling={false}
+                maxWidth={imageWidth}
+                maxHeight={imageHeight}
+                spoilerChapter={spoilerChapter ?? undefined}
+                onSpoilerRevealed={onSpoilerRevealed}
+              />
+            </Card>
+          </Box>
+        )}
+
+        {/* Name + children below portrait */}
+        <Stack
+          align="center"
+          gap={theme.spacing.sm}
+          style={{
+            padding: `${theme.spacing.lg} ${theme.spacing.xl} ${theme.spacing.xl}`,
+            position: 'relative',
+            zIndex: 3,
+          }}
+        >
+          <Title
+            order={1}
+            ta="center"
+            style={{
+              fontSize: 'clamp(1.6rem, 4vw, 2.8rem)',
+              fontFamily: 'var(--font-opti-goudy-text)',
+              textShadow: `0 2px 24px ${accentColor}50`,
+            }}
+          >
+            {entityName}
+          </Title>
+          {children}
+        </Stack>
       </Box>
     </Card>
   )
