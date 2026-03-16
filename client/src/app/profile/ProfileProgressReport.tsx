@@ -15,15 +15,15 @@ export default function ProfileProgressReport({ userProgress }: ProfileProgressR
   return (
     <Box style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '4px', padding: '12px' }}>
       <Group gap={6} align="baseline" mb={14}>
-        <Text style={{ fontSize: '13px', fontWeight: 600, color: '#d4d4d4', letterSpacing: '0.04em' }}>Reading Progress</Text>
-        <Text style={{ fontSize: '9px', color: '#1e1e1e', letterSpacing: '0.15em', textTransform: 'uppercase' }}>· chapter log</Text>
+        <Text style={{ fontSize: '15px', fontWeight: 600, color: '#d4d4d4', letterSpacing: '0.04em' }}>Reading Progress</Text>
+        <Text style={{ fontSize: '11px', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>· chapter log</Text>
       </Group>
 
       <Group justify="space-between" mb={8}>
-        <Text style={{ fontSize: '12px', color: '#777' }}>
+        <Text style={{ fontSize: '14px', color: '#999' }}>
           Chapter <span style={{ color: '#e5e5e5', fontWeight: 700 }}>{userProgress}</span> of {MAX_CHAPTER}
         </Text>
-        <Text style={{ fontSize: '12px', color: '#e11d48', fontWeight: 700 }}>{readPercent}%</Text>
+        <Text style={{ fontSize: '14px', color: '#e11d48', fontWeight: 700 }}>{readPercent}%</Text>
       </Group>
 
       {/* Progress bar + milestone ticks */}

@@ -113,8 +113,8 @@ export default function ProfileContentTabs({
       {/* Header */}
       <Group justify="space-between" align="center" mb={10}>
         <Group gap={6} align="baseline">
-          <Text style={{ fontSize: '13px', fontWeight: 600, color: '#d4d4d4', letterSpacing: '0.04em' }}>My Content</Text>
-          <Text style={{ fontSize: '9px', color: '#1e1e1e', letterSpacing: '0.15em', textTransform: 'uppercase' }}>· case files</Text>
+          <Text style={{ fontSize: '15px', fontWeight: 600, color: '#d4d4d4', letterSpacing: '0.04em' }}>My Content</Text>
+          <Text style={{ fontSize: '11px', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>· case files</Text>
         </Group>
         <Menu shadow="md" width={200}>
           <Menu.Target>
@@ -122,7 +122,7 @@ export default function ProfileContentTabs({
               size="xs"
               variant="outline"
               leftSection={<Plus size={12} />}
-              style={{ borderColor: 'rgba(225,29,72,0.3)', color: '#e11d48', fontSize: '9px', padding: '2px 8px', height: 'auto' }}
+              style={{ borderColor: 'rgba(225,29,72,0.3)', color: '#e11d48', fontSize: '12px', padding: '4px 10px', height: 'auto' }}
             >
               new
             </Button>
@@ -158,7 +158,7 @@ export default function ProfileContentTabs({
                     {count}
                   </Badge>
                 ) : null}
-                style={{ fontSize: '9px', color: activeTab === tab.value ? '#e11d48' : '#444' }}
+                style={{ fontSize: '13px', color: activeTab === tab.value ? '#e11d48' : '#888' }}
               >
                 {tab.label}
               </Tabs.Tab>
