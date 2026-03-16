@@ -14,7 +14,6 @@ import {
   Stack,
   Tabs,
   Text,
-  Title,
   useMantineTheme
 } from '@mantine/core'
 import { Crown, Users, Trophy, Calendar, BookOpen, Map, Image as ImageIcon, MessageSquare, Lightbulb } from 'lucide-react'
