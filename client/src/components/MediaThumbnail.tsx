@@ -1129,7 +1129,10 @@ function MediaSpoilerWrapper({
 
   const shouldHide = (() => {
     if (settings.showAllSpoilers) return false
-    if (chapterNumber) return chapterNumber > effectiveProgress
+    if (chapterNumber) {
+      if (effectiveProgress === 0) return false
+      return chapterNumber > effectiveProgress
+    }
     return media.isSpoiler ?? false
   })()
 
