@@ -300,7 +300,6 @@ export default function UsersPageContent() {
                               padding={0}
                               style={{
                                 ...getCardStyles(theme, accentCommunity),
-                                padding: 0,
                                 overflow: 'hidden',
                                 height: '100%',
                                 minHeight: rem(220),
@@ -341,9 +340,9 @@ export default function UsersPageContent() {
                               )}
 
                               {/* Inner content */}
-                              <Box p="md">
+                              <Box p="md" style={{ height: '100%' }}>
                                 <Stack gap="xs" align="center" style={{ height: '100%' }}>
-                                  <Box style={{ boxShadow: '0 0 0 3px rgba(168,85,247,0.2)', borderRadius: '50%' }}>
+                                  <Box style={{ boxShadow: '0 0 0 3px rgba(168,85,247,0.2)', borderRadius: '50%', overflow: 'hidden' }}>
                                     <UserProfileImage
                                       user={user}
                                       size={72}
