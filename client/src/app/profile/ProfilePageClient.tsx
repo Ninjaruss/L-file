@@ -279,7 +279,8 @@ export default function ProfilePageClient() {
             stats={stats}
             onOpenProfilePictureSelector={openProfilePictureSelector}
             onSaveUsername={handleSaveUsername}
-            onOpenSettings={() => setProfileTab('settings')}
+            onToggleSettings={() => setProfileTab(prev => prev === 'settings' ? 'general' : 'settings')}
+            isSettingsOpen={profileTab === 'settings'}
           />
 
           {/* Inline profile picture selector */}

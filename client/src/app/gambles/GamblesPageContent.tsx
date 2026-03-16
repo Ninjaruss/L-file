@@ -21,7 +21,6 @@ import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
-import { ScrollToTop } from '../../components/ScrollToTop'
 import { useProgress } from '../../providers/ProgressProvider'
 import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { shouldHideSpoiler } from '../../lib/spoiler-utils'
@@ -460,7 +459,7 @@ export default function GamblesPageContent({
           )}
         </HoverModal>
       }
-      afterContent={<ScrollToTop accentColor={accentGamble} />}
+
     />
   )
 }

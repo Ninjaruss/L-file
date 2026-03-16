@@ -18,7 +18,6 @@ import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
 import { BookOpen, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ScrollToTop } from '../../components/ScrollToTop'
 import { api } from '../../lib/api'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
@@ -375,7 +374,7 @@ export default function ArcsPageContent({
         onPageChange={handlePageChange}
         entityNamePlural="arcs"
         emptyIcon={<BookOpen size={48} />}
-        afterContent={<ScrollToTop accentColor={accentArc} />}
+
         hoverModal={
           <HoverModal
             isOpen={!!hoveredArc}

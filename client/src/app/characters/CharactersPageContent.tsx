@@ -17,7 +17,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
-import { ScrollToTop } from '../../components/ScrollToTop'
 import { useProgress } from '../../providers/ProgressProvider'
 import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { shouldHideSpoiler } from '../../lib/spoiler-utils'
@@ -529,7 +528,6 @@ export default function CharactersPageContent({
             )}
           </HoverModal>
         }
-        afterContent={<ScrollToTop accentColor={accentCharacter} />}
       />
 
     </>

@@ -34,7 +34,6 @@ import { useAuth } from '../../providers/AuthProvider'
 import AuthorProfileImage from '../../components/AuthorProfileImage'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
-import { ScrollToTop } from '../../components/ScrollToTop'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { PaginationBar } from '../../components/layouts/PaginationBar'
 import { EmptyState, SearchEmptyState } from '../../components/EmptyState'
@@ -899,7 +898,7 @@ export default function GuidesPageContent({
         )}
       </AnimatePresence>
 
-      <ScrollToTop accentColor={accentGuide} />
+
     </motion.div>
     </Box>
   )

@@ -30,7 +30,8 @@ interface ProfileHeaderProps {
   stats: ProfileStats
   onOpenProfilePictureSelector: () => void
   onSaveUsername: (username: string) => Promise<void>
-  onOpenSettings: () => void
+  onToggleSettings: () => void
+  isSettingsOpen: boolean
 }
 
 export default function ProfileHeader({
@@ -38,7 +39,8 @@ export default function ProfileHeader({
   stats,
   onOpenProfilePictureSelector,
   onSaveUsername,
-  onOpenSettings,
+  onToggleSettings,
+  isSettingsOpen,
 }: ProfileHeaderProps) {
   const [editingUsername, setEditingUsername] = useState(false)
   const [usernameInput, setUsernameInput] = useState('')
@@ -206,8 +208,19 @@ export default function ProfileHeader({
           </Box>
         ))}
         <Box style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
-          <ActionIcon variant="subtle" onClick={onOpenSettings} aria-label="Settings" style={{ color: '#333' }}>
-            <Settings size={16} />
+          <ActionIcon
+            variant={isSettingsOpen ? 'filled' : 'subtle'}
+            onClick={onToggleSettings}
+            aria-label={isSettingsOpen ? 'Close settings' : 'Open settings'}
+            title={isSettingsOpen ? 'Close settings' : 'Settings'}
+            style={{
+              color: isSettingsOpen ? '#fff' : '#888',
+              background: isSettingsOpen ? outlineStyles.accentColor : 'transparent',
+              border: isSettingsOpen ? 'none' : '1px solid #2a2a2a',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isSettingsOpen ? <X size={16} /> : <Settings size={16} />}
           </ActionIcon>
         </Box>
       </Group>

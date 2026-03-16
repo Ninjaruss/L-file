@@ -44,7 +44,6 @@ import {
   textColors
 } from '../../lib/mantine-theme'
 import { useProgress } from '../../providers/ProgressProvider'
-import { ScrollToTop } from '../../components/ScrollToTop'
 
 interface SearchResult {
   id: number
@@ -547,7 +546,7 @@ export default function SearchPageContent({
         </Group>
       )}
 
-      <ScrollToTop accentColor={guideAccent} />
+
     </Stack>
     </Container>
     </Box>
