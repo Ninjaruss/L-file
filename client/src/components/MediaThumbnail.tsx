@@ -8,10 +8,8 @@ import {
   Box,
   Loader,
   Text,
-  Tooltip,
   rem,
   useMantineTheme,
-  rgba
 } from '@mantine/core'
 import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
 import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle } from 'lucide-react'
@@ -21,6 +19,7 @@ import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
 import { api } from '../lib/api'
 import { analyzeMediaUrl, analyzeMediaUrlAsync, getPlaceholderInfo } from '../lib/media-utils'
+import SpoilerOverlay from './SpoilerOverlay'
 
 export interface MediaItem {
   id: number
@@ -1120,39 +1119,22 @@ function MediaSpoilerWrapper({
 }) {
   const [isRevealed, setIsRevealed] = useState(false)
   const { settings } = useSpoilerSettings()
-  const theme = useMantineTheme()
 
-  // Prioritize media's specific chapterNumber over entity's firstAppearanceChapter
-  // because the media itself might be from a later chapter than when the character first appears
   const chapterNumber = media.chapterNumber ?? spoilerChapter
 
+  // Mirrors shouldHideSpoiler's effectiveProgress logic; used for SpoilerOverlay's display label.
   const effectiveProgress = settings.chapterTolerance > 0
     ? settings.chapterTolerance
     : userProgress
 
-  const shouldHideSpoiler = () => {
-    if (settings.showAllSpoilers) {
-      return false
-    }
-
-    if (chapterNumber) {
-      return chapterNumber > effectiveProgress
-    }
-
+  const shouldHide = (() => {
+    if (settings.showAllSpoilers) return false
+    if (chapterNumber) return chapterNumber > effectiveProgress
     return media.isSpoiler ?? false
-  }
+  })()
 
-  const clientSideShouldHide = shouldHideSpoiler()
-
-  if (!clientSideShouldHide || isRevealed) {
+  if (!shouldHide || isRevealed) {
     return <>{children}</>
-  }
-
-  const handleReveal = (event: React.MouseEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
-    setIsRevealed(true)
-    onRevealed?.()
   }
 
   return (
@@ -1160,62 +1142,14 @@ function MediaSpoilerWrapper({
       <Box style={{ opacity: 0.3, filter: 'blur(2px)', width: '100%', height: '100%', pointerEvents: 'none' }}>
         {children}
       </Box>
-
-      <Box
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: rgba(theme.colors.red[6] ?? '#e11d48', 0.85),
-          borderRadius: rem(8),
-          cursor: 'pointer',
-          border: `1px solid ${theme.colors.red[5] ?? '#f87171'}`,
-          boxShadow: theme.shadows.lg,
-          zIndex: 10,
-          transition: 'background-color 0.2s ease'
+      <SpoilerOverlay
+        chapterNumber={chapterNumber}
+        effectiveProgress={effectiveProgress > 0 ? effectiveProgress : undefined}
+        onReveal={() => {
+          setIsRevealed(true)
+          onRevealed?.()
         }}
-        onClick={handleReveal}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = rgba(theme.colors.red[6] ?? '#e11d48', 0.95)
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = rgba(theme.colors.red[6] ?? '#e11d48', 0.85)
-        }}
-      >
-        <Tooltip
-          label={chapterNumber
-            ? `Chapter ${chapterNumber} spoiler – you're at Chapter ${effectiveProgress}. Click to reveal.`
-            : 'Spoiler content. Click to reveal.'}
-          position="top"
-          withArrow
-        >
-          <Box style={{ textAlign: 'center', width: '100%' }}>
-            <Text
-              size="xs"
-              fw={700}
-              style={{
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: rem(6),
-                marginBottom: rem(4)
-              }}
-            >
-              <AlertTriangle size={14} />
-              {chapterNumber ? `Chapter ${chapterNumber} Spoiler` : 'Spoiler'}
-            </Text>
-            <Text size="xs" style={{ color: 'rgba(255,255,255,0.85)' }}>
-              Click to reveal
-            </Text>
-          </Box>
-        </Tooltip>
-      </Box>
+      />
     </Box>
   )
 }
