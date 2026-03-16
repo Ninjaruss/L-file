@@ -297,68 +297,99 @@ export default function UsersPageContent() {
                               shadow="sm"
                               radius="md"
                               withBorder
-                              padding="md"
+                              padding={0}
                               style={{
                                 ...getCardStyles(theme, accentCommunity),
+                                padding: 0,
+                                overflow: 'hidden',
                                 height: '100%',
+                                minHeight: rem(220),
+                                position: 'relative',
                                 textDecoration: 'none',
                                 cursor: 'pointer',
-                                position: 'relative'
                               }}
                             >
+                              {/* Accent strip */}
+                              <Box
+                                style={{
+                                  height: 4,
+                                  background: 'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
+                                  width: '100%',
+                                }}
+                              />
+
+                              {/* Role chip */}
                               {(user.role === 'admin' || user.role === 'moderator') && (
                                 <Badge
                                   size="xs"
                                   style={{
                                     position: 'absolute',
-                                    top: rem(8),
-                                    right: rem(8),
+                                    top: rem(14),
+                                    right: rem(10),
                                     zIndex: 10,
                                     backgroundColor: user.role === 'admin'
-                                      ? 'rgba(225, 29, 72, 0.15)'
-                                      : 'rgba(77, 171, 247, 0.12)',
+                                      ? 'rgba(225,29,72,0.15)'
+                                      : 'rgba(77,171,247,0.12)',
                                     border: user.role === 'admin'
-                                      ? '1px solid rgba(225, 29, 72, 0.4)'
-                                      : '1px solid rgba(77, 171, 247, 0.35)',
-                                    color: user.role === 'admin' ? '#e11d48' : '#4dabf7'
+                                      ? '1px solid rgba(225,29,72,0.4)'
+                                      : '1px solid rgba(77,171,247,0.35)',
+                                    color: user.role === 'admin' ? '#e11d48' : '#4dabf7',
                                   }}
                                 >
                                   {user.role === 'admin' ? 'Admin' : 'Mod'}
                                 </Badge>
                               )}
-                              <Stack gap="xs" align="center" style={{ height: '100%' }}>
-                                <UserProfileImage
-                                  user={user}
-                                  size={56}
-                                  showFallback
-                                  className="user-profile-avatar"
-                                />
 
-                                <Stack gap={2} align="center" w="100%">
+                              {/* Inner content */}
+                              <Box p="md">
+                                <Stack gap="xs" align="center" style={{ height: '100%' }}>
+                                  <Box style={{ boxShadow: '0 0 0 3px rgba(168,85,247,0.2)', borderRadius: '50%' }}>
+                                    <UserProfileImage
+                                      user={user}
+                                      size={72}
+                                      showFallback
+                                      className="user-profile-avatar"
+                                    />
+                                  </Box>
+
+                                  <Stack gap={2} align="center" w="100%">
+                                    <Text
+                                      fw={700}
+                                      c={accentCommunity}
+                                      ta="center"
+                                      size="sm"
+                                      lineClamp={1}
+                                      title={user.username}
+                                    >
+                                      {user.username}
+                                    </Text>
+                                    <UserRoleDisplay
+                                      userRole={user.role as 'admin' | 'moderator' | 'user'}
+                                      customRole={user.customRole}
+                                      size="small"
+                                      spacing={0.5}
+                                    />
+                                  </Stack>
+
+                                  <UserBadges userId={user.id} size="sm" maxDisplay={3} />
+
                                   <Text
-                                    fw={600}
-                                    c={accentCommunity}
+                                    mt="auto"
                                     ta="center"
-                                    size="sm"
-                                    lineClamp={1}
-                                    title={user.username}
+                                    style={{
+                                      background: 'rgba(168,85,247,0.1)',
+                                      border: '1px solid rgba(168,85,247,0.3)',
+                                      color: accentCommunity,
+                                      borderRadius: rem(20),
+                                      padding: '3px 12px',
+                                      fontFamily: 'monospace',
+                                      fontSize: rem(11),
+                                    }}
                                   >
-                                    {user.username}
+                                    Ch. {user.userProgress ?? 0}
                                   </Text>
-                                  <UserRoleDisplay
-                                    userRole={user.role as 'admin' | 'moderator' | 'user'}
-                                    customRole={user.customRole}
-                                    size="small"
-                                    spacing={0.5}
-                                  />
                                 </Stack>
-
-                                <UserBadges userId={user.id} size="sm" maxDisplay={3} />
-
-                                <Text size="xs" c="dimmed" ta="center" mt="auto">
-                                  Ch. {user.userProgress ?? 0}
-                                </Text>
-                              </Stack>
+                              </Box>
                             </Card>
                           </motion.div>
                       ))}
