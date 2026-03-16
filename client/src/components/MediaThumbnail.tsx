@@ -7,12 +7,13 @@ import {
   Alert,
   Box,
   Loader,
+  Modal,
   Text,
   rem,
   useMantineTheme,
 } from '@mantine/core'
 import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
-import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle, Maximize2, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import Image from 'next/image'
 import { useProgress } from '../providers/ProgressProvider'
@@ -46,6 +47,7 @@ interface MediaThumbnailProps {
   onSpoilerRevealed?: () => void // Callback when spoiler is revealed
   priority?: boolean // If true, loads image eagerly (above-the-fold optimization)
   initialMedia?: MediaItem[] // Pre-loaded media to skip the API call on first render
+  allowFullView?: boolean // If true, shows expand button and fullscreen modal
 }
 
 // Cache for media data to avoid redundant API calls
@@ -226,7 +228,8 @@ export default function MediaThumbnail({
   hideIfEmpty = false,
   onSpoilerRevealed,
   priority = false,
-  initialMedia
+  initialMedia,
+  allowFullView = false
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
   const [allEntityMedia, setAllEntityMedia] = useState<MediaItem[]>([])
@@ -235,8 +238,10 @@ export default function MediaThumbnail({
   const [error, setError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [resolvedMediaInfo, setResolvedMediaInfo] = useState<Record<string, any>>({})
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const resolvedUrlsRef = useRef<Set<string>>(new Set())
   const abortControllerRef = useRef<AbortController | null>(null)
+  const modalContainerRef = useRef<HTMLDivElement>(null)
 
   // Viewport detection — gates loadMedia() so only visible/near-viewport cards
   // fire their media API call, preventing a burst of 12 simultaneous requests.
@@ -520,6 +525,20 @@ export default function MediaThumbnail({
 
     resolveMediaUrl()
   }, [currentThumbnail])
+
+  // Focus modal container for keyboard navigation
+  useEffect(() => {
+    if (isModalOpen) {
+      const timer = setTimeout(() => modalContainerRef.current?.focus(), 50)
+      return () => clearTimeout(timer)
+    }
+  }, [isModalOpen])
+
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') handlePrevious()
+    else if (e.key === 'ArrowRight') handleNext()
+    else if (e.key === 'Escape') setIsModalOpen(false)
+  }
 
   const handlePrevious = () => {
     if (allEntityMedia.length > 1) {
@@ -813,6 +832,78 @@ export default function MediaThumbnail({
     )
   }
 
+  const renderModalMediaContent = (media: MediaItem) => {
+    const resolvedInfo = resolvedMediaInfo[media.url]
+    const mediaInfo = resolvedInfo || analyzeMediaUrl(media.url)
+
+    if (media.type === 'image' && mediaInfo.isDirectImage) {
+      const imageUrl = mediaInfo.directImageUrl || media.url
+      const external = isExternalUrl(imageUrl)
+      return external ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={media.description || `${entityName} image`}
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+        />
+      ) : (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <Image
+            src={imageUrl}
+            alt={media.description || `${entityName} image`}
+            fill
+            style={{ objectFit: 'contain' }}
+            sizes="90vw"
+            priority
+          />
+        </div>
+      )
+    }
+
+    if (media.type === 'video' && mediaInfo.platform === 'youtube' && mediaInfo.embedUrl) {
+      return (
+        <iframe
+          src={mediaInfo.embedUrl}
+          title={media.description || `${entityName} video`}
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          allowFullScreen
+        />
+      )
+    }
+
+    if (media.type === 'video') {
+      return (
+        <video
+          src={media.url}
+          controls
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+        />
+      )
+    }
+
+    // Fallback: link to source
+    return (
+      <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: rem(12) }}>
+        <ImageIcon size={48} color="rgba(255,255,255,0.4)" />
+        <Text c="dimmed" size="sm">
+          {media.description || 'Media'}
+        </Text>
+        {media.url && (
+          <Text
+            component="a"
+            href={media.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            style={{ color: '#888', textDecoration: 'underline' }}
+          >
+            View source
+          </Text>
+        )}
+      </Box>
+    )
+  }
+
   const renderEmptyState = () => {
     const smallestDimension = Math.min(
       typeof maxWidth === 'number' ? maxWidth : Infinity,
@@ -1036,71 +1127,322 @@ export default function MediaThumbnail({
     (!numericMaxWidth || numericMaxWidth > 64) &&
     (!numericMaxHeight || numericMaxHeight > 64)
 
+  const showExpandButton = allowFullView && currentThumbnail && !inline &&
+    (!numericMaxWidth || numericMaxWidth > 64)
+
   return (
-    <Box component={containerComponent} ref={containerRef as React.Ref<HTMLDivElement>} className={className} style={containerStyles}>
-      <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress} spoilerChapter={spoilerChapter} onRevealed={onSpoilerRevealed}>
-        {mediaContent}
-      </MediaSpoilerWrapper>
+    <>
+      <Box component={containerComponent} ref={containerRef as React.Ref<HTMLDivElement>} className={className} style={containerStyles}>
+        <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress} spoilerChapter={spoilerChapter} onRevealed={onSpoilerRevealed}>
+          {mediaContent}
+        </MediaSpoilerWrapper>
 
-      {showControls && (
-        <>
+        {showControls && (
+          <>
+            <ActionIcon
+              variant="light"
+              size="sm"
+              radius="xl"
+              onClick={handlePrevious}
+              aria-label="Previous image"
+              style={{
+                position: 'absolute',
+                left: rem(8),
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
+                color: '#ffffff',
+                zIndex: 30
+              }}
+            >
+              <ChevronLeft size={20} />
+            </ActionIcon>
+
+            <ActionIcon
+              variant="light"
+              size="sm"
+              radius="xl"
+              onClick={handleNext}
+              aria-label="Next image"
+              style={{
+                position: 'absolute',
+                right: rem(8),
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
+                color: '#ffffff',
+                zIndex: 30
+              }}
+            >
+              <ChevronRight size={20} />
+            </ActionIcon>
+
+            {/* Dot indicators — bottom center */}
+            <Box
+              style={{
+                position: 'absolute',
+                bottom: rem(10),
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: rem(5),
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.52)',
+                borderRadius: rem(12),
+                paddingInline: rem(8),
+                paddingBlock: rem(5),
+                zIndex: 30,
+                pointerEvents: 'none',
+              }}
+            >
+              {allEntityMedia.map((_, idx) => (
+                <Box
+                  key={idx}
+                  style={{
+                    width: idx === currentIndex ? rem(8) : rem(5),
+                    height: idx === currentIndex ? rem(8) : rem(5),
+                    borderRadius: '50%',
+                    backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255,255,255,0.35)',
+                    transition: 'all 0.22s ease',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </Box>
+          </>
+        )}
+
+        {/* Expand / full-view button */}
+        {showExpandButton && (
           <ActionIcon
-            variant="light"
+            variant="subtle"
             size="sm"
-            radius="xl"
-            onClick={handlePrevious}
-            aria-label="Previous image"
+            radius="sm"
+            onClick={() => setIsModalOpen(true)}
+            aria-label="View full size"
             style={{
               position: 'absolute',
-              left: rem(8),
-              top: '50%',
-              transform: 'translateY(-50%)',
-              backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
-              color: '#ffffff',
-              zIndex: 30
-            }}
-          >
-            <ChevronLeft size={20} />
-          </ActionIcon>
-
-          <ActionIcon
-            variant="light"
-            size="sm"
-            radius="xl"
-            onClick={handleNext}
-            aria-label="Next image"
-            style={{
-              position: 'absolute',
+              top: rem(8),
               right: rem(8),
-              top: '50%',
-              transform: 'translateY(-50%)',
-              backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
-              color: '#ffffff',
-              zIndex: 30
+              backgroundColor: 'rgba(0,0,0,0.55)',
+              color: 'rgba(255,255,255,0.85)',
+              zIndex: 30,
+              transition: 'background 0.18s ease',
             }}
           >
-            <ChevronRight size={20} />
+            <Maximize2 size={13} />
           </ActionIcon>
+        )}
+      </Box>
 
-          <Box
-            style={{
-              position: 'absolute',
-              bottom: rem(8),
-              right: rem(8),
-              backgroundColor: `${theme.colors.dark?.[7] ?? theme.colors.gray?.[0]}CC`,
-              color: '#ffffff',
-              paddingInline: rem(8),
-              paddingBlock: rem(4),
-              borderRadius: rem(8),
-              fontSize: '0.75rem',
-              zIndex: 30
-            }}
+      {/* Fullscreen lightbox modal */}
+      {allowFullView && currentThumbnail && (
+        <Modal
+          opened={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          size="auto"
+          centered
+          withCloseButton={false}
+          padding={0}
+          overlayProps={{ blur: 10, backgroundOpacity: 0.94, color: '#000' }}
+          styles={{
+            content: {
+              background: '#080c14',
+              borderRadius: rem(12),
+              border: '1px solid rgba(255,255,255,0.07)',
+              overflow: 'hidden',
+              maxWidth: '92vw',
+              width: 'auto',
+            },
+            body: { padding: 0 },
+          }}
+        >
+          <div
+            ref={modalContainerRef}
+            tabIndex={-1}
+            onKeyDown={handleModalKeyDown}
+            style={{ outline: 'none' }}
           >
-            {currentIndex + 1} / {allEntityMedia.length}
-          </Box>
-        </>
+            {/* Top bar */}
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: `${rem(12)} ${rem(16)}`,
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(0,0,0,0.4)',
+              }}
+            >
+              <Text
+                size="xs"
+                style={{
+                  color: 'rgba(255,255,255,0.5)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                }}
+              >
+                {entityName || 'Image'}
+                {allEntityMedia.length > 1 && (
+                  <span style={{ marginLeft: rem(10), color: 'rgba(255,255,255,0.28)' }}>
+                    {currentIndex + 1} of {allEntityMedia.length}
+                  </span>
+                )}
+              </Text>
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+                style={{ color: 'rgba(255,255,255,0.6)' }}
+              >
+                <X size={16} />
+              </ActionIcon>
+            </Box>
+
+            {/* Image area */}
+            <Box
+              style={{
+                position: 'relative',
+                width: 'min(88vw, 860px)',
+                height: 'min(76vh, 640px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#050810',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentThumbnail.id}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {renderModalMediaContent(currentThumbnail)}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Prev / Next buttons in modal */}
+              {allEntityMedia.length > 1 && (
+                <>
+                  <ActionIcon
+                    variant="light"
+                    size="lg"
+                    radius="xl"
+                    onClick={handlePrevious}
+                    aria-label="Previous image"
+                    style={{
+                      position: 'absolute',
+                      left: rem(12),
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      color: '#fff',
+                      zIndex: 10,
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <ChevronLeft size={22} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="light"
+                    size="lg"
+                    radius="xl"
+                    onClick={handleNext}
+                    aria-label="Next image"
+                    style={{
+                      position: 'absolute',
+                      right: rem(12),
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      color: '#fff',
+                      zIndex: 10,
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <ChevronRight size={22} />
+                  </ActionIcon>
+                </>
+              )}
+            </Box>
+
+            {/* Bottom bar: dots + description */}
+            <Box
+              style={{
+                padding: `${rem(12)} ${rem(20)}`,
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(0,0,0,0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: rem(8),
+              }}
+            >
+              {/* Dot indicators */}
+              {allEntityMedia.length > 1 && (
+                <Box style={{ display: 'flex', gap: rem(6), alignItems: 'center' }}>
+                  {allEntityMedia.map((_, idx) => (
+                    <Box
+                      key={idx}
+                      onClick={() => {
+                        setCurrentIndex(idx)
+                        setCurrentThumbnail(allEntityMedia[idx])
+                      }}
+                      style={{
+                        width: idx === currentIndex ? rem(10) : rem(6),
+                        height: idx === currentIndex ? rem(10) : rem(6),
+                        borderRadius: '50%',
+                        backgroundColor: idx === currentIndex ? '#fff' : 'rgba(255,255,255,0.28)',
+                        transition: 'all 0.22s ease',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+
+              {/* Description */}
+              {currentThumbnail.description && (
+                <Text
+                  size="xs"
+                  ta="center"
+                  style={{ color: 'rgba(255,255,255,0.45)', maxWidth: 520 }}
+                >
+                  {currentThumbnail.description}
+                </Text>
+              )}
+
+              {/* Chapter badge */}
+              {currentThumbnail.chapterNumber && (
+                <Text
+                  size="xs"
+                  style={{
+                    color: 'rgba(255,255,255,0.3)',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    fontSize: rem(10),
+                  }}
+                >
+                  Chapter {currentThumbnail.chapterNumber}
+                </Text>
+              )}
+            </Box>
+          </div>
+        </Modal>
       )}
-    </Box>
+    </>
   )
 }
 

@@ -117,7 +117,8 @@ export function DetailPageHeader({
             entityType={entityType}
             entityId={entityId}
             entityName={entityName}
-            allowCycling={false}
+            allowCycling={true}
+            allowFullView={true}
             maxWidth="100%"
             maxHeight="100%"
             spoilerChapter={spoilerChapter ?? undefined}

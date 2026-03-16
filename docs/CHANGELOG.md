@@ -6,7 +6,7 @@
 - Detail page header redesigned with superpowers + frontend design skill
 
 ### Notes
-Superpowers skill seems to be pretty useful in making sure to cover most bases when making changes to the code base; however, it still isn't perfect and will make a minor quirk mistake here and there. It is still pretty good
+Superpowers skill seems to be pretty useful in making sure to cover most bases when making changes to the code base; however, it still isn't perfect and will make a minor quirk mistake here and there. It is still pretty good... but the token usage is crazy if I don't really limit it to a specific component.
 
 ## 2026-03-12
 - Additional frontend improvements using frontend design skill on profile page, changelog, submit pages
