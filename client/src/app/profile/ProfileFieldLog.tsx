@@ -111,13 +111,10 @@ export default function ProfileFieldLog({ guides, submissions, user }: ProfileFi
 
   return (
     <Box style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '4px', padding: '12px' }}>
-      <Group gap={6} align="baseline" mb={10}>
-        <Text style={{ fontSize: '15px', fontWeight: 600, color: '#d4d4d4', letterSpacing: '0.04em' }}>Activity</Text>
-        <Text style={{ fontSize: '11px', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>· field log</Text>
-      </Group>
+      <Text style={{ fontSize: '17px', fontWeight: 600, color: '#d4d4d4', marginBottom: 12 }}>Activity</Text>
 
       {events.length === 0 ? (
-        <Text style={{ fontSize: '13px', color: '#555', fontStyle: 'italic' }}>No activity yet.</Text>
+        <Text style={{ fontSize: '15px', color: '#666', fontStyle: 'italic' }}>No activity yet.</Text>
       ) : (
         <Box>
           {events.map((ev, i) => {
@@ -132,18 +129,18 @@ export default function ProfileFieldLog({ guides, submissions, user }: ProfileFi
                   borderBottom: i < events.length - 1 ? '1px solid #0f0f0f' : 'none',
                 }}
               >
-                <Text style={{ fontSize: '13px', color: '#777', whiteSpace: 'nowrap', paddingTop: '1px', minWidth: '32px', fontFamily: 'monospace' }}>
+                <Text style={{ fontSize: '14px', color: '#888', whiteSpace: 'nowrap', paddingTop: '1px', minWidth: '36px', fontFamily: 'monospace' }}>
                   {timeAgo(ev.date)}
                 </Text>
                 <Box style={{ flex: 1 }}>
-                  <Text style={{ fontSize: '15px', color: i === 0 ? '#ccc' : '#aaa' }}>{ev.title}</Text>
+                  <Text style={{ fontSize: '16px', color: i === 0 ? '#ddd' : '#bbb' }}>{ev.title}</Text>
                   {ev.detail && (
-                    <Text style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>{ev.detail}</Text>
+                    <Text style={{ fontSize: '14px', color: '#999', marginTop: '3px' }}>{ev.detail}</Text>
                   )}
                 </Box>
                 <Box
                   style={{
-                    fontSize: '11px',
+                    fontSize: '13px',
                     padding: '1px 5px',
                     background: style.bg,
                     color: style.color,

@@ -112,10 +112,7 @@ export default function ProfileContentTabs({
     <Box style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '4px', padding: '12px' }}>
       {/* Header */}
       <Group justify="space-between" align="center" mb={10}>
-        <Group gap={6} align="baseline">
-          <Text style={{ fontSize: '15px', fontWeight: 600, color: '#d4d4d4', letterSpacing: '0.04em' }}>My Content</Text>
-          <Text style={{ fontSize: '11px', color: '#333', letterSpacing: '0.15em', textTransform: 'uppercase' }}>· case files</Text>
-        </Group>
+        <Text style={{ fontSize: '17px', fontWeight: 600, color: '#d4d4d4' }}>My Content</Text>
         <Menu shadow="md" width={200}>
           <Menu.Target>
             <Button
@@ -158,7 +155,7 @@ export default function ProfileContentTabs({
                     {count}
                   </Badge>
                 ) : null}
-                style={{ fontSize: '13px', color: activeTab === tab.value ? '#e11d48' : '#888' }}
+                style={{ fontSize: '15px', color: activeTab === tab.value ? '#e11d48' : '#aaa' }}
               >
                 {tab.label}
               </Tabs.Tab>

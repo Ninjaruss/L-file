@@ -97,11 +97,6 @@ export default function ProfileHeader({
         }}
       />
 
-      {/* Ghost micro-label */}
-      <Text style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#1e1e1e', textTransform: 'uppercase', marginBottom: '12px', fontFamily: 'monospace' }}>
-        usogui database · classified
-      </Text>
-
       {/* Main header row */}
       <Group justify="space-between" align="flex-end" gap="lg" wrap="wrap">
         <Group align="flex-end" gap="lg">
@@ -181,9 +176,8 @@ export default function ProfileHeader({
 
         {/* Dossier metadata — ghosted */}
         <Stack gap={2} style={{ textAlign: 'right', paddingBottom: '6px' }}>
-          <Text style={{ fontSize: '12px', color: '#333', letterSpacing: '0.12em', fontFamily: 'monospace', lineHeight: 1.9 }}>
+          <Text style={{ fontSize: '13px', color: '#555', letterSpacing: '0.06em', fontFamily: 'monospace', lineHeight: 1.9 }}>
             #{caseRef}<br />
-            active<br />
             {memberSince}
           </Text>
         </Stack>
@@ -205,10 +199,10 @@ export default function ProfileHeader({
               paddingLeft: i === 0 ? 0 : '16px',
             }}
           >
-            <Text style={{ fontSize: '20px', fontWeight: 800, color: stat.accent ? '#e11d48' : '#aaa', lineHeight: 1, marginBottom: '1px', display: 'block' }}>
+            <Text style={{ fontSize: '22px', fontWeight: 800, color: stat.accent ? '#e11d48' : '#bbb', lineHeight: 1, marginBottom: '2px', display: 'block' }}>
               {stat.value}
             </Text>
-            <Text style={{ fontSize: '13px', color: '#777' }}>{stat.label}</Text>
+            <Text style={{ fontSize: '14px', color: '#888' }}>{stat.label}</Text>
           </Box>
         ))}
         <Box style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
