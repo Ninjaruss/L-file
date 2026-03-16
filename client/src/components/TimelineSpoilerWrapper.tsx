@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Box } from '@mantine/core'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
@@ -12,8 +12,8 @@ interface TimelineSpoilerWrapperProps {
   /** Called when the user clicks to reveal. Use to update parent state (e.g. revealedEvents). */
   onReveal?: () => void
   /** Applied to the outer Box. Use style={{ height: '100%' }} inside fixed-height card grids. */
-  style?: React.CSSProperties
-  children: React.ReactNode
+  style?: CSSProperties
+  children: ReactNode
 }
 
 /**
@@ -31,6 +31,7 @@ export default function TimelineSpoilerWrapper({
   const { userProgress } = useProgress()
   const { settings } = useSpoilerSettings()
 
+  // Mirrors the effectiveProgress logic from shouldHideSpoiler; used for SpoilerOverlay's display label.
   const effectiveProgress = settings.chapterTolerance > 0
     ? settings.chapterTolerance
     : userProgress
