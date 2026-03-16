@@ -564,7 +564,7 @@ function TimelineSpoilerWrapper({ event, children }: { event: TimelineEvent; chi
   const effectiveProgress = settings.chapterTolerance > 0 ? settings.chapterTolerance : userProgress
   const chapterNumber = event.chapterNumber
   const spoilerChapter = event.spoilerChapter ?? chapterNumber
-  const shouldHide = !settings.showAllSpoilers && spoilerChapter > effectiveProgress
+  const shouldHide = !settings.showAllSpoilers && effectiveProgress > 0 && spoilerChapter > effectiveProgress
 
   if (!shouldHide || revealed) {
     return <>{children}</>

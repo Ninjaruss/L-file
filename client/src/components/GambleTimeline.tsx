@@ -361,7 +361,7 @@ function TimelineSpoilerWrapper({ event, children }: { event: GambleTimelineEven
   const chapterNumber = event.chapterNumber
   const spoilerChapter = event.spoilerChapter ?? chapterNumber
 
-  const shouldHide = !settings.showAllSpoilers && spoilerChapter > effectiveProgress
+  const shouldHide = !settings.showAllSpoilers && effectiveProgress > 0 && spoilerChapter > effectiveProgress
 
   if (!shouldHide || revealed) {
     return <>{children}</>

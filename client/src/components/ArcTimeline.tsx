@@ -909,7 +909,7 @@ function TimelineSpoilerWrapper({ event, children }: { event: TimelineEvent; chi
   const spoilerChapter = event.spoilerChapter ?? chapterNumber
 
   // Hide events that are ahead of user's progress (no explicit isSpoiler flag needed)
-  const shouldHide = !settings.showAllSpoilers && spoilerChapter > effectiveProgress
+  const shouldHide = !settings.showAllSpoilers && effectiveProgress > 0 && spoilerChapter > effectiveProgress
 
   if (!shouldHide || revealed) {
     return <>{children}</>
