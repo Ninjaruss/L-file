@@ -22,7 +22,6 @@ import { motion } from 'motion/react'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
-import { ScrollToTop } from '../../components/ScrollToTop'
 import TimelineSpoilerWrapper from '../../components/TimelineSpoilerWrapper'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
@@ -226,7 +225,7 @@ export default function QuotesPageContent({
   const hasSearchQuery = Boolean(searchQuery || characterId)
 
   const renderQuoteCard = useCallback((quote: QuoteData) => (
-    <TimelineSpoilerWrapper chapterNumber={quote.chapter ?? 1}>
+    <TimelineSpoilerWrapper chapterNumber={quote.chapter}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -523,7 +522,7 @@ export default function QuotesPageContent({
           )}
         </HoverModal>
       }
-      afterContent={<ScrollToTop accentColor={accentQuote} />}
+
     />
   )
 }
