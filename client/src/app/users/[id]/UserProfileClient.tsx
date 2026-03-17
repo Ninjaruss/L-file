@@ -21,7 +21,6 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { getAlphaColor, getEntityThemeColor, headerColors, outlineStyles, textColors } from '../../../lib/mantine-theme'
-import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import { Camera, Dices, Eye, FileText, Heart, Quote, Star } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -208,14 +207,10 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
   const readingProgress = Math.min(Math.round((user.userProgress / MAX_CHAPTER) * 100), 100)
 
   return (
-    <Container size="lg" py="xl">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <BreadcrumbNav
-          items={createEntityBreadcrumbs('user', user.username)}
-          entityType="user"
-        />
-
-        {/* Main Profile Card */}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <Container size="lg" py="xl">
+        <Stack gap={0}>
+        {/* Main Profile Card — replaced in Task 3 */}
         <Card
           className="gambling-card"
           withBorder
@@ -815,7 +810,8 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             </Stack>
           </Card>
         )}
-      </motion.div>
-    </Container>
+        </Stack>
+      </Container>
+    </motion.div>
   )
 }
