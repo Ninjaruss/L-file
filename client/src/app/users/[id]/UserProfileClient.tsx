@@ -106,7 +106,6 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     mediaSubmitted: number
     likesReceived: number
     annotationsSubmitted: number
-    eventsSubmitted?: number
   } | null>(null)
   const [dataLoading, setDataLoading] = useState(true)
   const [contributionsVisible, setContributionsVisible] = useState(10)
@@ -210,7 +209,6 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Container size="lg" py="xl">
         <Stack gap={0}>
-        {/* Main Profile Card — replaced in Task 3 */}
         <Card
           className="gambling-card"
           withBorder
@@ -810,7 +808,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             </Stack>
           </Card>
         )}
-        </Stack>
+          </Stack>
       </Container>
     </motion.div>
   )
