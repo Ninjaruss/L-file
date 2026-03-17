@@ -8,20 +8,15 @@ import {
   Button,
   Card,
   Container,
-  Divider,
   Group,
-  Progress,
   SegmentedControl,
   SimpleGrid,
-  Skeleton,
   Stack,
   Text,
-  Title,
-  rem,
   useMantineTheme
 } from '@mantine/core'
-import { getAlphaColor, getEntityThemeColor, headerColors, outlineStyles, textColors } from '../../../lib/mantine-theme'
-import { Camera, Dices, Eye, FileText, Heart, Quote, Star } from 'lucide-react'
+import { getAlphaColor, getEntityThemeColor, outlineStyles, textColors } from '../../../lib/mantine-theme'
+import { Eye, FileText, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { api } from '../../../lib/api'
@@ -165,419 +160,108 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
     fetchUserData()
   }, [user.id, user.userStats, user.favoriteQuote, user.favoriteGamble])
 
-  const characterColor = getEntityThemeColor(theme, 'character')
-  const gambleColor = getEntityThemeColor(theme, 'gamble')
   const guideColor = getEntityThemeColor(theme, 'guide')
-  const mediaColor = getEntityThemeColor(theme, 'media')
-  const quoteColor = getEntityThemeColor(theme, 'quote')
-  const eventColor = getEntityThemeColor(theme, 'event')
-  const arcColor = getEntityThemeColor(theme, 'arc')
-  const likesColor = '#e11d48'
   const accentColor = outlineStyles.accentColor
   const accentBorderColor = getAlphaColor(accentColor, 0.4)
   const accentHoverColor = getAlphaColor(accentColor, 0.18)
   const accentTextColor = theme.colors.gray?.[0] ?? '#ffffff'
   const cardBaseBackground = theme.colors.dark?.[7] ?? '#070707'
 
-  const stats = [
-    {
-      label: 'Guides Written',
-      value: userStats?.guidesWritten ?? 0,
-      icon: <FileText size={22} color={guideColor} />,
-      color: guideColor,
-      isLoading: dataLoading && !userStats
-    },
-    {
-      label: 'Media Submitted',
-      value: userStats?.mediaSubmitted ?? 0,
-      icon: <Camera size={22} color={mediaColor} />,
-      color: mediaColor,
-      isLoading: dataLoading && !userStats
-    },
-    {
-      label: 'Likes Received',
-      value: userStats?.likesReceived ?? 0,
-      icon: <Heart size={22} color={likesColor} />,
-      color: likesColor,
-      isLoading: dataLoading && !userStats
-    }
-  ]
-
-  const readingProgress = Math.min(Math.round((user.userProgress / MAX_CHAPTER) * 100), 100)
+  const readPercent = Math.min(Math.round((user.userProgress / MAX_CHAPTER) * 100), 100)
+  const caseRef = String(user.id).padStart(4, '0')
+  const memberSince = user.createdAt
+    ? new Date(user.createdAt).toISOString().split('T')[0]
+    : '—'
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Container size="lg" py="xl">
         <Stack gap={0}>
-        <Card
-          className="gambling-card"
-          withBorder
-          radius="lg"
-          shadow="xl"
-          p="xl"
-          mb="xl"
+        {/* ── Header ── */}
+        <Box
           style={{
-            background: `linear-gradient(135deg, ${getAlphaColor('#7f1d1d', 0.45)}, ${getAlphaColor('#7f1d1d', 0.15)}), ${cardBaseBackground}`,
-            border: `1px solid ${accentBorderColor}`,
-            boxShadow: `0 20px 45px ${getAlphaColor(accentColor, 0.12)}`,
-            color: theme.colors.gray?.[0] ?? '#ffffff'
+            background: 'linear-gradient(180deg, #100508 0%, #0a0a0a 100%)',
+            borderBottom: '1px solid #1a1a1a',
+            padding: '20px 24px 0',
+            position: 'relative',
           }}
         >
-          <Stack gap="xl">
-            {/* Profile Header Section */}
-            <Group align="flex-start" gap="xl" wrap="nowrap">
-              <Box style={{
-                flexShrink: 0,
-                borderRadius: '50%',
-                border: `3px solid ${accentColor}50`,
-                boxShadow: `0 0 16px ${accentColor}20`,
-              }}>
-                <UserProfileImage user={user} size={140} showFallback showHoverInfo className="user-profile-avatar-large" />
+          {/* Top accent bar */}
+          <Box
+            style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0,
+              height: '2px',
+              background: 'linear-gradient(90deg, #e11d48 0%, rgba(124,58,237,0.5) 55%, transparent 100%)',
+            }}
+          />
+
+          {/* Main row */}
+          <Group justify="space-between" align="flex-end" gap="lg" wrap="wrap">
+            <Group align="flex-end" gap="lg">
+              {/* Avatar */}
+              <Box style={{ borderRadius: '4px', border: '1px solid #2a2a2a', boxShadow: '0 0 0 2px rgba(225,29,72,0.15)', flexShrink: 0 }}>
+                <UserProfileImage user={user} size={72} />
               </Box>
 
-              <Stack gap="lg" style={{ flex: 1, minWidth: 0 }}>
-                {/* Name and Role */}
-                <Stack gap="sm">
-                  <Group gap="sm" align="center" wrap="wrap">
-                    <Title
-                      order={1}
-                      size="h2"
-                      c={headerColors.h1}
-                      fw={800}
-                    >
-                      {user.username}
-                    </Title>
-                    <UserRoleDisplay
-                      userRole={user.role as 'admin' | 'moderator' | 'user'}
-                      customRole={user.customRole}
-                      size="medium"
-                      spacing={2}
-                    />
-                  </Group>
-
-                  <Text size="sm" c={textColors.tertiary}>
-                    Joined {user.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })
-                      : 'Unknown'}
-                  </Text>
-
-                  <UserBadges userId={user.id} size="lg" maxDisplay={8} />
-                </Stack>
-
-                {/* Quick Stats Row */}
-                <Group gap="md" wrap="wrap">
-                  {stats.map((stat) => (
-                    <Box
-                      key={stat.label}
-                      style={{
-                        padding: '1rem 0.75rem',
-                        background: `${stat.color}08`,
-                        border: `1px solid ${stat.color}22`,
-                        borderRadius: '0.5rem',
-                        textAlign: 'center',
-                        minWidth: 80,
-                      }}
-                    >
-                      {stat.isLoading ? (
-                        <Skeleton height={28} width={40} radius="sm" style={{ margin: '0 auto 4px' }} />
-                      ) : (
-                        <Text style={{
-                          fontFamily: 'var(--font-opti-goudy-text), serif',
-                          fontSize: '1.75rem',
-                          fontWeight: 400,
-                          color: stat.color,
-                          lineHeight: 1,
-                          marginBottom: 4,
-                        }}>
-                          {stat.value}
-                        </Text>
-                      )}
-                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.6rem' }}>
-                        {stat.label.toUpperCase()}
-                      </Text>
-                    </Box>
-                  ))}
+              {/* Name + role */}
+              <Stack gap={4} style={{ paddingBottom: '4px' }}>
+                <Text
+                  style={{
+                    fontFamily: 'var(--font-opti-goudy-text)',
+                    fontSize: '2rem',
+                    fontWeight: 900,
+                    color: '#f5f5f5',
+                    lineHeight: 1,
+                  }}
+                >
+                  {user.username}
+                </Text>
+                <Group gap="xs" wrap="wrap">
+                  <UserRoleDisplay
+                    userRole={user.role as 'admin' | 'moderator' | 'user'}
+                    customRole={user.customRole ?? null}
+                    size="medium"
+                    spacing={2}
+                  />
+                  <UserBadges userId={user.id} />
                 </Group>
               </Stack>
             </Group>
 
-            <Divider color={getAlphaColor(accentColor, 0.25)} />
+            {/* Dossier metadata */}
+            <Stack gap={2} style={{ textAlign: 'right', paddingBottom: '6px' }}>
+              <Text style={{ fontSize: '13px', color: '#555', letterSpacing: '0.06em', fontFamily: 'monospace', lineHeight: 1.9 }}>
+                #{caseRef}<br />
+                {memberSince}
+              </Text>
+            </Stack>
+          </Group>
 
-            {/* Reading Progress */}
-            <Card
-              withBorder
-              radius="lg"
-              padding="lg"
-              shadow="lg"
-              style={{
-                background: getAlphaColor(arcColor, 0.12),
-                border: `1px solid ${getAlphaColor(arcColor, 0.35)}`
-              }}
-            >
-              <Stack gap="md">
-                <Group justify="flex-start" gap="sm" style={{ marginBottom: 4 }}>
-                  <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${arcColor}40)` }} />
-                  <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
-                    READING PROGRESS
-                  </Text>
-                  <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${arcColor}20)` }} />
-                </Group>
-
-                <Stack gap="sm">
-                  <Group justify="space-between" align="center">
-                    <Stack gap={2}>
-                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
-                        Current Chapter
-                      </Text>
-                      <Text style={{
-                        fontFamily: 'var(--font-opti-goudy-text), serif',
-                        fontSize: '1.5rem',
-                        fontWeight: 400,
-                        color: arcColor,
-                        lineHeight: 1,
-                      }}>
-                        {user.userProgress}
-                      </Text>
-                    </Stack>
-                    <Stack gap={2} style={{ textAlign: 'right' }}>
-                      <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
-                        Total Chapters
-                      </Text>
-                      <Text style={{
-                        fontFamily: 'var(--font-opti-goudy-text), serif',
-                        fontSize: '1.5rem',
-                        fontWeight: 400,
-                        color: 'rgba(255,255,255,0.5)',
-                        lineHeight: 1,
-                      }}>
-                        {MAX_CHAPTER}
-                      </Text>
-                    </Stack>
-                  </Group>
-
-                  <Progress
-                    value={readingProgress}
-                    color={arcColor}
-                    radius="md"
-                    size="lg"
-                    striped
-                    animated
-                  />
-
-                  <Group justify="space-between" align="center">
-                    <Text size="xs" c={textColors.tertiary}>
-                      0%
-                    </Text>
-                    <Text size="sm" fw={600} c={arcColor}>
-                      {readingProgress}%
-                    </Text>
-                    <Text size="xs" c={textColors.tertiary}>
-                      100%
-                    </Text>
-                  </Group>
-                </Stack>
-              </Stack>
-            </Card>
-
-            {/* Favorites Section */}
-            {(favoriteQuote || favoriteGamble) && (
-              <>
-                <Divider color={getAlphaColor(accentColor, 0.25)} />
-                <Stack gap="lg">
-                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
-                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${characterColor}40)` }} />
-                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
-                      FAVORITES
-                    </Text>
-                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${characterColor}20)` }} />
-                  </Group>
-                  
-                  <SimpleGrid cols={{ base: 1, sm: favoriteQuote && favoriteGamble ? 2 : 1 }} spacing="lg">
-                    {favoriteQuote && (
-                      <Card
-                        withBorder
-                        radius="md"
-                        padding="lg"
-                        shadow="sm"
-                        style={{
-                          background: getAlphaColor(quoteColor, 0.12),
-                          border: `1px solid ${getAlphaColor(quoteColor, 0.35)}`
-                        }}
-                      >
-                        <Stack gap="md">
-                          <Group gap="sm" justify="space-between" align="center">
-                            <Group gap="sm">
-                              <Quote size={20} color={quoteColor} />
-                              <Text fw={600} c={quoteColor}>
-                                Favorite Quote
-                              </Text>
-                            </Group>
-                            <Anchor
-                              component={Link}
-                              href={`/quotes/${favoriteQuote.id}`}
-                              size="xs"
-                              c={quoteColor}
-                            >
-                              View Quote
-                            </Anchor>
-                          </Group>
-                          
-                          <Box
-                            p="md"
-                            style={{
-                              backgroundColor: getAlphaColor('#ffffff', 0.08),
-                              borderRadius: rem(8),
-                              borderLeft: `4px solid ${quoteColor}`
-                            }}
-                          >
-                            <Text fs="italic" size="sm" style={{ lineHeight: 1.6 }}>
-                              "{favoriteQuote.text}"
-                            </Text>
-                          </Box>
-                          
-                          <Group gap="xs" wrap="wrap">
-                            <Badge
-                              variant="light"
-                              size="sm"
-                              style={{
-                                background: getAlphaColor(quoteColor, 0.2),
-                                border: `1px solid ${getAlphaColor(quoteColor, 0.4)}`,
-                                color: quoteColor
-                              }}
-                            >
-                              {favoriteQuote.character?.name || 'Unknown'}
-                            </Badge>
-                            {favoriteQuote.chapterNumber && (
-                              <Badge
-                                variant="light"
-                                size="sm"
-                                style={{
-                                  background: getAlphaColor(characterColor, 0.2),
-                                  border: `1px solid ${getAlphaColor(characterColor, 0.4)}`,
-                                  color: characterColor
-                                }}
-                              >
-                                Chapter {favoriteQuote.chapterNumber}
-                              </Badge>
-                            )}
-                          </Group>
-                        </Stack>
-                      </Card>
-                    )}
-                    
-                    {favoriteGamble && (
-                      <Card
-                        withBorder
-                        radius="md"
-                        padding="lg"
-                        shadow="sm"
-                        style={{
-                          background: getAlphaColor(gambleColor, 0.12),
-                          border: `1px solid ${getAlphaColor(gambleColor, 0.35)}`
-                        }}
-                      >
-                        <Stack gap="md">
-                          <Group gap="sm" justify="space-between" align="center">
-                            <Group gap="sm">
-                              <Dices size={20} color={gambleColor} />
-                              <Text fw={600} c={gambleColor}>
-                                Favorite Gamble
-                              </Text>
-                            </Group>
-                            <Anchor
-                              component={Link}
-                              href={`/gambles/${favoriteGamble.id}`}
-                              size="xs"
-                              c={gambleColor}
-                            >
-                              View Gamble
-                            </Anchor>
-                          </Group>
-                          
-                          <Box style={{ textAlign: 'center' }}>
-                            <Badge 
-                              radius="lg" 
-                              size="xl" 
-                              variant="gradient" 
-                              gradient={{ from: getAlphaColor(gambleColor, 0.8), to: gambleColor }}
-                              style={{ fontWeight: 700, fontSize: rem(16), padding: rem(12) }}
-                            >
-                              {favoriteGamble.name}
-                            </Badge>
-                          </Box>
-                          
-                          {favoriteGamble.rules && (
-                            <Text size="xs" c={textColors.tertiary} style={{ textAlign: 'center' }}>
-                              {favoriteGamble.rules.length > 100 
-                                ? `${favoriteGamble.rules.substring(0, 100)}...`
-                                : favoriteGamble.rules}
-                            </Text>
-                          )}
-                        </Stack>
-                      </Card>
-                    )}
-                  </SimpleGrid>
-                </Stack>
-              </>
-            )}
-
-            {/* Favorite Characters */}
-            {user.favoriteCharacters && user.favoriteCharacters.length > 0 && (
-              <>
-                <Divider color={getAlphaColor(accentColor, 0.25)} />
-                <Stack gap="lg">
-                  <Group justify="flex-start" gap="sm" style={{ marginBottom: 12, marginTop: 8 }}>
-                    <Box style={{ height: 1, width: 40, background: `linear-gradient(to right, transparent, ${characterColor}40)` }} />
-                    <Text className="eyebrow-label" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.68rem' }}>
-                      FAVORITE CHARACTERS
-                    </Text>
-                    <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${characterColor}20)` }} />
-                  </Group>
-                  <Stack gap="xs">
-                    {user.favoriteCharacters
-                      .slice()
-                      .sort((a, b) => a.sortOrder - b.sortOrder)
-                      .map((fav) => (
-                        <Card
-                          key={fav.characterId}
-                          component={Link}
-                          href={`/characters/${fav.characterId}`}
-                          withBorder
-                          radius="md"
-                          padding="sm"
-                          style={{
-                            background: getAlphaColor(characterColor, 0.08),
-                            border: `1px solid ${getAlphaColor(characterColor, 0.25)}`,
-                            textDecoration: 'none',
-                          }}
-                        >
-                          <Group gap="sm" align="center">
-                            {fav.isPrimary && (
-                              <Badge
-                                size="xs"
-                                color="yellow"
-                                variant="filled"
-                                leftSection={<Star size={10} fill="currentColor" />}
-                              >
-                                #1
-                              </Badge>
-                            )}
-                            <Text size="sm" fw={fav.isPrimary ? 700 : 400} c={characterColor}>
-                              {fav.character.name}
-                            </Text>
-                          </Group>
-                        </Card>
-                      ))}
-                  </Stack>
-                </Stack>
-              </>
-            )}
-          </Stack>
-        </Card>
+          {/* Stat strip */}
+          <Group gap={0} style={{ marginTop: '16px', borderTop: '1px solid #1a1a1a' }}>
+            {[
+              { value: userStats?.guidesWritten ?? 0, label: 'Guides', accent: true },
+              { value: userStats?.mediaSubmitted ?? 0, label: 'Media', accent: false },
+              { value: userStats?.annotationsSubmitted ?? 0, label: 'Annotations', accent: false },
+              { value: `${readPercent}%`, label: 'Read', accent: false },
+            ].map((stat, i, arr) => (
+              <Box
+                key={stat.label}
+                style={{
+                  padding: '8px 16px',
+                  paddingLeft: i === 0 ? 0 : '16px',
+                  borderRight: i < arr.length - 1 ? '1px solid #1a1a1a' : 'none',
+                }}
+              >
+                <Text style={{ fontSize: '22px', fontWeight: 800, color: stat.accent ? '#e11d48' : '#bbb', lineHeight: 1, marginBottom: '2px', display: 'block' }}>
+                  {stat.value}
+                </Text>
+                <Text style={{ fontSize: '14px', color: '#888' }}>{stat.label}</Text>
+              </Box>
+            ))}
+          </Group>
+        </Box>
 
         {/* User Contributions Section */}
         {submissions.length > 0 && (
