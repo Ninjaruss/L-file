@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Alert,
   Box,
@@ -13,7 +13,6 @@ import {
   MultiSelect,
   Select,
   Stack,
-  Tabs,
   TagsInput,
   Text,
   TextInput,
@@ -23,7 +22,7 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { setTabAccentColors } from '../../lib/mantine-theme'
-import { FileText, Send, BookOpen, Eye, AlertTriangle } from 'lucide-react'
+import { FileText, Send, BookOpen, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../providers/AuthProvider'
@@ -31,8 +30,7 @@ import { FormProgressIndicator, FormStep } from '../../components/FormProgressIn
 import { FormSection } from '../../components/FormSection'
 import { api } from '../../lib/api'
 import { motion } from 'motion/react'
-import EntityEmbedHelperWithSearch from '../../components/EntityEmbedHelperWithSearch'
-import EnhancedSpoilerMarkdown from '../../components/EnhancedSpoilerMarkdown'
+import RichMarkdownEditor from '@/components/RichMarkdownEditor'
 import SubmissionGuidelines from '../../components/SubmissionGuidelines'
 import SubmissionSuccess from '../../components/SubmissionSuccess'
 import SubmitPageHeader from '../../components/SubmitPageHeader'
@@ -79,10 +77,8 @@ export default function SubmitGuidePageContent() {
   const [gambles, setGambles] = useState<Array<{ id: number; name: string }>>([])
   const [tags, setTags] = useState<Array<{ id: number; name: string }>>([])
   const [loadingData, setLoadingData] = useState(true)
-  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write')
 
   useEffect(() => { setTabAccentColors('guide') }, [])
-  const contentRef = useRef<HTMLTextAreaElement | null>(null)
 
   const accentColor = theme.other?.usogui?.guide ?? theme.colors.green[6]
   const inputStyles = getInputStyles(theme, accentColor)
@@ -133,30 +129,12 @@ export default function SubmitGuidePageContent() {
         })
         setShowSuccess(true)
         setFormData({ title: '', description: '', content: '', characterIds: [], arcId: null, gambleIds: [], tags: [] })
-        setActiveTab('write')
       }
     } catch (submissionError: unknown) {
       setError(submissionError instanceof Error ? submissionError.message : (isEditMode ? 'Failed to update guide. Please try again.' : 'Failed to submit guide. Please try again.'))
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleInsertEmbed = (embedCode: string) => {
-    const textarea = contentRef.current
-    if (!textarea) {
-      setFormData((prev) => ({ ...prev, content: prev.content + embedCode }))
-      return
-    }
-    const currentValue = formData.content
-    const cursorPosition = textarea.selectionStart ?? currentValue.length
-    const newValue = `${currentValue.slice(0, cursorPosition)}${embedCode}${currentValue.slice(cursorPosition)}`
-    setFormData((prev) => ({ ...prev, content: newValue }))
-    requestAnimationFrame(() => {
-      textarea.focus()
-      const offset = cursorPosition + embedCode.length
-      textarea.setSelectionRange(offset, offset)
-    })
   }
 
   useEffect(() => {
@@ -377,74 +355,19 @@ export default function SubmitGuidePageContent() {
 
                 <FormSection
                   title="Guide Content"
-                  description="Write your guide using Markdown. Use entity embeds to reference characters, arcs, gambles."
+                  description="Write your guide content. Use the toolbar to format text and insert entity embeds."
                   icon={<BookOpen size={18} color={accentColor} />}
                   accentColor={accentColor}
                   required
                   stepNumber={2}
                 >
-                  <Stack gap="md">
-                    <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
-
-                    <Box
-                      style={{
-                        backgroundColor: theme.colors.dark?.[6] ?? '#0a0a0a',
-                        borderRadius: rem(10),
-                        border: `1px solid ${accentColor}35`,
-                        padding: rem(16)
-                      }}
-                    >
-                      <Tabs
-                        value={activeTab}
-                        onChange={(value) => setActiveTab(value as 'write' | 'preview')}
-                      >
-                        <Tabs.List>
-                          <Tabs.Tab value="write" leftSection={<FileText size={15} />}>Write</Tabs.Tab>
-                          <Tabs.Tab value="preview" leftSection={<Eye size={15} />}>Preview</Tabs.Tab>
-                        </Tabs.List>
-
-                        <Tabs.Panel value="write" p="md">
-                          <Textarea
-                            label="Guide Content"
-                            placeholder="Write your guide here. Use Markdown for formatting and embed entities using {{entity_type:entity_id}} syntax."
-                            value={formData.content}
-                            onChange={(e) => handleInputChange('content', e.currentTarget.value)}
-                            required
-                            minRows={16}
-                            autosize
-                            error={formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH ? 'Your guide content needs more detail' : undefined}
-                            description={`${formData.content.length}/${MIN_CONTENT_LENGTH}+ characters`}
-                            ref={contentRef}
-                            styles={{
-                              input: { ...inputStyles.input, padding: rem(12), fontSize: rem(14) },
-                              label: inputStyles.label
-                            }}
-                          />
-                        </Tabs.Panel>
-
-                        <Tabs.Panel value="preview" p="md">
-                          <Stack gap="md">
-                            <Title order={5} c="dimmed">Preview</Title>
-                            <Box
-                              style={{
-                                border: `1px solid rgba(255,255,255,0.06)`,
-                                borderRadius: rem(10),
-                                padding: rem(16),
-                                minHeight: rem(280),
-                                backgroundColor: theme.colors.dark?.[7] ?? '#0a0a0a'
-                              }}
-                            >
-                              {formData.content ? (
-                                <EnhancedSpoilerMarkdown content={formData.content} compactEntityCards={false} />
-                              ) : (
-                                <Text c="dimmed" fs="italic" size="sm">Start writing your guide to see the preview…</Text>
-                              )}
-                            </Box>
-                          </Stack>
-                        </Tabs.Panel>
-                      </Tabs>
-                    </Box>
-                  </Stack>
+                  <RichMarkdownEditor
+                    value={formData.content}
+                    onChange={(md) => setFormData((prev) => ({ ...prev, content: md }))}
+                    placeholder="Write your guide content here. Use the toolbar to format text and insert entity embeds."
+                    minHeight={300}
+                    label="Guide content"
+                  />
                 </FormSection>
 
                 <FormSection
