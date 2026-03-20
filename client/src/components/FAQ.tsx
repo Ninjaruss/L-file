@@ -159,12 +159,9 @@ export const FAQ: React.FC<FAQProps> = ({ showTitle = true, maxItems }) => {
     <Box>
       {showTitle && (
         <Box style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Group justify="center" gap="sm" style={{ marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '1.2rem', color: accent, opacity: 0.75, lineHeight: 1 }}>♠</span>
-            <Text fw={700} style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', lineHeight: 1.2 }}>
-              Frequently Asked Questions
-            </Text>
-          </Group>
+          <Text fw={700} style={{ fontFamily: 'var(--font-opti-goudy-text)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', lineHeight: 1.2, marginBottom: '0.75rem' }}>
+            Frequently Asked Questions
+          </Text>
           <Text size="md" style={{ color: muted }}>
             Common questions about L-file and the Usogui series
           </Text>

@@ -209,18 +209,23 @@ export default function ProfileHeader({
         ))}
         <Box style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
           <ActionIcon
-            variant={isSettingsOpen ? 'filled' : 'subtle'}
+            size="lg"
+            variant={isSettingsOpen ? 'filled' : 'default'}
             onClick={onToggleSettings}
             aria-label={isSettingsOpen ? 'Close settings' : 'Open settings'}
             title={isSettingsOpen ? 'Close settings' : 'Settings'}
             style={{
-              color: isSettingsOpen ? '#fff' : '#888',
-              background: isSettingsOpen ? outlineStyles.accentColor : 'transparent',
-              border: isSettingsOpen ? 'none' : '1px solid #2a2a2a',
+              width: 38,
+              height: 38,
+              color: isSettingsOpen ? '#fff' : '#ccc',
+              background: isSettingsOpen ? outlineStyles.accentColor : '#1e1e1e',
+              border: isSettingsOpen ? 'none' : '1px solid #3a3a3a',
+              borderRadius: 8,
               transition: 'all 0.15s ease',
+              boxShadow: isSettingsOpen ? `0 0 12px ${outlineStyles.accentColor}55` : 'none',
             }}
           >
-            {isSettingsOpen ? <X size={16} /> : <Settings size={16} />}
+            {isSettingsOpen ? <X size={18} /> : <Settings size={18} />}
           </ActionIcon>
         </Box>
       </Group>

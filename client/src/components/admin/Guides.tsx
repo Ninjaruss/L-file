@@ -78,7 +78,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { api } from '../../lib/api'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
-import EntityEmbedHelperWithSearch from '../EntityEmbedHelperWithSearch'
+import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 
 const GuideStatusField = ({ source }: { source: string }) => {
   const record = useRecordContext()
@@ -2222,206 +2222,15 @@ export const GuideShow = () => {
   )
 }
 
-// Shared logic for the content editor (both Edit and Create)
-const useContentEditor = () => {
-  const { setValue, getValues } = useFormContext()
-  const [textAreaRef, setTextAreaRef] = useState<HTMLTextAreaElement | null>(null)
-  const [previewVisible, setPreviewVisible] = useState(true)
-  const contentValue = useWatch({ name: 'content' })
+// Custom content input component with rich markdown editor (Edit)
+const ContentInputWithPreview = () => (
+  <RichMarkdownAdminInput source="content" label="Guide content" minHeight={400} />
+)
 
-  const handleInsertEmbed = (embedCode: string) => {
-    if (textAreaRef) {
-      const currentValue = getValues().content || ''
-      const cursorPosition = textAreaRef.selectionStart || currentValue.length
-      const newValue =
-        currentValue.slice(0, cursorPosition) +
-        embedCode +
-        currentValue.slice(cursorPosition)
-      setValue('content', newValue, { shouldDirty: true, shouldValidate: true })
-      setTimeout(() => {
-        textAreaRef.focus()
-        textAreaRef.setSelectionRange(cursorPosition + embedCode.length, cursorPosition + embedCode.length)
-      }, 100)
-    } else {
-      const currentValue = getValues().content || ''
-      setValue('content', currentValue + embedCode, { shouldDirty: true, shouldValidate: true })
-    }
-  }
-
-  return { textAreaRef, setTextAreaRef, previewVisible, setPreviewVisible, contentValue, handleInsertEmbed }
-}
-
-// Custom content input component with side-by-side preview (Edit)
-const ContentInputWithPreview = () => {
-  const { textAreaRef, setTextAreaRef, previewVisible, setPreviewVisible, contentValue, handleInsertEmbed } = useContentEditor()
-
-  return (
-    <Box sx={{
-      p: 3,
-      backgroundColor: 'rgba(124, 58, 237, 0.05)',
-      borderRadius: 2,
-      border: '1px solid rgba(124, 58, 237, 0.2)',
-      mb: 3
-    }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ color: '#7c3aed', fontWeight: 'bold' }}>
-          Guide Content
-        </Typography>
-        <IconButton
-          size="small"
-          onClick={() => setPreviewVisible(v => !v)}
-          title={previewVisible ? 'Hide preview' : 'Show preview'}
-          sx={{ color: previewVisible ? '#7c3aed' : 'rgba(255,255,255,0.4)', '&:hover': { color: '#7c3aed' } }}
-        >
-          {previewVisible ? <EyeOff size={18} /> : <Eye size={18} />}
-        </IconButton>
-      </Box>
-
-      <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
-
-      <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
-        {/* Write panel */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <TextInput
-            source="content"
-            multiline
-            rows={18}
-            required
-            fullWidth
-            label="Content (Markdown Supported)"
-            helperText="Write your guide content using Markdown formatting and entity embeds"
-            sx={{
-              '& .MuiInputBase-input': {
-                fontFamily: 'monospace',
-                fontSize: '0.9rem',
-                lineHeight: 1.6
-              }
-            }}
-            inputProps={{
-              ref: (ref: HTMLTextAreaElement) => setTextAreaRef(ref)
-            }}
-          />
-        </Box>
-
-        {/* Preview panel */}
-        {previewVisible && (
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Eye size={12} /> Live Preview
-            </Typography>
-            <Box sx={{
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 2,
-              minHeight: '460px',
-              maxHeight: '600px',
-              overflowY: 'auto',
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {contentValue ? (
-                <EnhancedSpoilerMarkdown
-                  content={contentValue}
-                  compactEntityCards={false}
-                  enableEntityEmbeds={true}
-                />
-              ) : (
-                <Typography color="text.secondary" fontStyle="italic" fontSize="0.85rem">
-                  Start writing to see the live preview…
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        )}
-      </Box>
-    </Box>
-  )
-}
-
-// Content input component for create page with side-by-side preview
-const ContentInputWithPreviewCreate = () => {
-  const { textAreaRef, setTextAreaRef, previewVisible, setPreviewVisible, contentValue, handleInsertEmbed } = useContentEditor()
-
-  return (
-    <Box sx={{
-      p: 3,
-      backgroundColor: 'rgba(124, 58, 237, 0.05)',
-      borderRadius: 2,
-      border: '1px solid rgba(124, 58, 237, 0.2)',
-      mb: 3
-    }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ color: '#7c3aed', fontWeight: 'bold' }}>
-          Guide Content
-        </Typography>
-        <IconButton
-          size="small"
-          onClick={() => setPreviewVisible(v => !v)}
-          title={previewVisible ? 'Hide preview' : 'Show preview'}
-          sx={{ color: previewVisible ? '#7c3aed' : 'rgba(255,255,255,0.4)', '&:hover': { color: '#7c3aed' } }}
-        >
-          {previewVisible ? <EyeOff size={18} /> : <Eye size={18} />}
-        </IconButton>
-      </Box>
-
-      <EntityEmbedHelperWithSearch onInsertEmbed={handleInsertEmbed} />
-
-      <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
-        {/* Write panel */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <TextInput
-            source="content"
-            multiline
-            rows={15}
-            required
-            fullWidth
-            label="Content (Markdown Supported)"
-            helperText="Write your guide content using Markdown formatting and entity embeds"
-            sx={{
-              '& .MuiInputBase-input': {
-                fontFamily: 'monospace',
-                fontSize: '0.9rem',
-                lineHeight: 1.6
-              }
-            }}
-            inputProps={{
-              ref: (ref: HTMLTextAreaElement) => setTextAreaRef(ref)
-            }}
-          />
-        </Box>
-
-        {/* Preview panel */}
-        {previewVisible && (
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Eye size={12} /> Live Preview
-            </Typography>
-            <Box sx={{
-              border: '1px solid rgba(124, 58, 237, 0.2)',
-              borderRadius: 1,
-              p: 2,
-              minHeight: '400px',
-              maxHeight: '550px',
-              overflowY: 'auto',
-              backgroundColor: 'rgba(124, 58, 237, 0.02)'
-            }}>
-              {contentValue ? (
-                <EnhancedSpoilerMarkdown
-                  content={contentValue}
-                  compactEntityCards={false}
-                  enableEntityEmbeds={true}
-                />
-              ) : (
-                <Typography color="text.secondary" fontStyle="italic" fontSize="0.85rem">
-                  Start writing to see the live preview…
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        )}
-      </Box>
-    </Box>
-  )
-}
+// Content input component for create page with rich markdown editor
+const ContentInputWithPreviewCreate = () => (
+  <RichMarkdownAdminInput source="content" label="Guide content" minHeight={400} />
+)
 
 // Publication Status Input with rejection reason validation
 const PublicationStatusInput = () => {

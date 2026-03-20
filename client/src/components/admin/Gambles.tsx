@@ -40,6 +40,7 @@ import {
 import { Link } from 'react-router-dom'
 import { Image as ImageIcon, Edit3, Plus, X } from 'lucide-react'
 import { api } from '../../lib/api'
+import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 
 const FACTION_MEMBER_ROLES = ['leader', 'member', 'supporter', 'observer']
 
@@ -810,15 +811,7 @@ const GambleEditForm = () => {
             helperText="Name or title of this gamble"
           />
 
-          <TextInput
-            source="description"
-            multiline
-            rows={3}
-            fullWidth
-            label="Description"
-            helperText="Brief description of this gamble (optional). Supports Markdown formatting."
-            sx={{ mb: 3 }}
-          />
+          <RichMarkdownAdminInput source="description" label="Description" minHeight={120} />
 
           <NumberInput
             source="chapterId"
@@ -835,36 +828,13 @@ const GambleEditForm = () => {
       <FormTab label="Game Rules">
         <Box sx={{ maxWidth: 800, p: 3, backgroundColor: '#0a0a0a' }}>
           <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', mb: 2, fontWeight: 'bold' }}>How the Game Works</Typography>
-          <TextInput 
-            source="rules" 
-            multiline 
-            rows={8} 
-            required 
-            fullWidth
-            label="Game Rules"
-            helperText="Detailed explanation of how the gamble works. Supports Markdown formatting."
-            sx={{ mb: 3 }}
-          />
-          
+          <RichMarkdownAdminInput source="rules" label="Game Rules" minHeight={200} />
+
           <Typography variant="subtitle1" gutterBottom sx={{ mt: 3, mb: 1, color: '#ffffff', fontWeight: 'bold' }}>Victory Conditions</Typography>
-          <TextInput 
-            source="winCondition" 
-            multiline 
-            rows={4}
-            fullWidth
-            label="Win Conditions"
-            helperText="What determines victory in this gamble (optional). Supports Markdown formatting."
-          />
+          <RichMarkdownAdminInput source="winCondition" label="Win Conditions" minHeight={120} />
 
           <Typography variant="subtitle1" gutterBottom sx={{ mt: 3, mb: 1, color: '#ffffff', fontWeight: 'bold' }}>Explanation & Analysis</Typography>
-          <TextInput
-            source="explanation"
-            multiline
-            rows={8}
-            fullWidth
-            label="Explanation"
-            helperText="In-depth explanation of gamble mechanics, strategy, and analysis (optional). Supports Markdown formatting."
-          />
+          <RichMarkdownAdminInput source="explanation" label="Explanation" minHeight={200} />
         </Box>
       </FormTab>
 
@@ -1014,15 +984,7 @@ export const GambleCreate = () => {
                 helperText="Name or title of this gamble"
               />
 
-              <TextInput
-                source="description"
-                multiline
-                rows={3}
-                fullWidth
-                label="Description"
-                helperText="Brief description of this gamble (optional). Supports Markdown formatting."
-                sx={{ mb: 3 }}
-              />
+              <RichMarkdownAdminInput source="description" label="Description" minHeight={120} />
 
               <NumberInput
                 source="chapterId"
@@ -1039,36 +1001,13 @@ export const GambleCreate = () => {
           <FormTab label="Game Rules">
             <Box sx={{ maxWidth: 800, p: 3, backgroundColor: '#0a0a0a' }}>
               <Typography variant="h6" gutterBottom sx={{ color: '#16a34a', mb: 2, fontWeight: 'bold' }}>How the Game Works</Typography>
-              <TextInput 
-                source="rules" 
-                multiline 
-                rows={8} 
-                required 
-                fullWidth
-                label="Game Rules"
-                helperText="Detailed explanation of how the gamble works. Supports Markdown formatting."
-                sx={{ mb: 3 }}
-              />
-              
+              <RichMarkdownAdminInput source="rules" label="Game Rules" minHeight={200} />
+
               <Typography variant="subtitle1" gutterBottom sx={{ mt: 3, mb: 1, color: '#ffffff', fontWeight: 'bold' }}>Victory Conditions</Typography>
-              <TextInput 
-                source="winCondition" 
-                multiline 
-                rows={4}
-                fullWidth
-                label="Win Conditions"
-                helperText="What determines victory in this gamble (optional). Supports Markdown formatting."
-              />
+              <RichMarkdownAdminInput source="winCondition" label="Win Conditions" minHeight={120} />
 
               <Typography variant="subtitle1" gutterBottom sx={{ mt: 3, mb: 1, color: '#ffffff', fontWeight: 'bold' }}>Explanation & Analysis</Typography>
-              <TextInput
-                source="explanation"
-                multiline
-                rows={8}
-                fullWidth
-                label="Explanation"
-                helperText="In-depth explanation of gamble mechanics, strategy, and analysis (optional). Supports Markdown formatting."
-              />
+              <RichMarkdownAdminInput source="explanation" label="Explanation" minHeight={200} />
             </Box>
           </FormTab>
 

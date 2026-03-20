@@ -23,6 +23,7 @@ import { Edit3, Plus, Users, Building2 } from 'lucide-react'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { EditToolbar } from './EditToolbar'
+import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 
 const organizationFilters = [
   <SearchInput key="q" source="q" placeholder="Search organizations" alwaysOn />
@@ -348,14 +349,7 @@ export const OrganizationEdit = () => (
                       label="Organization Name"
                       helperText="Enter the name of this organization"
                     />
-                    <TextInput
-                      source="description"
-                      multiline
-                      rows={6}
-                      fullWidth
-                      label="Description"
-                      helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
-                    />
+                    <RichMarkdownAdminInput source="description" label="Description" minHeight={150} />
                   </Box>
                 </Grid>
               </Grid>
@@ -455,14 +449,7 @@ export const OrganizationCreate = () => (
                       label="Organization Name"
                       helperText="Enter the name of this organization"
                     />
-                    <TextInput
-                      source="description"
-                      multiline
-                      rows={6}
-                      fullWidth
-                      label="Description"
-                      helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
-                    />
+                    <RichMarkdownAdminInput source="description" label="Description" minHeight={150} />
                   </Box>
                 </Grid>
               </Grid>

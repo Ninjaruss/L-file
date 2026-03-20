@@ -28,6 +28,7 @@ import { Link } from 'react-router-dom'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
+import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 
 // Validation function for chapter range
 const validateChapterRange = (values: any) => {
@@ -669,14 +670,7 @@ export const ArcEdit = () => (
                       label="Arc Name"
                       helperText="Enter the name of this story arc"
                     />
-                    <TextInput
-                      source="description"
-                      multiline
-                      rows={6}
-                      fullWidth
-                      label="Arc Description"
-                      helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
-                    />
+                    <RichMarkdownAdminInput source="description" label="Arc Description" minHeight={150} />
                   </Box>
                 </Grid>
 
@@ -851,14 +845,7 @@ export const ArcCreate = () => (
                       Basic Information
                     </Typography>
                     <TextInput source="name" required fullWidth label="Arc Name" helperText="Enter the name of this story arc" />
-                    <TextInput
-                      source="description"
-                      multiline
-                      rows={6}
-                      fullWidth
-                      label="Arc Description"
-                      helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
-                    />
+                    <RichMarkdownAdminInput source="description" label="Arc Description" minHeight={150} />
                   </Box>
                 </Grid>
 

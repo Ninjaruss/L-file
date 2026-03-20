@@ -41,6 +41,7 @@ import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 import { RelationshipType } from '../../types'
 import { api } from '../../lib/api'
+import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 
 const RELATIONSHIP_TYPES = [
   'ally', 'rival', 'mentor', 'subordinate', 'family', 'partner', 'enemy', 'acquaintance'
@@ -700,20 +701,8 @@ export const CharacterEdit = () => (
                     Basic Information
                   </Typography>
                   <TextInput source="name" required fullWidth />
-                  <TextInput
-                    source="description"
-                    multiline
-                    rows={4}
-                    fullWidth
-                    helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
-                  />
-                  <TextInput
-                    source="backstory"
-                    multiline
-                    rows={8}
-                    fullWidth
-                    helperText="Detailed character history and background. Supports Markdown formatting."
-                  />
+                  <RichMarkdownAdminInput source="description" label="Description" minHeight={150} />
+                  <RichMarkdownAdminInput source="backstory" label="Backstory" minHeight={200} />
                   <NumberInput source="firstAppearanceChapter" max={539} min={1} fullWidth helperText="Chapter number when this character first appears (1-539)" />
                 </Box>
               </Grid>
@@ -1102,20 +1091,8 @@ export const CharacterCreate = () => (
                     Basic Information
                   </Typography>
                   <TextInput source="name" required fullWidth />
-                  <TextInput
-                    source="description"
-                    multiline
-                    rows={4}
-                    fullWidth
-                    helperText="Supports Markdown formatting (bold, italic, lists, links, etc.)"
-                  />
-                  <TextInput
-                    source="backstory"
-                    multiline
-                    rows={8}
-                    fullWidth
-                    helperText="Detailed character history and background. Supports Markdown formatting."
-                  />
+                  <RichMarkdownAdminInput source="description" label="Description" minHeight={150} />
+                  <RichMarkdownAdminInput source="backstory" label="Backstory" minHeight={200} />
                   <NumberInput source="firstAppearanceChapter" max={539} min={1} fullWidth helperText="Chapter number when this character first appears (1-539)" />
                 </Box>
               </Grid>

@@ -127,9 +127,6 @@ export default function HomePage() {
           {/* Manga texture overlays */}
           <Box aria-hidden="true" className="manga-speed-lines" style={{ color: 'rgba(225,29,72,0.6)' }} />
           <Box aria-hidden="true" className="manga-halftone" style={{ color: 'rgba(255,255,255,1)' }} />
-          {/* Suit watermarks */}
-          <SuitWatermark suit="spade" color="#e11d48" size={200} opacity={0.04} position="top-right" />
-          <SuitWatermark suit="diamond" color="#e11d48" size={160} opacity={0.03} position="bottom-left" />
 
           {/* Content above overlays */}
           <Box style={{ position: 'relative', zIndex: 1 }}>
@@ -143,12 +140,6 @@ export default function HomePage() {
               }}>
                 The Usogui Database
               </Text>
-              <Group justify="center" gap="sm" style={{ marginBottom: '0.75rem' }}>
-                <Box style={{ height: 1, width: 'clamp(40px, 8vw, 100px)', background: 'linear-gradient(to right, transparent, rgba(225,29,72,0.5))' }} />
-                <Text style={{ color: 'rgba(225,29,72,0.7)', fontSize: '0.9rem' }}>♠</Text>
-                <Text style={{ color: 'rgba(225,29,72,0.5)', fontSize: '0.75rem' }}>♦</Text>
-                <Box style={{ height: 1, width: 'clamp(40px, 8vw, 100px)', background: 'linear-gradient(to left, transparent, rgba(225,29,72,0.5))' }} />
-              </Group>
             </motion.div>
 
             {/* Large display title in OPTI Goudy */}

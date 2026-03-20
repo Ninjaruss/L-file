@@ -1,7 +1,10 @@
 # Changelog and notes
 
 ## TODO
-
+- Update media gallery modal to show full view of image in lightbox. Update the design to make it more clean.
+- Admin dashboard for volumes needs to be updated. The volumes media and showcase images need to be organized properly. Make it so that the showcase image is separate from the volume image. If there are popout images, add the volume to the volume showcase (uses the popout images).
+- Chapter volumes are determined by the chapter numbers in the volume entity
+- Add a proper data backup; update security for supabase data
 
 ## 2026-03-20
 - Debugs of spoiler system, volume showcase, volumes list, and edit submissions
