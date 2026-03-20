@@ -778,7 +778,8 @@ export const textColors = {
   guide: '#51cf66',      // Green group
   media: '#a855f7',      // Purple group
   quote: '#51cf66',      // Green group (shared with guide)
-  organization: '#a855f7' // Purple group (shared with media)
+  organization: '#a855f7', // Purple group (shared with media)
+  annotation: '#ff922b'  // Orange group (distinct lighter orange)
 } as const
 
 // Header color utilities for consistent styling
