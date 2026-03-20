@@ -1134,6 +1134,11 @@ class ApiClient {
     }>(`/edit-log/submissions${qs ? `?${qs}` : ''}`)
   }
 
+  async getMySubmissionEdits() {
+    const response = await this.request<any[]>('/edit-log/my-submissions')
+    return response
+  }
+
   async getOrganization(id: number) {
     return this.get<any>(`/organizations/${id}`)
   }
@@ -1745,6 +1750,11 @@ class ApiClient {
   async getMyAnnotations() {
     const response = await this.get<{ data: any[] }>('/annotations/my')
     return response.data
+  }
+
+  async getMyAnnotationSubmission(id: number) {
+    const response = await this.request<any>(`/annotations/my/${id}`)
+    return response
   }
 
   async createAnnotation(data: {
