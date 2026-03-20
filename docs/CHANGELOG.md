@@ -1,13 +1,13 @@
 # Changelog and notes
 
 ## TODO
-- Improve reading progress clarity on profile page
-- Make profile page activity feed more robust similar to changelog page
-- Improve/fix the editing of submissions; update changelog and activity feed to show these updates?
+
 
 ## 2026-03-20
 - Debugs of spoiler system, volume showcase, volumes list, and edit submissions
 - Profile image selector design updated to use modal
+- Reading progress bar clarity update
+- Entity embed system now used with an editor for all markdown pages
 
 ## 2026-03-14
 - Detail page header redesigned with superpowers + frontend design skill

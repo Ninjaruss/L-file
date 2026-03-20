@@ -466,11 +466,11 @@ function ImageCard({
         background: '#1a1a1a',
       }}
     >
-      <TimelineSpoilerWrapper chapterNumber={spoilerChapter}>
+      <TimelineSpoilerWrapper chapterNumber={spoilerChapter} style={{ position: 'absolute', inset: 0 }}>
         <Box
           style={{
-            width: '100%',
-            height: '100%',
+            position: 'absolute',
+            inset: 0,
             backgroundImage: `url(${media.url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
