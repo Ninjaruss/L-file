@@ -128,6 +128,8 @@ export default function MediaLightbox({
   const theme = useMantineTheme()
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
   const [touchStart, setTouchStart] = useState<number | null>(null)
+  // Kept for future zoom feature — not wired to UI yet
+  const [imageZoomed, setImageZoomed] = useState(false)
 
   const selectedMedia = media[currentIndex] ?? null
 
@@ -207,13 +209,15 @@ export default function MediaLightbox({
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
             />
           ) : selectedMedia.type === 'video' ? (
-            selectedMedia.url.includes('youtube.com') || selectedMedia.url.includes('youtu.be') ? (
+            // YouTube: immediate embed (same as original behavior), using getEmbedUrl for proper URL handling
+            (selectedMedia.url.includes('youtube.com') || selectedMedia.url.includes('youtu.be')) ? (
               <iframe
-                src={selectedMedia.url.replace('watch?v=', 'embed/')}
+                src={getEmbedUrl(selectedMedia.url) ?? selectedMedia.url.replace('watch?v=', 'embed/')}
                 title={selectedMedia.description}
                 allowFullScreen
                 style={{ width: '100%', height: '80dvh', border: 'none' }}
               />
+            // Vimeo + other embeddable: lazy-load gate
             ) : canEmbedVideo(selectedMedia.url) ? (
               !shouldLoadVideo ? (
                 <Button

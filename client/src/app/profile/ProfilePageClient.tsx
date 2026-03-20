@@ -321,15 +321,15 @@ export default function ProfilePageClient() {
                   onOpenQuoteModal={openQuoteModal}
                   onOpenGambleModal={openGambleModal}
                 />
-                <ProfileFieldLog
-                  guides={userGuides}
-                  submissions={submissions}
-                  user={user!}
-                  submissionEdits={submissionEdits}
-                />
-                <Box style={{ gridColumn: '1 / -1' }}>
+                <Stack gap="md">
                   <ReadingProgressBar userProgress={user?.userProgress ?? 0} markerLabel="you" />
-                </Box>
+                  <ProfileFieldLog
+                    guides={userGuides}
+                    submissions={submissions}
+                    user={user!}
+                    submissionEdits={submissionEdits}
+                  />
+                </Stack>
                 <Box style={{ gridColumn: '1 / -1' }}>
                   <ProfileContentTabs
                     userGuides={userGuides}

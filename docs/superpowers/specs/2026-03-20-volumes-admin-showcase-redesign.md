@@ -68,7 +68,13 @@ Checklist items show a small `CheckCircle` (green) when the image is present or 
 
 ### Re-fetch after upload
 
-The status card must re-fetch after the user uploads or deletes an image in either section below it. Pass an `onRefresh` callback prop (or use a shared refresh counter) from `VolumeShow` down through `WithRecord` so both `EntityDisplayMediaSection` components and `VolumeShowcaseStatusCard` stay in sync.
+The status card must re-fetch after the user uploads or deletes an image in either section below it. **Do not modify `EntityDisplayMediaSection`'s interface.** Instead:
+
+1. Add a `refreshCounter: number` state to `VolumeShow`.
+2. Pass `refreshCounter` as the `key` prop on `VolumeShowcaseStatusCard` — React will remount and re-fetch whenever the counter increments.
+3. Wrap each showcase `EntityDisplayMediaSection` in a thin `<Box>` that renders an `onRefresh` callback via a `useEffect` or a custom `MediaSectionWrapper` that calls `setRefreshCounter(c => c + 1)` on any mutation event — or simply, trigger the increment from a button/manual action pattern if `EntityDisplayMediaSection` fires a mutation notification (check its internal API first). If it fires no such event, use a polling alternative: a `useInterval` inside `VolumeShowcaseStatusCard` that re-checks every 5s while the tab is visible.
+
+The simplest approach that avoids touching `EntityDisplayMediaSection` at all: make `VolumeShowcaseStatusCard` poll the two showcase endpoints on a 5-second interval while mounted. This trades a small amount of network overhead for zero cross-component coupling.
 
 ### Section labels
 
@@ -131,7 +137,7 @@ getShowcaseReadyVolumes(): Promise<ShowcaseReadyVolume[]>
 // GET /volumes/showcase-ready
 ```
 
-Add the `ShowcaseReadyVolume` interface in `client/src/types/index.ts`.
+Add the `ShowcaseReadyVolume` interface in `client/src/types/index.ts` (it is an API response type, not a display-config type, so it does not belong in `showcase-config.ts`).
 
 ### 3c. Frontend — page.tsx
 
