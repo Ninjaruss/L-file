@@ -71,35 +71,51 @@ export function parseEntityEmbeds(content: string): {
   }
 }
 
+// Module-level cache: key = "type:id", value = Promise resolving to data or null.
+// Both 404s and network errors are cached as null for the session (no retry).
+// WARNING: only import this file from client components — never from Server Components
+// or route handlers, as module-level state would be shared across requests.
+const _entityCache = new Map<string, Promise<EntityEmbedData['data'] | null>>()
+
 /**
  * Fetch entity data for an embed
  */
-export async function fetchEntityData(type: EntityEmbedData['type'], id: number): Promise<any> {
-  try {
-    switch (type) {
-      case 'character':
-        return await api.getCharacter(id)
-      case 'arc':
-        return await api.getArc(id)
-      case 'gamble':
-        return await api.getGamble(id)
-      case 'guide':
-        return await api.getGuide(id)
-      case 'organization':
-        return await api.getOrganization(id)
-      case 'chapter':
-        return await api.getChapter(id)
-      case 'volume':
-        return await api.getVolume(id)
-      case 'quote':
-        return await api.getQuote(id)
-      default:
-        throw new Error(`Unsupported entity type: ${type}`)
-    }
-  } catch (error) {
-    console.error(`Failed to fetch ${type} with ID ${id}:`, error)
-    return null
+export async function fetchEntityData(
+  type: EntityEmbedData['type'],
+  id: number
+): Promise<EntityEmbedData['data'] | null> {
+  const key = `${type}:${id}`
+  if (_entityCache.has(key)) {
+    return _entityCache.get(key)!
   }
+  const promise = (async () => {
+    try {
+      switch (type) {
+        case 'character':
+          return await api.getCharacter(id)
+        case 'arc':
+          return await api.getArc(id)
+        case 'gamble':
+          return await api.getGamble(id)
+        case 'guide':
+          return await api.getGuide(id)
+        case 'organization':
+          return await api.getOrganization(id)
+        case 'chapter':
+          return await api.getChapter(id)
+        case 'volume':
+          return await api.getVolume(id)
+        case 'quote':
+          return await api.getQuote(id)
+        default:
+          return null
+      }
+    } catch {
+      return null
+    }
+  })()
+  _entityCache.set(key, promise)
+  return promise
 }
 
 /**
