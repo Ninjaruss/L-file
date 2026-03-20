@@ -6,7 +6,7 @@ import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image } 
 import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
-import { buildShowcaseItemFromApiData } from '../lib/showcase-config'
+import { buildShowcaseItemFromApiData, getActiveConfiguration } from '../lib/showcase-config'
 import type { VolumeShowcaseItem } from '../lib/showcase-config'
 import { api } from '../lib/api'
 import { RecentActivityFeed } from '../components/RecentActivityFeed'
@@ -29,15 +29,20 @@ export default function HomePage() {
   useEffect(() => {
     async function loadShowcase() {
       try {
-        const [bg37, pop37, bg38, pop38] = await Promise.all([
-          api.getVolumeShowcaseMedia(37, 'background'),
-          api.getVolumeShowcaseMedia(37, 'popout'),
-          api.getVolumeShowcaseMedia(38, 'background'),
-          api.getVolumeShowcaseMedia(38, 'popout'),
-        ])
-        const item37 = buildShowcaseItemFromApiData(37, bg37?.url ?? null, pop37?.url ?? null, 'Usogui Volume 37', 'The climactic battles intensify')
-        const item38 = buildShowcaseItemFromApiData(38, bg38?.url ?? null, pop38?.url ?? null, 'Usogui Volume 38', 'The final confrontation')
-        const volumes = [item37, item38].filter(Boolean) as VolumeShowcaseItem[]
+        const config = getActiveConfiguration()
+        const items = await Promise.all(
+          config.volumes.map(async (vol) => {
+            const [bg, pop] = await Promise.all([
+              api.getVolumeShowcaseMedia(vol.id, 'background'),
+              api.getVolumeShowcaseMedia(vol.id, 'popout'),
+            ])
+            // Prefer API URL, fall back to static path from config
+            const backgroundUrl = bg?.url ?? vol.backgroundImage
+            const popoutUrl = pop?.url ?? vol.popoutImage ?? null
+            return buildShowcaseItemFromApiData(vol.id, backgroundUrl, popoutUrl, vol.title, vol.description)
+          })
+        )
+        const volumes = items.filter(Boolean) as VolumeShowcaseItem[]
         if (volumes.length > 0) setShowcaseVolumes(volumes)
       } catch {
         // showcase stays null; component renders nothing

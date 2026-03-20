@@ -13,7 +13,7 @@ import {
   useMantineTheme,
 } from '@mantine/core'
 import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
-import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle, Maximize2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import Image from 'next/image'
 import { useProgress } from '../providers/ProgressProvider'
@@ -245,8 +245,11 @@ export default function MediaThumbnail({
 
   // Viewport detection — gates loadMedia() so only visible/near-viewport cards
   // fire their media API call, preventing a burst of 12 simultaneous requests.
+  // When initialMedia is already provided (server pre-fetched), skip the observer
+  // entirely — there's no API call to throttle and the data is ready immediately.
+  const hasInitialMedia = !!initialMedia && initialMedia.length > 0
   const containerRef = useRef<HTMLElement | null>(null)
-  const [isNearViewport, setIsNearViewport] = useState<boolean>(!!priority)
+  const [isNearViewport, setIsNearViewport] = useState<boolean>(!!priority || hasInitialMedia)
 
   useEffect(() => {
     if (priority) setIsNearViewport(true)
@@ -358,10 +361,6 @@ export default function MediaThumbnail({
     abortControllerRef.current = new AbortController()
     const signal = abortControllerRef.current.signal
 
-    setLoading(true)
-    setError(null)
-    setRetryCount(0)
-
     let finalEntityType = entityType
     if (finalEntityType === ('organization' as any)) {
       finalEntityType = 'organization'
@@ -370,7 +369,7 @@ export default function MediaThumbnail({
     const cacheKey = `${finalEntityType}-${entityId}-${userProgress}`
     const now = Date.now()
 
-    // Use pre-loaded media if provided (skips API call, pre-warms cache)
+    // Use pre-loaded media if provided (skips API call, pre-warms cache, no loading flash)
     if (initialMedia && initialMedia.length > 0) {
       mediaCache.set(cacheKey, { data: initialMedia, timestamp: now })
       setAllEntityMedia(initialMedia)
@@ -393,7 +392,7 @@ export default function MediaThumbnail({
       return
     }
 
-    // Check cache first
+    // Check cache first — also avoids a loading flash for repeat visits
     const cachedData = mediaCache.get(cacheKey)
 
     if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
@@ -428,6 +427,11 @@ export default function MediaThumbnail({
       setLoading(false)
       return
     }
+
+    // Only show loading spinner when we actually need a network request
+    setLoading(true)
+    setError(null)
+    setRetryCount(0)
 
     try {
       const response = await api.getEntityDisplayMediaForCycling(
@@ -1127,12 +1131,21 @@ export default function MediaThumbnail({
     (!numericMaxWidth || numericMaxWidth > 64) &&
     (!numericMaxHeight || numericMaxHeight > 64)
 
-  const showExpandButton = allowFullView && currentThumbnail && !inline &&
+  const canExpand = allowFullView && currentThumbnail && !inline &&
     (!numericMaxWidth || numericMaxWidth > 64)
 
   return (
     <>
-      <Box component={containerComponent} ref={containerRef as React.Ref<HTMLDivElement>} className={className} style={containerStyles}>
+      <Box
+        component={containerComponent}
+        ref={containerRef as React.Ref<HTMLDivElement>}
+        className={className}
+        style={{
+          ...containerStyles,
+          ...(canExpand ? { cursor: 'zoom-in' } : {})
+        }}
+        onClick={canExpand ? () => setIsModalOpen(true) : undefined}
+      >
         <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress} spoilerChapter={spoilerChapter} onRevealed={onSpoilerRevealed}>
           {mediaContent}
         </MediaSpoilerWrapper>
@@ -1143,7 +1156,7 @@ export default function MediaThumbnail({
               variant="light"
               size="sm"
               radius="xl"
-              onClick={handlePrevious}
+              onClick={(e) => { e.stopPropagation(); handlePrevious() }}
               aria-label="Previous image"
               style={{
                 position: 'absolute',
@@ -1162,7 +1175,7 @@ export default function MediaThumbnail({
               variant="light"
               size="sm"
               radius="xl"
-              onClick={handleNext}
+              onClick={(e) => { e.stopPropagation(); handleNext() }}
               aria-label="Next image"
               style={{
                 position: 'absolute',
@@ -1212,27 +1225,6 @@ export default function MediaThumbnail({
           </>
         )}
 
-        {/* Expand / full-view button */}
-        {showExpandButton && (
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            radius="sm"
-            onClick={() => setIsModalOpen(true)}
-            aria-label="View full size"
-            style={{
-              position: 'absolute',
-              top: rem(8),
-              right: rem(8),
-              backgroundColor: 'rgba(0,0,0,0.55)',
-              color: 'rgba(255,255,255,0.85)',
-              zIndex: 30,
-              transition: 'background 0.18s ease',
-            }}
-          >
-            <Maximize2 size={13} />
-          </ActionIcon>
-        )}
       </Box>
 
       {/* Fullscreen lightbox modal */}
@@ -1464,7 +1456,6 @@ function MediaSpoilerWrapper({
 
   const chapterNumber = media.chapterNumber ?? spoilerChapter
 
-  // Mirrors shouldHideSpoiler's effectiveProgress logic; used for SpoilerOverlay's display label.
   const effectiveProgress = settings.chapterTolerance > 0
     ? settings.chapterTolerance
     : userProgress
@@ -1489,7 +1480,6 @@ function MediaSpoilerWrapper({
       </Box>
       <SpoilerOverlay
         chapterNumber={chapterNumber}
-        effectiveProgress={effectiveProgress > 0 ? effectiveProgress : undefined}
         onReveal={() => {
           setIsRevealed(true)
           onRevealed?.()

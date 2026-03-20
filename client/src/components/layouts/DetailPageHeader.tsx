@@ -127,6 +127,7 @@ export function DetailPageHeader({
           {/* Left-edge fade blending portrait into content */}
           <Box
             aria-hidden
+            className="detail-hero-portrait-fade"
             style={{
               position: 'absolute',
               left: 0,
@@ -168,8 +169,9 @@ export function DetailPageHeader({
         />
       )}
 
-      {/* Content column — left 65%, bottom-anchored */}
+      {/* Content column — left 65% desktop, full width mobile, bottom-anchored */}
       <Box
+        className="detail-hero-content"
         style={{
           position: 'absolute',
           left: 0,

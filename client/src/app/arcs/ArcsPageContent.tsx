@@ -21,6 +21,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../lib/api'
 import { useHoverModal } from '../../hooks/useHoverModal'
 import { HoverModal } from '../../components/HoverModal'
+import { useProgress } from '../../providers/ProgressProvider'
+import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
+import { shouldHideSpoiler } from '../../lib/spoiler-utils'
 import { ListPageLayout } from '../../components/layouts/ListPageLayout'
 import { PlayingCard } from '../../components/cards/PlayingCard'
 import type { MediaItem } from '../../components/MediaThumbnail'
@@ -81,7 +84,11 @@ export default function ArcsPageContent({
   const [characterFilter, setCharacterFilter] = useState<string | null>(initialCharacter || null)
   const [sortBy, setSortBy] = useState<SortOption>((searchParams.get('sort') as SortOption) || 'startChapter')
 
+  const { userProgress } = useProgress()
+  const { settings: spoilerSettings } = useSpoilerSettings()
+
   // Track revealed spoilers
+  const [revealedArcs, setRevealedArcs] = useState<Set<number>>(new Set())
   const currentlyHoveredRef = useRef<{ arc: Arc; element: HTMLElement } | null>(null)
 
   // Hover modal
@@ -212,9 +219,13 @@ export default function ArcsPageContent({
 
     const handleCardClick = (e: React.MouseEvent) => {
       if (isTouchDevice) {
-        if (hoveredArc?.id !== arc.id) {
-          e.preventDefault()
-          handleArcTap(arc, e)
+        const isSpoilered = shouldHideSpoiler(arc.startChapter, userProgress, spoilerSettings)
+        const hasBeenRevealed = revealedArcs.has(arc.id)
+        if (!isSpoilered || hasBeenRevealed) {
+          if (hoveredArc?.id !== arc.id) {
+            e.preventDefault()
+            handleArcTap(arc, e)
+          }
         }
       }
     }
@@ -231,12 +242,23 @@ export default function ArcsPageContent({
           imagePriority={index < 6}
           initialMedia={initialMediaMap?.[arc.id]}
           spoilerChapter={arc.startChapter}
-          onSpoilerRevealed={() => {}}
+          onSpoilerRevealed={() => {
+            setRevealedArcs(prev => new Set(prev).add(arc.id))
+            if (currentlyHoveredRef.current?.arc.id === arc.id) {
+              const element = currentlyHoveredRef.current.element
+              const syntheticEvent = { currentTarget: element, target: element } as unknown as React.MouseEvent
+              handleArcMouseEnter(currentlyHoveredRef.current.arc, syntheticEvent)
+            }
+          }}
           onClick={handleCardClick}
           onMouseEnter={(e) => {
             if (!isTouchDevice) {
               currentlyHoveredRef.current = { arc, element: e.currentTarget as HTMLElement }
-              handleArcMouseEnter(arc, e)
+              const isSpoilered = shouldHideSpoiler(arc.startChapter, userProgress, spoilerSettings)
+              const hasBeenRevealed = revealedArcs.has(arc.id)
+              if (!isSpoilered || hasBeenRevealed) {
+                handleArcMouseEnter(arc, e)
+              }
             }
           }}
           onMouseLeave={() => {
@@ -313,7 +335,7 @@ export default function ArcsPageContent({
         )}
       </Stack>
     )
-  }, [isTouchDevice, hoveredArc, accentArc, handleArcMouseEnter, handleArcMouseLeave, handleArcTap])
+  }, [isTouchDevice, hoveredArc, accentArc, userProgress, spoilerSettings, revealedArcs, handleArcMouseEnter, handleArcMouseLeave, handleArcTap])
 
   // Character filter badge
   const activeFilterBadges = characterFilter ? (
@@ -377,7 +399,11 @@ export default function ArcsPageContent({
 
         hoverModal={
           <HoverModal
-            isOpen={!!hoveredArc}
+            isOpen={
+              !!hoveredArc &&
+              (!shouldHideSpoiler(hoveredArc.startChapter, userProgress, spoilerSettings) ||
+                revealedArcs.has(hoveredArc.id))
+            }
             position={hoverPosition}
             accentColor={accentArc}
             onMouseEnter={handleModalMouseEnter}
@@ -386,7 +412,9 @@ export default function ArcsPageContent({
             showCloseButton={isTouchDevice}
             entityLabel="arc"
           >
-            {hoveredArc && (
+            {hoveredArc &&
+              (!shouldHideSpoiler(hoveredArc.startChapter, userProgress, spoilerSettings) ||
+                revealedArcs.has(hoveredArc.id)) && (
               <>
                 <Title order={4} size="md" ta="center" lineClamp={2} style={{ fontFamily: 'var(--font-opti-goudy-text), serif', fontWeight: 400, fontSize: '1.4rem', color: accentArc }}>
                   {hoveredArc.name}

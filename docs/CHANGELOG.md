@@ -1,10 +1,13 @@
 # Changelog and notes
 
 ## TODO
-- Frontend design skill to make user detail page up to par with the profile page
 - Improve reading progress clarity on profile page
 - Make profile page activity feed more robust similar to changelog page
-- Improve/fix the editing of submissions
+- Improve/fix the editing of submissions; update changelog and activity feed to show these updates?
+
+## 2026-03-20
+- Debugs of spoiler system, volume showcase, volumes list, and edit submissions
+- Profile image selector design updated to use modal
 
 ## 2026-03-14
 - Detail page header redesigned with superpowers + frontend design skill

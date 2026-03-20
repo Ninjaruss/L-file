@@ -1132,7 +1132,15 @@ textarea:focus-visible {
     grid-template-columns: 1fr !important;
   }
   .detail-hero-portrait {
-    display: none !important;
+    width: 100% !important;
+    opacity: 0.4;
+  }
+  .detail-hero-content {
+    width: 100% !important;
+  }
+  .detail-hero-portrait-fade {
+    width: 80% !important;
+    background: linear-gradient(90deg, #080c14 0%, rgba(8,12,20,0.8) 60%, transparent 100%) !important;
   }
 }
 

@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { MediaOwnerType } from '../../../entities/media.entity';
 
@@ -26,6 +27,7 @@ export class UpdateOwnMediaDto {
     example: 1,
   })
   @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== '' ? Number(value) : undefined))
   @IsNumber()
   ownerId?: number;
 
@@ -35,6 +37,7 @@ export class UpdateOwnMediaDto {
     example: 45,
   })
   @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== '' ? Number(value) : undefined))
   @IsNumber()
   chapterNumber?: number;
 }

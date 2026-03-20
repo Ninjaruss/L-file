@@ -31,11 +31,6 @@ export default function TimelineSpoilerWrapper({
   const { userProgress } = useProgress()
   const { settings } = useSpoilerSettings()
 
-  // Mirrors the effectiveProgress logic from shouldHideSpoiler; used for SpoilerOverlay's display label.
-  const effectiveProgress = settings.chapterTolerance > 0
-    ? settings.chapterTolerance
-    : userProgress
-
   const hidden = shouldHideSpoiler(chapterNumber, userProgress, settings)
 
   if (!hidden || isRevealed) {
@@ -54,7 +49,6 @@ export default function TimelineSpoilerWrapper({
       </Box>
       <SpoilerOverlay
         chapterNumber={chapterNumber}
-        effectiveProgress={effectiveProgress}
         onReveal={handleReveal}
       />
     </Box>
