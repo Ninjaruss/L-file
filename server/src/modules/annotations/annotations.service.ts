@@ -19,6 +19,8 @@ import { Arc } from '../../entities/arc.entity';
 import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { UpdateAnnotationDto } from './dto/update-annotation.dto';
 import { AnnotationQueryDto } from './dto/annotation-query.dto';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -35,6 +37,7 @@ export class AnnotationsService {
     private chapterRepository: Repository<Chapter>,
     @InjectRepository(Arc)
     private arcRepository: Repository<Arc>,
+    private readonly editLogService: EditLogService,
   ) {}
 
   async create(
@@ -209,6 +212,17 @@ export class AnnotationsService {
     });
   }
 
+  async findMyOne(id: number, userId: number): Promise<Annotation> {
+    const annotation = await this.annotationRepository.findOne({
+      where: { id, authorId: userId },
+      relations: ['author'],
+    });
+    if (!annotation) {
+      throw new NotFoundException('Annotation not found');
+    }
+    return annotation;
+  }
+
   async findPending(query: AnnotationQueryDto): Promise<{
     data: Annotation[];
     total: number;
@@ -302,6 +316,8 @@ export class AnnotationsService {
       throw new ForbiddenException('Approved annotations cannot be edited');
     }
 
+    const priorStatus = annotation.status;
+
     // If the author is editing a rejected annotation, auto-resubmit (reset to pending)
     if (
       annotation.status === AnnotationStatus.REJECTED &&
@@ -330,7 +346,21 @@ export class AnnotationsService {
     }
 
     Object.assign(annotation, rest);
-    return await this.annotationRepository.save(annotation);
+
+    const saved = await this.annotationRepository.save(annotation);
+
+    const changedFields = Object.keys(rest);
+    if (isSpoiler !== undefined) changedFields.push('isSpoiler');
+    if (spoilerChapter !== undefined) changedFields.push('spoilerChapter');
+
+    await this.editLogService.logUpdate(
+      EditLogEntityType.ANNOTATION,
+      annotation.id,
+      currentUser.id,
+      [...changedFields, `priorStatus:${priorStatus}`],
+    );
+
+    return saved;
   }
 
   async remove(id: number, currentUser: User): Promise<void> {
