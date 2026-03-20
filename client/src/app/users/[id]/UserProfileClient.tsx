@@ -378,7 +378,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             </Stack>
           </Box>
 
-          {/* Right: Reading Progress */}
+          {/* Right column: Reading Progress */}
           <Box style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '4px', padding: '16px' }}>
             <Stack gap="md">
               <Text fw={700}>Reading Progress</Text>
