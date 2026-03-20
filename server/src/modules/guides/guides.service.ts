@@ -18,6 +18,8 @@ import { UpdateGuideDto } from './dto/update-guide.dto';
 import { GuideQueryDto } from './dto/guide-query.dto';
 import { PageViewsService } from '../page-views/page-views.service';
 import { PageType } from '../../entities/page-view.entity';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
 
 @Injectable()
 export class GuidesService {
@@ -37,6 +39,7 @@ export class GuidesService {
     @InjectRepository(Gamble)
     private readonly gambleRepository: Repository<Gamble>,
     private readonly pageViewsService: PageViewsService,
+    private readonly editLogService: EditLogService,
   ) {}
 
   async create(createGuideDto: CreateGuideDto, author: User): Promise<Guide> {
@@ -568,10 +571,12 @@ export class GuidesService {
       throw new ForbiddenException('You can only edit your own guides');
     }
 
+    const priorStatus = guide.status;
+
     const { tagNames, authorId, characterIds, arcId, gambleIds, ...guideData } =
       updateGuideDto;
 
-    return await this.guideRepository.manager.transaction(async (manager) => {
+    const result = await this.guideRepository.manager.transaction(async (manager) => {
       const guideRepo = manager.getRepository(Guide);
       const userRepo = manager.getRepository(User);
       const tagRepo = manager.getRepository(Tag);
@@ -717,6 +722,19 @@ export class GuidesService {
 
       return updatedGuide;
     });
+
+    // Log the edit
+    const changedFieldNames = Object.keys(guideData).filter(k => k !== 'tagNames' && k !== 'characterIds');
+    if (tagNames !== undefined) changedFieldNames.push('tags');
+    if (characterIds !== undefined) changedFieldNames.push('characters');
+    await this.editLogService.logUpdate(
+      EditLogEntityType.GUIDE,
+      guide.id,
+      currentUser.id,
+      [...changedFieldNames, `priorStatus:${priorStatus}`],
+    );
+
+    return result;
   }
 
   async remove(id: number, currentUser: User): Promise<void> {
