@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Box, Container, Skeleton, SimpleGrid, Stack, Tabs, Group, Text, Button, Alert, ActionIcon } from '@mantine/core'
+import { Box, Container, Skeleton, SimpleGrid, Stack, Tabs, Text, Button, Alert } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { motion } from 'motion/react'
-import { User as UserIcon, X } from 'lucide-react'
+import { User as UserIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { useAuth } from '../../providers/AuthProvider'
@@ -295,24 +295,6 @@ export default function ProfilePageClient() {
             isSettingsOpen={profileTab === 'settings'}
           />
 
-          {/* Inline profile picture selector */}
-          {profilePictureSelectorOpened && user?.id && typeof user.id === 'number' && (
-            <Box style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderTop: 'none', padding: '16px' }}>
-              <Group justify="space-between" mb="sm">
-                <Text size="sm" fw={600}>Profile Picture Options</Text>
-                <ActionIcon variant="subtle" onClick={closeProfilePictureSelector} aria-label="Close">
-                  <X size={16} />
-                </ActionIcon>
-              </Group>
-              <ProfilePictureSelector
-                currentUserId={user.id}
-                currentProfileType="default"
-                currentSelectedMediaId={null}
-                onSelect={handleProfilePictureSelect}
-              />
-            </Box>
-          )}
-
           {/* Tab switcher (hidden visually, controlled by gear icon) */}
           <Tabs
             value={profileTab}
@@ -398,6 +380,15 @@ export default function ProfilePageClient() {
         selectedGambleId={profileData.favoriteGamble ? parseInt(profileData.favoriteGamble) : null}
         onSelectGamble={handleGambleSelect}
         loading={loading}
+      />
+      <ProfilePictureSelector
+        opened={profilePictureSelectorOpened}
+        onClose={closeProfilePictureSelector}
+        currentUserId={user?.id ?? 0}
+        currentProfileType={user?.profilePictureType ?? 'fluxer'}
+        currentSelectedMediaId={user?.selectedCharacterMediaId ?? null}
+        user={user!}
+        onSelect={handleProfilePictureSelect}
       />
     </motion.div>
   )
