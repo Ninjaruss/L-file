@@ -531,18 +531,251 @@ function ImageCard({
   );
 }
 
-function PreviewPanel(props: any) {
+function PreviewPanel({
+  user,
+  pendingMedia,
+  pendingType,
+}: {
+  user: User;
+  pendingMedia: any | null;
+  pendingType: string | null;
+}) {
+  const getPreviewAvatarUrl = (): string | null => {
+    if (pendingType === 'character_media' && pendingMedia?.url) return pendingMedia.url;
+    if (pendingType === 'fluxer' && user.fluxerAvatar) {
+      return user.fluxerAvatar.startsWith('http')
+        ? user.fluxerAvatar
+        : `https://fluxerusercontent.com/avatars/${user.fluxerId}/${user.fluxerAvatar}.png?size=256`;
+    }
+    return null;
+  };
+
+  const avatarUrl = getPreviewAvatarUrl();
+  const fallbackLetter = user.username?.[0]?.toUpperCase() ?? '';
+
+  const selectionLabel = pendingType === 'character_media' && pendingMedia
+    ? pendingMedia.character?.name ?? 'Unknown Character'
+    : pendingType === 'fluxer'
+    ? 'Fluxer Avatar'
+    : null;
+
+  const selectionSub = pendingType === 'character_media' && pendingMedia?.chapterNumber
+    ? `Ch.${pendingMedia.chapterNumber} · Character Media`
+    : pendingType === 'character_media' && pendingMedia
+    ? 'Character Media'
+    : null;
+
   return (
-    <Box style={{ width: 200, flexShrink: 0, borderLeft: '1px solid #1e1e1e', background: '#0d0d0d', padding: 12 }}>
-      <Text size="xs" c="dimmed">Preview — coming soon</Text>
+    <Box
+      style={{
+        width: 200,
+        flexShrink: 0,
+        borderLeft: '1px solid #1e1e1e',
+        background: '#0d0d0d',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Label */}
+      <Box style={{ padding: '10px 14px 8px', borderBottom: '1px solid #1e1e1e', flexShrink: 0 }}>
+        <Text size="xs" fw={700} c="dimmed" style={{ textTransform: 'uppercase', letterSpacing: '.08em' }}>
+          Live Preview
+        </Text>
+      </Box>
+
+      <Box style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Mini profile header */}
+        <Box style={{ background: 'linear-gradient(180deg, #100508 0%, #0a0a0a 100%)', border: '1px solid #1e1e1e', borderRadius: 8, overflow: 'hidden' }}>
+          {/* Accent bar */}
+          <Box style={{ height: 2, background: 'linear-gradient(90deg, #e11d48 0%, rgba(124,58,237,0.4) 55%, transparent 100%)' }} />
+          {/* Avatar + name */}
+          <Box style={{ padding: '10px 10px 6px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <Avatar
+              src={avatarUrl ?? undefined}
+              size={40}
+              radius="sm"
+              styles={{ root: { background: '#e11d48', border: '1px solid #2a2a2a', flexShrink: 0 } }}
+            >
+              {fallbackLetter}
+            </Avatar>
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                size="xs"
+                fw={900}
+                style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#f5f5f5' }}
+              >
+                {user.username}
+              </Text>
+              <Text size="xs" style={{ color: '#e11d48', fontSize: 9 }}>
+                {user.role ?? 'Member'}
+              </Text>
+            </Box>
+          </Box>
+          {/* Stat strip */}
+          <Box style={{ display: 'flex', borderTop: '1px solid #1e1e1e' }}>
+            {[
+              { label: 'Guides', val: '—' },
+              { label: 'Media', val: '—' },
+              { label: 'Read', val: '—' },
+            ].map((s, i, arr) => (
+              <Box
+                key={s.label}
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  padding: '5px 0',
+                  borderRight: i < arr.length - 1 ? '1px solid #1e1e1e' : 'none',
+                }}
+              >
+                <Text size="xs" fw={700} c="dimmed" style={{ display: 'block', lineHeight: 1, marginBottom: 1 }}>{s.val}</Text>
+                <Text size="xs" c="dimmed" style={{ fontSize: 8 }}>{s.label}</Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Selection info card */}
+        {selectionLabel ? (
+          <Box
+            style={{
+              background: '#1a0a0e',
+              border: '1px solid rgba(225,29,72,0.2)',
+              borderRadius: 6,
+              padding: '8px 10px',
+            }}
+          >
+            <Text size="xs" fw={700} style={{ color: '#e11d48' }}>{selectionLabel}</Text>
+            {selectionSub && <Text size="xs" c="dimmed" mt={2}>{selectionSub}</Text>}
+          </Box>
+        ) : (
+          <Text size="xs" c="dimmed" ta="center">Nothing selected yet</Text>
+        )}
+      </Box>
     </Box>
   );
 }
 
-function FluxerTab(props: any) {
-  return <Box p="md"><Text c="dimmed" size="sm">Fluxer tab — coming soon</Text></Box>;
+interface FluxerTabProps {
+  user: User;
+  onSelect: () => void;
+  isSelected: boolean;
+  pendingMedia: any | null;
+  pendingType: string | null;
+}
+
+function FluxerTab({ user, onSelect, isSelected, pendingMedia, pendingType }: FluxerTabProps) {
+  const hasFluxer = !!user.fluxerAvatar;
+  const fluxerUrl = hasFluxer
+    ? user.fluxerAvatar!.startsWith('http')
+      ? user.fluxerAvatar!
+      : `https://fluxerusercontent.com/avatars/${user.fluxerId}/${user.fluxerAvatar}.png?size=256`
+    : null;
+
+  return (
+    <Box style={{ display: 'flex', height: 420 }}>
+      {/* Main content area */}
+      <Box
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 32,
+        }}
+      >
+        {hasFluxer ? (
+          <Stack align="center" gap="lg">
+            <Box
+              onClick={onSelect}
+              style={{
+                cursor: 'pointer',
+                border: `3px solid ${isSelected ? '#e11d48' : '#2a2a2a'}`,
+                borderRadius: 12,
+                padding: 4,
+                transition: 'border-color .15s ease',
+              }}
+            >
+              <Avatar src={fluxerUrl!} size={120} radius="md" />
+            </Box>
+            <Stack align="center" gap={4}>
+              <Text fw={600} size="sm">{user.username}</Text>
+              <Text size="xs" c="dimmed">Click avatar to use your Fluxer profile picture</Text>
+            </Stack>
+            {isSelected && (
+              <Badge variant="filled" color="red" size="sm">Selected — confirm below to save</Badge>
+            )}
+          </Stack>
+        ) : (
+          <Alert variant="light" color="red" title="No Fluxer Account Linked">
+            <Text size="sm">
+              Link your Fluxer account in Settings to use your Fluxer avatar as your profile picture.
+            </Text>
+          </Alert>
+        )}
+      </Box>
+
+      {/* Reuse the same PreviewPanel component as CharactersTab */}
+      <PreviewPanel
+        user={user}
+        pendingMedia={pendingMedia}
+        pendingType={pendingType}
+      />
+    </Box>
+  );
 }
 
 function ExclusiveTab({ isSupporter }: { isSupporter: boolean }) {
-  return <Box p="md"><Text c="dimmed" size="sm">Exclusive tab — coming soon</Text></Box>;
+  if (!isSupporter) {
+    return (
+      <Box
+        style={{
+          height: 420,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 32,
+        }}
+      >
+        <Stack align="center" gap="lg" style={{ maxWidth: 320 }}>
+          <Text size="xl" ta="center">✦</Text>
+          <Text fw={700} size="lg" ta="center">Supporter Exclusive</Text>
+          <Text size="sm" c="dimmed" ta="center">
+            Exclusive artwork profile pictures are available to supporters.
+            Support the database to unlock this feature and more!
+          </Text>
+          <Button
+            component="a"
+            href="https://ko-fi.com/ninjaruss"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="filled"
+            color="yellow"
+            size="sm"
+          >
+            ☕ Support on Ko-fi
+          </Button>
+        </Stack>
+      </Box>
+    );
+  }
+
+  // Supporter: show "coming soon" — exclusive artwork media not yet in DB
+  return (
+    <Box
+      style={{
+        height: 420,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 32,
+      }}
+    >
+      <Stack align="center" gap="md">
+        <Badge variant="filled" color="yellow" size="lg">✦ SUPPORTER</Badge>
+        <Text size="sm" c="dimmed" ta="center">
+          Exclusive artwork will appear here when available. Thank you for your support!
+        </Text>
+      </Stack>
+    </Box>
+  );
 }
