@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -19,7 +19,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core'
-import { getEntityThemeColor, backgroundStyles, getHeroStyles, getCardStyles } from '../../lib/mantine-theme'
+import { getEntityThemeColor, backgroundStyles, getCardStyles } from '../../lib/mantine-theme'
 import { AlertCircle, Search, BookOpen, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { api } from '../../lib/api'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
 import { useHoverModal } from '../../hooks/useHoverModal'
+import { ListPageHero } from '../../components/layouts/ListPageHero'
 
 interface Chapter {
   id: number
@@ -34,16 +35,17 @@ interface Chapter {
   title?: string | null
   summary?: string | null
   description?: string
-  volume?: {
-    id: number
-    number: number
-    title?: string
-  }
+}
+
+interface Volume {
+  id: number
+  number: number
+  startChapter: number
+  endChapter: number
 }
 
 interface VolumeGroup {
   volumeNumber: number | null
-  volumeTitle?: string
   chapters: Chapter[]
 }
 
@@ -63,6 +65,10 @@ interface ChaptersPageContentProps {
 
 const PAGE_SIZE = 12
 
+function findVolumeForChapter(chapterNumber: number, volumes: Volume[]): Volume | null {
+  return volumes.find(v => chapterNumber >= v.startChapter && chapterNumber <= v.endChapter) ?? null
+}
+
 export default function ChaptersPageContent({
   initialChapters,
   initialPage,
@@ -75,6 +81,7 @@ export default function ChaptersPageContent({
   const searchParams = useSearchParams()
 
   const [allChapters, setAllChapters] = useState<Chapter[]>(initialChapters)
+  const [allVolumes, setAllVolumes] = useState<Volume[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError || null)
   const [searchQuery, setSearchQuery] = useState(initialSearch || '')
@@ -94,12 +101,16 @@ export default function ChaptersPageContent({
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
-  const loadAllChapters = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await api.get<any>('/chapters?limit=1000')
-      setAllChapters(response.data || [])
+      const [chaptersRes, volumesRes] = await Promise.all([
+        api.get<any>('/chapters?limit=1000'),
+        api.getVolumes({ limit: 100 })
+      ])
+      setAllChapters(chaptersRes.data || [])
+      setAllVolumes(volumesRes.data || [])
     } catch (err: any) {
       console.error('Error loading chapters:', err)
       if (err?.status === 429) {
@@ -134,24 +145,21 @@ export default function ChaptersPageContent({
   const totalPages = Math.ceil(filteredChapters.length / PAGE_SIZE)
   const total = filteredChapters.length
 
-  // Build volume groups from ALL filtered chapters (for headers)
+  // Build volume groups from ALL filtered chapters sorted by volume order
   const volumeGroups = useMemo((): VolumeGroup[] => {
     const groupMap = new Map<number | null, VolumeGroup>()
     const order: Array<number | null> = []
     for (const chapter of filteredChapters) {
-      const volNum = chapter.volume?.number ?? null
+      const vol = findVolumeForChapter(chapter.number, allVolumes)
+      const volNum = vol?.number ?? null
       if (!groupMap.has(volNum)) {
-        groupMap.set(volNum, {
-          volumeNumber: volNum,
-          volumeTitle: chapter.volume?.title,
-          chapters: []
-        })
+        groupMap.set(volNum, { volumeNumber: volNum, chapters: [] })
         order.push(volNum)
       }
       groupMap.get(volNum)!.chapters.push(chapter)
     }
     return order.map(k => groupMap.get(k)!)
-  }, [filteredChapters])
+  }, [filteredChapters, allVolumes])
 
   // Build render segments from paginated chapters — inject volume headers at transitions
   const renderSegments = useMemo((): Segment[] => {
@@ -163,7 +171,8 @@ export default function ChaptersPageContent({
     let currentSegment: Segment | null = null
 
     for (const chapter of paginatedChapters) {
-      const volNum = chapter.volume?.number ?? null
+      const vol = findVolumeForChapter(chapter.number, allVolumes)
+      const volNum = vol?.number ?? null
       if (volNum !== lastVolNum) {
         if (currentSegment) segments.push(currentSegment)
         const group = volumeGroups.find(g => g.volumeNumber === volNum) ?? null
@@ -174,20 +183,13 @@ export default function ChaptersPageContent({
     }
     if (currentSegment) segments.push(currentSegment)
     return segments
-  }, [paginatedChapters, hasSearchQuery, volumeGroups])
-
-  // Compute stats for hero
-  const latestChapter = allChapters.length > 0 ? Math.max(...allChapters.map(c => c.number)) : 0
-  const volumeCount = useMemo(() => {
-    const vols = new Set(allChapters.map(c => c.volume?.number ?? null).filter(v => v !== null))
-    return vols.size
-  }, [allChapters])
+  }, [paginatedChapters, hasSearchQuery, volumeGroups, allVolumes])
 
   useEffect(() => {
-    if (allChapters.length === 0 || (allChapters.length > 0 && allChapters.length < 500)) {
-      loadAllChapters()
+    if (allChapters.length === 0 || allChapters.length < 500) {
+      loadAll()
     }
-  }, [allChapters.length, loadAllChapters])
+  }, [allChapters.length, loadAll])
 
   useEffect(() => {
     const urlPage = parseInt(searchParams.get('page') || '1', 10)
@@ -224,105 +226,16 @@ export default function ChaptersPageContent({
     <Box style={{ backgroundColor: backgroundStyles.page(theme), minHeight: '100vh' }}>
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
-      {/* Editorial Hero Section */}
-      <Box style={{ ...getHeroStyles(theme, accentChapter), paddingBlock: rem(48), paddingInline: rem(24) }}>
-        <Box style={{
-          maxWidth: rem(900),
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: rem(24),
-          flexWrap: 'wrap'
-        }}>
-          {/* Left: Editorial title block */}
-          <Box style={{ position: 'relative' }}>
-            {/* Watermark number */}
-            {allChapters.length > 0 && (
-              <Text
-                aria-hidden="true"
-                style={{
-                  fontFamily: 'var(--font-opti-goudy-text)',
-                  fontSize: rem(88),
-                  fontWeight: 400,
-                  lineHeight: 1,
-                  color: accentChapter,
-                  opacity: 0.12,
-                  position: 'absolute',
-                  top: rem(-16),
-                  left: rem(-8),
-                  userSelect: 'none',
-                  pointerEvents: 'none'
-                }}
-              >
-                {allChapters.length}
-              </Text>
-            )}
-            <Box style={{ position: 'relative' }}>
-              <Text
-                style={{
-                  fontSize: rem(11),
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                  color: accentChapter,
-                  fontWeight: 700,
-                  marginBottom: rem(6)
-                }}
-              >
-                Chapters
-              </Text>
-              <Title order={1}
-                style={{
-                  fontFamily: 'var(--font-opti-goudy-text)',
-                  fontSize: rem(32),
-                  fontWeight: 400,
-                  color: '#ffffff',
-                  lineHeight: 1.1
-                }}
-              >
-                Usogui Chapter Index
-              </Title>
-              <Text size="sm" c="dimmed" mt="xs">
-                Explore the story chapter by chapter through the Usogui universe
-              </Text>
-            </Box>
-          </Box>
-
-          {/* Right: Stat block */}
-          {allChapters.length > 0 && (
-            <Box style={{ display: 'flex', gap: rem(24), flexShrink: 0 }}>
-              {[
-                { label: 'chapters', value: allChapters.length },
-                { label: 'volumes', value: volumeCount },
-                { label: 'latest', value: latestChapter }
-              ].map(stat => (
-                <Box
-                  key={stat.label}
-                  style={{
-                    borderLeft: `3px solid ${accentChapter}`,
-                    paddingLeft: rem(12)
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: 'var(--font-opti-goudy-text)',
-                      fontSize: rem(28),
-                      fontWeight: 400,
-                      lineHeight: 1,
-                      color: accentChapter
-                    }}
-                  >
-                    {stat.value}
-                  </Text>
-                  <Text size="xs" c="dimmed" style={{ textTransform: 'lowercase', marginTop: rem(2) }}>
-                    {stat.label}
-                  </Text>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
-      </Box>
+      {/* Hero Section */}
+      <ListPageHero
+        icon={<BookOpen size={24} color="white" />}
+        title="Chapters"
+        subtitle="Explore the story chapter by chapter through the Usogui universe"
+        entityType="chapter"
+        count={allChapters.length || undefined}
+        countLabel="chapters"
+        hasActiveSearch={hasSearchQuery}
+      />
 
       {/* Search Strip */}
       <Box py="sm" px="md" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -453,7 +366,7 @@ export default function ChaptersPageContent({
                           }}
                         >
                           {segment.group.volumeNumber !== null
-                            ? `Vol. ${segment.group.volumeNumber}${segment.group.volumeTitle ? ` — ${segment.group.volumeTitle}` : ''}`
+                            ? `Vol. ${segment.group.volumeNumber}`
                             : 'Uncollected'
                           }
                         </Title>
@@ -664,17 +577,20 @@ export default function ChaptersPageContent({
                     >
                       Chapter #{hoveredChapter.number}
                     </Badge>
-                    {hoveredChapter.volume && (
-                      <Badge
-                        variant="filled"
-                        c="white"
-                        size="sm"
-                        fw={600}
-                        style={{ backgroundColor: getEntityThemeColor(theme, 'media') }}
-                      >
-                        Vol. {hoveredChapter.volume.number}
-                      </Badge>
-                    )}
+                    {(() => {
+                      const vol = findVolumeForChapter(hoveredChapter.number, allVolumes)
+                      return vol ? (
+                        <Badge
+                          variant="filled"
+                          c="white"
+                          size="sm"
+                          fw={600}
+                          style={{ backgroundColor: getEntityThemeColor(theme, 'media') }}
+                        >
+                          Vol. {vol.number}
+                        </Badge>
+                      ) : null
+                    })()}
                   </Group>
                   {(hoveredChapter.description || hoveredChapter.summary) && (
                     <Text

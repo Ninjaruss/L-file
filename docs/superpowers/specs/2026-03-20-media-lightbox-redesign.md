@@ -63,7 +63,7 @@ The gallery retains ownership of:
 
 It passes these down to `<MediaLightbox>`.
 
-`MediaItem` type is extracted to a shared location or re-exported from `MediaLightbox.tsx` so both components reference the same definition.
+`MediaItem` type stays defined in `MediaGallery.tsx` (the data owner) and is exported so `MediaLightbox.tsx` can import it.
 
 ### Removed
 
