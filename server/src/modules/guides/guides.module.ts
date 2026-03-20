@@ -10,6 +10,7 @@ import { Character } from '../../entities/character.entity';
 import { Arc } from '../../entities/arc.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { PageViewsModule } from '../page-views/page-views.module';
+import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PageViewsModule } from '../page-views/page-views.module';
       Gamble,
     ]),
     PageViewsModule,
+    EditLogModule,
   ],
   controllers: [GuidesController],
   providers: [GuidesService],

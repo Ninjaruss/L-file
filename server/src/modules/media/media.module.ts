@@ -11,6 +11,7 @@ import { UrlNormalizerService } from './services/url-normalizer.service';
 import { MediaUrlResolverService } from './services/media-url-resolver.service';
 import { FileValidationService } from './validators/file-validation.service';
 import { ServicesModule } from '../../services/services.module';
+import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ServicesModule } from '../../services/services.module';
     HttpModule,
     EmailModule,
     ServicesModule,
+    EditLogModule,
   ],
   providers: [
     MediaService,

@@ -8,6 +8,7 @@ import { Chapter } from '../../entities/chapter.entity';
 import { Arc } from '../../entities/arc.entity';
 import { AnnotationsController } from './annotations.controller';
 import { AnnotationsService } from './annotations.service';
+import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AnnotationsService } from './annotations.service';
       Chapter,
       Arc,
     ]),
+    EditLogModule,
   ],
   controllers: [AnnotationsController],
   providers: [AnnotationsService],
