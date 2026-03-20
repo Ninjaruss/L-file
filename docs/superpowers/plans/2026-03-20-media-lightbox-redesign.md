@@ -80,8 +80,7 @@ import {
   Modal,
   Text,
   rem,
-  useMantineTheme,
-  rgba
+  useMantineTheme
 } from '@mantine/core'
 import {
   X,
