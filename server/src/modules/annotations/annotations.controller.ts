@@ -121,6 +121,24 @@ export class AnnotationsController {
     return await this.annotationsService.findByAuthor(user.id);
   }
 
+  @Get('my/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get one of the current user's annotations by ID",
+    description: 'Fetches a single annotation belonging to the authenticated user.',
+  })
+  @ApiParam({ name: 'id', description: 'Annotation ID' })
+  @ApiOkResponse({ description: 'Annotation retrieved successfully' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiNotFoundResponse({ description: 'Annotation not found or not owned by user' })
+  async getMyAnnotation(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
+    return await this.annotationsService.findMyOne(id, user.id);
+  }
+
   // Create annotation
   @Post()
   @UseGuards(JwtAuthGuard)
