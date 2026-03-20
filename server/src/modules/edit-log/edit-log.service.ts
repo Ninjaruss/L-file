@@ -82,7 +82,18 @@ export class EditLogService {
         ? fetch(this.guideRepository as any, EditLogEntityType.GUIDE, groups.get(EditLogEntityType.GUIDE)!, 'title')
         : Promise.resolve(),
       groups.has(EditLogEntityType.MEDIA)
-        ? fetch(this.mediaRepository as any, EditLogEntityType.MEDIA, groups.get(EditLogEntityType.MEDIA)!, 'title')
+        ? (async () => {
+            const ids = groups.get(EditLogEntityType.MEDIA)!;
+            const rows = await this.mediaRepository.find({
+              where: { id: In(ids) } as any,
+              select: ['id', 'fileName'] as any,
+            });
+            for (const row of rows) {
+              if (row.fileName) {
+                nameMap.set(`${EditLogEntityType.MEDIA}:${row.id}`, row.fileName);
+              }
+            }
+          })()
         : Promise.resolve(),
       groups.has(EditLogEntityType.ANNOTATION)
         ? (async () => {
