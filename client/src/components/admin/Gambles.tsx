@@ -300,9 +300,6 @@ const FactionEditor = ({ gambleId, initialFactions }: { gambleId: number, initia
     </Box>
   )
 }
-import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
-import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
-import { EditToolbar } from './EditToolbar'
 
 
 const GambleFilters = [
