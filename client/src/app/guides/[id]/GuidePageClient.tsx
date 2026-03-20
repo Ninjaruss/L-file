@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useRef, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   Badge,
   Box,
@@ -12,7 +12,6 @@ import {
   Stack,
   Tabs,
   Text,
-  Textarea,
   Title,
   useMantineTheme
 } from '@mantine/core'
@@ -21,7 +20,6 @@ import {
   getEntityThemeColor,
   textColors,
   getAlphaColor,
-  fontSize,
   setTabAccentColors,
   backgroundStyles,
   getCardStyles
@@ -31,7 +29,7 @@ import Link from 'next/link'
 import { api } from '../../../lib/api'
 import { useAuth } from '../../../providers/AuthProvider'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
-import EntityEmbedHelperWithSearch from '../../../components/EntityEmbedHelperWithSearch'
+import RichMarkdownEditor from '../../../components/RichMarkdownEditor'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { motion } from 'motion/react'
 import { GuideStatus } from '../../../types'
@@ -100,8 +98,6 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
   const [activeTab, setActiveTab] = useState<string>('content')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // Call usePageView hook early to maintain hook order (Rules of Hooks)
   usePageView('guide', guide?.id?.toString() || '', !!guide?.id)
@@ -653,50 +649,11 @@ export default function GuidePageClient({ initialGuide, guideId }: GuidePageClie
                           </Text>
                           <Box style={{ height: 1, flex: 1, maxWidth: 120, background: `linear-gradient(to left, transparent, ${entityColors.guide}20)` }} />
                         </Group>
-                        <EntityEmbedHelperWithSearch onInsertEmbed={(embed) => {
-                          const textarea = textareaRef.current
-                          if (!textarea) {
-                            setEditedContent((prev) => prev + embed)
-                            return
-                          }
-
-                          const start = textarea.selectionStart ?? editedContent.length
-                          const end = textarea.selectionEnd ?? start
-                          const newContent = editedContent.slice(0, start) + embed + editedContent.slice(end)
-                          setEditedContent(newContent)
-
-                          requestAnimationFrame(() => {
-                            textarea.focus()
-                            const pos = start + embed.length
-                            try {
-                              textarea.setSelectionRange(pos, pos)
-                            } catch {
-                              // ignore
-                            }
-                          })
-                        }} />
-
-                        <Textarea
-                          ref={textareaRef}
+                        <RichMarkdownEditor
                           value={editedContent}
-                          onChange={(event) => setEditedContent(event.currentTarget.value)}
-                          autosize
-                          minRows={15}
-                          placeholder="Update guide content..."
-                          styles={{
-                            input: {
-                              backgroundColor: theme.colors.dark?.[5] ?? '#0b0b0b',
-                              color: theme.colors.gray?.[0] ?? '#fff',
-                              borderColor: 'rgba(255,255,255,0.06)',
-                              fontFamily: 'monospace',
-                              fontSize: fontSize.sm,
-                              lineHeight: 1.6,
-                              '&:focus': {
-                                borderColor: entityColors.guide,
-                                boxShadow: `0 0 0 2px ${getAlphaColor(entityColors.guide, 0.2)}`
-                              }
-                            }
-                          }}
+                          onChange={setEditedContent}
+                          minHeight={300}
+                          label="Guide content"
                         />
                         <Group gap={theme.spacing.sm}>
                           <Button
