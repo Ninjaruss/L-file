@@ -18,7 +18,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Textarea,
   Title,
   rem,
   useMantineTheme
@@ -33,6 +32,7 @@ import SubmissionGuidelines from '../../components/SubmissionGuidelines'
 import SubmissionSuccess from '../../components/SubmissionSuccess'
 import SubmitPageHeader from '../../components/SubmitPageHeader'
 import { getInputStyles, getDimmedInputStyles } from '../../lib/submitFormStyles'
+import RichMarkdownEditor from '../../components/RichMarkdownEditor'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -396,18 +396,12 @@ export default function SubmitAnnotationPageContent() {
                       description={`Minimum ${MIN_TITLE_LENGTH} characters`}
                       styles={inputStyles}
                     />
-                    <Textarea
-                      label="Content"
-                      placeholder="Share your insights, analysis, theories, or commentary. You can use markdown formatting."
-                      value={formData.content}
-                      onChange={(e) => handleInputChange('content', e.currentTarget.value)}
-                      required
-                      minRows={6}
-                      autosize
-                      error={formData.content.length > 0 && formData.content.trim().length < MIN_CONTENT_LENGTH
-                        ? `Content must be at least ${MIN_CONTENT_LENGTH} characters long` : undefined}
-                      description={`${formData.content.length}/${MIN_CONTENT_LENGTH}+ characters`}
-                      styles={inputStyles}
+                    <RichMarkdownEditor
+                      value={formData.content ?? ''}
+                      onChange={(md) => setFormData((prev) => ({ ...prev, content: md }))}
+                      placeholder="Write your annotation analysis here..."
+                      minHeight={180}
+                      label="Annotation content"
                     />
                   </Stack>
                 </FormSection>
