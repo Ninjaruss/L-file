@@ -515,16 +515,18 @@ export const mantineTheme: MantineThemeOverride = {
       // Orange group: arc, event
       // Green group: guide, quote
       // Purple group: media, organization, volume
-      gamble: '#ff5555',     // Red group
-      character: '#4dabf7',  // Blue group
-      arc: '#f97316',        // Orange group
-      volume: '#a855f7',     // Purple group
-      event: '#f97316',      // Orange group (shared with arc)
-      guide: '#51cf66',      // Green group
-      media: '#a855f7',      // Purple group
-      quote: '#51cf66',      // Green group (shared with guide)
-      organization: '#a855f7', // Purple group (shared with media)
-      chapter: '#4dabf7'     // Blue group (shared with character)
+      // Entity accent colors — all unique, imported from entityColors.ts
+      gamble:       ENTITY_COLORS.gamble,
+      character:    ENTITY_COLORS.character,
+      arc:          ENTITY_COLORS.arc,
+      volume:       ENTITY_COLORS.volume,
+      event:        ENTITY_COLORS.event,
+      guide:        ENTITY_COLORS.guide,
+      media:        ENTITY_COLORS.media,
+      quote:        ENTITY_COLORS.quote,
+      organization: ENTITY_COLORS.organization,
+      chapter:      ENTITY_COLORS.chapter,
+      annotation:   ENTITY_COLORS.annotation,
     },
     transitions: {
       durationShortest: 150,
@@ -578,7 +580,7 @@ export const getEntityAccent = (type: EntityAccentKey, theme?: MantineTheme): st
     case 'character':
       return palette.character
     case 'organization':
-      return palette.purple
+      return palette.organization
     case 'arc':
       return palette.arc
     case 'volume':
@@ -595,6 +597,8 @@ export const getEntityAccent = (type: EntityAccentKey, theme?: MantineTheme): st
       return palette.quote
     case 'gamble':
       return palette.gamble
+    case 'annotation':
+      return palette.annotation
     default:
       return entityAccentFallback
   }
@@ -623,6 +627,7 @@ export const getEntityThemeColor = (theme: MantineTheme, entityType: EntityAccen
     case 'guide': return entityColors.guide
     case 'media': return entityColors.media
     case 'quote': return entityColors.quote
+    case 'annotation': return entityColors.annotation
     default: return entityColors.red
   }
 }
