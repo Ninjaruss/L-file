@@ -15,7 +15,7 @@ import {
   Tab,
   BulkDeleteButton,
 } from 'react-admin'
-import { Typography, Box, Card, CardContent, Grid } from '@mui/material'
+import { Typography, Box, Card, CardContent } from '@mui/material'
 import { Edit3, Plus, Hash } from 'lucide-react'
 import { EditToolbar } from './EditToolbar'
 
@@ -233,46 +233,42 @@ export const ChapterEdit = () => (
                 '& .MuiFormControl-root': { mb: 3 },
               }}
             >
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Box
-                    sx={{
-                      p: 3,
-                      backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                      borderRadius: 2,
-                      border: '1px solid rgba(99, 102, 241, 0.2)',
-                      mb: 3,
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ color: '#6366f1', mb: 2, fontWeight: 'bold' }}>
-                      Basic Information
-                    </Typography>
-                    <NumberInput
-                      source="number"
-                      required
-                      fullWidth
-                      min={1}
-                      max={539}
-                      label="Chapter Number"
-                      helperText="The chapter number (1-539)"
-                    />
-                    <TextInput
-                      source="title"
-                      fullWidth
-                      label="Title"
-                      helperText="Chapter title (optional)"
-                    />
-                    <TextInput
-                      source="summary"
-                      multiline
-                      rows={5}
-                      fullWidth
-                      label="Summary"
-                      helperText="Brief summary of this chapter's content"
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
+              <Box
+                sx={{
+                  p: 3,
+                  backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(99, 102, 241, 0.2)',
+                  mb: 3,
+                }}
+              >
+                <Typography variant="h6" sx={{ color: '#6366f1', mb: 2, fontWeight: 'bold' }}>
+                  Basic Information
+                </Typography>
+                <NumberInput
+                  source="number"
+                  required
+                  fullWidth
+                  min={1}
+                  max={539}
+                  label="Chapter Number"
+                  helperText="The chapter number (1-539)"
+                />
+                <TextInput
+                  source="title"
+                  fullWidth
+                  label="Title"
+                  helperText="Chapter title (optional)"
+                />
+                <TextInput
+                  source="summary"
+                  multiline
+                  rows={5}
+                  fullWidth
+                  label="Summary"
+                  helperText="Brief summary of this chapter's content"
+                />
+              </Box>
             </Box>
           </CardContent>
         </Card>
