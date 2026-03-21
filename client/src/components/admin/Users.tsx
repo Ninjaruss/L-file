@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { API_BASE_URL } from '../../lib/api'
-import { MAX_CHAPTER, USER_ROLES } from '../../lib/constants'
+import { MAX_CHAPTER, PROFILE_PICTURE_TYPES, USER_ROLES } from '../../lib/constants'
 import BadgeDisplay from '../BadgeDisplay'
 import {
   List,
@@ -882,7 +882,7 @@ const UserShowContent = () => {
             </Typography>
 
             {/* Email + verified chip */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: record.fluxerUsername ? 1 : 2.5 }}>
               <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
                 {record.email}
               </Typography>
@@ -892,6 +892,18 @@ const UserShowContent = () => {
                 <Chip label="Unverified" size="small" color="warning" sx={{ height: 18, fontSize: '0.6rem', '& .MuiChip-label': { px: 0.8 } }} />
               )}
             </Box>
+
+            {/* Fluxer username */}
+            {record.fluxerUsername && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
+                  Fluxer:
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                  {record.fluxerUsername}
+                </Typography>
+              </Box>
+            )}
 
             {/* Stats row */}
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
@@ -1216,6 +1228,11 @@ export const UserEdit = () => (
       <RoleSelectInput />
       <TextInput source="customRole" label="Custom Role" helperText="Optional display title shown on the user's profile (e.g. 'Site Founder')" />
       <BooleanInput source="isEmailVerified" />
+      <SelectInput
+        source="profilePictureType"
+        label="Profile Picture Type"
+        choices={PROFILE_PICTURE_TYPES}
+      />
     </SimpleForm>
   </Edit>
 )
