@@ -104,18 +104,18 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     if (gambleCleaned.factions && Array.isArray(gambleCleaned.factions)) {
       gambleCleaned.factions = (gambleCleaned.factions as any[]).map((faction: any) => {
         const members: any[] = Array.isArray(faction.members) ? faction.members : []
-        const memberIds = members
-          .map((m: any) => {
-            if (typeof m.characterId === 'number') return m.characterId
-            if (typeof m.characterId === 'string' && !isNaN(Number(m.characterId))) return Number(m.characterId)
-            return null
-          })
-          .filter((id: any) => id !== null)
-        const memberRoles = members.map((m: any) => m.role || 'member')
+        const validMembers = members.filter((m: any) => {
+          const id = m.characterId
+          return (typeof id === 'number') || (typeof id === 'string' && !isNaN(Number(id)))
+        })
+        const memberIds = validMembers.map((m: any) =>
+          typeof m.characterId === 'number' ? m.characterId : Number(m.characterId)
+        )
+        const memberRoles = validMembers.map((m: any) => m.role || 'member')
 
         const factionDto: Record<string, unknown> = { memberIds, memberRoles }
         if (faction.name) factionDto.name = faction.name
-        if (faction.supportedGamblerId) {
+        if (faction.supportedGamblerId != null) {
           const sgId = faction.supportedGamblerId
           factionDto.supportedGamblerId = typeof sgId === 'number' ? sgId : Number(sgId)
         }
