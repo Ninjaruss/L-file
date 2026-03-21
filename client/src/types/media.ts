@@ -5,7 +5,7 @@ export interface MediaItem {
   description: string
   fileName?: string
   isUploaded?: boolean
-  ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user'
+  ownerType: 'character' | 'arc' | 'event' | 'gamble' | 'organization' | 'user' | 'volume' | 'chapter' | 'guide' | 'quote'
   ownerId: number
   chapterNumber?: number
   purpose: 'gallery' | 'entity_display'

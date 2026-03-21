@@ -543,7 +543,6 @@ export default function MediaGallery({
                               <ImageOff size={22} color={theme.colors.dark[3]} />
                             </Box>
                             <Text size="xs" c="dimmed">Image unavailable</Text>
-                            <Text size="xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Click to open</Text>
                           </>
                         ) : (
                           <>
