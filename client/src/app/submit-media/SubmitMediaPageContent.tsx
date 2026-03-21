@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import {
   Alert,
   Box,
@@ -56,9 +55,6 @@ interface SubmitMediaFormState {
 export default function SubmitMediaPageContent() {
   const { user, loading: authLoading } = useAuth()
   const theme = useMantineTheme()
-  const searchParams = useSearchParams()
-  const editMediaId = searchParams.get('edit')
-  const isEditMode = Boolean(editMediaId)
 
   const [formData, setFormData] = useState<SubmitMediaFormState>({
     url: '',
@@ -67,7 +63,6 @@ export default function SubmitMediaPageContent() {
     ownerId: null,
     chapterNumber: null
   })
-  const [existingMedia, setExistingMedia] = useState<any>(null)
   const [characters, setCharacters] = useState<Character[]>([])
   const [arcs, setArcs] = useState<Arc[]>([])
   const [events, setEvents] = useState<Event[]>([])
@@ -85,29 +80,6 @@ export default function SubmitMediaPageContent() {
   const accentColor = '#a855f7'
   const inputStyles = getInputStyles(theme, accentColor)
   const dimmedInputStyles = getDimmedInputStyles(theme)
-
-  useEffect(() => {
-    if (isEditMode && editMediaId) {
-      const fetchMediaData = async () => {
-        try {
-          const media = await api.getMyMediaSubmission(editMediaId)
-          setExistingMedia(media)
-          setFormData({
-            url: media.url || '',
-            description: media.description || '',
-            ownerType: media.ownerType || '',
-            ownerId: media.ownerId || null,
-            chapterNumber: media.chapterNumber || null
-          })
-          if (media.isUploaded) setActiveTab('upload')
-        } catch (fetchError) {
-          console.error('Failed to fetch media data:', fetchError)
-          setError('Failed to load media data for editing.')
-        }
-      }
-      fetchMediaData()
-    }
-  }, [isEditMode, editMediaId])
 
   useEffect(() => {
     if (!user) return
@@ -220,20 +192,9 @@ export default function SubmitMediaPageContent() {
     setError('')
     setLoading(true)
     try {
-      if (isEditMode && editMediaId) {
-        const fd = new FormData()
-        if (file) fd.append('file', file)
-        if (uploadData.description) fd.append('description', uploadData.description)
-        fd.append('ownerType', uploadData.ownerType)
-        fd.append('ownerId', uploadData.ownerId.toString())
-        if (uploadData.chapterNumber) fd.append('chapterNumber', uploadData.chapterNumber.toString())
-        await api.updateOwnMedia(editMediaId, fd)
-        setShowSuccess(true)
-      } else {
-        if (!file) throw new Error('File is required')
-        await api.uploadMedia(file, uploadData)
-        setShowSuccess(true)
-      }
+      if (!file) throw new Error('File is required')
+      await api.uploadMedia(file, uploadData)
+      setShowSuccess(true)
     } catch (uploadError: unknown) {
       setError(uploadError instanceof Error ? uploadError.message : 'Failed to upload media. Please try again.')
       throw uploadError
@@ -305,13 +266,10 @@ export default function SubmitMediaPageContent() {
     <Container size="md" py="xl">
       <SubmitPageHeader
         label="Media Submission"
-        title={isEditMode ? 'Edit Media Submission' : 'Submit Media'}
-        description={isEditMode
-          ? 'Update your media submission details and optionally replace the file'
-          : 'Share fanart, videos, audio, and more from YouTube, TikTok, DeviantArt, Pixiv, SoundCloud, and beyond'}
+        title="Submit Media"
+        description="Share fanart, videos, audio, and more from YouTube, TikTok, DeviantArt, Pixiv, SoundCloud, and beyond"
         icon={<Upload size={22} />}
         accentColor={accentColor}
-        editMode={isEditMode}
       />
 
       <SubmissionGuidelines type="media" accentColor={accentColor} />
@@ -333,7 +291,6 @@ export default function SubmitMediaPageContent() {
       {showSuccess && (
         <SubmissionSuccess
           type="media"
-          isEdit={isEditMode}
           accentColor={accentColor}
           onSubmitAnother={() => {
             setShowSuccess(false)
@@ -501,7 +458,7 @@ export default function SubmitMediaPageContent() {
                           color: isFormValid ? '#fff' : undefined
                         }}
                       >
-                        {loading ? (isEditMode ? 'Updating…' : 'Submitting…') : (isEditMode ? 'Update Media' : 'Submit Media')}
+                        {loading ? 'Submitting…' : 'Submit Media'}
                       </Button>
                       <Text size="xs" c="dimmed">Reviewed by a moderator before publishing</Text>
                     </Group>
@@ -536,8 +493,6 @@ export default function SubmitMediaPageContent() {
                     dataLoading={dataLoading}
                     error={error}
                     userRole={(user?.role as 'user' | 'moderator' | 'admin') || 'user'}
-                    isEditMode={isEditMode}
-                    existingMedia={existingMedia}
                   />
                 </Stack>
               )}
