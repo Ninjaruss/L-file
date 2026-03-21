@@ -16,12 +16,13 @@ import {
   ChevronRight,
   Play,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X
 } from 'lucide-react'
 import {
   getEnhancedEmbedUrl
 } from '../lib/video-utils'
-import { MediaItem } from './MediaGallery'
+import { MediaItem } from '../types/media'
 
 interface MediaLightboxProps {
   opened: boolean
@@ -93,6 +94,16 @@ export default function MediaLightbox({
     color: 'rgba(255,255,255,0.9)'
   }
 
+  const getEntityName = (item: MediaItem): string | null => {
+    if (item.character) return item.character.name
+    if (item.arc) return item.arc.name
+    if (item.event) return item.event.title
+    if (item.gamble) return item.gamble.name
+    if (item.organization) return item.organization.name
+    // user-owned items: no entity badge — submitter username is already shown below
+    return null
+  }
+
   return (
     <Modal
       opened={opened}
@@ -115,7 +126,6 @@ export default function MediaLightbox({
         {/* ── Media content — stop propagation so clicking image doesn't close ── */}
         <Box
           style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={(e) => e.stopPropagation()}
         >
           {selectedMedia.type === 'image' ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -123,6 +133,7 @@ export default function MediaLightbox({
               src={selectedMedia.url}
               alt={selectedMedia.description || 'Media preview'}
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+              onClick={(e) => e.stopPropagation()}
             />
           ) : selectedMedia.type === 'video' ? (
             (() => {
@@ -143,11 +154,12 @@ export default function MediaLightbox({
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
                     style={{ width: '100%', height: '80dvh', border: 'none' }}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 )
               }
               return (
-                <video controls style={{ maxWidth: '100%', maxHeight: '100dvh' }}>
+                <video controls style={{ maxWidth: '100%', maxHeight: '100dvh' }} onClick={(e) => e.stopPropagation()}>
                   <source src={selectedMedia.url} />
                   Your browser does not support the video tag.
                 </video>
@@ -174,6 +186,24 @@ export default function MediaLightbox({
           onClick={(e) => e.stopPropagation()}
         >
           <ExternalLink size={16} />
+        </ActionIcon>
+
+        {/* ── Close button (top-right, left of external link) ── */}
+        <ActionIcon
+          variant="transparent"
+          size="lg"
+          onClick={(e) => { e.stopPropagation(); onClose() }}
+          style={{
+            position: 'absolute',
+            top: rem(14),
+            right: rem(54),
+            zIndex: 10,
+            borderRadius: '50%',
+            ...controlStyle
+          }}
+          aria-label="Close"
+        >
+          <X size={16} />
         </ActionIcon>
 
         {/* ── Counter pill ── */}
@@ -266,6 +296,15 @@ export default function MediaLightbox({
                 style={{ borderColor: palette.secondaryAccent, color: palette.secondaryAccent }}
               >
                 Ch. {selectedMedia.chapterNumber}
+              </Badge>
+            )}
+            {getEntityName(selectedMedia) && (
+              <Badge
+                variant="outline"
+                size="sm"
+                style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)' }}
+              >
+                {getEntityName(selectedMedia)}
               </Badge>
             )}
             <Text size="xs" style={{ color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>
