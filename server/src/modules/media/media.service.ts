@@ -1071,6 +1071,14 @@ export class MediaService {
     ownerId: number,
     userProgress?: number,
   ): Promise<Media[]> {
+    // Map owner types to their primary display usageType to exclude
+    // showcase/background/popout variants from the cycling thumbnail
+    const primaryUsageTypeMap: Partial<Record<MediaOwnerType, MediaUsageType>> =
+      {
+        [MediaOwnerType.VOLUME]: MediaUsageType.VOLUME_IMAGE,
+        [MediaOwnerType.CHARACTER]: MediaUsageType.CHARACTER_IMAGE,
+      };
+
     const query = this.mediaRepo
       .createQueryBuilder('media')
       .leftJoinAndSelect('media.submittedBy', 'submittedBy')
@@ -1080,6 +1088,13 @@ export class MediaService {
         purpose: MediaPurpose.ENTITY_DISPLAY,
       })
       .andWhere('media.status = :status', { status: MediaStatus.APPROVED });
+
+    const primaryUsageType = primaryUsageTypeMap[ownerType];
+    if (primaryUsageType) {
+      query.andWhere('media.usageType = :usageType', {
+        usageType: primaryUsageType,
+      });
+    }
 
     // Return all media regardless of user progress - spoiler system will handle protection
 
