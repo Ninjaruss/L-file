@@ -43,10 +43,15 @@ const ChangedFieldsDisplay = () => {
         —
       </Typography>
     )
-  const fields =
-    typeof record.changedFields === 'string'
-      ? JSON.parse(record.changedFields)
-      : record.changedFields
+  let fields: Record<string, unknown> | null = null
+  try {
+    fields =
+      typeof record.changedFields === 'string'
+        ? JSON.parse(record.changedFields)
+        : record.changedFields
+  } catch {
+    fields = null
+  }
   const keys = Object.keys(fields || {})
   if (keys.length === 0)
     return (
