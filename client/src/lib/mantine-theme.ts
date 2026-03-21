@@ -5,101 +5,60 @@ import { ENTITY_COLORS } from './entityColors'
 // Entity-specific colors - Vibrant yet WCAG AA compliant for dark backgrounds
 export const colors = {
   gamble: [
-    '#fef2f2',
-    '#fee2e2',
-    '#fecaca',
-    '#fca5a5',
-    '#f87171',
-    '#ff5555', // Gamble red - 4.5:1 contrast (vibrant but accessible)
-    '#ef4444',
-    '#dc2626',
-    '#b91c1c',
-    '#450a0a'
-  ] as const,
-  character: [
-    '#eff6ff',
-    '#dbeafe',
-    '#bfdbfe',
-    '#93c5fd',
-    '#60a5fa',
-    '#4dabf7', // Character blue - 4.7:1 contrast (more vibrant than #3b82f6)
-    '#2563eb',
-    '#1d4ed8',
-    '#1e40af',
-    '#1e3a8a'
+    '#fff5f5', '#ffe3e3', '#ffc9c9', '#ffa8a8', '#ff8787',
+    '#ff3333', // index 5 — approved accent
+    '#e50000', '#cc0000', '#a80000', '#7a0000'
   ] as const,
   arc: [
-    '#fff7ed',
-    '#ffedd5',
-    '#fed7aa',
-    '#fdba74',
-    '#fb923c',
-    '#f97316', // Arc orange - 5.3:1 contrast (distinct from gamble red)
-    '#ea580c',
-    '#c2410c',
-    '#9a3412',
-    '#431407'
+    '#fff4e6', '#ffe8cc', '#ffd8a8', '#ffc078', '#ffa94d',
+    '#ff7a00', // index 5 — approved accent
+    '#f76707', '#e8590c', '#d9480f', '#7d2504'
+  ] as const,
+  annotation: [
+    '#fffde7', '#fff9c4', '#fff59d', '#fff176', '#ffee58',
+    '#ffd700', // index 5 — approved accent
+    '#f0c000', '#e0a800', '#c78c00', '#7d5a00'
   ] as const,
   event: [
-    '#fefce8',
-    '#fef3c7',
-    '#fde68a',
-    '#fcd34d',
-    '#fbbf24',
-    '#f39c12', // Event amber - 5.2:1 contrast (more distinct from red)
-    '#d97706',
-    '#b45309',
-    '#92400e',
-    '#451a03'
+    '#f4ffe0', '#e9ffb8', '#d8f88a', '#c5ee56', '#b0e21f',
+    '#99dd00', // index 5 — approved accent
+    '#84c400', '#6ea500', '#578500', '#2a4200'
   ] as const,
   guide: [
-    '#f0fdf4',
-    '#dcfce7',
-    '#bbf7d0',
-    '#86efac',
-    '#4ade80',
-    '#51cf66', // Guide green - 4.9:1 contrast (bright green)
-    '#16a34a',
-    '#15803d',
-    '#166534',
-    '#052e16'
+    '#f0fff4', '#d3f9d8', '#b2f2bb', '#8ce99a', '#69db7c',
+    '#22bb55', // index 5 — approved accent
+    '#1a9e47', '#138038', '#0d6130', '#053318'
   ] as const,
-  media: [
-    '#faf5ff',
-    '#f3e8ff',
-    '#e9d5ff',
-    '#d8b4fe',
-    '#c084fc',
-    '#a855f7', // Media purple - 4.5:1 contrast (saturated purple)
-    '#9333ea',
-    '#7c3aed',
-    '#6d28d9',
-    '#4c1d95'
+  organization: [
+    '#e6fffd', '#ccfff9', '#99fff4', '#5cfced', '#2df0e3',
+    '#00ccbb', // index 5 — approved accent
+    '#00b0a0', '#009080', '#006d60', '#003530'
   ] as const,
   quote: [
-    '#f0fdfa',
-    '#ccfbf1',
-    '#99f6e4',
-    '#5eead4',
-    '#2dd4bf',
-    '#20c997', // Quote teal - 4.6:1 contrast (vibrant teal)
-    '#0d9488',
-    '#0f766e',
-    '#115e59',
-    '#042f2e'
+    '#e3faff', '#c5f6fa', '#99e9f2', '#66d9e8', '#3bc9db',
+    '#00ccee', // index 5 — approved accent
+    '#00b3d0', '#0099b0', '#007a8e', '#003d47'
+  ] as const,
+  chapter: [
+    '#e7f5ff', '#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7',
+    '#2299ff', // index 5 — approved accent
+    '#1c86e5', '#166dcc', '#1056ab', '#082856'
+  ] as const,
+  character: [
+    '#f0edff', '#e0dcff', '#c5bcff', '#a99bff', '#9a88ff',
+    '#8877ff', // index 5 — approved accent
+    '#7060f5', '#5a4ae0', '#4436c0', '#201080'
   ] as const,
   volume: [
-    '#fdf2f8',
-    '#fce7f3',
-    '#fbcfe8',
-    '#f9a8d4',
-    '#f472b6',
-    '#ff69b4', // Volume pink - 4.6:1 contrast (hot pink)
-    '#ec4899',
-    '#db2777',
-    '#be185d',
-    '#500724'
-  ] as const
+    '#fdf0ff', '#f9d9ff', '#f3b8ff', '#ed96ff', '#e666ff',
+    '#dd44ff', // index 5 — approved accent
+    '#cc22f0', '#b300d9', '#9200b0', '#4a006e'
+  ] as const,
+  media: [
+    '#fff0f6', '#ffdeeb', '#fcc2d7', '#faa2c1', '#f783ac',
+    '#ff3399', // index 5 — approved accent
+    '#e0227f', '#c40068', '#a00054', '#5c0030'
+  ] as const,
 } as const
 
 export const mantineTheme: MantineThemeOverride = {
