@@ -815,6 +815,7 @@ const GambleEditForm = () => {
             <AutocompleteInput
               optionText={(record: any) => `Chapter ${record.number}${record.title ? ` — ${record.title}` : ''}`}
               label="Chapter"
+              required
               helperText="Select the chapter this gamble takes place in"
             />
           </ReferenceInput>

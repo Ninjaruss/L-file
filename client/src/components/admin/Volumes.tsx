@@ -29,10 +29,11 @@ const VolumeNumberInput = ({ isEdit = false }: { isEdit?: boolean }) => {
   const [value, setValue] = useState<number | undefined>(record?.number)
   const { data: existing = [] } = useGetList('volumes', {
     pagination: { page: 1, perPage: 1 },
-    filter: value !== undefined ? { number: value } : {},
+    filter: value !== undefined && value > 0 ? { number: value } : { number: -1 },
   })
 
-  const isDuplicate = existing.length > 0 && (!isEdit || existing[0]?.id !== record?.id)
+  const isDuplicate = value !== undefined && value > 0 &&
+    existing.length > 0 && (!isEdit || existing[0]?.id !== record?.id)
 
   return (
     <NumberInput
@@ -41,7 +42,11 @@ const VolumeNumberInput = ({ isEdit = false }: { isEdit?: boolean }) => {
       required
       fullWidth
       min={1}
-      onChange={(e: any) => setValue(Number(e.target.value))}
+      max={49}
+      onChange={(e: any) => {
+        const v = e.target.value
+        setValue(v !== '' && v !== undefined && v !== null ? Number(v) : undefined)
+      }}
       helperText={isDuplicate ? '⚠️ A volume with this number already exists' : 'The volume number (e.g. 1, 2, 3...)'}
     />
   )

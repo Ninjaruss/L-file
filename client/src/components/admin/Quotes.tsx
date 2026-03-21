@@ -1,4 +1,5 @@
 import React from 'react'
+import { MAX_CHAPTER } from '../../lib/constants'
 import {
   List,
   Datagrid,
@@ -28,8 +29,8 @@ const quoteFilters = [
   <ReferenceInput key="characterId" source="characterId" reference="characters" label="Character" alwaysOn>
     <AutocompleteInput optionText="name" />
   </ReferenceInput>,
-  <NumberInput key="chapterFrom" source="chapterNumber_gte" label="Chapter from" min={1} max={539} />,
-  <NumberInput key="chapterTo" source="chapterNumber_lte" label="Chapter to" min={1} max={539} />
+  <NumberInput key="chapterFrom" source="chapterNumber_gte" label="Chapter from" min={1} max={MAX_CHAPTER} />,
+  <NumberInput key="chapterTo" source="chapterNumber_lte" label="Chapter to" min={1} max={MAX_CHAPTER} />
 ]
 
 const QuoteBulkActionButtons = () => (
@@ -529,9 +530,9 @@ export const QuoteEdit = () => (
                       required
                       fullWidth
                       label="Chapter Number"
-                      max={539}
+                      max={MAX_CHAPTER}
                       min={1}
-                      helperText="Chapter where this quote appears (1-539)"
+                      helperText={`Chapter where this quote appears (1–${MAX_CHAPTER})`}
                     />
                     <NumberInput
                       source="pageNumber"
@@ -698,9 +699,9 @@ export const QuoteCreate = () => (
                       required
                       fullWidth
                       label="Chapter Number"
-                      max={539}
+                      max={MAX_CHAPTER}
                       min={1}
-                      helperText="Chapter where this quote appears (1-539)"
+                      helperText={`Chapter where this quote appears (1–${MAX_CHAPTER})`}
                     />
                     <NumberInput
                       source="pageNumber"
