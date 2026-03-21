@@ -17,7 +17,9 @@ import {
   ReferenceField,
   ReferenceInput,
   AutocompleteInput,
+  SelectInput,
   useGetList,
+  useRecordContext,
   SearchInput,
   BulkDeleteButton,
   WithRecord
@@ -106,24 +108,45 @@ const ArcTypeWithTooltip = ({ record }: { record: any }) => {
 }
 
 // Component for parent arc input in edit mode
-const ParentArcInput = () => {
-  return (
-    <ReferenceInput
-      source="parentId"
-      reference="arcs"
-      label="Parent Arc"
-    >
-      <AutocompleteInput
-        optionText="name"
-        filterToQuery={(searchText: string) => ({ name: searchText })}
-        helperText="Leave empty for top-level arc, or select a parent to make this a sub-arc. Do not select the current arc as its own parent."
-        sx={{
-          '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
-            backgroundColor: '#0f0f0f'
+const ArcParentInput = () => {
+  const record = useRecordContext()
+  const { data: allArcs = [] } = useGetList('arcs', {
+    pagination: { page: 1, perPage: 500 },
+    sort: { field: 'name', order: 'ASC' },
+  })
+
+  const getDescendantIds = (arcId: number): Set<number> => {
+    const result = new Set<number>()
+    const queue = [arcId]
+    while (queue.length > 0) {
+      const current = queue.shift()!
+      allArcs
+        .filter((a: any) => a.parentId === current)
+        .forEach((a: any) => {
+          if (!result.has(a.id)) {
+            result.add(a.id)
+            queue.push(a.id)
           }
-        }}
-      />
-    </ReferenceInput>
+        })
+    }
+    return result
+  }
+
+  const forbiddenIds = record?.id
+    ? new Set([record.id, ...getDescendantIds(record.id)])
+    : new Set<number>()
+
+  const parentChoices = allArcs.filter((a: any) => !forbiddenIds.has(a.id))
+
+  return (
+    <SelectInput
+      source="parentId"
+      label="Parent Arc"
+      choices={parentChoices.map((a: any) => ({ id: a.id, name: a.name }))}
+      allowEmpty
+      emptyText="None (top-level arc)"
+      helperText="Cannot select this arc or its descendants as parent"
+    />
   )
 }
 
@@ -686,7 +709,7 @@ export const ArcEdit = () => (
                       <GitBranch size={20} />
                       Arc Hierarchy
                     </Typography>
-                    <ParentArcInput />
+                    <ArcParentInput />
                   </Box>
                 </Grid>
 
@@ -868,22 +891,7 @@ export const ArcCreate = () => (
                       <GitBranch size={20} />
                       Arc Hierarchy
                     </Typography>
-                    <ReferenceInput
-                      source="parentId"
-                      reference="arcs"
-                      label="Parent Arc"
-                    >
-                      <AutocompleteInput
-                        optionText="name"
-                        filterToQuery={(searchText: string) => ({ name: searchText })}
-                        helperText="Leave empty for top-level arc, or select a parent to make this a sub-arc"
-                        sx={{
-                          '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
-                            backgroundColor: '#0f0f0f'
-                          }
-                        }}
-                      />
-                    </ReferenceInput>
+                    <ArcParentInput />
                   </Box>
                 </Grid>
 
