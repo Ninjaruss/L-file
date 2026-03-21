@@ -5,59 +5,59 @@ import { ENTITY_COLORS } from './entityColors'
 // Entity-specific Mantine color palettes — 10-step ramps with approved accent at index 5
 export const colors = {
   gamble: [
-    '#fff5f5', '#ffe3e3', '#ffc9c9', '#ffa8a8', '#ff8787',
-    '#ff3333', // index 5 — approved accent
-    '#e50000', '#cc0000', '#a80000', '#7a0000'
+    '#fdf2f3', '#fbd9db', '#f7b4b8', '#f28f94', '#eb6b71',
+    '#e63946', // index 5 — approved accent
+    '#c72636', '#a81e2c', '#861622', '#550e16'
   ] as const,
   arc: [
-    '#fff4e6', '#ffe8cc', '#ffd8a8', '#ffc078', '#ffa94d',
-    '#ff7a00', // index 5 — approved accent
-    '#f76707', '#e8590c', '#d9480f', '#7d2504'
+    '#fff4f0', '#ffddd1', '#ffbfa8', '#ff9f7a', '#ff844d',
+    '#ff6b35', // index 5 — approved accent
+    '#e5531d', '#c43e10', '#9e2f08', '#601a02'
   ] as const,
   annotation: [
-    '#fffde7', '#fff9c4', '#fff59d', '#fff176', '#ffee58',
-    '#ffd700', // index 5 — approved accent
-    '#f0c000', '#e0a800', '#c78c00', '#7d5a00'
+    '#f8f0fe', '#edcffc', '#dea8f9', '#cb7ef4', '#ab56ef',
+    '#9333ea', // index 5 — approved accent
+    '#7820cc', '#6010aa', '#4a0885', '#2a0450'
   ] as const,
   event: [
-    '#f4ffe0', '#e9ffb8', '#d8f88a', '#c5ee56', '#b0e21f',
-    '#99dd00', // index 5 — approved accent
-    '#84c400', '#6ea500', '#578500', '#2a4200'
+    '#fef9e8', '#fcefc2', '#f9e08a', '#f4cc4e', '#e0ab18',
+    '#ca8a04', // index 5 — approved accent
+    '#a86f03', '#865602', '#623d01', '#362000'
   ] as const,
   guide: [
-    '#f0fff4', '#d3f9d8', '#b2f2bb', '#8ce99a', '#69db7c',
-    '#22bb55', // index 5 — approved accent
-    '#1a9e47', '#138038', '#0d6130', '#053318'
+    '#f0fdf4', '#d1fae5', '#a7f3c7', '#6ee6a0', '#34c470',
+    '#16a34a', // index 5 — approved accent
+    '#0f8239', '#0a612a', '#07421c', '#03210e'
   ] as const,
   organization: [
-    '#e6fffd', '#ccfff9', '#99fff4', '#5cfced', '#2df0e3',
-    '#00ccbb', // index 5 — approved accent
-    '#00b0a0', '#009080', '#006d60', '#003530'
+    '#f0f8fe', '#d0ebfa', '#9fd4f5', '#5cb6ec', '#2494d6',
+    '#0369a1', // index 5 — approved accent
+    '#025382', '#013f64', '#012b45', '#001525'
   ] as const,
   quote: [
-    '#e3faff', '#c5f6fa', '#99e9f2', '#66d9e8', '#3bc9db',
-    '#00ccee', // index 5 — approved accent
-    '#00b3d0', '#0099b0', '#007a8e', '#003d47'
+    '#f0fdfb', '#ccf7f2', '#96ece3', '#56ddd0', '#27c4b6',
+    '#0d9488', // index 5 — approved accent
+    '#097569', '#075c52', '#053f38', '#02211d'
   ] as const,
   chapter: [
-    '#e7f5ff', '#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7',
-    '#2299ff', // index 5 — approved accent
-    '#1c86e5', '#166dcc', '#1056ab', '#082856'
+    '#f0faff', '#ddf3fe', '#b8e8fd', '#79d4fb', '#52c8f9',
+    '#38bdf8', // index 5 — approved accent
+    '#119ad4', '#0878ab', '#065a80', '#032e41'
   ] as const,
   character: [
-    '#f0edff', '#e0dcff', '#c5bcff', '#a99bff', '#9a88ff',
-    '#8877ff', // index 5 — approved accent
-    '#7060f5', '#5a4ae0', '#4436c0', '#201080'
+    '#fef9f0', '#fdefd1', '#fbd99a', '#f8c05e', '#f6b036',
+    '#f5a623', // index 5 — approved accent
+    '#d4860d', '#a86607', '#7c4904', '#3f2301'
   ] as const,
   volume: [
-    '#fdf0ff', '#f9d9ff', '#f3b8ff', '#ed96ff', '#e666ff',
-    '#dd44ff', // index 5 — approved accent
-    '#cc22f0', '#b300d9', '#9200b0', '#4a006e'
+    '#f5f0fd', '#e6d5fa', '#ceadf5', '#b17fee', '#8f52e2',
+    '#6d28d9', // index 5 — approved accent
+    '#571db8', '#421494', '#2e0c6e', '#160540'
   ] as const,
   media: [
-    '#fff0f6', '#ffdeeb', '#fcc2d7', '#faa2c1', '#f783ac',
-    '#ff3399', // index 5 — approved accent
-    '#e0227f', '#c40068', '#a00054', '#5c0030'
+    '#fef0f7', '#fcd1e8', '#f9a8d4', '#f472b3', '#e84d94',
+    '#db2777', // index 5 — approved accent
+    '#b81860', '#92104b', '#6d0937', '#3d0420'
   ] as const,
 } as const
 
