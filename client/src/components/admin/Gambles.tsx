@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   List,
   Datagrid,
@@ -15,6 +15,9 @@ import {
   AutocompleteInput,
   ReferenceArrayInput,
   AutocompleteArrayInput,
+  ArrayInput,
+  SimpleFormIterator,
+  SelectInput,
   TabbedForm,
   FormTab,
   DateField,
@@ -30,278 +33,14 @@ import {
   NumberField,
   FunctionField,
   WithRecord,
-  useNotify,
-  useRefresh
 } from 'react-admin'
 import {
-  Box, Typography, Tooltip, IconButton, Chip, Grid,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Autocomplete, TextField as MuiTextField, CircularProgress,
-  Button as MuiButton, Select, MenuItem, FormControl, InputLabel
+  Box, Typography, Tooltip, IconButton, Chip,
 } from '@mui/material'
 import { Link } from 'react-router-dom'
-import { Image as ImageIcon, Edit3, Plus, X } from 'lucide-react'
-import { api } from '../../lib/api'
+import { Image as ImageIcon } from 'lucide-react'
 import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 import { FACTION_ROLES } from '../../lib/constants'
-
-interface FactionMember {
-  character: any
-  role: string
-}
-
-interface FactionData {
-  id?: number
-  name: string
-  supportedGambler: any | null
-  members: FactionMember[]
-}
-
-const FactionEditor = ({ gambleId, initialFactions }: { gambleId: number, initialFactions: any[] }) => {
-  const notify = useNotify()
-  const refresh = useRefresh()
-  const [factions, setFactions] = useState<FactionData[]>(
-    initialFactions.map(f => ({
-      id: f.id,
-      name: f.name || '',
-      supportedGambler: f.supportedGambler || null,
-      members: (f.members || []).map((m: any) => ({ character: m.character, role: m.role || 'member' }))
-    }))
-  )
-  const [characters, setCharacters] = useState<any[]>([])
-  const [loadingChars, setLoadingChars] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [factionForm, setFactionForm] = useState<FactionData>({ name: '', supportedGambler: null, members: [] })
-  const [pendingMember, setPendingMember] = useState<{ character: any, role: string }>({ character: null, role: 'member' })
-
-  const loadCharacters = () => {
-    if (characters.length === 0 && !loadingChars) {
-      setLoadingChars(true)
-      api.getCharacters({ limit: 500 })
-        .then(res => setCharacters(res.data || []))
-        .catch(() => notify('Failed to load characters', { type: 'error' }))
-        .finally(() => setLoadingChars(false))
-    }
-  }
-
-  const handleOpenAdd = () => {
-    setEditingIndex(null)
-    setFactionForm({ name: '', supportedGambler: null, members: [] })
-    setPendingMember({ character: null, role: 'member' })
-    setModalOpen(true)
-    loadCharacters()
-  }
-
-  const handleOpenEdit = (index: number) => {
-    setEditingIndex(index)
-    setFactionForm({ ...factions[index], members: factions[index].members.map(m => ({ ...m })) })
-    setPendingMember({ character: null, role: 'member' })
-    setModalOpen(true)
-    loadCharacters()
-  }
-
-  const handleDeleteFaction = (index: number) => {
-    setFactions(f => f.filter((_, i) => i !== index))
-  }
-
-  const handleAddMember = () => {
-    if (!pendingMember.character) return
-    if (factionForm.members.find(m => m.character?.id === pendingMember.character.id)) return
-    setFactionForm(f => ({ ...f, members: [...f.members, { ...pendingMember }] }))
-    setPendingMember({ character: null, role: 'member' })
-  }
-
-  const handleRemoveMember = (idx: number) => {
-    setFactionForm(f => ({ ...f, members: f.members.filter((_, i) => i !== idx) }))
-  }
-
-  const handleSaveFactionModal = () => {
-    if (factionForm.members.length === 0) {
-      notify('A faction must have at least one member', { type: 'warning' })
-      return
-    }
-    if (editingIndex !== null) {
-      setFactions(f => f.map((faction, i) => i === editingIndex ? { ...factionForm } : faction))
-    } else {
-      setFactions(f => [...f, { ...factionForm }])
-    }
-    setModalOpen(false)
-  }
-
-  const handleSaveFactions = async () => {
-    setSaving(true)
-    try {
-      await api.put(`/gambles/${gambleId}`, {
-        factions: factions.map(f => ({
-          name: f.name || undefined,
-          supportedGamblerId: f.supportedGambler?.id || undefined,
-          memberIds: f.members.map(m => m.character.id),
-          memberRoles: f.members.map(m => m.role)
-        }))
-      })
-      notify('Factions saved successfully', { type: 'success' })
-      refresh()
-    } catch {
-      notify('Failed to save factions', { type: 'error' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <Box sx={{ mt: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-        <Typography variant="subtitle1" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
-          Factions / Teams
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <MuiButton size="small" variant="outlined" startIcon={<Plus size={14} />}
-            onClick={handleOpenAdd}
-            sx={{ borderColor: 'rgba(211,47,47,0.5)', color: '#d32f2f', '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(211,47,47,0.05)' } }}>
-            Add Faction
-          </MuiButton>
-          <MuiButton size="small" variant="contained" onClick={handleSaveFactions} disabled={saving}
-            sx={{ backgroundColor: '#d32f2f', '&:hover': { backgroundColor: '#b71c1c' } }}>
-            {saving ? 'Saving...' : 'Save Factions'}
-          </MuiButton>
-        </Box>
-      </Box>
-
-      {factions.length === 0 ? (
-        <Box sx={{ p: 2, border: '1px dashed rgba(211,47,47,0.3)', borderRadius: 1, textAlign: 'center' }}>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
-            No factions defined. Click "Add Faction" to create one.
-          </Typography>
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {factions.map((faction, i) => (
-            <Box key={i} sx={{ p: 1.5, border: '1px solid rgba(211,47,47,0.25)', borderRadius: 1, backgroundColor: '#0f0f0f', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#d32f2f', display: 'block', mb: 0.5, fontWeight: 600 }}>
-                  {faction.name || `Faction ${i + 1}`}
-                  {faction.supportedGambler && (
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 'normal', marginLeft: 6 }}>
-                      — Supports {faction.supportedGambler.name}
-                    </span>
-                  )}
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {faction.members.map((m, mi) => (
-                    <Chip key={mi} size="small"
-                      label={`${m.character?.name || '?'} (${m.role || 'member'})`}
-                      sx={{ fontSize: '0.65rem', height: 20, backgroundColor: 'rgba(211,47,47,0.1)', color: 'rgba(255,255,255,0.8)' }} />
-                  ))}
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 0.5, ml: 1, flexShrink: 0 }}>
-                <IconButton size="small" onClick={() => handleOpenEdit(i)}
-                  sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#d32f2f' } }}>
-                  <Edit3 size={14} />
-                </IconButton>
-                <IconButton size="small" onClick={() => handleDeleteFaction(i)}
-                  sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#ef4444' } }}>
-                  <X size={14} />
-                </IconButton>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ backgroundColor: 'rgba(211,47,47,0.12)', color: '#d32f2f', fontSize: '1.1rem' }}>
-          {editingIndex !== null ? 'Edit Faction' : 'Add Faction'}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <MuiTextField label="Faction Name (optional)" fullWidth
-                placeholder="e.g. Kakerou, L'air…"
-                helperText="Leave blank if this faction has no name"
-                value={factionForm.name}
-                onChange={(e) => setFactionForm(f => ({ ...f, name: e.target.value }))} />
-            </Grid>
-            <Grid item xs={6}>
-              <Autocomplete
-                options={characters}
-                getOptionLabel={(o: any) => o.name || ''}
-                value={factionForm.supportedGambler}
-                onChange={(_, v) => setFactionForm(f => ({ ...f, supportedGambler: v }))}
-                loading={loadingChars}
-                renderInput={(params) => (
-                  <MuiTextField {...params} label="Supported Gambler (optional)"
-                    helperText="Main gambler this faction backs"
-                    InputProps={{ ...params.InputProps, endAdornment: (<>{loadingChars && <CircularProgress size={16} />}{params.InputProps.endAdornment}</>) }} />
-                )}
-              />
-            </Grid>
-          </Grid>
-          <Box sx={{ border: '1px solid rgba(211,47,47,0.3)', borderRadius: 1, p: 2 }}>
-            <Typography variant="subtitle2" sx={{ color: '#d32f2f', fontWeight: 600, mb: 1.5 }}>
-              Members *
-            </Typography>
-            {factionForm.members.map((m, mi) => (
-              <Box key={mi} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, p: 1, borderRadius: 1, backgroundColor: 'rgba(211,47,47,0.04)', border: '1px solid rgba(211,47,47,0.1)' }}>
-                <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>{m.character?.name}</Typography>
-                <FormControl size="small" sx={{ minWidth: 130 }}>
-                  <InputLabel>Role</InputLabel>
-                  <Select value={m.role} label="Role"
-                    onChange={(e) => setFactionForm(f => ({
-                      ...f, members: f.members.map((mem, i) => i === mi ? { ...mem, role: e.target.value } : mem)
-                    }))}>
-                    {FACTION_ROLES.map(r => <MenuItem key={r.id} value={r.id} sx={{ textTransform: 'capitalize' }}>{r.name}</MenuItem>)}
-                  </Select>
-                </FormControl>
-                <IconButton size="small" onClick={() => handleRemoveMember(mi)}
-                  sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#ef4444' } }}>
-                  <X size={16} />
-                </IconButton>
-              </Box>
-            ))}
-            {factionForm.members.length === 0 && (
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.35)', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
-                No members added yet. Use the fields below to add characters.
-              </Typography>
-            )}
-            <Box sx={{ display: 'flex', gap: 1.5, mt: 1, pt: 1.5, borderTop: '1px solid rgba(211,47,47,0.15)' }}>
-              <Autocomplete sx={{ flex: 1 }}
-                options={characters.filter(c => !factionForm.members.find(m => m.character?.id === c.id))}
-                getOptionLabel={(o: any) => o.name || ''}
-                value={pendingMember.character}
-                onChange={(_, v) => setPendingMember(p => ({ ...p, character: v }))}
-                loading={loadingChars}
-                renderInput={(params) => <MuiTextField {...params} label="Add character…" size="small" />}
-              />
-              <FormControl size="small" sx={{ minWidth: 130 }}>
-                <InputLabel>Role</InputLabel>
-                <Select value={pendingMember.role} label="Role"
-                  onChange={(e) => setPendingMember(p => ({ ...p, role: e.target.value }))}>
-                  {FACTION_ROLES.map(r => <MenuItem key={r.id} value={r.id} sx={{ textTransform: 'capitalize' }}>{r.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <MuiButton variant="outlined" onClick={handleAddMember}
-                disabled={!pendingMember.character}
-                sx={{ borderColor: 'rgba(211,47,47,0.5)', color: '#d32f2f', px: 2, whiteSpace: 'nowrap', '&:hover': { borderColor: '#d32f2f', backgroundColor: 'rgba(211,47,47,0.05)' } }}>
-                Add
-              </MuiButton>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <MuiButton onClick={() => setModalOpen(false)} size="large">Cancel</MuiButton>
-          <MuiButton onClick={handleSaveFactionModal} variant="contained" size="large"
-            sx={{ backgroundColor: '#d32f2f', '&:hover': { backgroundColor: '#b71c1c' } }}>
-            {editingIndex !== null ? 'Update Faction' : 'Add Faction'}
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-    </Box>
-  )
-}
-
 
 const GambleFilters = [
   <SearchInput key="search" source="name" placeholder="Search by name" alwaysOn />,
@@ -721,10 +460,18 @@ const GambleEditForm = () => {
   
   if (isLoading || !record) return null
 
-  // Transform record to include participantIds for the form
+  // Transform record to include participantIds and reshape factions for the form
   const transformedRecord = {
     ...record,
-    participantIds: record.participants ? record.participants.map((p: any) => p.id) : []
+    participantIds: record.participants ? record.participants.map((p: any) => p.id) : [],
+    factions: record.factions ? record.factions.map((f: any) => ({
+      name: f.name || '',
+      supportedGamblerId: f.supportedGambler?.id ?? null,
+      members: (f.members || []).map((m: any) => ({
+        characterId: m.character?.id ?? null,
+        role: m.role || 'member',
+      })),
+    })) : [],
   }
 
   return (
@@ -852,7 +599,25 @@ const GambleEditForm = () => {
             />
           </ReferenceArrayInput>
 
-          <FactionEditor gambleId={record.id} initialFactions={record.factions || []} />
+          <ArrayInput source="factions" label="Factions / Teams">
+            <SimpleFormIterator inline={false}>
+              <TextInput source="name" label="Faction Name" fullWidth />
+              <ReferenceInput source="supportedGamblerId" reference="characters" perPage={200}>
+                <AutocompleteInput
+                  label="Supported Gambler (optional)"
+                  optionText="name"
+                />
+              </ReferenceInput>
+              <ArrayInput source="members" label="Members">
+                <SimpleFormIterator inline>
+                  <ReferenceInput source="characterId" reference="characters" perPage={200}>
+                    <AutocompleteInput label="Character" optionText="name" />
+                  </ReferenceInput>
+                  <SelectInput source="role" label="Role" choices={FACTION_ROLES} defaultValue="member" />
+                </SimpleFormIterator>
+              </ArrayInput>
+            </SimpleFormIterator>
+          </ArrayInput>
         </Box>
       </FormTab>
 
@@ -1022,6 +787,26 @@ export const GambleCreate = () => {
                   }}
                 />
               </ReferenceArrayInput>
+
+              <ArrayInput source="factions" label="Factions / Teams">
+                <SimpleFormIterator inline={false}>
+                  <TextInput source="name" label="Faction Name" fullWidth />
+                  <ReferenceInput source="supportedGamblerId" reference="characters" perPage={200}>
+                    <AutocompleteInput
+                      label="Supported Gambler (optional)"
+                      optionText="name"
+                    />
+                  </ReferenceInput>
+                  <ArrayInput source="members" label="Members">
+                    <SimpleFormIterator inline>
+                      <ReferenceInput source="characterId" reference="characters" perPage={200}>
+                        <AutocompleteInput label="Character" optionText="name" />
+                      </ReferenceInput>
+                      <SelectInput source="role" label="Role" choices={FACTION_ROLES} defaultValue="member" />
+                    </SimpleFormIterator>
+                  </ArrayInput>
+                </SimpleFormIterator>
+              </ArrayInput>
             </Box>
           </FormTab>
 

@@ -67,7 +67,7 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
   if (resource === 'gambles') {
     // Keep only the fields that are allowed in the CreateGambleDto/UpdateGambleDto
     const allowedFields = [
-      'name', 'description', 'rules', 'winCondition', 'explanation', 'chapterId', 'participantIds'
+      'name', 'description', 'rules', 'winCondition', 'explanation', 'chapterId', 'participantIds', 'factions'
     ]
 
     const gambleCleaned: Record<string, unknown> = {}
@@ -96,6 +96,31 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
       gambleCleaned.participantIds = data.participants.map((p: any) =>
         typeof p === 'object' && p !== null ? p.id : p
       ).filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
+    }
+
+    // Transform factions from ArrayInput nested format to backend DTO format
+    // ArrayInput produces: [{ name, supportedGamblerId, members: [{ characterId, role }] }]
+    // Backend expects:     [{ name, supportedGamblerId, memberIds, memberRoles }]
+    if (gambleCleaned.factions && Array.isArray(gambleCleaned.factions)) {
+      gambleCleaned.factions = (gambleCleaned.factions as any[]).map((faction: any) => {
+        const members: any[] = Array.isArray(faction.members) ? faction.members : []
+        const memberIds = members
+          .map((m: any) => {
+            if (typeof m.characterId === 'number') return m.characterId
+            if (typeof m.characterId === 'string' && !isNaN(Number(m.characterId))) return Number(m.characterId)
+            return null
+          })
+          .filter((id: any) => id !== null)
+        const memberRoles = members.map((m: any) => m.role || 'member')
+
+        const factionDto: Record<string, unknown> = { memberIds, memberRoles }
+        if (faction.name) factionDto.name = faction.name
+        if (faction.supportedGamblerId) {
+          const sgId = faction.supportedGamblerId
+          factionDto.supportedGamblerId = typeof sgId === 'number' ? sgId : Number(sgId)
+        }
+        return factionDto
+      })
     }
 
     return gambleCleaned
