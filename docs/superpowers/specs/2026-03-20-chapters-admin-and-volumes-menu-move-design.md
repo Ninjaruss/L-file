@@ -32,7 +32,7 @@ Organizations, Quotes, Tags
 **After — Reference Data section:**
 Organizations, Quotes, Tags, Volumes, Chapters
 
-Icon for Chapters: `Hash` from lucide-react (represents a chapter number/index).
+Icon for Chapters: `Hash` from lucide-react (represents a chapter number/index). Add `Hash` to the lucide-react import in `AdminMenu.tsx` and use it inline: `leftIcon={<Hash size={20} />`.
 
 ---
 
@@ -50,28 +50,32 @@ Located at: `client/src/components/admin/Chapters.tsx`
 
 ### ChapterList
 - Default sort: `number ASC`
-- Columns: id, number, title, summary (2-line clamp truncated), bulk delete button
+- Columns: id, number, title, and summary (via `FunctionField` with MUI `Typography` using `WebkitLineClamp: 2` — same pattern as the description column in `VolumeList`), bulk delete button
 - `rowClick="show"`
 
 ### ChapterShow
-- Header card with indigo gradient, shows chapter number and title
-- Tabs: **Overview** (summary text) — no Media tab needed (chapters have no media association)
+- Header card with indigo gradient; icon: `<Hash size={32} color="white" />`; shows "Chapter {number}" as the heading and the title (if present) as a subtitle beneath it
+- Tabs: **Overview** — renders summary text in a styled box; shows "No summary available" italic fallback when `summary` is null/empty (matching the `VolumeShow` null-check pattern)
+- No Media tab needed (chapters have no media association)
 
 ### ChapterEdit
 - Indigo accent (`#6366f1`)
 - Fields: Number (required, min 1, max 539), Title (optional), Summary (multiline textarea)
-- Uses `EditToolbar` with delete confirmation
+- Uses `EditToolbar` with `resource="chapters"`, `confirmTitle="Delete Chapter"`, `confirmMessage="Are you sure you want to delete this chapter? This cannot be undone."`
 
 ### ChapterCreate
 - Green accent (`#16a34a`) matching all other Create views
-- Same fields as Edit
+- Same fields as Edit (number, title, summary)
+- Plain `SimpleForm` with no `toolbar` prop (no delete action on create, matching `VolumeCreate`)
+- Header icon: `<Plus size={32} />`
 
 ---
 
 ## 3. AdminApp.tsx Changes
 
-- Import `ChapterList, ChapterEdit, ChapterCreate, ChapterShow` from `./Chapters`
-- Import `Hash` icon from lucide-react, wrap as `HashIcon` component
+- Add `Hash` to the existing lucide-react import line in `AdminApp.tsx`
+- Add `const HashIcon = () => <Hash />` alongside the other icon wrapper constants
+- Import chapter components: `import { ChapterList, ChapterEdit, ChapterCreate, ChapterShow } from '../../components/admin/Chapters'`
 - Register `<Resource name="chapters" list={ChapterList} edit={ChapterEdit} create={ChapterCreate} show={ChapterShow} icon={HashIcon} />`
 
 ---
