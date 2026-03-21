@@ -509,12 +509,6 @@ export const mantineTheme: MantineThemeOverride = {
       purple: '#7c3aed',
       black: '#0a0a0a',
       white: '#ffffff',
-      // Entity colors - 5 color groups for visual clarity
-      // Blue group: character, chapter
-      // Red group: gamble
-      // Orange group: arc, event
-      // Green group: guide, quote
-      // Purple group: media, organization, volume
       // Entity accent colors — all unique, imported from entityColors.ts
       gamble:       ENTITY_COLORS.gamble,
       character:    ENTITY_COLORS.character,
