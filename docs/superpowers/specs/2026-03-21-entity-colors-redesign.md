@@ -47,6 +47,10 @@ Replace the spectral distribution with a **semantically motivated** palette. Eac
 
 Replace all 11 hex values with the approved palette above. No structural changes — only the color values change. All downstream consumers (Mantine theme, MUI admin theme, `textColors`, etc.) import from this file and will update automatically.
 
+**Note on role reversal:** `character` and `annotation` have exchanged their former semantic roles — character moves from cold indigo (#8877ff) to warm amber gold (#f5a623), and annotation moves from gold (#ffd700) to purple (#9333ea). This is intentional.
+
+All values were visually reviewed against a dark background and approved.
+
 ---
 
 ## What Does Not Change
