@@ -16,7 +16,8 @@ import {
   Building2,
   MessageSquare,
   Library,
-  Award
+  Award,
+  Hash
 } from 'lucide-react'
 import { usePendingCounts } from '../../hooks/usePendingCounts'
 
@@ -176,6 +177,11 @@ export const AdminMenu = () => {
         to="/volumes"
         primaryText="Volumes"
         leftIcon={<Library size={20} />}
+      />
+      <MenuItemLink
+        to="/chapters"
+        primaryText="Chapters"
+        leftIcon={<Hash size={20} />}
       />
 
       <Divider sx={{ my: 1 }} />
