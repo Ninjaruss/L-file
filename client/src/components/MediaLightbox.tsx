@@ -89,7 +89,7 @@ export default function MediaLightbox({
     if (touchStart === null) return
     const diff = touchStart - e.changedTouches[0].clientX
     if (Math.abs(diff) > 50) {
-      diff > 0 ? onNext() : onPrevious()
+      if (diff > 0) { onNext() } else { onPrevious() }
     }
     setTouchStart(null)
   }
@@ -130,7 +130,6 @@ export default function MediaLightbox({
           style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           {selectedMedia.type === 'image' ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={selectedMedia.url}
               alt={selectedMedia.description || 'Media preview'}
