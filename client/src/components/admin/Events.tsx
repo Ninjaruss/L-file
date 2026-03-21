@@ -80,6 +80,7 @@ import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 // Note: Removed EntityEmbedHelperWithSearch import to avoid Mantine/MUI conflicts
 import { EVENT_TYPES } from '../../lib/constants'
+import { ApproveRejectToolbar } from './EditToolbar'
 
 const STATUS_CHOICES = [
   { id: EventStatus.PENDING, name: 'Pending' },
@@ -1568,7 +1569,10 @@ export const EventEdit = () => {
           </Box>
 
           <CardContent sx={{ p: 4 }}>
-            <SimpleForm validate={validateEventForm} sx={{
+            <SimpleForm
+              validate={validateEventForm}
+              toolbar={<ApproveRejectToolbar resource="events" showDelete={false} />}
+              sx={{
               '& .MuiTextField-root': {
                 mb: 3,
                 '& .MuiOutlinedInput-root': {
@@ -1658,33 +1662,10 @@ export const EventEdit = () => {
                     <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
                       Publication Status
                     </Typography>
-                    <SelectInput
-                      source="status"
-                      choices={[
-                        { id: EventStatus.PENDING, name: 'Pending Review' },
-                        { id: EventStatus.APPROVED, name: 'Approved' },
-                        { id: EventStatus.REJECTED, name: 'Rejected' }
-                      ]}
-                      fullWidth
-                      sx={{
-                        '& .MuiSelect-select': {
-                          backgroundColor: '#0f0f0f'
-                        }
-                      }}
-                    />
-                    <FormDataConsumer>
-                      {({ formData }) =>
-                        formData.status === 'rejected' && (
-                          <TextInput
-                            source="rejectionReason"
-                            label="Rejection Reason"
-                            multiline
-                            fullWidth
-                            helperText="Explain why this event was rejected"
-                          />
-                        )
-                      }
-                    </FormDataConsumer>
+                    <EventStatusField source="status" />
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mt: 1 }}>
+                      Use the Approve / Reject buttons in the toolbar below to change status.
+                    </Typography>
                   </Box>
                 </Grid>
 

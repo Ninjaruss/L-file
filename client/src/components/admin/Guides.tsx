@@ -77,6 +77,7 @@ import {
 import { api } from '../../lib/api'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
+import { ApproveRejectToolbar } from './EditToolbar'
 
 const GuideStatusField = ({ source }: { source: string }) => {
   const record = useRecordContext()
@@ -2387,7 +2388,9 @@ export const GuideEdit = () => {
           </Box>
 
           <CardContent sx={{ p: 4 }}>
-            <SimpleForm sx={{
+            <SimpleForm
+              toolbar={<ApproveRejectToolbar resource="guides" showDelete={true} />}
+              sx={{
               '& .MuiTextField-root': {
                 mb: 3,
                 '& .MuiOutlinedInput-root': {
@@ -2419,10 +2422,10 @@ export const GuideEdit = () => {
             }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Box sx={{ 
-                    p: 3, 
-                    backgroundColor: 'rgba(225, 29, 72, 0.05)', 
-                    borderRadius: 2, 
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: 'rgba(225, 29, 72, 0.05)',
+                    borderRadius: 2,
                     border: '1px solid rgba(225, 29, 72, 0.2)',
                     mb: 3
                   }}>
@@ -2483,14 +2486,33 @@ export const GuideEdit = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <PublicationStatusInput />
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: 'rgba(245, 124, 0, 0.05)',
+                    borderRadius: 2,
+                    border: '1px solid rgba(245, 124, 0, 0.2)'
+                  }}>
+                    <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
+                      Publication Status
+                    </Typography>
+                    <FunctionField
+                      source="status"
+                      label="Status"
+                      render={(record: any) => (
+                        <GuideStatusField source="status" />
+                      )}
+                    />
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mt: 1 }}>
+                      Use the Approve / Reject buttons in the toolbar below to change status.
+                    </Typography>
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Box sx={{ 
-                    p: 3, 
-                    backgroundColor: 'rgba(16, 185, 129, 0.05)', 
-                    borderRadius: 2, 
+                  <Box sx={{
+                    p: 3,
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                    borderRadius: 2,
                     border: '1px solid rgba(16, 185, 129, 0.2)',
                     mb: 3
                   }}>

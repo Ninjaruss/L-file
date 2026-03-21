@@ -57,6 +57,7 @@ import {
   Link as LinkIcon
 } from 'lucide-react'
 import { api } from '../../lib/api'
+import { ApproveRejectToolbar } from './EditToolbar'
 
 const TruncatedUrlField = () => {
   const record = useRecordContext()
@@ -2628,7 +2629,9 @@ const DynamicEntitySelector = () => {
 export const MediaEdit = () => {
   return (
     <Edit>
-      <SimpleForm sx={{ 
+      <SimpleForm
+        toolbar={<ApproveRejectToolbar resource="media" showDelete={true} />}
+        sx={{
         '& .MuiCardContent-root': {
           padding: '24px',
           backgroundColor: '#0a0a0a',
@@ -2787,39 +2790,10 @@ export const MediaEdit = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <SelectInput 
-                source="status" 
-                choices={[
-                  { id: 'pending', name: 'Pending Review' },
-                  { id: 'approved', name: 'Approved' },
-                  { id: 'rejected', name: 'Rejected' },
-                ]}
-                required
-                fullWidth
-                label="Status"
-                sx={{ 
-                  '& .MuiInputBase-root': {
-                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
-                    color: '#ffffff',
-                  }
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextInput 
-                source="rejectionReason" 
-                multiline 
-                rows={3} 
-                fullWidth
-                label="Rejection Reason"
-                helperText="Only required when status is 'Rejected'"
-                sx={{ 
-                  '& .MuiInputBase-root': {
-                    backgroundColor: 'rgba(10, 10, 10, 0.8)',
-                    color: '#ffffff',
-                  }
-                }}
-              />
+              <MediaStatusField source="status" />
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mt: 1 }}>
+                Use the Approve / Reject buttons in the toolbar below to change status.
+              </Typography>
             </Grid>
           </Grid>
         </Box>
