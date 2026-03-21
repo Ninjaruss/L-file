@@ -10,6 +10,7 @@ interface FormSectionProps {
   accentColor: string
   required?: boolean
   stepNumber?: number
+  hasValue?: boolean
   children: React.ReactNode
 }
 
@@ -20,6 +21,7 @@ export function FormSection({
   accentColor,
   required,
   stepNumber,
+  hasValue = false,
   children
 }: FormSectionProps) {
   return (
@@ -29,7 +31,9 @@ export function FormSection({
         backgroundColor: 'rgba(255, 255, 255, 0.02)',
         borderRadius: rem(12),
         border: `1px solid ${accentColor}25`,
-        borderLeft: `3px solid ${accentColor}60`,
+        borderLeft: hasValue
+          ? `3px solid ${accentColor}90`
+          : `3px solid ${accentColor}60`,
         position: 'relative'
       }}
     >

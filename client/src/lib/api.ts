@@ -1425,6 +1425,10 @@ class ApiClient {
     return this.put<any>(`/events/${id}/own`, data)
   }
 
+  async getMyEventSubmission(id: number) {
+    return this.get<any>(`/events/${id}`)
+  }
+
   async deleteEvent(id: number) {
     return this.delete<any>(`/events/${id}`)
   }
