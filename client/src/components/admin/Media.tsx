@@ -2413,7 +2413,6 @@ const MediaShowContent = () => {
                 </Typography>
               </Box>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>File Metadata</Typography>
                 <TextField source="fileName" label="File Name" emptyText="—" />
                 <TextField source="mimeType" label="MIME Type" emptyText="—" />
                 <NumberField source="fileSize" label="File Size (bytes)" emptyText="—" />

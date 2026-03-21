@@ -1334,7 +1334,6 @@ const EventShowContent = () => {
               </Box>
 
               <FunctionField
-                label="Rejection Reason"
                 render={(record: any) =>
                   record?.rejectionReason ? (
                     <Box sx={{ mt: 1 }}>
