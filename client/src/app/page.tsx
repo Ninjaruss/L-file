@@ -6,8 +6,8 @@ import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image } 
 import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
-import { buildShowcaseItemFromApiData, getActiveConfiguration } from '../lib/showcase-config'
 import type { VolumeShowcaseItem } from '../lib/showcase-config'
+import type { ShowcaseReadyVolume } from '../types'
 import { api } from '../lib/api'
 import { RecentActivityFeed } from '../components/RecentActivityFeed'
 import { FavoritesSection } from '../components/FavoritesSection'
@@ -29,21 +29,17 @@ export default function HomePage() {
   useEffect(() => {
     async function loadShowcase() {
       try {
-        const config = getActiveConfiguration()
-        const items = await Promise.all(
-          config.volumes.map(async (vol) => {
-            const [bg, pop] = await Promise.all([
-              api.getVolumeShowcaseMedia(vol.id, 'background'),
-              api.getVolumeShowcaseMedia(vol.id, 'popout'),
-            ])
-            // Prefer API URL, fall back to static path from config
-            const backgroundUrl = bg?.url ?? vol.backgroundImage
-            const popoutUrl = pop?.url ?? vol.popoutImage ?? null
-            return buildShowcaseItemFromApiData(vol.id, backgroundUrl, popoutUrl, vol.title, vol.description)
-          })
-        )
-        const volumes = items.filter(Boolean) as VolumeShowcaseItem[]
-        if (volumes.length > 0) setShowcaseVolumes(volumes)
+        const items = await api.getShowcaseReadyVolumes()
+        if (items.length > 0) {
+          setShowcaseVolumes(
+            items.map((v: ShowcaseReadyVolume) => ({
+              id: v.volumeId,
+              backgroundImage: v.backgroundUrl,
+              popoutImage: v.popoutUrl,
+              title: v.title,
+            }))
+          )
+        }
       } catch {
         // showcase stays null; component renders nothing
       }
