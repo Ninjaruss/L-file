@@ -1,5 +1,6 @@
 import { MantineThemeOverride, createTheme, rem, MantineTheme } from '@mantine/core'
 import selectClasses from './mantine-select.module.css'
+import { ENTITY_COLORS } from './entityColors'
 
 // Entity-specific colors - Vibrant yet WCAG AA compliant for dark backgrounds
 export const colors = {
@@ -770,18 +771,18 @@ export const textColors = {
   error: '#f48fb1',      // 4.7:1 contrast ratio (improved from #f44336)
   info: '#64b5f6',       // 5.1:1 contrast ratio (improved from #2196f3)
 
-  // Entity-specific text colors - 5 color groups
-  gamble: '#ff5555',     // Red group
-  character: '#4dabf7',  // Blue group
-  arc: '#f97316',        // Orange group
-  volume: '#a855f7',     // Purple group
-  chapter: '#4dabf7',    // Blue group (shared with character)
-  event: '#f97316',      // Orange group (shared with arc)
-  guide: '#51cf66',      // Green group
-  media: '#a855f7',      // Purple group
-  quote: '#51cf66',      // Green group (shared with guide)
-  organization: '#a855f7', // Purple group (shared with media)
-  annotation: '#ff922b'  // Orange group (distinct lighter orange)
+  // Entity-specific text colors — all unique, imported from entityColors.ts
+  gamble:       ENTITY_COLORS.gamble,
+  character:    ENTITY_COLORS.character,
+  arc:          ENTITY_COLORS.arc,
+  volume:       ENTITY_COLORS.volume,
+  chapter:      ENTITY_COLORS.chapter,
+  event:        ENTITY_COLORS.event,
+  guide:        ENTITY_COLORS.guide,
+  media:        ENTITY_COLORS.media,
+  quote:        ENTITY_COLORS.quote,
+  organization: ENTITY_COLORS.organization,
+  annotation:   ENTITY_COLORS.annotation,
 } as const
 
 // Header color utilities for consistent styling
