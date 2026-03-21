@@ -19,6 +19,7 @@ import {
 import { Typography, Chip, Box, Card, CardContent, Grid } from '@mui/material'
 import { Edit3, Plus, BookOpen, Layers, Image as ImageIcon } from 'lucide-react'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
+import { VolumeShowcaseStatusCard } from './VolumeShowcaseStatusCard'
 import { EditToolbar } from './EditToolbar'
 
 const validateChapterRange = (values: any) => {
@@ -214,15 +215,23 @@ export const VolumeShow = () => (
           </Box>
         </Tab>
 
-        <Tab label="Media">
+        <Tab label="Cover Image">
           <WithRecord
             render={(record) => (
-              <EntityDisplayMediaSection
-                ownerType="volume"
-                ownerId={record.id}
-                accentColor="#6366f1"
-                usageType="volume_image"
-              />
+              <Box sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ color: '#6366f1', fontWeight: 'bold', mb: 0.5 }}>
+                  Cover Image
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>
+                  The main cover/thumbnail for this volume. Used in volume listings and cards.
+                </Typography>
+                <EntityDisplayMediaSection
+                  ownerType="volume"
+                  ownerId={record.id}
+                  accentColor="#6366f1"
+                  usageType="volume_image"
+                />
+              </Box>
             )}
           />
         </Tab>
@@ -231,12 +240,29 @@ export const VolumeShow = () => (
           <WithRecord
             render={(record) => (
               <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <VolumeShowcaseStatusCard volumeNumber={record.number} />
+
                 <Box>
-                  <Typography variant="h6" sx={{ color: '#6366f1', fontWeight: 'bold', mb: 1 }}>
-                    Background Image
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="h6" sx={{ color: '#6366f1', fontWeight: 'bold' }}>
+                      Background Image
+                    </Typography>
+                    <Box
+                      sx={{
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 0.5,
+                        border: '1px solid rgba(239,68,68,0.3)',
+                        background: 'rgba(239,68,68,0.15)',
+                      }}
+                    >
+                      <Typography sx={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Required
+                      </Typography>
+                    </Box>
+                  </Box>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>
-                    Full-width background used in the homepage volume showcase.
+                    Full-width background displayed behind the volume showcase on the homepage.
                   </Typography>
                   <EntityDisplayMediaSection
                     ownerType="volume"
@@ -245,12 +271,28 @@ export const VolumeShow = () => (
                     usageType="volume_showcase_background"
                   />
                 </Box>
+
                 <Box>
-                  <Typography variant="h6" sx={{ color: '#6366f1', fontWeight: 'bold', mb: 1 }}>
-                    Popout Image
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="h6" sx={{ color: '#6366f1', fontWeight: 'bold' }}>
+                      Popout Image
+                    </Typography>
+                    <Box
+                      sx={{
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 0.5,
+                        border: '1px solid rgba(239,68,68,0.3)',
+                        background: 'rgba(239,68,68,0.15)',
+                      }}
+                    >
+                      <Typography sx={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Required
+                      </Typography>
+                    </Box>
+                  </Box>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>
-                    Foreground popout image used in the homepage volume showcase.
+                    Foreground character/art image that pops out in the homepage showcase animation.
                   </Typography>
                   <EntityDisplayMediaSection
                     ownerType="volume"
