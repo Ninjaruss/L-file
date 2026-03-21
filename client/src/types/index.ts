@@ -386,3 +386,11 @@ export interface CharacterOrganization {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ShowcaseReadyVolume {
+  volumeId: number
+  volumeNumber: number
+  backgroundUrl: string
+  popoutUrl: string
+  title: string
+}

@@ -25,9 +25,10 @@ import { CharacterRelationshipList, CharacterRelationshipEdit, CharacterRelation
 import { CharacterOrganizationList, CharacterOrganizationEdit, CharacterOrganizationCreate, CharacterOrganizationShow } from '../../components/admin/CharacterOrganizations'
 import { AnnotationList, AnnotationEdit, AnnotationCreate, AnnotationShow } from '../../components/admin/Annotations'
 import { VolumeList, VolumeEdit, VolumeCreate, VolumeShow } from '../../components/admin/Volumes'
+import { ChapterList, ChapterEdit, ChapterCreate, ChapterShow } from '../../components/admin/Chapters'
 
 // Icons
-import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Link2, Building2, MessageSquare, Library, Award } from 'lucide-react'
+import { Users, User, BookOpen, Crown, Zap, FileText, Image, Quote, Tag, Shield, Link2, Building2, MessageSquare, Library, Award, Hash } from 'lucide-react'
 
 // Convert icons to components
 const UsersIcon = () => <Users />
@@ -45,6 +46,7 @@ const Building2Icon = () => <Building2 />
 const MessageSquareIcon = () => <MessageSquare />
 const LibraryIcon = () => <Library />
 const AwardIcon = () => <Award />
+const HashIcon = () => <Hash />
 
 export default function AdminApp() {
   return (
@@ -86,6 +88,14 @@ export default function AdminApp() {
         create={VolumeCreate}
         show={VolumeShow}
         icon={LibraryIcon}
+      />
+      <Resource
+        name="chapters"
+        list={ChapterList}
+        edit={ChapterEdit}
+        create={ChapterCreate}
+        show={ChapterShow}
+        icon={HashIcon}
       />
       <Resource
         name="gambles"

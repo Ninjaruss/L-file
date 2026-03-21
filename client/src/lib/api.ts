@@ -1090,6 +1090,10 @@ class ApiClient {
     } | null>(`/volumes/${id}/showcase/${type}`)
   }
 
+  async getShowcaseReadyVolumes() {
+    return this.get<import('../types').ShowcaseReadyVolume[]>('/volumes/showcase-ready')
+  }
+
   async getRecentEdits(params?: { page?: number; limit?: number; entityType?: string }) {
     const query = new URLSearchParams()
     if (params?.page) query.set('page', String(params.page))
