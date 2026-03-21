@@ -4,50 +4,34 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   ActionIcon,
   Alert,
-  AspectRatio,
   Badge,
   Box,
-  Button,
   Card,
   Group,
   Loader,
-  Modal,
   Paper,
   Select,
-  SimpleGrid,
   Stack,
   Text,
-  Transition,
   rem,
   useMantineTheme,
   rgba
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { getEntityThemeColor, semanticColors, textColors } from '../lib/mantine-theme'
+import { getEntityThemeColor } from '../lib/mantine-theme'
 import {
   Image as ImageIcon,
   Play,
   ExternalLink,
-  X,
-  ZoomIn,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
   ImageOff
 } from 'lucide-react'
-import NextImage from 'next/image'
 import { api } from '../lib/api'
-import { API_BASE_URL } from '../lib/api'
 import {
   extractYouTubeVideoId,
-  extractVimeoVideoId,
   getYouTubeThumbnail,
-  getYouTubeEmbedUrlEnhanced,
-  getVimeoEmbedUrlEnhanced,
   isYouTubeUrl,
-  isDirectVideoUrl,
-  canEmbedVideo as canEmbedVideoUtil
 } from '../lib/video-utils'
+import MediaLightbox from './MediaLightbox'
 
 export interface MediaItem {
   id: number
@@ -87,35 +71,12 @@ interface MediaGalleryProps {
   initialMediaId?: number | string
 }
 
-const MAX_DIALOG_WIDTH = 1280
-
 const mediaTypeOptions = [
   { value: 'all', label: 'All Types' },
   { value: 'image', label: 'Images' },
   { value: 'video', label: 'Videos' },
   { value: 'audio', label: 'Audio' }
 ]
-
-// Helper function to detect external URLs that aren't in our allowed domains
-function isExternalUrl(url: string): boolean {
-  try {
-    const urlObj = new URL(url)
-    const hostname = urlObj.hostname
-
-    // List of our hosted/allowed domains that should use Next.js Image optimization
-    const hostedDomains = [
-      'localhost',
-      'backblazeb2.com',
-      'l-file.com'
-    ]
-
-    // Check if it's a hosted domain
-    return !hostedDomains.some(domain => hostname.includes(domain))
-  } catch {
-    // If URL parsing fails, treat as relative URL (not external)
-    return false
-  }
-}
 
 export default function MediaGallery({
   ownerType,
@@ -166,38 +127,15 @@ export default function MediaGallery({
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [imageZoomed, setImageZoomed] = useState(false)
-  const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
   const [hoveredMediaId, setHoveredMediaId] = useState<number | null>(null)
   const [failedImageIds, setFailedImageIds] = useState<Set<number>>(new Set())
-  const [touchStart, setTouchStart] = useState<number | null>(null)
 
   const handleImageError = (mediaId: number) => {
     setFailedImageIds(prev => new Set(prev).add(mediaId))
   }
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX)
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) return
-    const touchEnd = e.changedTouches[0].clientX
-    const diff = touchStart - touchEnd
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        handleNext()
-      } else {
-        handlePrevious()
-      }
-    }
-    setTouchStart(null)
-  }
-
   // Filter state
   const [selectedMediaType, setSelectedMediaType] = useState<string>('all')
-  const [selectedCharacter, setSelectedCharacter] = useState<string>('all')
-  const [selectedArc, setSelectedArc] = useState<string>('all')
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -276,8 +214,6 @@ export default function MediaGallery({
       setCurrentImageIndex(index)
       setSelectedMedia(filteredMedia[index])
       setDialogOpen(true)
-      setImageZoomed(false)
-      setShouldLoadVideo(false)
     }
   }, [initialMediaId, filteredMedia])
 
@@ -286,15 +222,11 @@ export default function MediaGallery({
     setCurrentImageIndex(mediaIndex)
     setSelectedMedia(mediaItem)
     setDialogOpen(true)
-    setImageZoomed(false)
-    setShouldLoadVideo(false)
   }
 
   const handleCloseDialog = () => {
     setDialogOpen(false)
     setSelectedMedia(null)
-    setImageZoomed(false)
-    setShouldLoadVideo(false)
   }
 
   const handlePrevious = () => {
@@ -302,8 +234,6 @@ export default function MediaGallery({
       const newIndex = currentImageIndex - 1
       setCurrentImageIndex(newIndex)
       setSelectedMedia(filteredMedia[newIndex])
-      setImageZoomed(false)
-      setShouldLoadVideo(false)
     }
   }
 
@@ -312,40 +242,8 @@ export default function MediaGallery({
       const newIndex = currentImageIndex + 1
       setCurrentImageIndex(newIndex)
       setSelectedMedia(filteredMedia[newIndex])
-      setImageZoomed(false)
-      setShouldLoadVideo(false)
     }
   }
-
-  const handleImageZoom = () => {
-    setImageZoomed((prev) => !prev)
-  }
-
-  const handleLoadVideo = () => {
-    setShouldLoadVideo(true)
-  }
-
-  // Keyboard navigation for lightbox
-  useEffect(() => {
-    if (!dialogOpen) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowLeft':
-          handlePrevious()
-          break
-        case 'ArrowRight':
-          handleNext()
-          break
-        case 'Escape':
-          handleCloseDialog()
-          break
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [dialogOpen])
 
   const getMediaThumbnail = (mediaItem: MediaItem) => {
 
@@ -384,22 +282,6 @@ export default function MediaGallery({
           return getYouTubeThumbnail(videoId)
         }
       }
-    }
-
-    return null
-  }
-
-  const canEmbedVideo = canEmbedVideoUtil
-
-  const getEmbedUrl = (url: string): string | null => {
-    const youtubeId = extractYouTubeVideoId(url)
-    if (youtubeId) {
-      return getYouTubeEmbedUrlEnhanced(youtubeId)
-    }
-
-    const vimeoId = extractVimeoVideoId(url)
-    if (vimeoId) {
-      return getVimeoEmbedUrlEnhanced(vimeoId)
     }
 
     return null
@@ -690,217 +572,14 @@ export default function MediaGallery({
         })}
       </Box>
 
-      <Modal
+      <MediaLightbox
         opened={dialogOpen}
+        media={filteredMedia}
+        currentIndex={currentImageIndex}
         onClose={handleCloseDialog}
-        size="90%"
-        centered
-        withCloseButton={false}
-        padding={0}
-        overlayProps={{ opacity: 0.9, color: '#000' }}
-      >
-        {selectedMedia && (
-          <Box style={{ position: 'relative' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            <ActionIcon
-              variant="subtle"
-              size="lg"
-              onClick={handleCloseDialog}
-              style={{
-                position: 'absolute',
-                top: rem(16),
-                right: rem(16),
-                zIndex: 1000,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                color: 'white'
-              }}
-              aria-label="Close viewer"
-            >
-              <X size={20} />
-            </ActionIcon>
-
-            {currentImageIndex > 0 && (
-              <ActionIcon
-                variant="subtle"
-                size="lg"
-                onClick={handlePrevious}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: rem(16),
-                  transform: 'translateY(-50%)',
-                  zIndex: 1000,
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  color: 'white'
-                }}
-                aria-label="Previous image"
-              >
-                <ChevronLeft size={24} />
-              </ActionIcon>
-            )}
-
-            {currentImageIndex < filteredMedia.length - 1 && (
-              <ActionIcon
-                variant="subtle"
-                size="lg"
-                onClick={handleNext}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  right: rem(16),
-                  transform: 'translateY(-50%)',
-                  zIndex: 1000,
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  color: 'white'
-                }}
-                aria-label="Next image"
-              >
-                <ChevronRight size={24} />
-              </ActionIcon>
-            )}
-
-            <Stack gap={0}>
-              <Box style={{ maxHeight: '70vh', overflow: 'hidden' }}>
-                {selectedMedia.type === 'image' ? (
-                  <NextImage
-                    src={selectedMedia.url}
-                    alt={selectedMedia.description || 'Media preview'}
-                    width={1200}
-                    height={800}
-                    style={{
-                      width: '100%',
-                      height: 'auto',
-                      maxHeight: '70vh',
-                      objectFit: 'contain'
-                    }}
-                  />
-                ) : selectedMedia.type === 'video' ? (
-                  selectedMedia.url.includes('youtube.com') || selectedMedia.url.includes('youtu.be') ? (
-                    <iframe
-                      src={selectedMedia.url.replace('watch?v=', 'embed/')}
-                      title={selectedMedia.description}
-                      allowFullScreen
-                      style={{ width: '100%', minHeight: '60vh', border: 'none' }}
-                    />
-                  ) : canEmbedVideo(selectedMedia.url) ? (
-                    !shouldLoadVideo ? (
-                      <Button
-                        size="md"
-                        leftSection={<Play size={18} />}
-                        onClick={handleLoadVideo}
-                        style={{
-                          marginTop: '2rem'
-                        }}
-                      >
-                        Load Video
-                      </Button>
-                    ) : (
-                      <iframe
-                        src={getEmbedUrl(selectedMedia.url)!}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        title={selectedMedia.description}
-                        style={{ width: '100%', minHeight: '60vh', border: 'none' }}
-                      />
-                    )
-                  ) : (
-                    <video controls style={{ width: '100%', maxHeight: '70vh' }}>
-                      <source src={selectedMedia.url} />
-                      Your browser does not support the video tag.
-                    </video>
-                  )
-                ) : (
-                  <Box
-                    p="xl"
-                    ta="center"
-                    style={{
-                      minHeight: '300px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {getMediaTypeIcon(selectedMedia.type)}
-                    <Text ml="md">Media type not supported for preview</Text>
-                  </Box>
-                )}
-              </Box>
-
-              <Paper p="md" radius={0}>
-                <Stack gap="md">
-                  <Group justify="space-between" align="flex-start">
-                    <Stack gap="xs" style={{ flex: 1 }}>
-                      <Group gap="xs" align="center">
-                        <Badge
-                          variant="light"
-                          c={palette.accent}
-                          size="sm"
-                          style={{
-                            backgroundColor: `${palette.accent}20`,
-                            borderColor: palette.accent
-                          }}
-                        >
-                          {selectedMedia.ownerType}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          size="sm"
-                          c={palette.accent}
-                          style={{ borderColor: palette.accent }}
-                        >
-                          {selectedMedia.type}
-                        </Badge>
-                        {selectedMedia.chapterNumber && (
-                          <Badge
-                            variant="outline"
-                            size="sm"
-                            c={palette.secondaryAccent}
-                            style={{ borderColor: palette.secondaryAccent }}
-                          >
-                            Chapter {selectedMedia.chapterNumber}
-                          </Badge>
-                        )}
-                      </Group>
-
-                      {selectedMedia.description && (
-                        <Text size="sm" fw={500}>
-                          {selectedMedia.description}
-                        </Text>
-                      )}
-
-                      <Group gap="md" align="center">
-                        <Text size="sm" style={{ color: theme.colors.gray[6] }}>
-                          Submitted by {selectedMedia.submittedBy.username}
-                        </Text>
-
-                        {selectedMedia.createdAt && (
-                          <Text size="sm" style={{ color: theme.colors.gray[6] }}>
-                            {new Date(selectedMedia.createdAt).toLocaleDateString()}
-                          </Text>
-                        )}
-                      </Group>
-                    </Stack>
-
-                    <Group gap="xs">
-                      <ActionIcon
-                        variant="light"
-                        component="a"
-                        href={selectedMedia.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Open original"
-                      >
-                        <ExternalLink size={16} />
-                      </ActionIcon>
-                    </Group>
-                  </Group>
-                </Stack>
-              </Paper>
-            </Stack>
-          </Box>
-        )}
-      </Modal>
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+      />
     </Box>
   )
 }
