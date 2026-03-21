@@ -84,14 +84,10 @@ function getSubmissionLink(submission: SubmissionItem): string {
 }
 
 function getEditLink(submission: SubmissionItem): string | null {
-  if (submission.type === 'guide') return `/submit-guide?edit=${submission.id}`
-  if (submission.type === 'event') return `/submit-event?edit=${submission.id}`
-  if (submission.type === 'annotation') {
-    return `/submit-annotation?edit=${submission.id}`
-  }
-  if (submission.type === 'media') {
-    return `/submit-media?edit=${submission.id}`
-  }
+  if (submission.type === 'guide') return `/guides/${submission.id}/edit`
+  if (submission.type === 'event') return `/events/${submission.id}/edit`
+  if (submission.type === 'annotation') return `/annotations/${submission.id}/edit`
+  if (submission.type === 'media') return `/media/${submission.id}/edit`
   return null
 }
 
