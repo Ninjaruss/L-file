@@ -15,9 +15,9 @@ export const colors = {
     '#e5531d', '#c43e10', '#9e2f08', '#601a02'
   ] as const,
   annotation: [
-    '#f8f0fe', '#edcffc', '#dea8f9', '#cb7ef4', '#ab56ef',
-    '#9333ea', // index 5 — approved accent
-    '#7820cc', '#6010aa', '#4a0885', '#2a0450'
+    '#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc',
+    '#d946ef', // index 5 — approved accent
+    '#be185d', '#9d174d', '#831843', '#500724'
   ] as const,
   event: [
     '#fef9e8', '#fcefc2', '#f9e08a', '#f4cc4e', '#e0ab18',
@@ -30,9 +30,9 @@ export const colors = {
     '#0f8239', '#0a612a', '#07421c', '#03210e'
   ] as const,
   organization: [
-    '#f0f8fe', '#d0ebfa', '#9fd4f5', '#5cb6ec', '#2494d6',
-    '#0369a1', // index 5 — approved accent
-    '#025382', '#013f64', '#012b45', '#001525'
+    '#f0f9fe', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8',
+    '#0284c7', // index 5 — approved accent
+    '#0166a1', '#0153a0', '#053566', '#001a2e'
   ] as const,
   quote: [
     '#f0fdfb', '#ccf7f2', '#96ece3', '#56ddd0', '#27c4b6',
@@ -50,14 +50,14 @@ export const colors = {
     '#d4860d', '#a86607', '#7c4904', '#3f2301'
   ] as const,
   volume: [
-    '#f5f0fd', '#e6d5fa', '#ceadf5', '#b17fee', '#8f52e2',
-    '#6d28d9', // index 5 — approved accent
-    '#571db8', '#421494', '#2e0c6e', '#160540'
+    '#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc',
+    '#8b5cf6', // index 5 — approved accent
+    '#7c3aed', '#6d28d9', '#5b21b6', '#3c0d6b'
   ] as const,
   media: [
-    '#fef0f7', '#fcd1e8', '#f9a8d4', '#f472b3', '#e84d94',
-    '#db2777', // index 5 — approved accent
-    '#b81860', '#92104b', '#6d0937', '#3d0420'
+    '#fdf2f8', '#fce7f3', '#fbcfe8', '#f8b4d6', '#f472b6',
+    '#ec4899', // index 5 — approved accent
+    '#db2777', '#be185d', '#9d174d', '#500724'
   ] as const,
 } as const
 

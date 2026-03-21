@@ -8,15 +8,15 @@
 export const ENTITY_COLORS = {
   gamble:       '#e63946', // Crimson        — danger, blood, high stakes
   arc:          '#ff6b35', // Flame Orange   — epic narrative fire, adventure
-  annotation:   '#9333ea', // Bright Purple  — scholarly, analytical
+  annotation:   '#d946ef', // Fuchsia        — scholarly, analytical
   event:        '#ca8a04', // Ochre          — momentous, historical, marked in time
   guide:        '#16a34a', // Forest Green   — helpful, educational, community
-  organization: '#0369a1', // Deep Ocean     — cold, institutional power
+  organization: '#0284c7', // Ocean Blue     — cold, institutional power
   quote:        '#0d9488', // Dark Teal      — voice, dialogue, spoken word
   chapter:      '#38bdf8', // Sky Blue       — crisp, readable, fresh pages
   character:    '#f5a623', // Amber Gold     — warmth, humanity, spotlight
-  volume:       '#6d28d9', // Deep Violet    — weighty tomes, gravitas
-  media:        '#db2777', // Hot Pink       — creative, expressive, fan art
+  volume:       '#8b5cf6', // Vivid Violet   — weighty tomes, gravitas
+  media:        '#ec4899', // Bright Pink    — creative, expressive, fan art
 } as const
 
 export type EntityColorKey = keyof typeof ENTITY_COLORS
