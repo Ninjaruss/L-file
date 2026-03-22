@@ -121,8 +121,9 @@ export function DetailPageHeader({
             spoilerChapter={spoilerChapter ?? undefined}
             onSpoilerRevealed={onSpoilerRevealed}
             objectFit="contain"
-            objectPosition="right top"
+            objectPosition="center top"
             controlsPosition="right"
+            showBlurredBackground={true}
           />
           {/* Left-edge fade blending portrait into content */}
           <Box
@@ -133,7 +134,7 @@ export function DetailPageHeader({
               left: 0,
               top: 0,
               bottom: 0,
-              width: '70%',
+              width: '60%',
               background: 'linear-gradient(90deg, #080c14 0%, rgba(8,12,20,0.75) 55%, transparent 100%)',
               zIndex: 2,
               pointerEvents: 'none',

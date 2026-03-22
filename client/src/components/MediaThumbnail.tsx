@@ -33,7 +33,7 @@ export interface MediaItem {
 }
 
 interface MediaThumbnailProps {
-  entityType: 'character' | 'arc' | 'gamble' | 'organization' | 'volume' | 'chapter' | 'event' | 'guide' | 'media' | 'quote'
+  entityType: 'character' | 'arc' | 'gamble' | 'organization' | 'volume' | 'chapter' | 'event' | 'guide' | 'media' | 'quote' | 'annotation'
   entityId: number
   entityName?: string
   className?: string
