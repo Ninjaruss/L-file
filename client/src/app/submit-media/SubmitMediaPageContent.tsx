@@ -267,7 +267,7 @@ export default function SubmitMediaPageContent() {
       <SubmitPageHeader
         label="Media Submission"
         title="Submit Media"
-        description="Share fanart, videos, audio, and more from YouTube, TikTok, DeviantArt, Pixiv, SoundCloud, and beyond"
+        description="Share fanart and videos from YouTube, DeviantArt, Pixiv, Twitter/X, or a direct image link"
         icon={<Upload size={22} />}
         accentColor={accentColor}
       />
@@ -357,7 +357,7 @@ export default function SubmitMediaPageContent() {
                         value={formData.url}
                         onChange={(e) => handleInputChange('url', e.currentTarget.value)}
                         required
-                        description={urlError ? undefined : 'YouTube, TikTok, Instagram, DeviantArt, Pixiv, SoundCloud, direct links, etc.'}
+                        description={urlError ? undefined : 'YouTube, DeviantArt, Pixiv, Twitter/X, or a direct image link'}
                         error={urlError}
                         leftSection={
                           <Box style={{ display: 'flex', alignItems: 'center' }}>

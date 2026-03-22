@@ -430,7 +430,7 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
                         value={formData.url}
                         onChange={(e) => handleInputChange('url', e.currentTarget.value)}
                         required
-                        description={urlError ? undefined : 'YouTube, TikTok, Instagram, DeviantArt, Pixiv, SoundCloud, direct links, etc.'}
+                        description={urlError ? undefined : 'YouTube, DeviantArt, Pixiv, Twitter/X, or a direct image link'}
                         error={urlError}
                         leftSection={
                           <Box style={{ display: 'flex', alignItems: 'center' }}>

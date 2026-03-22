@@ -33,7 +33,7 @@ export default function SubmissionGuidelines({ type, accentColor = DEFAULT_ACCEN
         'Credit the original artist when known',
         'Tag relevant characters, arcs, or gambles',
         'Use descriptive titles and descriptions',
-        'Supported platforms: YouTube, TikTok, Instagram, DeviantArt, Pixiv, SoundCloud',
+        'Supported platforms: YouTube, DeviantArt, Pixiv, Twitter/X, Instagram',
         'For images: Use the Upload tab (max 5MB)'
       ]
     },
