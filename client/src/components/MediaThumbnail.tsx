@@ -20,7 +20,7 @@ import Image from 'next/image'
 import { useProgress } from '../providers/ProgressProvider'
 import { useSpoilerSettings } from '../hooks/useSpoilerSettings'
 import { api } from '../lib/api'
-import { analyzeMediaUrl, analyzeMediaUrlAsync, getPlaceholderInfo } from '../lib/media-utils'
+import { analyzeMediaUrl, analyzeMediaUrlAsync, getPlaceholderInfo, isExternalUrl } from '../lib/media-utils'
 import SpoilerOverlay from './SpoilerOverlay'
 
 export interface MediaItem {
@@ -66,27 +66,6 @@ const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 // Retry configuration
 const RETRY_DELAYS = [1000, 2000, 4000] // Progressive backoff
 const MAX_RETRIES = 3
-
-// Helper function to detect external URLs that aren't in our allowed domains
-function isExternalUrl(url: string): boolean {
-  try {
-    const urlObj = new URL(url)
-    const hostname = urlObj.hostname
-
-    // List of our hosted/allowed domains that should use Next.js Image optimization
-    const hostedDomains = [
-      'localhost',
-      'backblazeb2.com',
-      'l-file.com'
-    ]
-
-    // Check if it's a hosted domain
-    return !hostedDomains.some(domain => hostname.includes(domain))
-  } catch {
-    // If URL parsing fails, treat as relative URL (not external)
-    return false
-  }
-}
 
 // Image component with loading states and retry logic
 function ImageWithRetry({

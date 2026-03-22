@@ -203,3 +203,16 @@ export function getPlaceholderInfo(platform: string): { icon: string; label: str
       return { icon: '🔗', label: 'External', color: '#6b7280' }
   }
 }
+
+/**
+ * Returns true if the URL is hosted on an external domain not served via
+ * Next.js image optimisation (i.e. not localhost, Backblaze B2, or l-file.com).
+ */
+export function isExternalUrl(url: string): boolean {
+  try {
+    const { hostname } = new URL(url)
+    return !['localhost', 'backblazeb2.com', 'l-file.com'].some(d => hostname.includes(d))
+  } catch {
+    return false
+  }
+}
