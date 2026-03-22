@@ -19,12 +19,15 @@ Two issues on entity detail page headers (`DetailPageHeader`):
 When `true`, a second image layer is rendered underneath the main image using the same current `MediaItem`. This layer:
 - `objectFit: cover` — fills the entire container
 - `filter: blur(20px) brightness(0.3) saturate(0.6)` — heavily blurred and darkened so it reads as texture/atmosphere, not a second image
-- `transform: scale(1.08)` — slight scale prevents the blur from leaving a bright fringe at container edges
+- `transform: scale(1.08)` — slight scale prevents the blur from leaving a bright fringe at container edges; the outer container already has `overflow: hidden` so no additional wrapper is needed
 - `pointerEvents: none`, `aria-hidden: true` — purely decorative, no interaction
 - Updates in sync with the current cycling index (same `currentThumbnail` state)
+- **Guard:** only rendered when `currentThumbnail.type === 'image'` and the URL resolves to a direct image (i.e., `mediaInfo.isDirectImage` is true) — skipped for videos, embeds, and placeholders
+
+**Insertion point in JSX:** the blurred layer is a `position: absolute, inset: 0, zIndex: 0` `Box` inserted as the first child of the outer container `Box` (the one with `containerRef`, line ~1150), before `MediaSpoilerWrapper`. It must NOT be placed inside `renderMediaContent` — the inner image `div` has its own `overflow: hidden` which would clip the blurred layer to the wrong bounds.
 
 The main image layer is unchanged in rendering but:
-- `objectPosition` changes from `"right top"` → `"center top"` in `DetailPageHeader` (blurred bg now handles the right-side fill; centering horizontally works better for varied image compositions)
+- `objectPosition` changes from `"right top"` → `"center top"` in `DetailPageHeader`. The `right top` alignment was designed for cutout-style images (to keep subjects at the right edge); with a full-bleed blurred background filling the dead space, centering horizontally produces more natural framing for rectangular artwork at varied compositions.
 
 **`DetailPageHeader.tsx` changes:**
 - Pass `showBlurredBackground={true}` to `MediaThumbnail`
@@ -64,3 +67,4 @@ The `padding: rem(4)` wrapper keeps the visual dot size the same while expanding
 - No changes to desktop center-mode arrows/dots
 - No changes to any other entity detail page components
 - No new API calls — blurred layer reuses the same `currentThumbnail` already in state
+- Single-image entities show no dot strip; this is unchanged — the existing `showControls` guard (`allEntityMedia.length > 1`) already handles it and requires no modification
