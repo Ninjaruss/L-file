@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import {
   Alert,
   Box,
@@ -13,6 +13,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Textarea,
@@ -87,6 +88,14 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
   const [error, setError] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
 
+  const [activeTab, setActiveTab] = useState<'url' | 'upload'>('url')
+  const [stagedFile, setStagedFile] = useState<File | null>(null)
+  const [dropError, setDropError] = useState<string | null>(null)
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const isPrivilegedUser = !!user && (user.role === 'moderator' || user.role === 'admin')
+
   const [characters, setCharacters] = useState<Array<{ id: number; name: string }>>([])
   const [arcs, setArcs] = useState<Array<{ id: number; name: string }>>([])
   const [events, setEvents] = useState<Array<{ id: number; title: string }>>([])
@@ -95,6 +104,57 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
 
   const handleInputChange = <K extends keyof EditMediaFormState>(field: K, value: EditMediaFormState[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
+
+  const handleFileSelect = (file: File) => {
+    setDropError(null)
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setDropError('Only JPEG, PNG, WebP, and GIF files are allowed.')
+      return
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setDropError('File must be 5 MB or smaller.')
+      return
+    }
+    setStagedFile(file)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileSelect(file)
+  }
+
+  const handleTabChange = (value: string | null) => {
+    const tab = (value as 'url' | 'upload') ?? 'url'
+    setActiveTab(tab)
+    if (tab === 'url') {
+      setStagedFile(null)
+      setDropError(null)
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   const isDirty = (field: keyof EditMediaFormState): boolean => {
@@ -107,8 +167,12 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
   }
 
   const validateForm = () => {
-    if (!formData.url.trim()) return 'Media URL is required'
-    if (!isValidUrl(formData.url)) return 'Please enter a valid URL'
+    if (activeTab === 'upload') {
+      if (!stagedFile) return 'Please select a file to upload'
+    } else {
+      if (!formData.url.trim()) return 'Media URL is required'
+      if (!isValidUrl(formData.url)) return 'Please enter a valid URL'
+    }
     if (!formData.ownerType) return 'Please select an entity type'
     if (!formData.ownerId) return 'Please select a specific entity'
     return null
@@ -158,7 +222,11 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
     setLoading(true)
     try {
       const fd = new FormData()
-      fd.append('url', formData.url.trim())
+      if (activeTab === 'upload' && stagedFile) {
+        fd.append('file', stagedFile)
+      } else {
+        fd.append('url', formData.url.trim())
+      }
       fd.append('ownerType', formData.ownerType)
       fd.append('ownerId', String(formData.ownerId!))
       if (formData.chapterNumber) fd.append('chapterNumber', String(formData.chapterNumber))
@@ -301,7 +369,7 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
                         </Text>
                       )}
                       <Text size="xs" c="dimmed" mt="xs">
-                        Update the URL below to replace it.
+                        {activeTab === 'upload' ? 'Upload a file below to replace it.' : 'Update the URL below to replace it.'}
                       </Text>
                     </Box>
                   )}
@@ -309,38 +377,143 @@ export default function EditMediaPageContent({ id }: EditMediaPageContentProps) 
                   {/* Media URL */}
                   <FormSection
                     title="Media Link"
-                    description="Update the URL to a video, audio track, or media post"
-                    icon={<LinkIcon size={18} color={accentColor} />}
+                    description={activeTab === 'upload' ? 'Upload an image file to replace the current media' : 'Update the URL to a video, audio track, or media post'}
+                    icon={activeTab === 'upload' ? <Upload size={18} color={accentColor} /> : <LinkIcon size={18} color={accentColor} />}
                     accentColor={accentColor}
                     required
                     stepNumber={1}
-                    hasValue={!!formData.url}
+                    hasValue={activeTab === 'upload' ? !!stagedFile : !!formData.url}
                   >
-                    <TextInput
-                      label={
-                        <span>
-                          Media URL
-                          {isDirty('url') && (
-                            <span style={{ fontSize: rem(10), background: 'rgba(245,158,11,0.1)', color: AMBER, border: '1px solid rgba(245,158,11,0.25)', borderRadius: 3, padding: '1px 5px', marginLeft: 6 }}>
-                              edited
-                            </span>
-                          )}
-                        </span>
-                      }
-                      placeholder="https://…"
-                      value={formData.url}
-                      onChange={(e) => handleInputChange('url', e.currentTarget.value)}
-                      required
-                      description={urlError ? undefined : 'YouTube, TikTok, Instagram, DeviantArt, Pixiv, SoundCloud, direct links, etc.'}
-                      error={urlError}
-                      leftSection={
-                        <Box style={{ display: 'flex', alignItems: 'center' }}>
-                          <LinkIcon size={16} />
-                        </Box>
-                      }
-                      leftSectionPointerEvents="none"
-                      styles={inputStyles}
-                    />
+                    {/* Tab toggle — moderators and admins only */}
+                    {isPrivilegedUser && (
+                      <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        mb="md"
+                      >
+                        <Tabs.List>
+                          <Tabs.Tab value="url" leftSection={<LinkIcon size={14} />}>
+                            URL
+                          </Tabs.Tab>
+                          <Tabs.Tab value="upload" leftSection={<Upload size={14} />}>
+                            Upload File
+                          </Tabs.Tab>
+                        </Tabs.List>
+                      </Tabs>
+                    )}
+
+                    {/* URL mode */}
+                    {activeTab === 'url' && (
+                      <TextInput
+                        label={
+                          <span>
+                            Media URL
+                            {isDirty('url') && (
+                              <span style={{ fontSize: rem(10), background: 'rgba(245,158,11,0.1)', color: AMBER, border: '1px solid rgba(245,158,11,0.25)', borderRadius: 3, padding: '1px 5px', marginLeft: 6 }}>
+                                edited
+                              </span>
+                            )}
+                          </span>
+                        }
+                        placeholder="https://…"
+                        value={formData.url}
+                        onChange={(e) => handleInputChange('url', e.currentTarget.value)}
+                        required
+                        description={urlError ? undefined : 'YouTube, TikTok, Instagram, DeviantArt, Pixiv, SoundCloud, direct links, etc.'}
+                        error={urlError}
+                        leftSection={
+                          <Box style={{ display: 'flex', alignItems: 'center' }}>
+                            <LinkIcon size={16} />
+                          </Box>
+                        }
+                        leftSectionPointerEvents="none"
+                        styles={inputStyles}
+                      />
+                    )}
+
+                    {/* Upload mode — moderators and admins only */}
+                    {activeTab === 'upload' && (
+                      <Box>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.currentTarget.files?.[0]
+                            if (file) handleFileSelect(file)
+                            e.currentTarget.value = ''
+                          }}
+                        />
+
+                        {stagedFile ? (
+                          /* File preview */
+                          <Box
+                            style={{
+                              border: `1px solid ${accentColor}40`,
+                              borderRadius: rem(8),
+                              padding: rem(12),
+                              backgroundColor: `${accentColor}08`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: rem(12),
+                            }}
+                          >
+                            <img
+                              src={URL.createObjectURL(stagedFile)}
+                              alt="Preview"
+                              style={{ width: rem(56), height: rem(56), objectFit: 'cover', borderRadius: rem(4), flexShrink: 0 }}
+                            />
+                            <Box style={{ flex: 1, minWidth: 0 }}>
+                              <Text size="sm" fw={500} style={{ wordBreak: 'break-all' }}>
+                                {stagedFile.name}
+                                <span style={{ fontSize: rem(10), background: 'rgba(245,158,11,0.1)', color: AMBER, border: '1px solid rgba(245,158,11,0.25)', borderRadius: 3, padding: '1px 5px', marginLeft: 6 }}>
+                                  edited
+                                </span>
+                              </Text>
+                              <Text size="xs" c="dimmed">{formatFileSize(stagedFile.size)}</Text>
+                            </Box>
+                            <Button
+                              variant="subtle"
+                              size="xs"
+                              color="red"
+                              onClick={() => { setStagedFile(null); setDropError(null) }}
+                              style={{ flexShrink: 0 }}
+                            >
+                              ✕
+                            </Button>
+                          </Box>
+                        ) : (
+                          /* Dropzone */
+                          <Box
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                              border: `2px dashed ${dragActive ? accentColor : `${accentColor}40`}`,
+                              borderRadius: rem(8),
+                              padding: rem(32),
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              backgroundColor: dragActive ? `${accentColor}12` : 'transparent',
+                              transition: 'all 150ms ease',
+                            }}
+                          >
+                            <Upload size={24} color={accentColor} style={{ marginBottom: rem(8) }} />
+                            <Text size="sm" c="dimmed">
+                              Drag & drop an image here, or{' '}
+                              <span style={{ color: accentColor, textDecoration: 'underline' }}>browse</span>
+                            </Text>
+                            <Text size="xs" c="dimmed" mt={4}>JPEG, PNG, WebP, GIF — max 5 MB</Text>
+                          </Box>
+                        )}
+
+                        {dropError && (
+                          <Text size="xs" c="red" mt="xs">{dropError}</Text>
+                        )}
+                      </Box>
+                    )}
                   </FormSection>
 
                   {/* Related Entity */}
