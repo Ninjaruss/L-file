@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
 import { MediaOwnerType } from '../../../entities/media.entity';
 
 export class UpdateOwnMediaDto {
@@ -12,6 +12,14 @@ export class UpdateOwnMediaDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({
+    description: 'URL of the media content',
+    example: 'https://www.pixiv.net/en/artworks/12345',
+  })
+  @IsOptional()
+  @IsUrl({}, { message: 'url must be a valid URL' })
+  url?: string;
 
   @ApiPropertyOptional({
     description: 'Type of entity this media belongs to',
@@ -27,7 +35,9 @@ export class UpdateOwnMediaDto {
     example: 1,
   })
   @IsOptional()
-  @Transform(({ value }) => (value !== undefined && value !== '' ? Number(value) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== '' ? Number(value) : undefined,
+  )
   @IsNumber()
   ownerId?: number;
 
@@ -37,7 +47,9 @@ export class UpdateOwnMediaDto {
     example: 45,
   })
   @IsOptional()
-  @Transform(({ value }) => (value !== undefined && value !== '' ? Number(value) : undefined))
+  @Transform(({ value }) =>
+    value !== undefined && value !== '' ? Number(value) : undefined,
+  )
   @IsNumber()
   chapterNumber?: number;
 }

@@ -65,12 +65,16 @@ export class MediaService {
       const ext = extensionMatch[1].toLowerCase();
 
       // Image extensions
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
+      if (
+        ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)
+      ) {
         return MediaType.IMAGE;
       }
 
       // Video extensions
-      if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v'].includes(ext)) {
+      if (
+        ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v'].includes(ext)
+      ) {
         return MediaType.VIDEO;
       }
 
@@ -551,6 +555,12 @@ export class MediaService {
       media.chapterNumber = updateData.chapterNumber;
     }
 
+    // Apply URL update only when no file is being uploaded (file takes precedence)
+    if (updateData.url !== undefined && !file) {
+      media.url = updateData.url;
+      media.isUploaded = false;
+    }
+
     // Handle file replacement if a new file is provided
     if (file) {
       // Validate file with magic byte checks
@@ -629,10 +639,13 @@ export class MediaService {
     const saved = await this.mediaRepo.save(media);
 
     const changedFieldNames: string[] = [];
-    if (updateData.description !== undefined) changedFieldNames.push('description');
+    if (updateData.description !== undefined)
+      changedFieldNames.push('description');
     if (updateData.ownerType !== undefined) changedFieldNames.push('ownerType');
     if (updateData.ownerId !== undefined) changedFieldNames.push('ownerId');
-    if (updateData.chapterNumber !== undefined) changedFieldNames.push('chapterNumber');
+    if (updateData.chapterNumber !== undefined)
+      changedFieldNames.push('chapterNumber');
+    if (updateData.url !== undefined && !file) changedFieldNames.push('url');
     if (file) changedFieldNames.push('file');
 
     await this.editLogService.logUpdate(
