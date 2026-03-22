@@ -1168,7 +1168,7 @@ export default function MediaThumbnail({
                 height: '100%',
                 objectFit: 'cover',
                 transform: 'scale(1.08)',
-                filter: 'blur(20px) brightness(0.3) saturate(0.6)',
+                filter: 'blur(36px) brightness(0.18) saturate(0.5)',
                 display: 'block',
               }}
             />

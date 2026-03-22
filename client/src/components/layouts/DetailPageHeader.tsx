@@ -292,22 +292,19 @@ export function DetailPageHeader({
             priority
           />
 
-          {/* Prev / next half-zones — visible on hover (always on mobile) */}
+          {/* Prev / next buttons — scoped to button area only, vertically centred */}
           {allMedia.length > 1 && (
             <>
-              {/* Prev: left half */}
+              {/* Prev button */}
               <Box
                 style={{
                   position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: rem(44),
-                  width: '50%',
+                  left: rem(10),
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   zIndex: 10,
                   cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  paddingLeft: rem(10),
+                  padding: rem(6),
                   opacity: (isMobile ?? false) || isPortraitHovered ? 1 : 0,
                   transition: 'opacity 0.18s ease',
                 }}
@@ -325,27 +322,22 @@ export function DetailPageHeader({
                     justifyContent: 'center',
                     color: '#fff',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                    flexShrink: 0,
                   }}
                 >
                   <ChevronLeft size={16} />
                 </Box>
               </Box>
 
-              {/* Next: right half */}
+              {/* Next button */}
               <Box
                 style={{
                   position: 'absolute',
-                  right: 0,
-                  top: 0,
-                  bottom: rem(44),
-                  width: '50%',
+                  right: rem(10),
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   zIndex: 10,
                   cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  paddingRight: rem(10),
+                  padding: rem(6),
                   opacity: (isMobile ?? false) || isPortraitHovered ? 1 : 0,
                   transition: 'opacity 0.18s ease',
                 }}
@@ -363,7 +355,6 @@ export function DetailPageHeader({
                     justifyContent: 'center',
                     color: '#fff',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                    flexShrink: 0,
                   }}
                 >
                   <ChevronRight size={16} />
