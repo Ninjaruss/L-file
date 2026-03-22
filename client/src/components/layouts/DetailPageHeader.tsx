@@ -199,63 +199,226 @@ export function DetailPageHeader({
         }}
       />
 
-      {/* Portrait area — full bleed background */}
-      {showImage ? (
+      {/* ── Full-bleed blurred atmospheric background ── */}
+      {showImage && currentMedia && (
         <Box
-          className="detail-hero-portrait"
+          aria-hidden
           style={{
             position: 'absolute',
             inset: 0,
+            zIndex: 1,
+            pointerEvents: 'none',
             overflow: 'hidden',
           }}
         >
           <MediaThumbnail
             entityType={entityType}
             entityId={entityId}
-            entityName={entityName}
-            allowCycling={true}
-            allowFullView={true}
+            initialMedia={[currentMedia]}
+            allowFullView={false}
+            allowCycling={false}
+            showBlurredBackground={true}
+            objectFit="cover"
+            objectPosition="center 15%"
+            maxWidth="100%"
+            maxHeight="100%"
+            priority
+          />
+        </Box>
+      )}
+
+      {/* ── Portrait zone — right 58%, click opens lightbox ── */}
+      {showImage && currentMedia && (
+        <Box
+          style={{
+            position: 'absolute',
+            left: '42%',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 2,
+            overflow: 'hidden',
+            cursor: 'zoom-in',
+          }}
+          onMouseEnter={() => setIsPortraitHovered(true)}
+          onMouseLeave={() => setIsPortraitHovered(false)}
+          onClick={() => setIsModalOpen(true)}
+        >
+          {/* Main image */}
+          <MediaThumbnail
+            entityType={entityType}
+            entityId={entityId}
+            initialMedia={[currentMedia]}
+            allowFullView={false}
+            allowCycling={false}
+            showBlurredBackground={false}
+            objectFit="cover"
+            objectPosition="center 15%"
             maxWidth="100%"
             maxHeight="100%"
             spoilerChapter={spoilerChapter ?? undefined}
             onSpoilerRevealed={onSpoilerRevealed}
-            objectFit="contain"
-            objectPosition="center top"
-            controlsPosition="right"
-            showBlurredBackground={true}
+            priority
           />
-          {/* Left-edge fade blending portrait into content */}
-          <Box
-            aria-hidden
-            className="detail-hero-portrait-fade"
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: '60%',
-              background: 'linear-gradient(90deg, #080c14 0%, rgba(8,12,20,0.75) 55%, transparent 100%)',
-              zIndex: 2,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Bottom fade */}
-          <Box
-            aria-hidden
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 60,
-              background: 'linear-gradient(0deg, #080c14, transparent)',
-              zIndex: 2,
-              pointerEvents: 'none',
-            }}
-          />
+
+          {/* Prev / next half-zones — visible on hover (always on mobile) */}
+          {allMedia.length > 1 && (
+            <>
+              {/* Prev: left half */}
+              <Box
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: rem(44),
+                  width: '50%',
+                  zIndex: 10,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  paddingLeft: rem(10),
+                  opacity: isMobile || isPortraitHovered ? 1 : 0,
+                  transition: 'opacity 0.18s ease',
+                }}
+                onClick={(e) => { e.stopPropagation(); handlePrev() }}
+              >
+                <Box
+                  style={{
+                    width: rem(32),
+                    height: rem(32),
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.58)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ChevronLeft size={16} />
+                </Box>
+              </Box>
+
+              {/* Next: right half */}
+              <Box
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  bottom: rem(44),
+                  width: '50%',
+                  zIndex: 10,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  paddingRight: rem(10),
+                  opacity: isMobile || isPortraitHovered ? 1 : 0,
+                  transition: 'opacity 0.18s ease',
+                }}
+                onClick={(e) => { e.stopPropagation(); handleNext() }}
+              >
+                <Box
+                  style={{
+                    width: rem(32),
+                    height: rem(32),
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.58)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ChevronRight size={16} />
+                </Box>
+              </Box>
+            </>
+          )}
+
+          {/* Dot strip — centred at bottom of portrait zone */}
+          {allMedia.length > 1 && (
+            <Box
+              style={{
+                position: 'absolute',
+                bottom: rem(10),
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                zIndex: 15,
+              }}
+            >
+              <Box
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'rgba(0,0,0,0.70)',
+                  borderRadius: rem(20),
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  padding: `${rem(5)} ${rem(10)}`,
+                }}
+              >
+                {allMedia.map((_, idx) => (
+                  <Box
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCurrentIndex(idx)
+                    }}
+                    style={{
+                      padding: rem(5),
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Box
+                      style={{
+                        width: idx === currentIndex ? rem(13) : rem(8),
+                        height: idx === currentIndex ? rem(13) : rem(8),
+                        borderRadius: '50%',
+                        background: idx === currentIndex ? '#fff' : 'rgba(255,255,255,0.38)',
+                        boxShadow: idx === currentIndex ? '0 0 0 3px rgba(255,255,255,0.12)' : 'none',
+                        transition: 'all 0.22s ease',
+                        flexShrink: 0,
+                      }}
+                    />
+                  </Box>
+                ))}
+                <Box
+                  style={{
+                    width: 1,
+                    height: rem(13),
+                    background: 'rgba(255,255,255,0.12)',
+                    margin: `0 ${rem(4)}`,
+                    flexShrink: 0,
+                  }}
+                />
+                <Text
+                  style={{
+                    fontSize: rem(10),
+                    color: 'rgba(255,255,255,0.5)',
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {currentIndex + 1} / {allMedia.length}
+                </Text>
+              </Box>
+            </Box>
+          )}
         </Box>
-      ) : (
-        /* No-image fallback: entity-tinted glow on right side */
+      )}
+
+      {/* No-image fallback: entity-tinted glow on right side */}
+      {(!showImage || allMedia.length === 0) && (
         <Box
           aria-hidden
           style={{
@@ -268,6 +431,36 @@ export function DetailPageHeader({
           }}
         />
       )}
+
+      {/* Left-edge fade blending portrait into content */}
+      <Box
+        aria-hidden
+        className="detail-hero-portrait-fade"
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '60%',
+          background: 'linear-gradient(90deg, #080c14 0%, rgba(8,12,20,0.75) 55%, transparent 100%)',
+          zIndex: 3,
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Bottom fade */}
+      <Box
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 60,
+          background: 'linear-gradient(0deg, #080c14, transparent)',
+          zIndex: 3,
+          pointerEvents: 'none',
+        }}
+      />
 
       {/* Content column — left 65% desktop, full width mobile, bottom-anchored */}
       {/* pointerEvents: none so cycling arrows in the portrait beneath remain clickable */}
@@ -403,6 +596,35 @@ export function DetailPageHeader({
         {children}
         </Box>
       </Box>
+
+      {/* Lightbox modal */}
+      {currentMedia && (
+        <Modal
+          opened={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          size="xl"
+          padding={0}
+          withCloseButton={false}
+          centered
+          styles={{
+            body: { background: '#000', padding: 0 },
+            content: { background: '#000' },
+          }}
+        >
+          <Box style={{ position: 'relative', width: '100%', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="lg"
+              style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, color: '#fff' }}
+              onClick={() => setIsModalOpen(false)}
+            >
+              <X size={18} />
+            </ActionIcon>
+            {renderLightboxImage(currentMedia)}
+          </Box>
+        </Modal>
+      )}
     </Box>
   )
 }
