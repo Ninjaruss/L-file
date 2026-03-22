@@ -26,7 +26,9 @@ export class FluxerStrategy extends PassportStrategy(Strategy, 'fluxer') {
   }
 
   async validate(accessToken: string, _refreshToken: string): Promise<User> {
-    console.log('[FLUXER STRATEGY] validate() called, fetching user profile...');
+    console.log(
+      '[FLUXER STRATEGY] validate() called, fetching user profile...',
+    );
     // Fetch user profile from Fluxer OAuth2 API
     const response = await fetch('https://api.fluxer.app/v1/oauth2/@me', {
       headers: {
@@ -50,10 +52,18 @@ export class FluxerStrategy extends PassportStrategy(Strategy, 'fluxer') {
     // The oauth2/@me endpoint wraps user info in a .user property
     const profile = data.user;
     if (!profile) {
-      console.error('[FLUXER STRATEGY] No .user in response:', JSON.stringify(data).substring(0, 500));
+      console.error(
+        '[FLUXER STRATEGY] No .user in response:',
+        JSON.stringify(data).substring(0, 500),
+      );
       throw new Error('Fluxer profile response missing user data');
     }
-    console.log('[FLUXER STRATEGY] Got profile for:', profile.username, 'id:', profile.id);
+    console.log(
+      '[FLUXER STRATEGY] Got profile for:',
+      profile.username,
+      'id:',
+      profile.id,
+    );
     return await this.authService.validateFluxerUser(profile);
   }
 }

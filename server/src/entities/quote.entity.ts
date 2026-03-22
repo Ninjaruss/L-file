@@ -56,7 +56,9 @@ export class Quote {
   pageNumber: number;
 
   @ApiHideProperty()
-  @ManyToOne(() => require('./character.entity').Character, { onDelete: 'CASCADE' })
+  @ManyToOne(() => require('./character.entity').Character, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'characterId' })
   character: Character;
 

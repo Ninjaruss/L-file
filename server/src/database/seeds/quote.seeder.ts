@@ -27,7 +27,7 @@ export class QuoteSeeder implements Seeder {
       .createQueryBuilder('c')
       .where('c.name IN (:...names)', { names: characterNames })
       .getMany();
-    const characterByName = new Map(characters.map(c => [c.name, c]));
+    const characterByName = new Map(characters.map((c) => [c.name, c]));
 
     const bakuCharacter = characterByName.get('Baku Madarame');
     const marcoCharacter = characterByName.get('Marco Reiji');

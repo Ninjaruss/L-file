@@ -243,13 +243,17 @@ export class AppController {
     },
   })
   async getFavoritesData() {
-    const [quoteStats, gambleStats, characterMediaStats, characterFavoriteStats] =
-      await Promise.all([
-        this.usersService.getQuotePopularityStats(),
-        this.usersService.getGamblePopularityStats(),
-        this.usersService.getCharacterMediaPopularityStats(),
-        this.usersService.getCharacterFavoriteStats(),
-      ]);
+    const [
+      quoteStats,
+      gambleStats,
+      characterMediaStats,
+      characterFavoriteStats,
+    ] = await Promise.all([
+      this.usersService.getQuotePopularityStats(),
+      this.usersService.getGamblePopularityStats(),
+      this.usersService.getCharacterMediaPopularityStats(),
+      this.usersService.getCharacterFavoriteStats(),
+    ]);
 
     return {
       favoriteQuotes: quoteStats.slice(0, 3),

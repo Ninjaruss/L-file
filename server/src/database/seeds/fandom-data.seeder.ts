@@ -128,11 +128,21 @@ export class FandomDataSeeder implements Seeder {
         purpose: MediaPurpose.ENTITY_DISPLAY,
       },
     });
-    const mediaByVolumeId = new Map(existingDisplayMedia.map(m => [m.ownerId, m]));
+    const mediaByVolumeId = new Map(
+      existingDisplayMedia.map((m) => [m.ownerId, m]),
+    );
 
     // Resolve local cover directory once
     const localDir = path.resolve(
-      __dirname, '..', '..', '..', '..', 'client', 'public', 'assets', 'volume-covers',
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'client',
+      'public',
+      'assets',
+      'volume-covers',
     );
     const localFiles = fs.existsSync(localDir) ? fs.readdirSync(localDir) : [];
 
@@ -145,7 +155,8 @@ export class FandomDataSeeder implements Seeder {
 
       try {
         const prefix = `volume-${String(v.number).padStart(2, '0')}`;
-        const matchedFile = localFiles.find(fn => fn.toLowerCase().startsWith(prefix)) || null;
+        const matchedFile =
+          localFiles.find((fn) => fn.toLowerCase().startsWith(prefix)) || null;
         const mediaUrl = matchedFile
           ? `/assets/volume-covers/${matchedFile}`
           : v.coverUrl || null;
@@ -155,32 +166,51 @@ export class FandomDataSeeder implements Seeder {
         const existing = mediaByVolumeId.get(vol.id);
         if (existing) {
           let changed = false;
-          if (existing.url !== mediaUrl) { existing.url = mediaUrl; changed = true; }
-          if (matchedFile && existing.fileName !== matchedFile) { existing.fileName = matchedFile; changed = true; }
-          if (matchedFile && !existing.isUploaded) { existing.isUploaded = true; changed = true; }
-          if (!existing.usageType) { existing.usageType = MediaUsageType.VOLUME_IMAGE; changed = true; }
+          if (existing.url !== mediaUrl) {
+            existing.url = mediaUrl;
+            changed = true;
+          }
+          if (matchedFile && existing.fileName !== matchedFile) {
+            existing.fileName = matchedFile;
+            changed = true;
+          }
+          if (matchedFile && !existing.isUploaded) {
+            existing.isUploaded = true;
+            changed = true;
+          }
+          if (!existing.usageType) {
+            existing.usageType = MediaUsageType.VOLUME_IMAGE;
+            changed = true;
+          }
           if (changed) mediaToUpdate.push(existing);
         } else {
           if (!systemUser) {
-            console.warn('Skipping media creation for volume cover because system user is missing.');
+            console.warn(
+              'Skipping media creation for volume cover because system user is missing.',
+            );
           } else {
-            mediaToCreate.push(mediaRepo.create({
-              url: mediaUrl,
-              fileName: matchedFile || null,
-              type: MediaType.IMAGE,
-              ownerType: MediaOwnerType.VOLUME,
-              ownerId: vol.id,
-              usageType: MediaUsageType.VOLUME_IMAGE,
-              status: MediaStatus.APPROVED,
-              purpose: MediaPurpose.ENTITY_DISPLAY,
-              isUploaded: Boolean(matchedFile),
-              submittedBy: systemUser,
-            } as any));
+            mediaToCreate.push(
+              mediaRepo.create({
+                url: mediaUrl,
+                fileName: matchedFile || null,
+                type: MediaType.IMAGE,
+                ownerType: MediaOwnerType.VOLUME,
+                ownerId: vol.id,
+                usageType: MediaUsageType.VOLUME_IMAGE,
+                status: MediaStatus.APPROVED,
+                purpose: MediaPurpose.ENTITY_DISPLAY,
+                isUploaded: Boolean(matchedFile),
+                submittedBy: systemUser,
+              } as any),
+            );
           }
         }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.warn(`Error attaching cover for volume ${v.number}:`, errorMessage);
+        console.warn(
+          `Error attaching cover for volume ${v.number}:`,
+          errorMessage,
+        );
       }
     }
 

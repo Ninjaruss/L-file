@@ -3,6 +3,10 @@
 ## TODO
 - Add a proper data backup; update security for supabase data
 - QA passthrough of specific detail pages like gambles
+- Sync reading progress with other trackers? (i.e. myanimelist, anilist, etc.)
+
+## 2026-03-22
+- Cleaned up entity display image usage on detail page headers
 
 ## 2026-03-21
 - QA passthrough of admin dashboard with superpowers

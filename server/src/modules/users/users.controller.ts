@@ -501,10 +501,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Missing or invalid input' })
   @ApiResponse({ status: 401, description: 'Wrong current password' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  async changeEmail(
-    @CurrentUser() user: User,
-    @Body() dto: ChangeEmailDto,
-  ) {
+  async changeEmail(@CurrentUser() user: User, @Body() dto: ChangeEmailDto) {
     return this.service.changeEmail(user.id, dto.newEmail, dto.currentPassword);
   }
 
@@ -532,7 +529,11 @@ export class UsersController {
     @CurrentUser() user: User,
     @Body() dto: ChangePasswordDto,
   ) {
-    return this.service.changePassword(user.id, dto.newPassword, dto.currentPassword);
+    return this.service.changePassword(
+      user.id,
+      dto.newPassword,
+      dto.currentPassword,
+    );
   }
 
   @Get('profile/progress')
@@ -728,7 +729,10 @@ export class UsersController {
   @Roles(UserRole.USER, UserRole.MODERATOR, UserRole.EDITOR, UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user favorite characters' })
-  @ApiResponse({ status: 200, description: 'Favorite characters retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Favorite characters retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMyFavoriteCharacters(@CurrentUser() user: User) {
     return this.service.getUserFavoriteCharacters(user.id);
@@ -741,10 +745,13 @@ export class UsersController {
   @ApiOperation({
     summary: 'Set favorite characters',
     description:
-      'Replace the current user\'s favorite characters list (max 5, exactly one must be primary)',
+      "Replace the current user's favorite characters list (max 5, exactly one must be primary)",
   })
   @ApiBody({ type: SetFavoriteCharactersDto })
-  @ApiResponse({ status: 200, description: 'Favorite characters updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Favorite characters updated successfully',
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async setMyFavoriteCharacters(

@@ -342,9 +342,7 @@ export class GamblesService {
       return [];
     }
 
-    return gamble.factions
-      .filter((f) => f.name)
-      .map((f) => f.name as string);
+    return gamble.factions.filter((f) => f.name).map((f) => f.name as string);
   }
 
   /**

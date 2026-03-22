@@ -59,12 +59,18 @@ export class CreateGambleFactions1739000000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop the gamble_faction_members table
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gamble_faction_members_characterId"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gamble_faction_members_factionId"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_gamble_faction_members_characterId"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_gamble_faction_members_factionId"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "gamble_faction_members"`);
 
     // Drop the gamble_factions table
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gamble_factions_gambleId"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_gamble_factions_gambleId"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "gamble_factions"`);
 
     // Drop the enum type

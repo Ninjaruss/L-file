@@ -20,8 +20,12 @@ export class MainSeeder {
   constructor(private readonly dataSource: DataSource) {}
 
   private async runTier(seeders: Seeder[], tierName: string): Promise<boolean> {
-    this.logger.log(chalk.blue(`🌱 Running ${tierName} in parallel: ${seeders.map(s => s.constructor.name).join(', ')}`));
-    const results = await Promise.allSettled(seeders.map(s => s.run()));
+    this.logger.log(
+      chalk.blue(
+        `🌱 Running ${tierName} in parallel: ${seeders.map((s) => s.constructor.name).join(', ')}`,
+      ),
+    );
+    const results = await Promise.allSettled(seeders.map((s) => s.run()));
     let success = true;
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
@@ -54,26 +58,30 @@ export class MainSeeder {
 
     // Tier 2: Depend on Tier 1 — run in parallel after Tier 1 completes
     const tier2: Seeder[] = [
-      new ChapterSeeder(this.dataSource),               // after VolumeSeeder
+      new ChapterSeeder(this.dataSource), // after VolumeSeeder
       new CharacterOrganizationSeeder(this.dataSource), // after CharacterSeeder + OrganizationSeeder
-      new QuoteSeeder(this.dataSource),                 // after CharacterSeeder
+      new QuoteSeeder(this.dataSource), // after CharacterSeeder
     ];
 
     // Tier 3: Depend on Tier 2 — run in parallel after Tier 2 completes
     const tier3: Seeder[] = [
-      new GambleSeeder(this.dataSource),      // after ChapterSeeder + CharacterSeeder
-      new FandomDataSeeder(this.dataSource),  // after VolumeSeeder + ChapterSeeder
+      new GambleSeeder(this.dataSource), // after ChapterSeeder + CharacterSeeder
+      new FandomDataSeeder(this.dataSource), // after VolumeSeeder + ChapterSeeder
     ];
 
     let success = await this.runTier(tier1, 'Tier 1');
     if (!success) {
-      this.logger.error(chalk.red('❌ Tier 1 failed, aborting remaining tiers'));
+      this.logger.error(
+        chalk.red('❌ Tier 1 failed, aborting remaining tiers'),
+      );
       return false;
     }
 
     success = await this.runTier(tier2, 'Tier 2');
     if (!success) {
-      this.logger.error(chalk.red('❌ Tier 2 failed, aborting remaining tiers'));
+      this.logger.error(
+        chalk.red('❌ Tier 2 failed, aborting remaining tiers'),
+      );
       return false;
     }
 

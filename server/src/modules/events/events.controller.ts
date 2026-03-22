@@ -452,14 +452,18 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Reject an event',
-    description: 'Reject an event with a reason (requires admin/moderator/editor role)',
+    description:
+      'Reject an event with a reason (requires admin/moderator/editor role)',
   })
   @ApiParam({ name: 'id', description: 'Event ID', type: 'number' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        rejectionReason: { type: 'string', description: 'Reason for rejection' },
+        rejectionReason: {
+          type: 'string',
+          description: 'Reason for rejection',
+        },
       },
       required: ['rejectionReason'],
     },

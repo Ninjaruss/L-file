@@ -1,5 +1,18 @@
-import { Controller, Get, Query, ParseIntPipe, DefaultValuePipe, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Query,
+  ParseIntPipe,
+  DefaultValuePipe,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { EditLogService } from './edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,30 +36,44 @@ export class EditLogController {
     @Query('entityType') entityType?: string,
   ) {
     const safeLimit = Math.min(limit, 50);
-    const validEntityType = Object.values(EditLogEntityType).includes(entityType as EditLogEntityType)
+    const validEntityType = Object.values(EditLogEntityType).includes(
+      entityType as EditLogEntityType,
+    )
       ? (entityType as EditLogEntityType)
       : undefined;
 
-    return this.editLogService.getRecent({ page, limit: safeLimit, entityType: validEntityType });
+    return this.editLogService.getRecent({
+      page,
+      limit: safeLimit,
+      entityType: validEntityType,
+    });
   }
 
   @Get('submissions')
   @ApiOperation({ summary: 'Get recently approved user submissions (public)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Paginated list of approved submissions' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of approved submissions',
+  })
   async getRecentSubmissions(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     const safeLimit = Math.min(limit, 50);
-    return this.editLogService.getRecentApprovedSubmissions({ page, limit: safeLimit });
+    return this.editLogService.getRecentApprovedSubmissions({
+      page,
+      limit: safeLimit,
+    });
   }
 
   @Get('my-submissions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user submission edits (requires auth)' })
+  @ApiOperation({
+    summary: 'Get current user submission edits (requires auth)',
+  })
   @ApiResponse({ status: 200, description: 'User submission edit log entries' })
   async getMySubmissions(@CurrentUser() user: User) {
     return this.editLogService.getSubmissionEditsByUser(user.id);

@@ -38,7 +38,9 @@ export class UserFavoriteCharacter {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => require('./character.entity').Character, { onDelete: 'CASCADE' })
+  @ManyToOne(() => require('./character.entity').Character, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'characterId' })
   character: Character;
 }

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response, CookieOptions } from 'express';
@@ -69,7 +63,9 @@ export class AuthFluxerController {
 
     // Guard suppresses exceptions — a null user means authentication failed
     if (!req.user) {
-      console.error('[FLUXER CALLBACK] Authentication failed — req.user is null');
+      console.error(
+        '[FLUXER CALLBACK] Authentication failed — req.user is null',
+      );
       return res.redirect(`${frontendUrl}/login?error=callback_error`);
     }
 

@@ -273,7 +273,7 @@ export class AuthService {
 
   verifyLinkToken(token: string): { sub: number; purpose: string } {
     try {
-      return this.jwt.verify(token) as { sub: number; purpose: string };
+      return this.jwt.verify(token);
     } catch {
       throw new UnauthorizedException('Invalid or expired link token');
     }
@@ -311,10 +311,7 @@ export class AuthService {
     });
   }
 
-  async unlinkProvider(
-    userId: number,
-    provider: 'fluxer',
-  ): Promise<void> {
+  async unlinkProvider(userId: number, provider: 'fluxer'): Promise<void> {
     const hasOther = await this.usersService.hasOtherAuthMethod(
       userId,
       provider,

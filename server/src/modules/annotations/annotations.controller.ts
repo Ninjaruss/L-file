@@ -126,12 +126,15 @@ export class AnnotationsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Get one of the current user's annotations by ID",
-    description: 'Fetches a single annotation belonging to the authenticated user.',
+    description:
+      'Fetches a single annotation belonging to the authenticated user.',
   })
   @ApiParam({ name: 'id', description: 'Annotation ID' })
   @ApiOkResponse({ description: 'Annotation retrieved successfully' })
   @ApiUnauthorizedResponse({ description: 'Not authenticated' })
-  @ApiNotFoundResponse({ description: 'Annotation not found or not owned by user' })
+  @ApiNotFoundResponse({
+    description: 'Annotation not found or not owned by user',
+  })
   async getMyAnnotation(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,

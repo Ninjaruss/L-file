@@ -49,13 +49,18 @@ export class EditLogService {
 
     const nameMap = new Map<string, string>();
 
-    const fetch = async <T extends { id: number; name?: string; title?: string }>(
+    const fetch = async <
+      T extends { id: number; name?: string; title?: string },
+    >(
       repo: Repository<T>,
       type: EditLogEntityType,
       ids: number[],
       field: 'name' | 'title',
     ) => {
-      const rows = await repo.find({ where: { id: In(ids) } as any, select: ['id', field] as any });
+      const rows = await repo.find({
+        where: { id: In(ids) } as any,
+        select: ['id', field] as any,
+      });
       for (const row of rows) {
         const val = (row as any)[field] as string | undefined;
         if (val) nameMap.set(`${type}:${row.id}`, val);
@@ -64,22 +69,52 @@ export class EditLogService {
 
     await Promise.all([
       groups.has(EditLogEntityType.CHARACTER)
-        ? fetch(this.characterRepository as any, EditLogEntityType.CHARACTER, groups.get(EditLogEntityType.CHARACTER)!, 'name')
+        ? fetch(
+            this.characterRepository as any,
+            EditLogEntityType.CHARACTER,
+            groups.get(EditLogEntityType.CHARACTER)!,
+            'name',
+          )
         : Promise.resolve(),
       groups.has(EditLogEntityType.GAMBLE)
-        ? fetch(this.gambleRepository as any, EditLogEntityType.GAMBLE, groups.get(EditLogEntityType.GAMBLE)!, 'name')
+        ? fetch(
+            this.gambleRepository as any,
+            EditLogEntityType.GAMBLE,
+            groups.get(EditLogEntityType.GAMBLE)!,
+            'name',
+          )
         : Promise.resolve(),
       groups.has(EditLogEntityType.ARC)
-        ? fetch(this.arcRepository as any, EditLogEntityType.ARC, groups.get(EditLogEntityType.ARC)!, 'name')
+        ? fetch(
+            this.arcRepository as any,
+            EditLogEntityType.ARC,
+            groups.get(EditLogEntityType.ARC)!,
+            'name',
+          )
         : Promise.resolve(),
       groups.has(EditLogEntityType.ORGANIZATION)
-        ? fetch(this.organizationRepository as any, EditLogEntityType.ORGANIZATION, groups.get(EditLogEntityType.ORGANIZATION)!, 'name')
+        ? fetch(
+            this.organizationRepository as any,
+            EditLogEntityType.ORGANIZATION,
+            groups.get(EditLogEntityType.ORGANIZATION)!,
+            'name',
+          )
         : Promise.resolve(),
       groups.has(EditLogEntityType.EVENT)
-        ? fetch(this.eventRepository as any, EditLogEntityType.EVENT, groups.get(EditLogEntityType.EVENT)!, 'title')
+        ? fetch(
+            this.eventRepository as any,
+            EditLogEntityType.EVENT,
+            groups.get(EditLogEntityType.EVENT)!,
+            'title',
+          )
         : Promise.resolve(),
       groups.has(EditLogEntityType.GUIDE)
-        ? fetch(this.guideRepository as any, EditLogEntityType.GUIDE, groups.get(EditLogEntityType.GUIDE)!, 'title')
+        ? fetch(
+            this.guideRepository as any,
+            EditLogEntityType.GUIDE,
+            groups.get(EditLogEntityType.GUIDE)!,
+            'title',
+          )
         : Promise.resolve(),
       groups.has(EditLogEntityType.MEDIA)
         ? (async () => {
@@ -90,7 +125,10 @@ export class EditLogService {
             });
             for (const row of rows) {
               if (row.fileName) {
-                nameMap.set(`${EditLogEntityType.MEDIA}:${row.id}`, row.fileName);
+                nameMap.set(
+                  `${EditLogEntityType.MEDIA}:${row.id}`,
+                  row.fileName,
+                );
               }
             }
           })()
@@ -129,7 +167,10 @@ export class EditLogService {
       repo: Repository<T>,
       field: 'name' | 'title',
     ) => {
-      const rows = await repo.find({ where: { id: In(ids) } as any, select: ['id', field] as any });
+      const rows = await repo.find({
+        where: { id: In(ids) } as any,
+        select: ['id', field] as any,
+      });
       for (const row of rows) {
         const val = (row as any)[field] as string | undefined;
         if (val) nameMap.set(row.id, val);
@@ -137,11 +178,21 @@ export class EditLogService {
     };
 
     switch (entityType.toLowerCase()) {
-      case 'character': await fetch(this.characterRepository as any, 'name'); break;
-      case 'gamble': await fetch(this.gambleRepository as any, 'name'); break;
-      case 'arc': await fetch(this.arcRepository as any, 'name'); break;
-      case 'organization': await fetch(this.organizationRepository as any, 'name'); break;
-      case 'event': await fetch(this.eventRepository as any, 'title'); break;
+      case 'character':
+        await fetch(this.characterRepository as any, 'name');
+        break;
+      case 'gamble':
+        await fetch(this.gambleRepository as any, 'name');
+        break;
+      case 'arc':
+        await fetch(this.arcRepository as any, 'name');
+        break;
+      case 'organization':
+        await fetch(this.organizationRepository as any, 'name');
+        break;
+      case 'event':
+        await fetch(this.eventRepository as any, 'title');
+        break;
     }
 
     return nameMap;
@@ -202,7 +253,9 @@ export class EditLogService {
     });
   }
 
-  async getSubmissionEditsByUser(userId: number): Promise<Array<EditLog & { entityName?: string }>> {
+  async getSubmissionEditsByUser(
+    userId: number,
+  ): Promise<Array<EditLog & { entityName?: string }>> {
     const data = await this.editLogRepository.find({
       where: {
         userId,
@@ -298,7 +351,12 @@ export class EditLogService {
       entityName: nameMap.get(`${e.entityType}:${e.entityId}`),
     }));
 
-    return { data: enriched, total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      data: enriched,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getRecentApprovedSubmissions(options: {
@@ -313,7 +371,12 @@ export class EditLogService {
       entityId?: number;
       entityName?: string;
       createdAt: Date;
-      submittedBy?: { id: number; username: string; fluxerAvatar?: string; fluxerId?: string } | null;
+      submittedBy?: {
+        id: number;
+        username: string;
+        fluxerAvatar?: string;
+        fluxerId?: string;
+      } | null;
     }>;
     total: number;
     page: number;
@@ -347,7 +410,12 @@ export class EditLogService {
       entityId?: number;
       entityName?: string;
       createdAt: Date;
-      submittedBy?: { id: number; username: string; fluxerAvatar?: string; fluxerId?: string } | null;
+      submittedBy?: {
+        id: number;
+        username: string;
+        fluxerAvatar?: string;
+        fluxerId?: string;
+      } | null;
     }> = [
       ...guides.map((g) => ({
         id: g.id,
@@ -355,7 +423,12 @@ export class EditLogService {
         title: g.title,
         createdAt: g.createdAt,
         submittedBy: g.author
-          ? { id: g.author.id, username: g.author.username, fluxerAvatar: g.author.fluxerAvatar ?? undefined, fluxerId: g.author.fluxerId ?? undefined }
+          ? {
+              id: g.author.id,
+              username: g.author.username,
+              fluxerAvatar: g.author.fluxerAvatar ?? undefined,
+              fluxerId: g.author.fluxerId ?? undefined,
+            }
           : null,
       })),
       ...media
@@ -368,7 +441,12 @@ export class EditLogService {
           entityId: m.ownerId,
           createdAt: m.createdAt,
           submittedBy: m.submittedBy
-            ? { id: m.submittedBy.id, username: m.submittedBy.username, fluxerAvatar: m.submittedBy.fluxerAvatar ?? undefined, fluxerId: m.submittedBy.fluxerId ?? undefined }
+            ? {
+                id: m.submittedBy.id,
+                username: m.submittedBy.username,
+                fluxerAvatar: m.submittedBy.fluxerAvatar ?? undefined,
+                fluxerId: m.submittedBy.fluxerId ?? undefined,
+              }
             : null,
         })),
       ...annotations.map((a) => ({
@@ -379,7 +457,12 @@ export class EditLogService {
         entityId: a.ownerId,
         createdAt: a.createdAt,
         submittedBy: a.author
-          ? { id: a.author.id, username: a.author.username, fluxerAvatar: a.author.fluxerAvatar ?? undefined, fluxerId: a.author.fluxerId ?? undefined }
+          ? {
+              id: a.author.id,
+              username: a.author.username,
+              fluxerAvatar: a.author.fluxerAvatar ?? undefined,
+              fluxerId: a.author.fluxerId ?? undefined,
+            }
           : null,
       })),
     ];
@@ -412,6 +495,11 @@ export class EditLogService {
           : undefined,
     }));
 
-    return { data: enrichedData, total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      data: enrichedData,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

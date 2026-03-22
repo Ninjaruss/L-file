@@ -66,9 +66,7 @@ export class AuthLinkController {
     }
 
     const userId =
-      typeof payload.sub === 'string'
-        ? parseInt(payload.sub, 10)
-        : payload.sub;
+      typeof payload.sub === 'string' ? parseInt(payload.sub, 10) : payload.sub;
 
     const linkToken = this.authService.generateLinkToken(userId);
     res.cookie(LINK_TOKEN_COOKIE, linkToken, this.getLinkTokenCookieOptions());

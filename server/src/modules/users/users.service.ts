@@ -12,7 +12,12 @@ import { User, UserRole, ProfilePictureType } from '../../entities/user.entity';
 import { Quote } from '../../entities/quote.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { Character } from '../../entities/character.entity';
-import { Media, MediaStatus, MediaPurpose, MediaOwnerType } from '../../entities/media.entity';
+import {
+  Media,
+  MediaStatus,
+  MediaPurpose,
+  MediaOwnerType,
+} from '../../entities/media.entity';
 import { Guide, GuideStatus } from '../../entities/guide.entity';
 import { GuideLike } from '../../entities/guide-like.entity';
 import { Annotation, AnnotationStatus } from '../../entities/annotation.entity';
@@ -32,8 +37,10 @@ export class UsersService {
     @InjectRepository(User) private readonly repo: Repository<User>,
     @InjectRepository(Quote) private readonly quoteRepo: Repository<Quote>,
     @InjectRepository(Gamble) private readonly gambleRepo: Repository<Gamble>,
-    @InjectRepository(Character) private readonly characterRepo: Repository<Character>,
-    @InjectRepository(UserFavoriteCharacter) private readonly favoriteCharacterRepo: Repository<UserFavoriteCharacter>,
+    @InjectRepository(Character)
+    private readonly characterRepo: Repository<Character>,
+    @InjectRepository(UserFavoriteCharacter)
+    private readonly favoriteCharacterRepo: Repository<UserFavoriteCharacter>,
     private readonly emailService: EmailService,
   ) {}
 
@@ -810,7 +817,8 @@ export class UsersService {
       }
     }
 
-    (user as any).favoriteCharacters = await this.getUserFavoriteCharacters(userId);
+    (user as any).favoriteCharacters =
+      await this.getUserFavoriteCharacters(userId);
 
     return user;
   }
@@ -937,7 +945,9 @@ export class UsersService {
     return result;
   }
 
-  async getUserFavoriteCharacters(userId: number): Promise<UserFavoriteCharacter[]> {
+  async getUserFavoriteCharacters(
+    userId: number,
+  ): Promise<UserFavoriteCharacter[]> {
     return this.favoriteCharacterRepo.find({
       where: { userId },
       relations: ['character'],
@@ -947,16 +957,24 @@ export class UsersService {
 
   async setFavoriteCharacters(
     userId: number,
-    favorites: Array<{ characterId: number; isPrimary: boolean; sortOrder: number }>,
+    favorites: Array<{
+      characterId: number;
+      isPrimary: boolean;
+      sortOrder: number;
+    }>,
   ): Promise<UserFavoriteCharacter[]> {
     if (favorites.length > 5) {
-      throw new BadRequestException('Cannot have more than 5 favorite characters');
+      throw new BadRequestException(
+        'Cannot have more than 5 favorite characters',
+      );
     }
 
     if (favorites.length > 0) {
       const primaryCount = favorites.filter((f) => f.isPrimary).length;
       if (primaryCount !== 1) {
-        throw new BadRequestException('Exactly one character must be designated as primary');
+        throw new BadRequestException(
+          'Exactly one character must be designated as primary',
+        );
       }
 
       const characterIds = favorites.map((f) => f.characterId);
@@ -993,8 +1011,14 @@ export class UsersService {
   }
 
   async getCharacterFavoriteStats(): Promise<{
-    mostFavorited: Array<{ character: { id: number; name: string; entityImageUrl: string | null }; totalCount: number }>;
-    mostPrimary: Array<{ character: { id: number; name: string; entityImageUrl: string | null }; primaryCount: number }>;
+    mostFavorited: Array<{
+      character: { id: number; name: string; entityImageUrl: string | null };
+      totalCount: number;
+    }>;
+    mostPrimary: Array<{
+      character: { id: number; name: string; entityImageUrl: string | null };
+      primaryCount: number;
+    }>;
     mostLoyal: Array<{
       character: { id: number; name: string; entityImageUrl: string | null };
       loyaltyRatio: number;
@@ -1043,7 +1067,9 @@ export class UsersService {
     const characters = await this.characterRepo.find({
       where: { id: In(allCharacterIds) },
     });
-    const characterMap = new Map<number, Character>(characters.map((c) => [c.id, c]));
+    const characterMap = new Map<number, Character>(
+      characters.map((c) => [c.id, c]),
+    );
 
     const mediaRepo = this.favoriteCharacterRepo.manager.getRepository(Media);
     const entityImages = await mediaRepo.find({
@@ -1072,7 +1098,10 @@ export class UsersService {
         totalCount: parseInt(s.totalcount),
       }))
       .filter((r) => r.character)
-      .map((r) => ({ character: toCharacterDto(r.character), totalCount: r.totalCount }));
+      .map((r) => ({
+        character: toCharacterDto(r.character),
+        totalCount: r.totalCount,
+      }));
 
     const mostPrimary = primaryStats
       .slice(0, 2)
@@ -1081,13 +1110,21 @@ export class UsersService {
         primaryCount: parseInt(s.primarycount),
       }))
       .filter((r) => r.character)
-      .map((r) => ({ character: toCharacterDto(r.character), primaryCount: r.primaryCount }));
+      .map((r) => ({
+        character: toCharacterDto(r.character),
+        primaryCount: r.primaryCount,
+      }));
 
     const loyaltyRankings = allCharacterIds
       .map((id) => {
         const total = totalMap.get(id) || 0;
         const primary = primaryMap.get(id) || 0;
-        return { characterId: id, total, primary, ratio: total >= MINIMUM_THRESHOLD ? primary / total : 0 };
+        return {
+          characterId: id,
+          total,
+          primary,
+          ratio: total >= MINIMUM_THRESHOLD ? primary / total : 0,
+        };
       })
       .filter((r) => r.total >= MINIMUM_THRESHOLD)
       .sort((a, b) => b.ratio - a.ratio)

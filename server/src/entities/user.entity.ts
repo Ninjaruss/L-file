@@ -170,10 +170,16 @@ export class User {
   @JoinColumn({ name: 'selectedCharacterMediaId' })
   selectedCharacterMedia: Media | null;
 
-  @OneToMany(() => require('./event.entity').Event, (event: any) => event.createdBy)
+  @OneToMany(
+    () => require('./event.entity').Event,
+    (event: any) => event.createdBy,
+  )
   submittedEvents: Event[];
 
-  @OneToMany(() => require('./user-badge.entity').UserBadge, (userBadge: any) => userBadge.user)
+  @OneToMany(
+    () => require('./user-badge.entity').UserBadge,
+    (userBadge: any) => userBadge.user,
+  )
   badges: UserBadge[];
 
   // Computed property for frontend compatibility
@@ -181,7 +187,10 @@ export class User {
     return this.badges || [];
   }
 
-  @OneToMany(() => require('./donation.entity').Donation, (donation: any) => donation.user)
+  @OneToMany(
+    () => require('./donation.entity').Donation,
+    (donation: any) => donation.user,
+  )
   donations: Donation[];
 
   @CreateDateColumn()

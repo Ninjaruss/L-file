@@ -11,7 +11,9 @@ export class FluxerAuthGuard extends AuthGuard('fluxer') {
       console.error('[FLUXER AUTH GUARD] Strategy error:', err?.message || err);
     }
     if (!user && !err) {
-      console.error('[FLUXER AUTH GUARD] No user returned and no error — auth silently failed');
+      console.error(
+        '[FLUXER AUTH GUARD] No user returned and no error — auth silently failed',
+      );
     }
     return user || null;
   }

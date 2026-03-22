@@ -345,7 +345,9 @@ export class DonationsService {
       .leftJoin('donation.user', 'user')
       .where('donation.status = :status', { status: DonationStatus.COMPLETED })
       .andWhere('donation.isAnonymous = :isAnonymous', { isAnonymous: false })
-      .groupBy('donation.userId, user.username, user.fluxerId, user.fluxerAvatar, user.profilePictureType')
+      .groupBy(
+        'donation.userId, user.username, user.fluxerId, user.fluxerAvatar, user.profilePictureType',
+      )
       .orderBy('totalAmount', 'DESC')
       .limit(limit)
       .getRawMany();

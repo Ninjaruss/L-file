@@ -16,11 +16,19 @@ export class FavoriteCharacterItemDto {
   @Min(1)
   characterId: number;
 
-  @ApiProperty({ description: 'Whether this is the primary favorite', example: true })
+  @ApiProperty({
+    description: 'Whether this is the primary favorite',
+    example: true,
+  })
   @IsBoolean()
   isPrimary: boolean;
 
-  @ApiProperty({ description: 'Display order (1-5)', example: 1, minimum: 1, maximum: 5 })
+  @ApiProperty({
+    description: 'Display order (1-5)',
+    example: 1,
+    minimum: 1,
+    maximum: 5,
+  })
   @IsInt()
   @Min(1)
   @Max(5)
@@ -29,7 +37,8 @@ export class FavoriteCharacterItemDto {
 
 export class SetFavoriteCharactersDto {
   @ApiProperty({
-    description: 'List of favorite characters (max 5). Exactly one must have isPrimary=true.',
+    description:
+      'List of favorite characters (max 5). Exactly one must have isPrimary=true.',
     type: [FavoriteCharacterItemDto],
   })
   @IsArray()

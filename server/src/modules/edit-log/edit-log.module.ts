@@ -13,7 +13,19 @@ import { EditLogService } from './edit-log.service';
 import { EditLogController } from './edit-log.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EditLog, Guide, Media, Annotation, Character, Gamble, Arc, Organization, Event])],
+  imports: [
+    TypeOrmModule.forFeature([
+      EditLog,
+      Guide,
+      Media,
+      Annotation,
+      Character,
+      Gamble,
+      Arc,
+      Organization,
+      Event,
+    ]),
+  ],
   controllers: [EditLogController],
   providers: [EditLogService],
   exports: [EditLogService],

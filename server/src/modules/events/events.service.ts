@@ -498,19 +498,22 @@ export class EventsService {
       event.type = updateData.type;
     }
     if (updateData.arcId !== undefined) {
-      event.arcId = updateData.arcId && !isNaN(Number(updateData.arcId))
-        ? Number(updateData.arcId)
-        : (null as unknown as number);
+      event.arcId =
+        updateData.arcId && !isNaN(Number(updateData.arcId))
+          ? Number(updateData.arcId)
+          : (null as unknown as number);
     }
     if (updateData.gambleId !== undefined) {
-      event.gambleId = updateData.gambleId && !isNaN(Number(updateData.gambleId))
-        ? Number(updateData.gambleId)
-        : (null as unknown as number);
+      event.gambleId =
+        updateData.gambleId && !isNaN(Number(updateData.gambleId))
+          ? Number(updateData.gambleId)
+          : (null as unknown as number);
     }
     if (updateData.spoilerChapter !== undefined) {
-      event.spoilerChapter = updateData.spoilerChapter && !isNaN(Number(updateData.spoilerChapter))
-        ? Number(updateData.spoilerChapter)
-        : (null as unknown as number);
+      event.spoilerChapter =
+        updateData.spoilerChapter && !isNaN(Number(updateData.spoilerChapter))
+          ? Number(updateData.spoilerChapter)
+          : (null as unknown as number);
     }
 
     // Update character relationships if provided

@@ -109,7 +109,9 @@ export class VolumesController {
   }
 
   @Get('showcase-ready')
-  @ApiOperation({ summary: 'Get all volumes with both approved showcase images' })
+  @ApiOperation({
+    summary: 'Get all volumes with both approved showcase images',
+  })
   @ApiResponse({
     status: 200,
     description: 'Volumes ready for homepage showcase',

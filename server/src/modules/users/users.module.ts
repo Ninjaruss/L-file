@@ -11,7 +11,17 @@ import { BadgesModule } from '../badges/badges.module';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Quote, Gamble, Character, UserFavoriteCharacter]), BadgesModule, EmailModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      Quote,
+      Gamble,
+      Character,
+      UserFavoriteCharacter,
+    ]),
+    BadgesModule,
+    EmailModule,
+  ],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

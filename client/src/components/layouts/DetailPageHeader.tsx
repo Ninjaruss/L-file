@@ -127,6 +127,14 @@ export function DetailPageHeader({
 
   const currentMedia = allMedia[currentIndex] ?? null
 
+  const isCurrentSpoilerProtected =
+    !isSpoilerRevealed &&
+    !!currentMedia &&
+    (currentMedia.isSpoiler || (
+      !!currentMedia.chapterNumber &&
+      currentMedia.chapterNumber > (userProgress ?? 0)
+    ))
+
   const handlePrev = useCallback(() => {
     setCurrentIndex(i => (i > 0 ? i - 1 : allMedia.length - 1))
   }, [allMedia.length])
@@ -218,32 +226,37 @@ export function DetailPageHeader({
       />
 
       {/* ── Full-bleed blurred atmospheric background ── */}
-      {showImage && currentMedia && (
-        <Box
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 1,
-            pointerEvents: 'none',
-            overflow: 'hidden',
-          }}
-        >
-          <MediaThumbnail
-            entityType={entityType}
-            entityId={entityId}
-            initialMedia={[currentMedia]}
-            allowFullView={false}
-            allowCycling={false}
-            showBlurredBackground={true}
-            objectFit="cover"
-            objectPosition="center 15%"
-            maxWidth="100%"
-            maxHeight="100%"
-            priority
-          />
-        </Box>
-      )}
+      {showImage && currentMedia && currentMedia.type === 'image' && !isCurrentSpoilerProtected && (() => {
+        const mediaInfo = analyzeMediaUrl(currentMedia.url)
+        const blurSrc = mediaInfo.directImageUrl || currentMedia.url
+        return (
+          <Box
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 1,
+              pointerEvents: 'none',
+              overflow: 'hidden',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={blurSrc}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center 15%',
+                transform: 'scale(1.08)',
+                filter: 'blur(36px) brightness(0.18) saturate(0.5)',
+                display: 'block',
+              }}
+            />
+          </Box>
+        )
+      })()}
 
       {/* ── Portrait zone — right 58%, click opens lightbox ── */}
       {showImage && currentMedia && (
@@ -261,13 +274,7 @@ export function DetailPageHeader({
           onMouseEnter={() => setIsPortraitHovered(true)}
           onMouseLeave={() => setIsPortraitHovered(false)}
           onClick={() => {
-            const isProtectedSpoiler =
-              !isSpoilerRevealed &&
-              (currentMedia.isSpoiler || (
-                !!currentMedia.chapterNumber &&
-                currentMedia.chapterNumber > (userProgress ?? 0)
-              ))
-            if (!isProtectedSpoiler) {
+            if (!isCurrentSpoilerProtected) {
               setIsModalOpen(true)
             }
           }}

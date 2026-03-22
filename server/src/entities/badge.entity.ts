@@ -87,7 +87,10 @@ export class Badge {
   @Column({ type: 'boolean', default: false })
   isManuallyAwardable: boolean;
 
-  @OneToMany(() => require('./user-badge.entity').UserBadge, (userBadge: any) => userBadge.badge)
+  @OneToMany(
+    () => require('./user-badge.entity').UserBadge,
+    (userBadge: any) => userBadge.badge,
+  )
   userBadges: UserBadge[];
 
   @CreateDateColumn()

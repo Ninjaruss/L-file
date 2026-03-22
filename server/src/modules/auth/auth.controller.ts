@@ -220,7 +220,11 @@ export class AuthController {
     }
     // Validate the token is legitimate before setting the cookie
     await this.auth.refreshAccessToken(refreshToken);
-    res.cookie('refreshToken', refreshToken, this.getRefreshTokenCookieOptions());
+    res.cookie(
+      'refreshToken',
+      refreshToken,
+      this.getRefreshTokenCookieOptions(),
+    );
     return { success: true };
   }
 
