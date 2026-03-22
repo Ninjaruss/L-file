@@ -53,6 +53,8 @@ interface MediaThumbnailProps {
   objectPosition?: string
   /** CSS object-fit for image rendering. Defaults to 'cover'. */
   objectFit?: React.CSSProperties['objectFit']
+  /** When true, renders a blurred, darkened copy of the current image behind the main image for a full-bleed background effect. */
+  showBlurredBackground?: boolean
   /** Controls placement. 'right' shifts arrows and dots to the right portrait zone (for hero headers). */
   controlsPosition?: 'center' | 'right'
 }
@@ -239,6 +241,7 @@ export default function MediaThumbnail({
   allowFullView = false,
   objectPosition = 'center center',
   objectFit = 'cover' as React.CSSProperties['objectFit'],
+  showBlurredBackground = false,
   controlsPosition = 'center',
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
@@ -1145,6 +1148,15 @@ export default function MediaThumbnail({
   const canExpand = allowFullView && currentThumbnail && !inline &&
     (!numericMaxWidth || numericMaxWidth > 64)
 
+  const currentMediaInfo = currentThumbnail
+    ? (resolvedMediaInfo[currentThumbnail.url] || analyzeMediaUrl(currentThumbnail.url))
+    : null
+  const showBlurLayer =
+    showBlurredBackground &&
+    !!currentThumbnail &&
+    currentThumbnail.type === 'image' &&
+    !!currentMediaInfo?.isDirectImage
+
   return (
     <>
       <Box
@@ -1157,6 +1169,32 @@ export default function MediaThumbnail({
         }}
         onClick={canExpand ? () => setIsModalOpen(true) : undefined}
       >
+        {showBlurLayer && currentThumbnail && (
+          <Box
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: 'none',
+              overflow: 'hidden',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentMediaInfo?.directImageUrl || currentThumbnail.url}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: 'scale(1.08)',
+                filter: 'blur(20px) brightness(0.3) saturate(0.6)',
+                display: 'block',
+              }}
+            />
+          </Box>
+        )}
         <MediaSpoilerWrapper media={currentThumbnail} userProgress={userProgress} spoilerChapter={spoilerChapter} onRevealed={onSpoilerRevealed}>
           {mediaContent}
         </MediaSpoilerWrapper>
