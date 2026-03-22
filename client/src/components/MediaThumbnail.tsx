@@ -51,6 +51,8 @@ interface MediaThumbnailProps {
   allowFullView?: boolean // If true, shows expand button and fullscreen modal
   /** CSS object-position for image rendering. Defaults to 'center center'. */
   objectPosition?: string
+  /** CSS object-fit for image rendering. Defaults to 'cover'. */
+  objectFit?: React.CSSProperties['objectFit']
   /** Controls placement. 'right' shifts arrows and dots to the right portrait zone (for hero headers). */
   controlsPosition?: 'center' | 'right'
 }
@@ -236,6 +238,7 @@ export default function MediaThumbnail({
   initialMedia,
   allowFullView = false,
   objectPosition = 'center center',
+  objectFit = 'cover' as React.CSSProperties['objectFit'],
   controlsPosition = 'center',
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
@@ -594,7 +597,7 @@ export default function MediaThumbnail({
               fill
               priority={priority}
               style={{
-                objectFit: 'cover',
+                objectFit: objectFit,
                 objectPosition: objectPosition,
                 margin: 0,
                 padding: 0,
@@ -625,7 +628,7 @@ export default function MediaThumbnail({
               fill
               priority={priority}
               style={{
-                objectFit: 'cover',
+                objectFit: objectFit,
                 objectPosition: objectPosition,
                 margin: 0,
                 padding: 0,
@@ -811,7 +814,7 @@ export default function MediaThumbnail({
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
+            objectFit: objectFit,
             objectPosition: objectPosition
           }}
           onError={() => {

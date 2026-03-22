@@ -106,10 +106,7 @@ export function DetailPageHeader({
           className="detail-hero-portrait"
           style={{
             position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: '60%',
+            inset: 0,
             overflow: 'hidden',
           }}
         >
@@ -123,7 +120,8 @@ export function DetailPageHeader({
             maxHeight="100%"
             spoilerChapter={spoilerChapter ?? undefined}
             onSpoilerRevealed={onSpoilerRevealed}
-            objectPosition="top center"
+            objectFit="contain"
+            objectPosition="right top"
             controlsPosition="right"
           />
           {/* Left-edge fade blending portrait into content */}
