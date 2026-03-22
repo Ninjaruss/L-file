@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Box, Text, Group, Button } from '@mantine/core'
+import { Anchor, Box, Text, Group, Button, Badge } from '@mantine/core'
+import Link from 'next/link'
 
 type EventType = 'guide' | 'media' | 'annotation' | 'event' | 'progress'
 
@@ -9,6 +10,7 @@ interface FeedEvent {
   type: EventType
   title: string
   detail: string
+  href: string
   date: Date
 }
 
@@ -26,6 +28,24 @@ const TYPE_BG: Record<EventType, string> = {
   annotation: 'rgba(124,58,237,0.04)',
   event:      'rgba(245,158,11,0.04)',
   progress:   'rgba(249,115,22,0.04)',
+}
+
+const TYPE_COLOR: Record<EventType, string> = {
+  guide:      'rgba(34,197,94,0.8)',
+  media:      'rgba(59,130,246,0.8)',
+  annotation: 'rgba(124,58,237,0.8)',
+  event:      'rgba(245,158,11,0.8)',
+  progress:   'rgba(249,115,22,0.8)',
+}
+
+const ENTITY_LINK_MAP: Record<string, string> = {
+  character: '/characters',
+  gamble: '/gambles',
+  arc: '/arcs',
+  organization: '/organizations',
+  event: '/events',
+  guide: '/guides',
+  media: '/media',
 }
 
 function timeAgo(date: Date): string {
@@ -53,6 +73,8 @@ interface SubmissionItem {
   title?: string
   status: string
   createdAt: string
+  entityType?: string
+  entityId?: number
 }
 
 interface FieldLogUser {
@@ -93,6 +115,7 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
         type: 'guide',
         title: actionMap[guide.status] ?? 'Guide updated',
         detail: guide.title,
+        href: `/guides/${guide.id}`,
         date: new Date(guide.updatedAt || guide.createdAt),
       })
     }
@@ -107,10 +130,14 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
         event:      { pending: 'Event submitted', approved: 'Event approved', rejected: 'Event rejected' },
         annotation: { pending: 'Annotation added', approved: 'Annotation approved', rejected: 'Annotation rejected' },
       }
+      const entityHref = sub.entityType && sub.entityId
+        ? `${ENTITY_LINK_MAP[sub.entityType.toLowerCase()] ?? '#'}/${sub.entityId}`
+        : '#'
       items.push({
         type,
         title: titleMap[type]?.[sub.status] ?? `${type} updated`,
         detail: sub.title ?? '',
+        href: type === 'guide' ? `/guides/${sub.id}` : entityHref,
         date: new Date(sub.createdAt),
       })
     }
@@ -121,6 +148,7 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
         type: 'progress',
         title: 'Reading progress',
         detail: `Chapter ${user.userProgress} reached`,
+        href: '/profile',
         date: new Date(user.updatedAt),
       })
     }
@@ -134,10 +162,14 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
       const priorStatus = priorStatusField?.split(':')[1]
       const action = priorStatus === 'REJECTED' ? 'resubmitted' : 'edited'
       const resolvedType: EventType = TYPE_BORDER[type] ? type : 'event'
+      const editHref = edit.entityType && edit.entityId
+        ? `${ENTITY_LINK_MAP[edit.entityType.toLowerCase()] ?? '#'}/${edit.entityId}`
+        : '#'
       items.push({
         type: resolvedType,
         title: `${edit.entityType.charAt(0).toUpperCase() + edit.entityType.slice(1)} ${action}`,
         detail: edit.entityName ?? '',
+        href: editHref,
         date: new Date(edit.createdAt),
       })
     }
@@ -180,11 +212,24 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
                 }}
               >
                 <Box style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontSize: '13px', color: '#e5e5e5', fontWeight: 600, lineHeight: 1.3 }}>
-                    {ev.title}
-                  </Text>
+                  <Group gap={6} wrap="nowrap" mb={2}>
+                    <Badge
+                      size="xs"
+                      variant="dot"
+                      style={{ color: TYPE_COLOR[ev.type], borderColor: TYPE_BORDER[ev.type], background: 'transparent', flexShrink: 0 }}
+                    >
+                      {ev.type}
+                    </Badge>
+                    <Anchor
+                      component={Link}
+                      href={ev.href}
+                      style={{ fontSize: '13px', color: '#e5e5e5', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {ev.title}
+                    </Anchor>
+                  </Group>
                   {ev.detail && (
-                    <Text style={{ fontSize: '11px', color: '#888', marginTop: '2px' }} lineClamp={1}>
+                    <Text style={{ fontSize: '11px', color: '#888', marginTop: '1px' }} lineClamp={1}>
                       {ev.detail}
                     </Text>
                   )}

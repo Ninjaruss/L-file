@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Box, Text, Group, Button } from '@mantine/core'
+import { Anchor, Box, Text, Group, Button, Badge } from '@mantine/core'
+import Link from 'next/link'
 
 type PublicEventType = 'guide' | 'media' | 'annotation' | 'event'
 
@@ -19,11 +20,36 @@ const TYPE_BG: Record<PublicEventType, string> = {
   event:      'rgba(245,158,11,0.04)',
 }
 
+const TYPE_COLOR: Record<PublicEventType, string> = {
+  guide:      'rgba(34,197,94,0.8)',
+  media:      'rgba(59,130,246,0.8)',
+  annotation: 'rgba(124,58,237,0.8)',
+  event:      'rgba(245,158,11,0.8)',
+}
+
 const TYPE_LABEL: Record<PublicEventType, string> = {
   guide:      'Guide published',
   media:      'Media contributed',
   annotation: 'Annotation added',
   event:      'Event contributed',
+}
+
+const ENTITY_LINK_MAP: Record<string, string> = {
+  character: '/characters',
+  gamble: '/gambles',
+  arc: '/arcs',
+  organization: '/organizations',
+  event: '/events',
+  guide: '/guides',
+  media: '/media',
+}
+
+function submissionHref(type: string, id: number, entityType?: string, entityId?: number): string {
+  if (type === 'guide') return `/guides/${id}`
+  if (entityType && entityId) {
+    return `${ENTITY_LINK_MAP[entityType.toLowerCase()] ?? '#'}/${entityId}`
+  }
+  return '#'
 }
 
 function timeAgo(date: Date): string {
@@ -50,8 +76,10 @@ export default function PublicActivityTimeline({ submissions }: PublicActivityTi
       .filter((s) => TYPE_BORDER[s.type as PublicEventType])
       .map((s) => ({
         type: s.type as PublicEventType,
-        title: TYPE_LABEL[s.type as PublicEventType] ?? s.type,
-        detail: (s.title ?? '') as string,
+        title: (s.title ?? TYPE_LABEL[s.type as PublicEventType] ?? s.type) as string,
+        entityType: s.entityType as string | undefined,
+        entityName: s.entityName as string | undefined,
+        href: submissionHref(s.type, s.id, s.entityType, s.entityId),
         date: new Date(s.createdAt),
       }))
       .sort((a, b) => b.date.getTime() - a.date.getTime())
@@ -91,12 +119,25 @@ export default function PublicActivityTimeline({ submissions }: PublicActivityTi
                 }}
               >
                 <Box style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontSize: '13px', color: '#e5e5e5', fontWeight: 600, lineHeight: 1.3 }}>
-                    {ev.title}
-                  </Text>
-                  {ev.detail && (
-                    <Text style={{ fontSize: '11px', color: '#888', marginTop: '2px' }} lineClamp={1}>
-                      {ev.detail}
+                  <Group gap={6} wrap="nowrap" mb={2}>
+                    <Badge
+                      size="xs"
+                      variant="dot"
+                      style={{ color: TYPE_COLOR[ev.type], borderColor: TYPE_BORDER[ev.type], background: 'transparent', flexShrink: 0 }}
+                    >
+                      {ev.type}
+                    </Badge>
+                    <Anchor
+                      component={Link}
+                      href={ev.href}
+                      style={{ fontSize: '13px', color: '#e5e5e5', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {ev.title}
+                    </Anchor>
+                  </Group>
+                  {ev.entityName && ev.entityType && (
+                    <Text style={{ fontSize: '11px', color: '#888', marginTop: '1px' }} lineClamp={1}>
+                      {ev.entityType.charAt(0).toUpperCase() + ev.entityType.slice(1).toLowerCase()}: {ev.entityName}
                     </Text>
                   )}
                 </Box>
