@@ -51,6 +51,8 @@ interface MediaThumbnailProps {
   allowFullView?: boolean // If true, shows expand button and fullscreen modal
   /** CSS object-position for image rendering. Defaults to 'center center'. */
   objectPosition?: string
+  /** Controls placement. 'right' shifts arrows and dots to the right portrait zone (for hero headers). */
+  controlsPosition?: 'center' | 'right'
 }
 
 // Cache for media data to avoid redundant API calls
@@ -234,6 +236,7 @@ export default function MediaThumbnail({
   initialMedia,
   allowFullView = false,
   objectPosition = 'center center',
+  controlsPosition = 'center',
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
   const [allEntityMedia, setAllEntityMedia] = useState<MediaItem[]>([])
@@ -302,15 +305,15 @@ export default function MediaThumbnail({
       display: inline ? 'inline-block' : 'block',
       position: 'relative',
       overflow: 'hidden',
-      borderRadius: rem(8),
-      backgroundColor: theme.colors.gray?.[0] ?? '#f8f9fa',
+      borderRadius: controlsPosition === 'right' ? 0 : rem(8),
+      backgroundColor: controlsPosition === 'right' ? 'transparent' : (theme.colors.gray?.[0] ?? '#f8f9fa'),
       isolation: 'isolate',
       contain: 'layout size style',
       boxSizing: 'border-box',
       margin: 0,
       padding: 0
     }),
-    [inline, maxHeight, maxWidth, theme]
+    [inline, maxHeight, maxWidth, theme, controlsPosition]
   )
 
   const contentWrapperStyles = useMemo(
@@ -1222,7 +1225,9 @@ export default function MediaThumbnail({
                 aria-label="Previous image"
                 style={{
                   position: 'absolute',
-                  left: rem(8),
+                  ...(controlsPosition === 'right'
+                    ? { right: rem(52) }
+                    : { left: rem(8) }),
                   top: '50%',
                   transform: 'translateY(-50%)',
                   backgroundColor: 'rgba(0,0,0,0.58)',
@@ -1259,8 +1264,9 @@ export default function MediaThumbnail({
                 style={{
                   position: 'absolute',
                   bottom: rem(10),
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  ...(controlsPosition === 'right'
+                    ? { right: rem(8) }
+                    : { left: '50%', transform: 'translateX(-50%)' }),
                   display: 'flex',
                   gap: rem(5),
                   alignItems: 'center',
