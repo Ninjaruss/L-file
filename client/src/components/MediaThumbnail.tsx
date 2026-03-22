@@ -49,6 +49,8 @@ interface MediaThumbnailProps {
   priority?: boolean // If true, loads image eagerly (above-the-fold optimization)
   initialMedia?: MediaItem[] // Pre-loaded media to skip the API call on first render
   allowFullView?: boolean // If true, shows expand button and fullscreen modal
+  /** CSS object-position for image rendering. Defaults to 'center center'. */
+  objectPosition?: string
 }
 
 // Cache for media data to avoid redundant API calls
@@ -230,7 +232,8 @@ export default function MediaThumbnail({
   onSpoilerRevealed,
   priority = false,
   initialMedia,
-  allowFullView = false
+  allowFullView = false,
+  objectPosition = 'center center',
 }: MediaThumbnailProps) {
   const [currentThumbnail, setCurrentThumbnail] = useState<MediaItem | null>(null)
   const [allEntityMedia, setAllEntityMedia] = useState<MediaItem[]>([])
@@ -589,7 +592,7 @@ export default function MediaThumbnail({
               priority={priority}
               style={{
                 objectFit: 'cover',
-                objectPosition: 'center center',
+                objectPosition: objectPosition,
                 margin: 0,
                 padding: 0,
                 border: 'none',
@@ -620,7 +623,7 @@ export default function MediaThumbnail({
               priority={priority}
               style={{
                 objectFit: 'cover',
-                objectPosition: 'center center',
+                objectPosition: objectPosition,
                 margin: 0,
                 padding: 0,
                 border: 'none',
@@ -767,7 +770,7 @@ export default function MediaThumbnail({
             fill
             style={{
               objectFit: 'cover',
-              objectPosition: 'center center',
+              objectPosition: objectPosition,
               margin: 0,
               padding: 0,
               border: 'none',
