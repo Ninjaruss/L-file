@@ -1162,7 +1162,44 @@ export default function MediaThumbnail({
         </MediaSpoilerWrapper>
 
         {showControls && (
-          isMobile ? (
+          controlsPosition === 'right' ? (
+            /* Hero mode: clickable dot strip + count badge, no arrows */
+            <Box
+              style={{
+                position: 'absolute',
+                bottom: rem(10),
+                right: rem(10),
+                display: 'flex',
+                gap: rem(5),
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.55)',
+                borderRadius: rem(12),
+                paddingInline: rem(8),
+                paddingBlock: rem(5),
+                zIndex: 30,
+              }}
+            >
+              {allEntityMedia.map((_, idx) => (
+                <Box
+                  key={idx}
+                  onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); setCurrentThumbnail(allEntityMedia[idx]) }}
+                  style={{
+                    width: idx === currentIndex ? rem(10) : rem(7),
+                    height: idx === currentIndex ? rem(10) : rem(7),
+                    borderRadius: '50%',
+                    backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255,255,255,0.35)',
+                    cursor: 'pointer',
+                    transition: 'all 0.22s ease',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+              <Box style={{ width: 1, height: rem(14), backgroundColor: 'rgba(255,255,255,0.15)', marginInline: rem(2), flexShrink: 0 }} />
+              <Text style={{ fontSize: rem(9), color: 'rgba(255,255,255,0.5)', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                {currentIndex + 1} / {allEntityMedia.length}
+              </Text>
+            </Box>
+          ) : isMobile ? (
             <>
               {/* Mobile: single › arrow on right edge */}
               <ActionIcon
@@ -1219,7 +1256,7 @@ export default function MediaThumbnail({
             </>
           ) : (
             <>
-              {/* Desktop: both ‹ › arrows */}
+              {/* Desktop center: both ‹ › arrows */}
               <ActionIcon
                 variant="light"
                 size="md"
@@ -1228,9 +1265,7 @@ export default function MediaThumbnail({
                 aria-label="Previous image"
                 style={{
                   position: 'absolute',
-                  ...(controlsPosition === 'right'
-                    ? { right: rem(52) }
-                    : { left: rem(8) }),
+                  left: rem(8),
                   top: '50%',
                   transform: 'translateY(-50%)',
                   backgroundColor: 'rgba(0,0,0,0.58)',
@@ -1262,14 +1297,13 @@ export default function MediaThumbnail({
                 <ChevronRight size={18} />
               </ActionIcon>
 
-              {/* Desktop: frosted-pill dot indicator — bottom center */}
+              {/* Desktop center: frosted-pill dot indicator */}
               <Box
                 style={{
                   position: 'absolute',
                   bottom: rem(10),
-                  ...(controlsPosition === 'right'
-                    ? { right: rem(8) }
-                    : { left: '50%', transform: 'translateX(-50%)' }),
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   gap: rem(5),
                   alignItems: 'center',
