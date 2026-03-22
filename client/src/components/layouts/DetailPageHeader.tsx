@@ -502,7 +502,7 @@ export function DetailPageHeader({
           pointerEvents: 'none',
         }}
       >
-        <Box style={{ pointerEvents: 'auto' }}>
+        <Box style={{ pointerEvents: 'none' }}>
         {/* Eyebrow label */}
         <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <Box
@@ -615,7 +615,7 @@ export function DetailPageHeader({
           </Box>
         )}
 
-        {children}
+        {children && <Box style={{ pointerEvents: 'auto' }}>{children}</Box>}
         </Box>
       </Box>
 
