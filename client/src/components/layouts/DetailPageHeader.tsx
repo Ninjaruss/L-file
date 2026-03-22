@@ -106,7 +106,10 @@ export function DetailPageHeader({
           className="detail-hero-portrait"
           style={{
             position: 'absolute',
-            inset: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: '42%',
             overflow: 'hidden',
           }}
         >
