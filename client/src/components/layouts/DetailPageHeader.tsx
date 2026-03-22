@@ -93,6 +93,7 @@ export function DetailPageHeader({
       const validMediaOwnerTypes = [
         'character', 'arc', 'event', 'gamble', 'organization',
         'volume', 'chapter', 'guide', 'quote', 'media',
+        // 'user' excluded: no DetailPageHeader is rendered on user profile pages currently
       ] as const
       type ValidMediaOwnerType = typeof validMediaOwnerTypes[number]
       if (!(validMediaOwnerTypes as readonly string[]).includes(entityType)) return
@@ -260,7 +261,12 @@ export function DetailPageHeader({
           onMouseEnter={() => setIsPortraitHovered(true)}
           onMouseLeave={() => setIsPortraitHovered(false)}
           onClick={() => {
-            const isProtectedSpoiler = currentMedia.isSpoiler && !isSpoilerRevealed
+            const isProtectedSpoiler =
+              !isSpoilerRevealed &&
+              (currentMedia.isSpoiler || (
+                !!currentMedia.chapterNumber &&
+                currentMedia.chapterNumber > (userProgress ?? 0)
+              ))
             if (!isProtectedSpoiler) {
               setIsModalOpen(true)
             }
