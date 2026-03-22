@@ -314,7 +314,7 @@ export default function UsersPageContent() {
                               <Box
                                 style={{
                                   height: 4,
-                                  background: 'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
+                                  background: accentCommunity,
                                   width: '100%',
                                 }}
                               />
