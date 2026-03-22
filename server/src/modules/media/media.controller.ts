@@ -525,6 +525,11 @@ export class MediaController {
           format: 'binary',
           description: 'Optional replacement image file',
         },
+        url: {
+          type: 'string',
+          format: 'uri',
+          description: 'URL of the media content. Omit when uploading a file.',
+        },
       },
     },
   })
