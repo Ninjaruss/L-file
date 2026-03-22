@@ -1208,12 +1208,13 @@ export default function MediaThumbnail({
                 bottom: rem(10),
                 right: rem(10),
                 display: 'flex',
-                gap: rem(5),
+                gap: rem(2),
                 alignItems: 'center',
-                backgroundColor: 'rgba(0,0,0,0.55)',
-                borderRadius: rem(12),
-                paddingInline: rem(8),
-                paddingBlock: rem(5),
+                backgroundColor: 'rgba(0,0,0,0.72)',
+                borderRadius: rem(20),
+                border: '1px solid rgba(255,255,255,0.08)',
+                paddingInline: rem(10),
+                paddingBlock: rem(7),
                 zIndex: 30,
               }}
             >
@@ -1222,18 +1223,29 @@ export default function MediaThumbnail({
                   key={idx}
                   onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); setCurrentThumbnail(allEntityMedia[idx]) }}
                   style={{
-                    width: idx === currentIndex ? rem(10) : rem(7),
-                    height: idx === currentIndex ? rem(10) : rem(7),
-                    borderRadius: '50%',
-                    backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255,255,255,0.35)',
+                    padding: rem(4),
                     cursor: 'pointer',
-                    transition: 'all 0.22s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     flexShrink: 0,
                   }}
-                />
+                >
+                  <Box
+                    style={{
+                      width: idx === currentIndex ? rem(14) : rem(9),
+                      height: idx === currentIndex ? rem(14) : rem(9),
+                      borderRadius: '50%',
+                      backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255,255,255,0.45)',
+                      transition: 'all 0.22s ease',
+                      flexShrink: 0,
+                      boxShadow: idx === currentIndex ? '0 0 0 3px rgba(255,255,255,0.15)' : 'none',
+                    }}
+                  />
+                </Box>
               ))}
               <Box style={{ width: 1, height: rem(14), backgroundColor: 'rgba(255,255,255,0.15)', marginInline: rem(2), flexShrink: 0 }} />
-              <Text style={{ fontSize: rem(9), color: 'rgba(255,255,255,0.5)', lineHeight: 1, whiteSpace: 'nowrap' }}>
+              <Text style={{ fontSize: rem(11), color: 'rgba(255,255,255,0.65)', lineHeight: 1, whiteSpace: 'nowrap' }}>
                 {currentIndex + 1} / {allEntityMedia.length}
               </Text>
             </Box>
