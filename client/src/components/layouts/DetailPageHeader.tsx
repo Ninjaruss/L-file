@@ -120,6 +120,8 @@ export function DetailPageHeader({
             maxHeight="100%"
             spoilerChapter={spoilerChapter ?? undefined}
             onSpoilerRevealed={onSpoilerRevealed}
+            objectPosition="top center"
+            controlsPosition="right"
           />
           {/* Left-edge fade blending portrait into content */}
           <Box
