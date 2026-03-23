@@ -1091,7 +1091,8 @@ class ApiClient {
   }
 
   async getShowcaseReadyVolumes() {
-    return this.get<import('../types').ShowcaseReadyVolume[]>('/volumes/showcase-ready')
+    const response = await this.get<{ data: import('../types').ShowcaseReadyVolume[] }>('/volumes/showcase-ready')
+    return response?.data ?? []
   }
 
   async getRecentEdits(params?: { page?: number; limit?: number; entityType?: string }) {

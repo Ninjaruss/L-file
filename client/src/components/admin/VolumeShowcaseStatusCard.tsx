@@ -101,7 +101,8 @@ export function VolumeShowcaseStatusCard({ volumeNumber }: VolumeShowcaseStatusC
         else if (hasBg || hasPop) setState('incomplete')
         else setState('not-ready')
       } catch {
-        // silently retain last known state on fetch errors
+        // On error, don't stay stuck in 'loading' — fall back to 'not-ready'
+        setState((prev) => (prev === 'loading' ? 'not-ready' : prev))
       }
     }
 
