@@ -168,9 +168,16 @@ export class VolumesService {
       ),
     ]);
 
-    // Keep only the latest approved record per volume for each type
-    const latestBg = new Map(bgMedia.map((m) => [m.ownerId, m]));
-    const latestPop = new Map(popMedia.map((m) => [m.ownerId, m]));
+    // Keep only the latest approved record per volume for each type.
+    // bgMedia/popMedia are sorted createdAt DESC so first-seen per ownerId is the latest.
+    const latestBg = new Map<number, (typeof bgMedia)[0]>();
+    for (const m of bgMedia) {
+      if (!latestBg.has(m.ownerId)) latestBg.set(m.ownerId, m);
+    }
+    const latestPop = new Map<number, (typeof popMedia)[0]>();
+    for (const m of popMedia) {
+      if (!latestPop.has(m.ownerId)) latestPop.set(m.ownerId, m);
+    }
     const sharedVolumeIds = [...latestBg.keys()].filter((id) =>
       latestPop.has(id),
     );

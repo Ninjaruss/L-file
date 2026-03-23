@@ -79,16 +79,25 @@ export function VolumeShowcaseStatusCard({ volumeNumber }: VolumeShowcaseStatusC
 
     async function fetchStatus() {
       try {
-        const [bg, pop] = await Promise.all([
+        // Use the same endpoint the homepage showcase uses so this card
+        // accurately reflects whether the volume will actually appear.
+        const [showcaseReady, bg, pop] = await Promise.all([
+          api.getShowcaseReadyVolumes(),
           api.getVolumeShowcaseMedia(volumeNumber, 'background'),
           api.getVolumeShowcaseMedia(volumeNumber, 'popout'),
         ])
         if (cancelled) return
+
         const hasBg = bg !== null
         const hasPop = pop !== null
         setHasBackground(hasBg)
         setHasPopout(hasPop)
-        if (hasBg && hasPop) setState('ready')
+
+        const isShowcaseReady = showcaseReady.some(
+          (v) => v.volumeNumber === volumeNumber,
+        )
+
+        if (isShowcaseReady) setState('ready')
         else if (hasBg || hasPop) setState('incomplete')
         else setState('not-ready')
       } catch {

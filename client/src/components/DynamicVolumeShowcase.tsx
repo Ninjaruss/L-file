@@ -142,7 +142,9 @@ export function DynamicVolumeShowcase({
   const time = useMotionValue(0)
   const [imageStates, setImageStates] = useState<ImageLoadingStates>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
-  const [cycleOffset, setCycleOffset] = useState(0)
+  const [cycleOffset, setCycleOffset] = useState(() =>
+    Math.floor(Math.random() * volumes.length)
+  )
 
   const displayCount = layout === 'single' ? 1 : 2
   const canCycle = volumes.length > displayCount
