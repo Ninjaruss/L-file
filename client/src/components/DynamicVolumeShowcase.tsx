@@ -129,6 +129,8 @@ function ImageWithRetry({
   )
 }
 
+const CYCLE_INTERVAL_MS = 8000
+
 export function DynamicVolumeShowcase({
   volumes,
   layout = volumes.length === 1 ? 'single' : 'dual',
@@ -140,6 +142,18 @@ export function DynamicVolumeShowcase({
   const time = useMotionValue(0)
   const [imageStates, setImageStates] = useState<ImageLoadingStates>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
+  const [cycleOffset, setCycleOffset] = useState(0)
+
+  const displayCount = layout === 'single' ? 1 : 2
+  const canCycle = volumes.length > displayCount
+
+  React.useEffect(() => {
+    if (!canCycle) return
+    const id = setInterval(() => {
+      setCycleOffset(prev => (prev + displayCount) % volumes.length)
+    }, CYCLE_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [canCycle, displayCount, volumes.length])
 
   React.useEffect(() => {
     const animate = () => {
@@ -344,8 +358,8 @@ export function DynamicVolumeShowcase({
           paddingInline: 'clamp(0.75rem, 2vw, 2rem)'
         }}
       >
-        {volumes.slice(0, layout === 'single' ? 1 : 2).map((volume, index) =>
-          renderVolume(volume, index, Math.min(volumes.length, layout === 'single' ? 1 : 2))
+        {Array.from({ length: displayCount }, (_, i) => volumes[(cycleOffset + i) % volumes.length]).map((volume, index) =>
+          renderVolume(volume, index, displayCount)
         )}
       </Box>
     </Box>
