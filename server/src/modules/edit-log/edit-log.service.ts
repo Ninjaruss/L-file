@@ -162,9 +162,7 @@ export class EditLogService {
               select: ['id', 'number', 'title'] as any,
             });
             for (const row of rows) {
-              const label = row.number != null
-                ? `Ch. ${row.number}${row.title ? ` — ${row.title}` : ''}`
-                : (row.title ?? `Chapter ${row.id}`);
+              const label = `Ch. ${row.number}${row.title ? ` — ${row.title}` : ''}`;
               nameMap.set(`${EditLogEntityType.CHAPTER}:${row.id}`, label);
             }
           })()
@@ -211,20 +209,17 @@ export class EditLogService {
       case 'event':
         await fetch(this.eventRepository as any, 'title');
         break;
-      case 'chapter':
-        await (async () => {
-          const rows = await this.chapterRepository.find({
-            where: { id: In(ids) } as any,
-            select: ['id', 'number', 'title'] as any,
-          });
-          for (const row of rows) {
-            const label = row.number != null
-              ? `Ch. ${row.number}${row.title ? ` — ${row.title}` : ''}`
-              : (row.title ?? `Chapter ${row.id}`);
-            nameMap.set(row.id, label);
-          }
-        })();
+      case 'chapter': {
+        const rows = await this.chapterRepository.find({
+          where: { id: In(ids) } as any,
+          select: ['id', 'number', 'title'] as any,
+        });
+        for (const row of rows) {
+          const label = `Ch. ${row.number}${row.title ? ` — ${row.title}` : ''}`;
+          nameMap.set(row.id, label);
+        }
         break;
+      }
     }
 
     return nameMap;
