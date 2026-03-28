@@ -20,6 +20,9 @@ export enum EditLogEntityType {
   MEDIA = 'media',
   ANNOTATION = 'annotation',
   CHAPTER = 'chapter',
+  TAG = 'tag',
+  CHARACTER_RELATIONSHIP = 'character_relationship',
+  CHARACTER_ORGANIZATION = 'character_organization',
 }
 
 export enum EditLogAction {
@@ -66,6 +69,10 @@ export class EditLog {
   })
   @Column({ type: 'jsonb', nullable: true })
   changedFields: string[] | null;
+
+  @ApiPropertyOptional({ description: 'Whether this edit was marked as a minor change' })
+  @Column({ default: false })
+  isMinorEdit: boolean;
 
   @ApiProperty({ description: 'ID of the user who made the edit' })
   @Column()

@@ -225,12 +225,13 @@ export class EditLogService {
     return nameMap;
   }
 
-  async logEdit(
+  private async logEdit(
     entityType: EditLogEntityType,
     entityId: number,
     action: EditLogAction,
     userId: number,
     changedFields?: string[],
+    isMinorEdit = false,
   ): Promise<EditLog> {
     const editLog = this.editLogRepository.create({
       entityType,
@@ -238,6 +239,7 @@ export class EditLogService {
       action,
       userId,
       changedFields: changedFields || null,
+      isMinorEdit,
     });
     return await this.editLogRepository.save(editLog);
   }
@@ -255,14 +257,9 @@ export class EditLogService {
     entityId: number,
     userId: number,
     changedFields: string[],
+    isMinorEdit = false,
   ): Promise<EditLog> {
-    return this.logEdit(
-      entityType,
-      entityId,
-      EditLogAction.UPDATE,
-      userId,
-      changedFields,
-    );
+    return this.logEdit(entityType, entityId, EditLogAction.UPDATE, userId, changedFields, isMinorEdit);
   }
 
   async logDelete(
@@ -339,6 +336,9 @@ export class EditLogService {
       [EditLogEntityType.MEDIA]: 0,
       [EditLogEntityType.ANNOTATION]: 0,
       [EditLogEntityType.CHAPTER]: 0,
+      [EditLogEntityType.TAG]: 0,
+      [EditLogEntityType.CHARACTER_RELATIONSHIP]: 0,
+      [EditLogEntityType.CHARACTER_ORGANIZATION]: 0,
     };
 
     for (const result of results) {
@@ -420,7 +420,12 @@ export class EditLogService {
       entityName: nameMap.get(`${e.entityType}:${e.entityId}`),
     }));
 
-    return { data: enriched, total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      data: enriched,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getRecentApprovedSubmissions(options: {
@@ -565,5 +570,20 @@ export class EditLogService {
       page,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async findLastMajorEdit(
+    entityType: EditLogEntityType,
+    entityId: number,
+  ): Promise<EditLog | null> {
+    return this.editLogRepository.findOne({
+      where: {
+        entityType,
+        entityId,
+        action: EditLogAction.UPDATE,
+        isMinorEdit: false,
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 }
