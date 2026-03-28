@@ -6,6 +6,8 @@ interface PendingCounts {
   media: number
   events: number
   annotations: number
+  quotes: number
+  unverifiedEditorial: number
   total: number
 }
 
@@ -19,6 +21,8 @@ export const usePendingCounts = () => {
     media: 0,
     events: 0,
     annotations: 0,
+    quotes: 0,
+    unverifiedEditorial: 0,
     total: 0
   })
   const [loading, setLoading] = useState(true)
@@ -27,37 +31,39 @@ export const usePendingCounts = () => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [guidesRes, mediaRes, eventsRes, annotationsRes] = await Promise.all([
-          dataProvider.getList('guides', {
-            filter: { status: 'pending' },
-            pagination: { page: 1, perPage: 1 },
-            sort: { field: 'id', order: 'ASC' }
-          }),
-          dataProvider.getList('media', {
-            filter: { status: 'pending' },
-            pagination: { page: 1, perPage: 1 },
-            sort: { field: 'id', order: 'ASC' }
-          }),
-          dataProvider.getList('events', {
-            filter: { status: 'pending' },
-            pagination: { page: 1, perPage: 1 },
-            sort: { field: 'id', order: 'ASC' }
-          }),
-          dataProvider.getList('annotations', {
-            filter: { status: 'pending' },
-            pagination: { page: 1, perPage: 1 },
-            sort: { field: 'id', order: 'ASC' }
-          })
+        const unverifiedFilter = { isVerified: false }
+        const oneItem = { page: 1, perPage: 1 }
+        const idSort = { field: 'id', order: 'ASC' as const }
+
+        const [guidesRes, mediaRes, eventsRes, annotationsRes, quotesRes,
+               charsRes, arcsRes, gamblesRes, chaptersRes, orgsRes] = await Promise.all([
+          dataProvider.getList('guides', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('media', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('events', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('annotations', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('quotes', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('characters', { filter: unverifiedFilter, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('arcs', { filter: unverifiedFilter, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('gambles', { filter: unverifiedFilter, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('chapters', { filter: unverifiedFilter, pagination: oneItem, sort: idSort }),
+          dataProvider.getList('organizations', { filter: unverifiedFilter, pagination: oneItem, sort: idSort }),
         ])
 
-        const newCounts = {
+        const unverifiedEditorial =
+          (charsRes.total || 0) + (arcsRes.total || 0) + (gamblesRes.total || 0) +
+          (chaptersRes.total || 0) + (orgsRes.total || 0)
+
+        const newCounts: PendingCounts = {
           guides: guidesRes.total || 0,
           media: mediaRes.total || 0,
           events: eventsRes.total || 0,
           annotations: annotationsRes.total || 0,
-          total: 0
+          quotes: quotesRes.total || 0,
+          unverifiedEditorial,
+          total: 0,
         }
-        newCounts.total = newCounts.guides + newCounts.media + newCounts.events + newCounts.annotations
+        newCounts.total = newCounts.guides + newCounts.media + newCounts.events +
+                          newCounts.annotations + newCounts.quotes + newCounts.unverifiedEditorial
 
         setCounts(newCounts)
       } catch (error) {
@@ -68,8 +74,6 @@ export const usePendingCounts = () => {
     }
 
     fetchCounts()
-
-    // Refresh counts every 60 seconds
     const interval = setInterval(fetchCounts, 60000)
     return () => clearInterval(interval)
   }, [dataProvider])

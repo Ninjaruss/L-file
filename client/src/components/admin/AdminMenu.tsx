@@ -56,7 +56,22 @@ export const AdminMenu = () => {
       <MenuItemLink
         to="/characters"
         primaryText="Characters"
-        leftIcon={<User size={20} />}
+        leftIcon={
+          <Badge
+            badgeContent={counts.unverifiedEditorial}
+            color="warning"
+            sx={{
+              '& .MuiBadge-badge': {
+                fontSize: '0.65rem',
+                minWidth: '16px',
+                height: '16px',
+                padding: '0 4px'
+              }
+            }}
+          >
+            <User size={20} />
+          </Badge>
+        }
       />
       <MenuItemLink
         to="/arcs"
@@ -153,6 +168,26 @@ export const AdminMenu = () => {
           </Badge>
         }
       />
+      <MenuItemLink
+        to="/quotes"
+        primaryText="Quotes"
+        leftIcon={
+          <Badge
+            badgeContent={counts.quotes}
+            color="warning"
+            sx={{
+              '& .MuiBadge-badge': {
+                fontSize: '0.65rem',
+                minWidth: '16px',
+                height: '16px',
+                padding: '0 4px'
+              }
+            }}
+          >
+            <Quote size={20} />
+          </Badge>
+        }
+      />
 
       <Divider sx={{ my: 1 }} />
 
@@ -164,20 +199,17 @@ export const AdminMenu = () => {
         leftIcon={<Shield size={20} />}
       />
       <MenuItemLink
-        to="/quotes"
-        primaryText="Quotes"
-        leftIcon={<Quote size={20} />}
-      />
-      <MenuItemLink
         to="/tags"
         primaryText="Tags"
         leftIcon={<Tag size={20} />}
       />
-      <MenuItemLink
-        to="/volumes"
-        primaryText="Volumes"
-        leftIcon={<Library size={20} />}
-      />
+      {permissions === 'admin' && (
+        <MenuItemLink
+          to="/volumes"
+          primaryText="Volumes"
+          leftIcon={<Library size={20} />}
+        />
+      )}
       <MenuItemLink
         to="/chapters"
         primaryText="Chapters"
