@@ -329,6 +329,7 @@ export interface Volume {
   coverImage: string;
   releaseDate: string;
   chapters: number[];
+  pairedVolumeId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -393,4 +394,9 @@ export interface ShowcaseReadyVolume {
   backgroundUrl: string
   popoutUrl: string
   title: string
+}
+
+export interface ShowcaseSlot {
+  primary: ShowcaseReadyVolume
+  secondary?: ShowcaseReadyVolume
 }

@@ -270,7 +270,10 @@ export const VolumeShow = () => (
           <WithRecord
             render={(record) => (
               <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <VolumeShowcaseStatusCard volumeNumber={record.number} />
+                <VolumeShowcaseStatusCard
+                  volumeId={record.id}
+                  pairedVolumeId={record.pairedVolumeId ?? null}
+                />
 
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -453,6 +456,31 @@ export const VolumeEdit = () => (
                       max={539}
                       label="End Chapter"
                       helperText="Last chapter of this volume (1-539)"
+                    />
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Box
+                    sx={{
+                      p: 3,
+                      backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                      borderRadius: 2,
+                      border: '1px solid rgba(99, 102, 241, 0.2)',
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ color: '#6366f1', mb: 0.5, fontWeight: 'bold' }}>
+                      Showcase Pairing
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)', mb: 2 }}>
+                      Enter the volume ID of a second volume to display alongside this one in the homepage showcase (dual layout). Leave blank for single layout.
+                    </Typography>
+                    <NumberInput
+                      source="pairedVolumeId"
+                      fullWidth
+                      min={1}
+                      label="Pair with Volume ID"
+                      helperText="Volume database ID to show alongside this one"
                     />
                   </Box>
                 </Grid>
