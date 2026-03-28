@@ -16,10 +16,18 @@ import {
   ChipField,
   SearchInput,
   BulkDeleteButton,
-  WithRecord
+  WithRecord,
+  useRecordContext,
+  useNotify,
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  TopToolbar,
+  BooleanField,
 } from 'react-admin'
 import { Typography, Box, Card, CardContent, Grid } from '@mui/material'
-import { Edit3, Plus, Users, Building2 } from 'lucide-react'
+import { Edit3, Plus, Users, Building2, CheckCircle, Clock } from 'lucide-react'
+import { api } from '../../lib/api'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { EditToolbar } from './EditToolbar'
@@ -33,6 +41,42 @@ const OrganizationBulkActionButtons = () => (
   <>
     <BulkDeleteButton mutationMode="pessimistic" />
   </>
+)
+
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const OrganizationShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyOrganization.bind(api)} />
+  </TopToolbar>
 )
 
 export const OrganizationList = () => (
@@ -60,12 +104,13 @@ export const OrganizationList = () => (
           </Typography>
         )}
       />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 export const OrganizationShow = () => (
-  <Show>
+  <Show actions={<OrganizationShowActions />}>
     <Box sx={{
       backgroundColor: '#0a0a0a',
       minHeight: '100vh',

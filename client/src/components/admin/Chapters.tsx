@@ -16,10 +16,17 @@ import {
   BulkDeleteButton,
   useRecordContext,
   useGetList,
+  useNotify,
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  TopToolbar,
+  BooleanField,
 } from 'react-admin'
 import { Typography, Box, Card, CardContent } from '@mui/material'
-import { Edit3, Plus, Hash } from 'lucide-react'
+import { Edit3, Plus, Hash, CheckCircle, Clock } from 'lucide-react'
 import { EditToolbar } from './EditToolbar'
+import { api } from '../../lib/api'
 
 const ChapterNumberInput = ({ isEdit = false }: { isEdit?: boolean }) => {
   const record = useRecordContext()
@@ -55,6 +62,42 @@ const ChapterBulkActionButtons = () => (
   </>
 )
 
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const ChapterShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyChapter.bind(api)} />
+  </TopToolbar>
+)
+
 export const ChapterList = () => (
   <List sort={{ field: 'number', order: 'ASC' }}>
     <Datagrid rowClick="show" bulkActionButtons={<ChapterBulkActionButtons />}>
@@ -82,12 +125,13 @@ export const ChapterList = () => (
           </Box>
         )}
       />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 export const ChapterShow = () => (
-  <Show>
+  <Show actions={<ChapterShowActions />}>
     <Box sx={{ backgroundColor: '#0a0a0a', minHeight: '100vh', p: 3 }}>
       {/* Header */}
       <Card

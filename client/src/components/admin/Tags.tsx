@@ -11,10 +11,18 @@ import {
   TextInput,
   FunctionField,
   SearchInput,
-  BulkDeleteButton
+  BulkDeleteButton,
+  useRecordContext,
+  useNotify,
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  TopToolbar,
+  BooleanField,
 } from 'react-admin'
 import { Typography, Box, Chip, Card, CardContent, Grid } from '@mui/material'
-import { Edit3, Plus, Tag } from 'lucide-react'
+import { Edit3, Plus, Tag, CheckCircle, Clock } from 'lucide-react'
+import { api } from '../../lib/api'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
 
@@ -26,6 +34,42 @@ const TagBulkActionButtons = () => (
   <>
     <BulkDeleteButton mutationMode="pessimistic" />
   </>
+)
+
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const TagShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyTag.bind(api)} />
+  </TopToolbar>
 )
 
 export const TagList = () => (
@@ -69,12 +113,13 @@ export const TagList = () => (
           </Box>
         )}
       />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 export const TagShow = () => (
-  <Show>
+  <Show actions={<TagShowActions />}>
     <Box sx={{
       backgroundColor: '#0a0a0a',
       minHeight: '100vh',

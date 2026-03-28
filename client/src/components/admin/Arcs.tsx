@@ -22,11 +22,18 @@ import {
   useRecordContext,
   SearchInput,
   BulkDeleteButton,
-  WithRecord
+  WithRecord,
+  useNotify,
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  TopToolbar,
+  BooleanField
 } from 'react-admin'
 import { Typography, Chip, Box, Card, CardContent, Grid, Tooltip, IconButton } from '@mui/material'
-import { Edit3, Plus, BookOpen, Layers, GitBranch, Image as ImageIcon } from 'lucide-react'
+import { Edit3, Plus, BookOpen, Layers, GitBranch, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { api } from '../../lib/api'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EditToolbar } from './EditToolbar'
@@ -168,6 +175,42 @@ const ArcBulkActionButtons = () => (
   </>
 )
 
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const ArcShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyArc.bind(api)} />
+  </TopToolbar>
+)
+
 export const ArcList = () => (
   <List sort={{ field: 'startChapter', order: 'ASC' }} filters={arcFilters}>
     <Datagrid rowClick="show" bulkActionButtons={<ArcBulkActionButtons />}>
@@ -258,12 +301,13 @@ export const ArcList = () => (
           </Tooltip>
         )}
       />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 export const ArcShow = () => (
-  <Show>
+  <Show actions={<ArcShowActions />}>
     <Box sx={{
       backgroundColor: '#0a0a0a',
       minHeight: '100vh',

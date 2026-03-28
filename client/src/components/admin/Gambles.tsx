@@ -33,12 +33,19 @@ import {
   NumberField,
   FunctionField,
   WithRecord,
+  useRecordContext,
+  useNotify,
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  BooleanField,
 } from 'react-admin'
 import {
   Box, Typography, Tooltip, IconButton, Chip,
 } from '@mui/material'
 import { Link } from 'react-router-dom'
-import { Image as ImageIcon } from 'lucide-react'
+import { Image as ImageIcon, CheckCircle, Clock } from 'lucide-react'
+import { api } from '../../lib/api'
 import { RichMarkdownAdminInput } from '../RichMarkdownEditor/RichMarkdownAdminInput'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
@@ -55,6 +62,42 @@ const GambleListActions = () => (
     <FilterButton />
     <CreateButton />
     <ExportButton />
+  </TopToolbar>
+)
+
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const GambleShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyGamble.bind(api)} />
   </TopToolbar>
 )
 
@@ -119,12 +162,13 @@ export const GambleList = () => (
           </Tooltip>
         )}
       />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 export const GambleShow = () => (
-  <Show>
+  <Show actions={<GambleShowActions />}>
     <Box sx={{ 
       backgroundColor: '#0a0a0a',
       minHeight: '100vh',

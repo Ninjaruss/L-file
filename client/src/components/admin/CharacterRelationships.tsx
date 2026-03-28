@@ -20,10 +20,16 @@ import {
   FunctionField,
   TopToolbar,
   CreateButton,
-  ExportButton
+  ExportButton,
+  useNotify,
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  BooleanField,
 } from 'react-admin'
 import { Box, Chip, Typography, Divider } from '@mui/material'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, CheckCircle, Clock } from 'lucide-react'
+import { api } from '../../lib/api'
 import { RelationshipType } from '../../types'
 import { RELATIONSHIP_TYPE_CHOICES } from '../../lib/constants'
 
@@ -143,6 +149,42 @@ const ListActions = () => (
   </TopToolbar>
 )
 
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const CharacterRelationshipShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyCharacterRelationship.bind(api)} />
+  </TopToolbar>
+)
+
 // List component
 export const CharacterRelationshipList = () => (
   <List
@@ -167,13 +209,14 @@ export const CharacterRelationshipList = () => (
       />
       <NumberField source="spoilerChapter" label="Spoiler Ch." />
       <DateField source="createdAt" showTime sortable />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 // Show component
 export const CharacterRelationshipShow = () => (
-  <Show>
+  <Show actions={<CharacterRelationshipShowActions />}>
     <SimpleShowLayout>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary', mt: 1 }}>

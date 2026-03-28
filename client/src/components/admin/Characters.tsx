@@ -26,7 +26,11 @@ import {
   BulkDeleteButton,
   useRecordContext,
   useNotify,
-  useRefresh
+  useRefresh,
+  usePermissions,
+  Button as RAButton,
+  TopToolbar,
+  BooleanField
 } from 'react-admin'
 import {
   Box, Card, CardContent, Typography, Grid, Chip, Button as MuiButton,
@@ -34,7 +38,7 @@ import {
   DialogActions, Select, MenuItem, FormControl, InputLabel,
   Autocomplete, TextField as MuiTextField, CircularProgress
 } from '@mui/material'
-import { Edit3, Plus, Users, ArrowRight, Building2, Image as ImageIcon } from 'lucide-react'
+import { Edit3, Plus, Users, ArrowRight, Building2, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 import { Link } from 'react-router-dom'
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
@@ -342,6 +346,42 @@ const CharacterBulkActionButtons = () => (
   </>
 )
 
+const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
+  const record = useRecordContext()
+  const notify = useNotify()
+  const refresh = useRefresh()
+  const { permissions } = usePermissions()
+
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+  if (!record) return null
+
+  const handleVerify = async () => {
+    try {
+      await apiMethod(Number(record.id))
+      notify('Verified successfully', { type: 'success' })
+      refresh()
+    } catch (error: any) {
+      notify(error?.message || 'Could not verify — you may have authored the last edit', { type: 'error' })
+    }
+  }
+
+  if (record.isVerified) {
+    return (
+      <RAButton label="Verified" disabled color="success" startIcon={<CheckCircle size={16} />} onClick={() => {}} />
+    )
+  }
+
+  return (
+    <RAButton label="Verify" onClick={handleVerify} color="primary" startIcon={<Clock size={16} />} />
+  )
+}
+
+const CharacterShowActions = () => (
+  <TopToolbar>
+    <VerifyButton apiMethod={api.verifyCharacter.bind(api)} />
+  </TopToolbar>
+)
+
 export const CharacterList = () => (
   <List sort={{ field: 'name', order: 'ASC' }} filters={characterFilters}>
     <Datagrid rowClick="show" bulkActionButtons={<CharacterBulkActionButtons />}>
@@ -415,12 +455,13 @@ export const CharacterList = () => (
           </Tooltip>
         )}
       />
+      <BooleanField source="isVerified" label="Verified" />
     </Datagrid>
   </List>
 )
 
 export const CharacterShow = () => (
-  <Show>
+  <Show actions={<CharacterShowActions />}>
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="name" />
