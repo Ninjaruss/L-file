@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Box, Text, Accordion, Paper, Anchor, Group, useMantineTheme, rgba } from '@mantine/core'
+import { Box, Text, Accordion, Paper, Anchor, Group, SimpleGrid, useMantineTheme, rgba } from '@mantine/core'
 import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -84,25 +84,58 @@ const faqData: FAQItem[] = [
       'No. L-file is an independent fan project and is not affiliated with Sako Toshio, Shueisha, or any official publishers. It is created by fans for the Usogui community.'
   },
   {
-    question: 'Can I contribute content to L-file?',
+    question: ‘Can I contribute content to L-file?’,
     answer: (
       <>
-        Yes! Registered users can submit guides, media, and other contributions.{' '}
-        <Anchor component={Link} href="/login" color="red.5">
-          Login via Fluxer
-        </Anchor>{' '}
-        to get started. All submissions are moderated for quality and accuracy.
+        <Text component="p" size="sm" style={{ marginBottom: ‘1rem’ }}>
+          Yes! Registered users can submit guides, media, and other contributions.{‘ ‘}
+          <Anchor component={Link} href="/login" color="red.5">
+            Login via Fluxer
+          </Anchor>{‘ ‘}
+          to get started. All submissions are moderated for quality and accuracy.
+        </Text>
 
-        {' '}If you’d like to help with database entries or get more involved, join the{' '}
-        <Anchor
-          component="a"
-          href="#" /* TODO: Replace with Fluxer server invite URL */
-          color="red.5"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Fluxer community
-        </Anchor>.
+        <Text component="p" size="sm" style={{ marginBottom: ‘1rem’ }}>
+          Interested in a more active role? The following positions are open — reach out by emailing{‘ ‘}
+          <Anchor href={`mailto:${‘contact’}@${‘ninjaruss.net’}`} color="red.5">
+            {‘contact’}@{‘ninjaruss.net’}
+          </Anchor>{‘ ‘}
+          or by sending me a direct message on Fluxer.
+        </Text>
+
+        <SimpleGrid cols={2} spacing="sm">
+          <Box
+            style={{
+              padding: ‘0.85rem 1rem’,
+              borderRadius: ‘0.6rem’,
+              border: ‘1px solid rgba(225,29,72,0.25)’,
+              backgroundColor: ‘rgba(225,29,72,0.06)’
+            }}
+          >
+            <Text fw={700} size="sm" style={{ color: ‘rgba(225,29,72,0.9)’, marginBottom: ‘0.35rem’ }}>
+              Editor
+            </Text>
+            <Text size="xs" style={{ lineHeight: 1.6, color: ‘rgba(255,255,255,0.7)’ }}>
+              Adds and maintains database entries — characters, arcs, gambles, chapters, and related details. Requires familiarity with the full series.
+            </Text>
+          </Box>
+
+          <Box
+            style={{
+              padding: ‘0.85rem 1rem’,
+              borderRadius: ‘0.6rem’,
+              border: ‘1px solid rgba(225,29,72,0.25)’,
+              backgroundColor: ‘rgba(225,29,72,0.06)’
+            }}
+          >
+            <Text fw={700} size="sm" style={{ color: ‘rgba(225,29,72,0.9)’, marginBottom: ‘0.35rem’ }}>
+              Moderator
+            </Text>
+            <Text size="xs" style={{ lineHeight: 1.6, color: ‘rgba(255,255,255,0.7)’ }}>
+              Reviews and approves community submissions such as guides, media, and annotations. Helps keep content accurate and on-topic.
+            </Text>
+          </Box>
+        </SimpleGrid>
       </>
     )
   },
