@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,6 +13,8 @@ import {
 import { Character } from '../../entities/character.entity';
 import { CreateCharacterRelationshipDto } from './dto/create-character-relationship.dto';
 import { UpdateCharacterRelationshipDto } from './dto/update-character-relationship.dto';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
 
 @Injectable()
 export class CharacterRelationshipsService {
@@ -20,6 +23,7 @@ export class CharacterRelationshipsService {
     private repo: Repository<CharacterRelationship>,
     @InjectRepository(Character)
     private characterRepo: Repository<Character>,
+    private editLogService: EditLogService,
   ) {}
 
   /**
@@ -159,6 +163,7 @@ export class CharacterRelationshipsService {
    */
   async create(
     dto: CreateCharacterRelationshipDto,
+    userId: number,
   ): Promise<
     | CharacterRelationship
     | { primary: CharacterRelationship; reverse: CharacterRelationship }
@@ -225,6 +230,11 @@ export class CharacterRelationshipsService {
     });
 
     const savedPrimary = await this.repo.save(relationship);
+    await this.editLogService.logCreate(
+      EditLogEntityType.CHARACTER_RELATIONSHIP,
+      savedPrimary.id,
+      userId,
+    );
 
     // If reverse relationship type is provided, create the reverse relationship
     if (dto.reverseRelationshipType) {
@@ -249,6 +259,11 @@ export class CharacterRelationshipsService {
         });
 
         const savedReverse = await this.repo.save(reverseRelationship);
+        await this.editLogService.logCreate(
+          EditLogEntityType.CHARACTER_RELATIONSHIP,
+          savedReverse.id,
+          userId,
+        );
         return { primary: savedPrimary, reverse: savedReverse };
       }
     }
@@ -262,6 +277,8 @@ export class CharacterRelationshipsService {
   async update(
     id: number,
     dto: UpdateCharacterRelationshipDto,
+    userId: number,
+    isMinorEdit = false,
   ): Promise<CharacterRelationship> {
     const relationship = await this.findOne(id);
 
@@ -308,17 +325,64 @@ export class CharacterRelationshipsService {
       }
     }
 
+    const changedFields = Object.keys(dto);
     Object.assign(relationship, dto);
-    return this.repo.save(relationship);
+
+    if (!isMinorEdit) {
+      relationship.isVerified = false;
+      relationship.verifiedById = null;
+      relationship.verifiedAt = null;
+    }
+
+    const saved = await this.repo.save(relationship);
+    await this.editLogService.logUpdate(
+      EditLogEntityType.CHARACTER_RELATIONSHIP,
+      id,
+      userId,
+      changedFields,
+      isMinorEdit,
+    );
+    return saved;
   }
 
   /**
    * Delete a relationship
    */
-  async remove(id: number): Promise<{ message: string }> {
+  async remove(id: number, userId: number): Promise<{ message: string }> {
     const relationship = await this.findOne(id);
+    await this.editLogService.logDelete(
+      EditLogEntityType.CHARACTER_RELATIONSHIP,
+      id,
+      userId,
+    );
     await this.repo.remove(relationship);
     return { message: `Relationship ${id} deleted successfully` };
+  }
+
+  /**
+   * Verify a relationship (Moderator/Admin)
+   */
+  async verify(
+    id: number,
+    verifierId: number,
+    isAdmin: boolean,
+  ): Promise<CharacterRelationship> {
+    const rel = await this.repo.findOne({ where: { id } });
+    if (!rel)
+      throw new NotFoundException(`CharacterRelationship with id ${id} not found`);
+    if (!isAdmin) {
+      const lastEdit = await this.editLogService.findLastMajorEdit(
+        EditLogEntityType.CHARACTER_RELATIONSHIP,
+        id,
+      );
+      if (lastEdit && lastEdit.userId === verifierId) {
+        throw new ForbiddenException('You cannot verify your own edit');
+      }
+    }
+    rel.isVerified = true;
+    rel.verifiedById = verifierId;
+    rel.verifiedAt = new Date();
+    return this.repo.save(rel);
   }
 
   /**

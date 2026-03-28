@@ -21,13 +21,17 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CharacterRelationshipsService } from './character-relationships.service';
-import { RelationshipType } from '../../entities/character-relationship.entity';
+import {
+  CharacterRelationship,
+  RelationshipType,
+} from '../../entities/character-relationship.entity';
 import { CreateCharacterRelationshipDto } from './dto/create-character-relationship.dto';
 import { UpdateCharacterRelationshipDto } from './dto/update-character-relationship.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('character-relationships')
 @Controller('character-relationships')
@@ -75,7 +79,7 @@ export class CharacterRelationshipsController {
    */
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'List all relationships (admin)',
@@ -146,7 +150,7 @@ export class CharacterRelationshipsController {
    */
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get a single relationship (admin)',
@@ -166,15 +170,18 @@ export class CharacterRelationshipsController {
    */
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a relationship (admin)',
     description: 'Create a new character relationship',
   })
   @ApiBody({ type: CreateCharacterRelationshipDto })
-  async create(@Body(ValidationPipe) dto: CreateCharacterRelationshipDto) {
-    const result = await this.service.create(dto);
+  async create(
+    @Body(ValidationPipe) dto: CreateCharacterRelationshipDto,
+    @CurrentUser() user: User,
+  ) {
+    const result = await this.service.create(dto, user.id);
     // If bidirectional relationship was created, return only the primary one
     // (React Admin expects a single object with an id field)
     if ('primary' in result) {
@@ -188,7 +195,7 @@ export class CharacterRelationshipsController {
    */
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update a relationship (admin)',
@@ -203,8 +210,10 @@ export class CharacterRelationshipsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) dto: UpdateCharacterRelationshipDto,
+    @Body('isMinorEdit') isMinorEdit: boolean,
+    @CurrentUser() user: User,
   ) {
-    return this.service.update(id, dto);
+    return this.service.update(id, dto, user.id, isMinorEdit ?? false);
   }
 
   /**
@@ -223,7 +232,29 @@ export class CharacterRelationshipsController {
     description: 'Relationship ID',
     type: 'number',
   })
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.service.remove(id, user.id);
+  }
+
+  /**
+   * Moderator/Admin endpoint: Verify a relationship
+   */
+  @Post(':id/verify')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify a character relationship (Moderator/Admin)' })
+  @ApiParam({ name: 'id', description: 'Relationship ID' })
+  @ApiResponse({ status: 200, description: 'Relationship verified successfully' })
+  @ApiResponse({ status: 403, description: 'Cannot verify your own edit' })
+  @ApiResponse({ status: 404, description: 'Relationship not found' })
+  async verify(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ): Promise<CharacterRelationship> {
+    return this.service.verify(id, user.id, user.role === UserRole.ADMIN);
   }
 }

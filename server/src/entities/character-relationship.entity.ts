@@ -10,6 +10,7 @@ import {
   Check,
 } from 'typeorm';
 import { Character } from './character.entity';
+import { User } from './user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum RelationshipType {
@@ -107,4 +108,17 @@ export class CharacterRelationship {
   @ApiProperty({ description: 'When this relationship was last updated' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ nullable: true })
+  verifiedById: number;
+
+  @ManyToOne(() => User, { nullable: true, eager: false })
+  @JoinColumn({ name: 'verifiedById' })
+  verifiedBy: User;
+
+  @Column({ type: 'timestamp', nullable: true })
+  verifiedAt: Date;
 }
