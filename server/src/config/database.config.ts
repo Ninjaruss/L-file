@@ -46,13 +46,15 @@ export const getDatabaseConfig = (configService: ConfigService) => {
     // Add auto retry on lost connections
     retryAttempts: 5,
     retryDelay: 3000,
-    // Connection pool settings optimized for fly.io (1GB VM)
+    // Connection pool settings optimized for Supabase Transaction mode pooler (port 6543)
     extra: {
-      max: 10, // Reduced from 20 for single VM deployment
-      min: 2, // Maintain minimum connections for faster queries
+      max: 10,
+      min: 1,
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 30000,
-      acquireTimeoutMillis: 30000, // Timeout for acquiring connection from pool
+      acquireTimeoutMillis: 30000,
+      // Required for Supabase Transaction mode pooler — prepared statements not supported
+      prepare: false,
     },
   };
 };

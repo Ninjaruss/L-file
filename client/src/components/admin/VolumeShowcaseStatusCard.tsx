@@ -106,6 +106,7 @@ export function VolumeShowcaseStatusCard({
   const [backgroundStatus, setBackgroundStatus] = useState<ImageStatus>(null)
   const [popoutStatus, setPopoutStatus] = useState<ImageStatus>(null)
   const [state, setState] = useState<ShowcaseState>('loading')
+  const [pairedWith, setPairedWith] = useState<{ volumeId: number; volumeNumber: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -123,11 +124,23 @@ export function VolumeShowcaseStatusCard({
         setBackgroundStatus(bg)
         setPopoutStatus(pop)
 
-        const isShowcaseReady = showcaseReady.some(
+        // Find which slot this volume belongs to (as primary or secondary)
+        const mySlot = showcaseReady.find(
           (slot) =>
             slot.primary.volumeId === volumeId ||
             slot.secondary?.volumeId === volumeId,
         )
+        const isShowcaseReady = !!mySlot
+
+        if (mySlot?.secondary) {
+          const partner =
+            mySlot.primary.volumeId === volumeId
+              ? mySlot.secondary
+              : mySlot.primary
+          setPairedWith({ volumeId: partner.volumeId, volumeNumber: partner.volumeNumber })
+        } else {
+          setPairedWith(null)
+        }
 
         if (isShowcaseReady) setState('ready')
         else if (bg !== null || pop !== null) setState('incomplete')
@@ -212,9 +225,13 @@ export function VolumeShowcaseStatusCard({
                   >
                     Showcase Layout
                   </Typography>
-                  {pairedVolumeId ? (
+                  {pairedWith ? (
                     <Typography sx={{ color: '#a5b4fc', fontSize: '0.75rem', fontWeight: 600 }}>
-                      ⇄ Paired · Vol. ID {pairedVolumeId}
+                      ⇄ Paired · Vol. {pairedWith.volumeNumber}
+                    </Typography>
+                  ) : pairedVolumeId ? (
+                    <Typography sx={{ color: '#eab308', fontSize: '0.75rem', fontWeight: 600 }}>
+                      ⇄ Paired (secondary not ready)
                     </Typography>
                   ) : (
                     <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>

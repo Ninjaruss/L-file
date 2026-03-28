@@ -231,27 +231,39 @@ export class VolumesService {
       };
     };
 
-    // Collect volume IDs that are designated as secondaries by another volume.
+    // Build canonical pairs: lower-numbered volume is always primary.
+    // Handles bidirectional references (A→B and B→A) by deduplicating via a key.
+    const seenPairKeys = new Set<string>();
+    const pairedPrimaryIds = new Set<number>();
     const secondaryIds = new Set<number>();
+    const pairedSlots: ShowcaseSlot[] = [];
+
     for (const vol of volumes) {
-      if (vol.pairedVolumeId && volumeMap.has(vol.pairedVolumeId)) {
-        secondaryIds.add(vol.pairedVolumeId);
+      if (!vol.pairedVolumeId || !volumeMap.has(vol.pairedVolumeId)) continue;
+      const paired = volumeMap.get(vol.pairedVolumeId)!;
+      // Canonical order: lower volume number = primary
+      const [primary, secondary] =
+        vol.number < paired.number ? [vol, paired] : [paired, vol];
+      const key = `${primary.id}-${secondary.id}`;
+      if (!seenPairKeys.has(key)) {
+        seenPairKeys.add(key);
+        pairedPrimaryIds.add(primary.id);
+        secondaryIds.add(secondary.id);
+        pairedSlots.push({
+          primary: toShowcaseVolume(primary.id),
+          secondary: toShowcaseVolume(secondary.id),
+        });
       }
     }
 
-    const slots: ShowcaseSlot[] = [];
+    // Unpaired volumes: not involved in any pair
+    const unpairedSlots: ShowcaseSlot[] = [];
     for (const vol of volumes) {
-      if (secondaryIds.has(vol.id)) continue; // rendered as someone else's secondary
-
-      const slot: ShowcaseSlot = { primary: toShowcaseVolume(vol.id) };
-
-      if (vol.pairedVolumeId && volumeMap.has(vol.pairedVolumeId)) {
-        slot.secondary = toShowcaseVolume(vol.pairedVolumeId);
+      if (!pairedPrimaryIds.has(vol.id) && !secondaryIds.has(vol.id)) {
+        unpairedSlots.push({ primary: toShowcaseVolume(vol.id) });
       }
-
-      slots.push(slot);
     }
 
-    return slots;
+    return [...pairedSlots, ...unpairedSlots];
   }
 }

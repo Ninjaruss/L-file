@@ -35,10 +35,12 @@ export default new DataSource({
   logging: process.env.TYPEORM_LOGGING === 'false' ? false : (isDevelopment ? ['query', 'error'] : ['error']),
   // Connection pool settings optimized for migrations
   extra: {
-    max: 10,
-    min: 2,
+    max: 5,
+    min: 1,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
-    statement_timeout: parseInt(process.env.PGSTATEMENT_TIMEOUT || '300000'), // 5 minute default
+    statement_timeout: parseInt(process.env.PGSTATEMENT_TIMEOUT || '300000'),
+    // Required for Supabase Transaction mode pooler — prepared statements not supported
+    prepare: false,
   },
 });
