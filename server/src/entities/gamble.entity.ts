@@ -5,12 +5,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToMany,
+  ManyToOne,
   OneToMany,
   JoinTable,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { Character } from './character.entity';
 import { GambleFaction } from './gamble-faction.entity';
+import { User } from './user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity()
@@ -82,6 +85,22 @@ export class Gamble {
   factions?: GambleFaction[];
 
   // Media relationships are now handled polymorphically through ownerType/ownerId
+
+  @ApiProperty({ description: 'Whether this gamble page has been verified by a moderator' })
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @ApiPropertyOptional({ description: 'ID of the moderator who last verified this page' })
+  @Column({ nullable: true })
+  verifiedById: number;
+
+  @ManyToOne(() => User, { nullable: true, eager: false })
+  @JoinColumn({ name: 'verifiedById' })
+  verifiedBy: User;
+
+  @ApiPropertyOptional({ description: 'When this page was last verified' })
+  @Column({ type: 'timestamp', nullable: true })
+  verifiedAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;

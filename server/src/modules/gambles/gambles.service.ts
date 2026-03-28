@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeleteResult, In } from 'typeorm';
 import { Gamble } from '../../entities/gamble.entity';
@@ -27,7 +27,10 @@ export class GamblesService {
     private readonly editLogService: EditLogService,
   ) {}
 
-  async create(createGambleDto: CreateGambleDto, userId: number): Promise<Gamble> {
+  async create(
+    createGambleDto: CreateGambleDto,
+    userId: number,
+  ): Promise<Gamble> {
     const gamble = new Gamble();
     gamble.name = createGambleDto.name;
     gamble.description = createGambleDto.description;
@@ -56,7 +59,11 @@ export class GamblesService {
 
     // Return the gamble with all relations loaded
     const result = await this.findOne(savedGamble.id);
-    await this.editLogService.logCreate(EditLogEntityType.GAMBLE, savedGamble.id, userId);
+    await this.editLogService.logCreate(
+      EditLogEntityType.GAMBLE,
+      savedGamble.id,
+      userId,
+    );
     return result;
   }
 
@@ -175,7 +182,12 @@ export class GamblesService {
     });
   }
 
-  async update(id: number, updateGambleDto: UpdateGambleDto, userId: number): Promise<Gamble> {
+  async update(
+    id: number,
+    updateGambleDto: UpdateGambleDto,
+    userId: number,
+    isMinorEdit = false,
+  ): Promise<Gamble> {
     const gamble = await this.findOne(id); // Validates existence and loads relations
 
     // Update basic fields
@@ -198,6 +210,11 @@ export class GamblesService {
       }
     }
 
+    if (!isMinorEdit) {
+      gamble.isVerified = false;
+      gamble.verifiedById = null;
+      gamble.verifiedAt = null;
+    }
     await this.gamblesRepository.save(gamble);
 
     // Handle factions if provided
@@ -214,10 +231,31 @@ export class GamblesService {
     // Return the updated gamble with all relations
     const result = await this.findOne(id);
     const changedFields = Object.keys(updateGambleDto).filter(
-      k => updateGambleDto[k as keyof UpdateGambleDto] !== undefined
+      (k) => updateGambleDto[k as keyof UpdateGambleDto] !== undefined,
     );
-    await this.editLogService.logUpdate(EditLogEntityType.GAMBLE, id, userId, changedFields);
+    await this.editLogService.logUpdate(
+      EditLogEntityType.GAMBLE,
+      id,
+      userId,
+      changedFields,
+      isMinorEdit,
+    );
     return result;
+  }
+
+  async verify(id: number, verifierId: number, isAdmin: boolean): Promise<Gamble> {
+    const gamble = await this.gamblesRepository.findOne({ where: { id } });
+    if (!gamble) throw new NotFoundException(`Gamble with id ${id} not found`);
+    if (!isAdmin) {
+      const lastEdit = await this.editLogService.findLastMajorEdit(EditLogEntityType.GAMBLE, id);
+      if (lastEdit && lastEdit.userId === verifierId) {
+        throw new ForbiddenException('You cannot verify your own edit');
+      }
+    }
+    gamble.isVerified = true;
+    gamble.verifiedById = verifierId;
+    gamble.verifiedAt = new Date();
+    return this.gamblesRepository.save(gamble);
   }
 
   async remove(id: number, userId: number): Promise<DeleteResult> {

@@ -419,13 +419,30 @@ export class GamblesController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) data: UpdateGambleDto,
+    @Body('isMinorEdit') isMinorEdit: boolean,
     @CurrentUser() user: User,
   ): Promise<Gamble> {
-    const result = await this.gamblesService.update(id, data, user.id);
+    const result = await this.gamblesService.update(id, data, user.id, isMinorEdit ?? false);
     if (!result) {
       throw new NotFoundException(`Gamble with id ${id} not found`);
     }
     return result;
+  }
+
+  @Post(':id/verify')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify a gamble page (Moderator/Admin)' })
+  @ApiParam({ name: 'id', description: 'Gamble ID' })
+  @ApiResponse({ status: 200, description: 'Gamble verified successfully' })
+  @ApiResponse({ status: 403, description: 'Cannot verify your own edit' })
+  @ApiResponse({ status: 404, description: 'Gamble not found' })
+  async verify(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ): Promise<Gamble> {
+    return this.gamblesService.verify(id, user.id, user.role === UserRole.ADMIN);
   }
 
   @Delete(':id')
@@ -453,7 +470,10 @@ export class GamblesController {
   })
   @ApiResponse({ status: 404, description: 'Gamble not found' })
   @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
-  async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
     const result = await this.gamblesService.remove(id, user.id);
     if (!result || result.affected === 0) {
       throw new NotFoundException(`Gamble with id ${id} not found`);
