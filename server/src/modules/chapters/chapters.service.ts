@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chapter } from '../../entities/chapter.entity';
@@ -72,17 +72,50 @@ export class ChaptersService {
   async create(data: Partial<Chapter>, userId: number): Promise<Chapter> {
     const chapter = this.repo.create(data);
     const saved = await this.repo.save(chapter);
-    await this.editLogService.logCreate(EditLogEntityType.CHAPTER, saved.id, userId);
+    await this.editLogService.logCreate(
+      EditLogEntityType.CHAPTER,
+      saved.id,
+      userId,
+    );
     return saved;
   }
 
-  async update(id: number, data: Partial<Chapter>, userId: number) {
-    const result = await this.repo.update(id, data);
-    if (result.affected && result.affected > 0) {
-      const changedFields = Object.keys(data).filter(k => data[k as keyof typeof data] !== undefined);
-      await this.editLogService.logUpdate(EditLogEntityType.CHAPTER, id, userId, changedFields);
+  async update(id: number, data: Partial<Chapter>, userId: number, isMinorEdit = false) {
+    const entity = await this.repo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException(`Chapter with id ${id} not found`);
+    Object.assign(entity, data);
+    if (!isMinorEdit) {
+      entity.isVerified = false;
+      entity.verifiedById = null;
+      entity.verifiedAt = null;
     }
-    return result;
+    const saved = await this.repo.save(entity);
+    const changedFields = Object.keys(data).filter(
+      (k) => data[k as keyof typeof data] !== undefined,
+    );
+    await this.editLogService.logUpdate(
+      EditLogEntityType.CHAPTER,
+      id,
+      userId,
+      changedFields,
+      isMinorEdit,
+    );
+    return saved;
+  }
+
+  async verify(id: number, verifierId: number, isAdmin: boolean): Promise<Chapter> {
+    const chapter = await this.repo.findOne({ where: { id } });
+    if (!chapter) throw new NotFoundException(`Chapter with id ${id} not found`);
+    if (!isAdmin) {
+      const lastEdit = await this.editLogService.findLastMajorEdit(EditLogEntityType.CHAPTER, id);
+      if (lastEdit && lastEdit.userId === verifierId) {
+        throw new ForbiddenException('You cannot verify your own edit');
+      }
+    }
+    chapter.isVerified = true;
+    chapter.verifiedById = verifierId;
+    chapter.verifiedAt = new Date();
+    return this.repo.save(chapter);
   }
 
   async remove(id: number, userId: number) {

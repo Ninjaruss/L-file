@@ -26,6 +26,7 @@ import {
   ApiOperation,
   ApiQuery,
   ApiParam,
+  ApiResponse,
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBadRequestResponse,
@@ -198,7 +199,10 @@ export class ChaptersController {
   @ApiForbiddenResponse({
     description: 'Forbidden - requires moderator or admin role',
   })
-  create(@Body() createChapterDto: CreateChapterDto, @CurrentUser() user: User) {
+  create(
+    @Body() createChapterDto: CreateChapterDto,
+    @CurrentUser() user: User,
+  ) {
     return this.service.create(createChapterDto, user.id);
   }
 
@@ -221,19 +225,26 @@ export class ChaptersController {
   async update(
     @Param('id') id: number,
     @Body() data: UpdateChapterDto,
+    @Body('isMinorEdit') isMinorEdit: boolean,
     @CurrentUser() user: User,
   ): Promise<Chapter> {
-    const result = await this.service.update(id, data, user.id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Chapter with id ${id} not found`);
-    }
-    const updatedChapter = await this.service.findOne(id);
-    if (!updatedChapter) {
-      throw new NotFoundException(
-        `Chapter with id ${id} not found after update`,
-      );
-    }
-    return updatedChapter;
+    return this.service.update(id, data, user.id, isMinorEdit ?? false);
+  }
+
+  @Post(':id/verify')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify a chapter page (Moderator/Admin)' })
+  @ApiParam({ name: 'id', description: 'Chapter ID' })
+  @ApiResponse({ status: 200, description: 'Chapter verified successfully' })
+  @ApiResponse({ status: 403, description: 'Cannot verify your own edit' })
+  @ApiResponse({ status: 404, description: 'Chapter not found' })
+  async verify(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ): Promise<Chapter> {
+    return this.service.verify(id, user.id, user.role === UserRole.ADMIN);
   }
 
   @Delete(':id')
@@ -250,7 +261,10 @@ export class ChaptersController {
     description: 'Forbidden - requires moderator or admin role',
   })
   @ApiParam({ name: 'id', description: 'Chapter ID', example: 1 })
-  async remove(@Param('id') id: number, @CurrentUser() user: User): Promise<{ id: number }> {
+  async remove(
+    @Param('id') id: number,
+    @CurrentUser() user: User,
+  ): Promise<{ id: number }> {
     const result = await this.service.remove(id, user.id);
     if (result.affected === 0) {
       throw new NotFoundException(`Chapter with id ${id} not found`);
