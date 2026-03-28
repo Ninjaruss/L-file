@@ -6,6 +6,11 @@ export interface VolumeShowcaseItem {
   description?: string
 }
 
+export interface VolumeShowcaseSlot {
+  primary: VolumeShowcaseItem
+  secondary?: VolumeShowcaseItem
+}
+
 export interface ShowcaseAnimations {
   floatIntensity?: number
   parallaxIntensity?: number

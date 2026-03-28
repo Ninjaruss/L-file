@@ -4,6 +4,12 @@
 - Add a proper data backup; update security for supabase data
 - QA passthrough of specific detail pages like gambles
 - Sync reading progress with other trackers? (i.e. myanimelist, anilist, etc.)
+- Editor role showing for frontend
+
+
+## 2026-03-27
+- More descriptive changelog and activity display involving edits to the site
+- Editor role bug fixes
 
 ## 2026-03-22
 - Cleaned up entity display image usage on detail page headers

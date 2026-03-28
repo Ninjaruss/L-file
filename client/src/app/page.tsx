@@ -6,8 +6,8 @@ import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image } 
 import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
-import type { VolumeShowcaseItem } from '../lib/showcase-config'
-import type { ShowcaseReadyVolume } from '../types'
+import type { VolumeShowcaseSlot } from '../lib/showcase-config'
+import type { ShowcaseSlot } from '../types'
 import { api } from '../lib/api'
 import { RecentActivityFeed } from '../components/RecentActivityFeed'
 import { FavoritesSection } from '../components/FavoritesSection'
@@ -23,27 +23,34 @@ export default function HomePage() {
   const theme = useMantineTheme()
   const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
 
-  // Fetch showcase images from R2 via API, fall back to static images
-  const [showcaseVolumes, setShowcaseVolumes] = useState<VolumeShowcaseItem[] | null>(null)
+  const [showcaseSlots, setShowcaseSlots] = useState<VolumeShowcaseSlot[] | null>(null)
 
   useEffect(() => {
     async function loadShowcase() {
       try {
         const items = await api.getShowcaseReadyVolumes()
         if (items.length > 0) {
-          setShowcaseVolumes(
-            items.map((v: ShowcaseReadyVolume) => ({
-              id: v.volumeId,
-              backgroundImage: v.backgroundUrl,
-              popoutImage: v.popoutUrl,
-              title: v.title,
+          setShowcaseSlots(
+            items.map((slot: ShowcaseSlot) => ({
+              primary: {
+                id: slot.primary.volumeId,
+                backgroundImage: slot.primary.backgroundUrl,
+                popoutImage: slot.primary.popoutUrl,
+                title: slot.primary.title,
+              },
+              secondary: slot.secondary ? {
+                id: slot.secondary.volumeId,
+                backgroundImage: slot.secondary.backgroundUrl,
+                popoutImage: slot.secondary.popoutUrl,
+                title: slot.secondary.title,
+              } : undefined,
             }))
           )
         } else {
-          setShowcaseVolumes([])
+          setShowcaseSlots([])
         }
       } catch {
-        setShowcaseVolumes([])
+        setShowcaseSlots([])
       }
     }
     loadShowcase()
@@ -172,11 +179,10 @@ export default function HomePage() {
         </Box>
 
         {/* Featured Volume Covers Section */}
-        {showcaseVolumes && showcaseVolumes.length > 0 && (
+        {showcaseSlots && showcaseSlots.length > 0 && (
           <LazySection minHeight={360} delay={100}>
             <DynamicVolumeShowcase
-              volumes={showcaseVolumes}
-              layout={showcaseVolumes.length === 1 ? 'single' : 'dual'}
+              slots={showcaseSlots}
             />
           </LazySection>
         )}

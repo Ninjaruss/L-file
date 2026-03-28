@@ -1000,7 +1000,7 @@ export class UsersController {
   // --- Statistics endpoints ---
   @Get('stats/quote-popularity')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get quote popularity statistics',
@@ -1023,7 +1023,7 @@ export class UsersController {
 
   @Get('stats/gamble-popularity')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get gamble popularity statistics',
@@ -1046,7 +1046,7 @@ export class UsersController {
 
   @Get('stats/profile-customization')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get profile customization statistics',

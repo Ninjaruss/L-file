@@ -7,11 +7,10 @@ import React, { useRef, useState, useCallback } from 'react'
 import { AlertTriangle, Image as ImageIcon } from 'lucide-react'
 import { useShowcaseAnimationSet, getEntranceAnimation, getPopoutRotation } from '../lib/showcase-animations'
 
-import type { VolumeShowcaseItem, ShowcaseAnimations } from '../lib/showcase-config'
+import type { VolumeShowcaseItem, VolumeShowcaseSlot, ShowcaseAnimations } from '../lib/showcase-config'
 
 interface DynamicVolumeShowcaseProps {
-  volumes: VolumeShowcaseItem[]
-  layout?: 'single' | 'dual'
+  slots: VolumeShowcaseSlot[]
   animations?: ShowcaseAnimations
   height?: string
   className?: string
@@ -132,8 +131,7 @@ function ImageWithRetry({
 const CYCLE_INTERVAL_MS = 8000
 
 export function DynamicVolumeShowcase({
-  volumes,
-  layout = volumes.length === 1 ? 'single' : 'dual',
+  slots,
   animations = defaultAnimations,
   height = 'clamp(380px, 50vh, 600px)',
   className
@@ -142,20 +140,19 @@ export function DynamicVolumeShowcase({
   const time = useMotionValue(0)
   const [imageStates, setImageStates] = useState<ImageLoadingStates>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
-  const [cycleOffset, setCycleOffset] = useState(() =>
-    Math.floor(Math.random() * volumes.length)
+  const [slotIndex, setSlotIndex] = useState(() =>
+    Math.floor(Math.random() * Math.max(slots.length, 1))
   )
 
-  const displayCount = layout === 'single' ? 1 : 2
-  const canCycle = volumes.length > displayCount
+  const canCycle = slots.length > 1
 
   React.useEffect(() => {
     if (!canCycle) return
     const id = setInterval(() => {
-      setCycleOffset(prev => (prev + displayCount) % volumes.length)
+      setSlotIndex(prev => (prev + 1) % slots.length)
     }, CYCLE_INTERVAL_MS)
     return () => clearInterval(id)
-  }, [canCycle, displayCount, volumes.length])
+  }, [canCycle, slots.length])
 
   React.useEffect(() => {
     const animate = () => {
@@ -297,28 +294,20 @@ export function DynamicVolumeShowcase({
 
   // Validation
   React.useEffect(() => {
-    if (!volumes || volumes.length === 0) {
+    if (!slots || slots.length === 0) {
       setGlobalError('No volumes provided for showcase')
       return
     }
 
-    if (layout === 'dual' && volumes.length < 2) {
-      setGlobalError('Dual layout requires at least 2 volumes')
-      return
-    }
-
-    if (layout === 'single' && volumes.length > 1) {
-      console.warn('Single layout with multiple volumes - only first volume will be displayed')
-    }
-
-    const invalidVolumes = volumes.filter(vol => !vol.backgroundImage)
+    const allVolumes = slots.flatMap(s => s.secondary ? [s.primary, s.secondary] : [s.primary])
+    const invalidVolumes = allVolumes.filter(vol => !vol.backgroundImage)
     if (invalidVolumes.length > 0) {
       setGlobalError('Some volumes are missing background images')
       return
     }
 
     setGlobalError(null)
-  }, [volumes, layout])
+  }, [slots])
 
   if (globalError) {
     return (
@@ -333,6 +322,14 @@ export function DynamicVolumeShowcase({
       </Alert>
     )
   }
+
+  const currentSlot = slots[slotIndex % slots.length]
+  const slotVolumes: VolumeShowcaseItem[] = currentSlot
+    ? currentSlot.secondary
+      ? [currentSlot.primary, currentSlot.secondary]
+      : [currentSlot.primary]
+    : []
+  const layout: 'single' | 'dual' = slotVolumes.length === 2 ? 'dual' : 'single'
 
   return (
     <Box
@@ -353,15 +350,15 @@ export function DynamicVolumeShowcase({
         style={{
           position: 'relative',
           display: 'flex',
-          justifyContent: layout === 'single' ? 'center' : 'center',
+          justifyContent: 'center',
           alignItems: 'center',
           height: '100%',
           gap: layout === 'dual' ? '0.5rem' : '0',
           paddingInline: 'clamp(0.75rem, 2vw, 2rem)'
         }}
       >
-        {Array.from({ length: displayCount }, (_, i) => volumes[(cycleOffset + i) % volumes.length]).map((volume, index) =>
-          renderVolume(volume, index, displayCount)
+        {slotVolumes.map((volume, index) =>
+          renderVolume(volume, index, slotVolumes.length)
         )}
       </Box>
     </Box>

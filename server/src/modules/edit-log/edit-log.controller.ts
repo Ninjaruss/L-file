@@ -75,14 +75,20 @@ export class EditLogController {
   @ApiParam({ name: 'id', type: Number })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Paginated wiki edits for the user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated wiki edits for the user',
+  })
   async getWikiEditsByUser(
     @Param('id', ParseIntPipe) userId: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     const safeLimit = Math.min(limit, 50);
-    return this.editLogService.getWikiEditsByUser(userId, { page, limit: safeLimit });
+    return this.editLogService.getWikiEditsByUser(userId, {
+      page,
+      limit: safeLimit,
+    });
   }
 
   @Get('my-submissions')

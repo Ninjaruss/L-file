@@ -393,7 +393,11 @@ export class EventsService {
     return this.repo.save(event);
   }
 
-  async update(id: number, data: UpdateEventDto, userId?: number): Promise<Event> {
+  async update(
+    id: number,
+    data: UpdateEventDto,
+    userId?: number,
+  ): Promise<Event> {
     const { characterIds, ...updateData } = data;
 
     // Clean up numeric fields to handle NaN values
@@ -457,10 +461,15 @@ export class EventsService {
     }
     if (userId !== undefined) {
       const changedFields = Object.keys(updateData).filter(
-        k => updateData[k as keyof typeof updateData] !== undefined
+        (k) => updateData[k as keyof typeof updateData] !== undefined,
       );
       if (characterIds !== undefined) changedFields.push('characters');
-      await this.editLogService.logUpdate(EditLogEntityType.EVENT, id, userId, changedFields);
+      await this.editLogService.logUpdate(
+        EditLogEntityType.EVENT,
+        id,
+        userId,
+        changedFields,
+      );
     }
     return result;
   }
@@ -550,7 +559,9 @@ export class EventsService {
 
   remove(id: number, userId?: number) {
     if (userId !== undefined) {
-      this.editLogService.logDelete(EditLogEntityType.EVENT, id, userId).catch(() => {});
+      this.editLogService
+        .logDelete(EditLogEntityType.EVENT, id, userId)
+        .catch(() => {});
     }
     return this.repo.delete(id);
   }

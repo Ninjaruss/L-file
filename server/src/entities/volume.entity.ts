@@ -42,6 +42,14 @@ export class Volume {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @ApiPropertyOptional({
+    description:
+      'ID of another volume to pair with in the homepage showcase (dual layout)',
+    example: 38,
+  })
+  @Column({ type: 'int', nullable: true })
+  pairedVolumeId: number | null;
+
   // Media relationships are now handled polymorphically through the Media entity
   // with ownerType='volume' and ownerId=volume.id
 

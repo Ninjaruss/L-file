@@ -7,7 +7,11 @@ import { MediaModule } from '../media/media.module';
 import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Organization]), MediaModule, EditLogModule],
+  imports: [
+    TypeOrmModule.forFeature([Organization]),
+    MediaModule,
+    EditLogModule,
+  ],
   providers: [OrganizationsService],
   controllers: [OrganizationsController],
   exports: [OrganizationsService],

@@ -53,6 +53,16 @@ export class UpdateVolumeDto {
   })
   description?: string;
 
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @ApiPropertyOptional({
+    description:
+      'ID of another volume to pair with in the homepage showcase (dual layout). Set to null to unpair.',
+    example: 38,
+  })
+  pairedVolumeId?: number | null;
+
   // Cover images are now handled polymorphically through the Media entity
   // with ownerType='volume' and ownerId=volume.id
 }

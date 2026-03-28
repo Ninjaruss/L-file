@@ -59,7 +59,7 @@ export const AdminAuthProvider: AuthProvider = {
 
   checkError: (error) => {
     const status = error.status
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       api.setToken(null)
       return Promise.reject()
     }

@@ -159,7 +159,7 @@ export class TranslationsController {
   }
 
   @Post(':entityType/:entityId')
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Create translation',
     description:
@@ -287,7 +287,7 @@ export class TranslationsController {
   }
 
   @Put(':entityType/:id')
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Update translation',
     description:
@@ -359,7 +359,7 @@ export class TranslationsController {
   }
 
   @Delete(':entityType/:id')
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Delete translation',
     description:
@@ -453,7 +453,7 @@ export class TranslationsController {
   }
 
   @Get('stats')
-  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.EDITOR)
   @ApiOperation({
     summary: 'Get translation statistics',
     description:
