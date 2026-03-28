@@ -2,34 +2,64 @@
 
 import React, { useEffect, useState } from 'react'
 import { Box, Typography } from '@mui/material'
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react'
 import { api } from '../../lib/api'
 
-interface VolumeShowcaseStatusCardProps {
-  volumeNumber: number
-}
-
+type ImageStatus = 'approved' | 'pending' | 'rejected' | null
 type ShowcaseState = 'not-ready' | 'incomplete' | 'ready' | 'loading'
 
-interface ChecklistItemProps {
-  label: string
-  present: boolean
+interface VolumeShowcaseStatusCardProps {
+  volumeId: number
+  pairedVolumeId: number | null
 }
 
-function ChecklistItem({ label, present }: ChecklistItemProps) {
+const IMAGE_STATUS_CONFIG: Record<
+  NonNullable<ImageStatus> | 'null',
+  { icon: React.ReactNode; label: string; color: string }
+> = {
+  approved: {
+    icon: <CheckCircle size={13} color="#10b981" />,
+    label: 'Approved',
+    color: '#10b981',
+  },
+  pending: {
+    icon: <Clock size={13} color="#eab308" />,
+    label: 'Pending approval',
+    color: '#eab308',
+  },
+  rejected: {
+    icon: <XCircle size={13} color="#ef4444" />,
+    label: 'Rejected — re-upload',
+    color: '#ef4444',
+  },
+  null: {
+    icon: null,
+    label: 'Not uploaded',
+    color: 'rgba(255,255,255,0.3)',
+  },
+}
+
+function ImageStatusTile({ label, status }: { label: string; status: ImageStatus }) {
+  const cfg = status ? IMAGE_STATUS_CONFIG[status] : IMAGE_STATUS_CONFIG.null
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      {present ? (
-        <CheckCircle size={15} color="#10b981" />
-      ) : (
-        <XCircle size={15} color="rgba(239,68,68,0.6)" />
-      )}
+    <Box sx={{ background: 'rgba(255,255,255,0.04)', borderRadius: 1.5, p: '8px 10px' }}>
       <Typography
-        variant="caption"
-        sx={{ color: present ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}
+        sx={{
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: '0.68rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          mb: 0.5,
+        }}
       >
-        {label} — {present ? 'uploaded' : <em>missing</em>}
+        {label}
       </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+        {cfg.icon}
+        <Typography sx={{ color: cfg.color, fontSize: '0.75rem', fontWeight: 600 }}>
+          {cfg.label}
+        </Typography>
+      </Box>
     </Box>
   )
 }
@@ -57,7 +87,7 @@ const STATE_CONFIG = {
     icon: <AlertTriangle size={28} color="#eab308" />,
     titleColor: '#eab308',
     title: 'Incomplete — Not in Showcase',
-    message: 'Upload the missing image to enable showcase.',
+    message: 'Take action on the images below to enable showcase.',
   },
   ready: {
     border: 'rgba(16,185,129,0.4)',
@@ -69,9 +99,12 @@ const STATE_CONFIG = {
   },
 }
 
-export function VolumeShowcaseStatusCard({ volumeNumber }: VolumeShowcaseStatusCardProps) {
-  const [hasBackground, setHasBackground] = useState(false)
-  const [hasPopout, setHasPopout] = useState(false)
+export function VolumeShowcaseStatusCard({
+  volumeId,
+  pairedVolumeId,
+}: VolumeShowcaseStatusCardProps) {
+  const [backgroundStatus, setBackgroundStatus] = useState<ImageStatus>(null)
+  const [popoutStatus, setPopoutStatus] = useState<ImageStatus>(null)
   const [state, setState] = useState<ShowcaseState>('loading')
 
   useEffect(() => {
@@ -79,29 +112,27 @@ export function VolumeShowcaseStatusCard({ volumeNumber }: VolumeShowcaseStatusC
 
     async function fetchStatus() {
       try {
-        // Use the same endpoint the homepage showcase uses so this card
-        // accurately reflects whether the volume will actually appear.
-        const [showcaseReady, bg, pop] = await Promise.all([
+        const [showcaseReady, imageStatus] = await Promise.all([
           api.getShowcaseReadyVolumes(),
-          api.getVolumeShowcaseMedia(volumeNumber, 'background'),
-          api.getVolumeShowcaseMedia(volumeNumber, 'popout'),
+          api.getVolumeShowcaseStatus(volumeId),
         ])
         if (cancelled) return
 
-        const hasBg = bg !== null
-        const hasPop = pop !== null
-        setHasBackground(hasBg)
-        setHasPopout(hasPop)
+        const bg = imageStatus?.background ?? null
+        const pop = imageStatus?.popout ?? null
+        setBackgroundStatus(bg)
+        setPopoutStatus(pop)
 
         const isShowcaseReady = showcaseReady.some(
-          (v) => v.volumeNumber === volumeNumber,
+          (slot) =>
+            slot.primary.volumeId === volumeId ||
+            slot.secondary?.volumeId === volumeId,
         )
 
         if (isShowcaseReady) setState('ready')
-        else if (hasBg || hasPop) setState('incomplete')
+        else if (bg !== null || pop !== null) setState('incomplete')
         else setState('not-ready')
       } catch {
-        // On error, don't stay stuck in 'loading' — fall back to 'not-ready'
         setState((prev) => (prev === 'loading' ? 'not-ready' : prev))
       }
     }
@@ -112,7 +143,7 @@ export function VolumeShowcaseStatusCard({ volumeNumber }: VolumeShowcaseStatusC
       cancelled = true
       clearInterval(interval)
     }
-  }, [volumeNumber])
+  }, [volumeId])
 
   const config = STATE_CONFIG[state]
 
@@ -148,10 +179,55 @@ export function VolumeShowcaseStatusCard({ volumeNumber }: VolumeShowcaseStatusC
           </Typography>
         )}
         {state !== 'loading' && (
-          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-            <ChecklistItem label="Background Image" present={hasBackground} />
-            <ChecklistItem label="Popout Image" present={hasPopout} />
-          </Box>
+          <>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
+              <ImageStatusTile label="Background Image" status={backgroundStatus} />
+              <ImageStatusTile label="Popout Image" status={popoutStatus} />
+            </Box>
+            <Box
+              sx={{
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                pt: 1.5,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 1.5,
+                  p: '8px 10px',
+                  gap: 1,
+                  alignItems: 'center',
+                }}
+              >
+                <Box>
+                  <Typography
+                    sx={{
+                      color: 'rgba(255,255,255,0.4)',
+                      fontSize: '0.68rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      mb: 0.5,
+                    }}
+                  >
+                    Showcase Layout
+                  </Typography>
+                  {pairedVolumeId ? (
+                    <Typography sx={{ color: '#a5b4fc', fontSize: '0.75rem', fontWeight: 600 }}>
+                      ⇄ Paired · Vol. ID {pairedVolumeId}
+                    </Typography>
+                  ) : (
+                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+                      Single (no pairing)
+                    </Typography>
+                  )}
+                </Box>
+                <Typography sx={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.68rem', alignSelf: 'flex-end', pb: '1px' }}>
+                  (set in Edit tab)
+                </Typography>
+              </Box>
+            </Box>
+          </>
         )}
       </Box>
     </Box>
