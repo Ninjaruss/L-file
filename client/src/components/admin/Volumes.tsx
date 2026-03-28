@@ -17,6 +17,7 @@ import {
   WithRecord,
   useRecordContext,
   useGetList,
+  usePermissions,
 } from 'react-admin'
 import { Typography, Chip, Box, Card, CardContent, Grid } from '@mui/material'
 import { Edit3, Plus, BookOpen, Layers, Image as ImageIcon } from 'lucide-react'
@@ -343,7 +344,10 @@ export const VolumeShow = () => (
   </Show>
 )
 
-export const VolumeEdit = () => (
+export const VolumeEdit = () => {
+  const { permissions } = usePermissions()
+  if (permissions !== 'admin') return <div>Access denied. Volume editing is restricted to administrators.</div>
+  return (
   <Edit>
     <SimpleForm
       validate={validateChapterRange}
@@ -527,9 +531,13 @@ export const VolumeEdit = () => (
       </Box>
     </SimpleForm>
   </Edit>
-)
+  )
+}
 
-export const VolumeCreate = () => (
+export const VolumeCreate = () => {
+  const { permissions } = usePermissions()
+  if (permissions !== 'admin') return <div>Access denied. Volume creation is restricted to administrators.</div>
+  return (
   <Create>
     <SimpleForm validate={validateChapterRange}>
       <Box sx={{ backgroundColor: '#0a0a0a', width: '100%', p: 3 }}>
@@ -651,4 +659,5 @@ export const VolumeCreate = () => (
       </Box>
     </SimpleForm>
   </Create>
-)
+  )
+}
