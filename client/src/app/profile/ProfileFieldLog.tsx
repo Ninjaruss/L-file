@@ -91,6 +91,17 @@ function actionLabel(action: string): string {
   return 'edited'
 }
 
+// ── Wiki edit type ────────────────────────────────────────────────────────────
+type WikiEditItem = {
+  id: number
+  action: string
+  entityType: string
+  entityId: number
+  entityName?: string
+  changedFields?: string[] | null
+  createdAt: string
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface FeedEvent {
   kind: 'submission' | 'wiki' | 'progress'
@@ -150,12 +161,12 @@ interface ProfileFieldLogProps {
 export default function ProfileFieldLog({ guides, submissions, user, submissionEdits }: ProfileFieldLogProps) {
   const [visibleCount, setVisibleCount] = useState(8)
   const [filter, setFilter] = useState<FilterKind>('all')
-  const [wikiEdits, setWikiEdits] = useState<any[]>([])
+  const [wikiEdits, setWikiEdits] = useState<WikiEditItem[]>([])
 
   useEffect(() => {
     if (!user?.id) return
     api.getWikiEditsByUser(user.id, { limit: 50 })
-      .then((res: any) => setWikiEdits(res?.data ?? []))
+      .then((res) => setWikiEdits(res?.data ?? []))
       .catch(() => {})
   }, [user?.id])
 
@@ -269,7 +280,7 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
   const filtered = filter === 'edits'
     ? events.filter(e => e.kind === 'wiki')
     : filter === 'submissions'
-    ? events.filter(e => e.kind !== 'wiki')
+    ? events.filter(e => e.kind === 'submission')
     : events
 
   const visible = filtered.slice(0, visibleCount)
@@ -349,11 +360,14 @@ export default function ProfileFieldLog({ guides, submissions, user, submissionE
                       <Text style={{ fontSize: '11px', color: ev.textColor, marginTop: '1px', opacity: 0.7 }}>
                         {ev.type.charAt(0).toUpperCase() + ev.type.slice(1)}
                       </Text>
-                      {formatChangedFields(ev.changedFields) && (
-                        <Text style={{ fontSize: '11px', color: '#666', marginTop: '1px' }}>
-                          {formatChangedFields(ev.changedFields)}
-                        </Text>
-                      )}
+                      {(() => {
+                        const fieldsLabel = formatChangedFields(ev.changedFields)
+                        return fieldsLabel ? (
+                          <Text style={{ fontSize: '11px', color: '#666', marginTop: '1px' }}>
+                            {fieldsLabel}
+                          </Text>
+                        ) : null
+                      })()}
                     </>
                   )}
                   {ev.kind !== 'wiki' && ev.detail && (
