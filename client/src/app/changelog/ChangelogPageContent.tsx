@@ -102,8 +102,8 @@ function relativeTime(dateStr: string): string {
 function getActionLabel(entry: EditEntry): string {
   const isSubmissionType = ['guide', 'media', 'annotation'].includes(entry.entityType)
   if (isSubmissionType && entry.action === 'update') {
-    const priorStatusField = ((entry as any).changedFields ?? []).find(
-      (f: string) => f.startsWith('priorStatus:')
+    const priorStatusField = (entry.changedFields ?? []).find(
+      (f) => f.startsWith('priorStatus:')
     )
     const priorStatus = priorStatusField?.split(':')[1]
     if (priorStatus === 'REJECTED') return 'resubmitted'
