@@ -2,6 +2,7 @@ import {
   Injectable,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -24,6 +25,7 @@ export interface FluxerMessage {
 
 @Injectable()
 export class FluxerChatService {
+  private readonly logger = new Logger(FluxerChatService.name);
   private readonly botToken: string;
   private readonly channelId: string;
   private readonly webhookUrl: string;
@@ -56,10 +58,18 @@ export class FluxerChatService {
         { headers: { Authorization: `Bot ${this.botToken}` } },
       );
       if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        this.logger.error(`Failed to fetch Fluxer messages: ${res.status} ${res.statusText} — ${body}`);
         return this.messagesCache?.data ?? [];
       }
       raw = await res.json();
-    } catch {
+    } catch (err) {
+      this.logger.error('Error fetching Fluxer messages:', err);
+      return this.messagesCache?.data ?? [];
+    }
+
+    if (!Array.isArray(raw)) {
+      this.logger.error('Unexpected Fluxer messages response shape:', JSON.stringify(raw).slice(0, 200));
       return this.messagesCache?.data ?? [];
     }
 
