@@ -17,7 +17,7 @@ export class FluxerStrategy extends PassportStrategy(Strategy, 'fluxer') {
       clientID: configService.get<string>('FLUXER_CLIENT_ID')!,
       clientSecret: configService.get<string>('FLUXER_CLIENT_SECRET')!,
       callbackURL: configService.get<string>('FLUXER_CALLBACK_URL')!,
-      scope: 'identify email',
+      scope: 'identify email guilds',
       // Disable state verification — this app uses JWT (no sessions),
       // and passport-oauth2 state requires session middleware.
       // The OAuth flow is still protected by redirect URI validation on Fluxer's side.
