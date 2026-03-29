@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import {
   Badge,
   Box,
-  Card,
   Container,
   Group,
   Stack,
@@ -17,12 +16,11 @@ import {
   getEntityThemeColor,
   textColors,
   getAlphaColor,
-  fontSize,
   setTabAccentColors,
   backgroundStyles,
-  getCardStyles
 } from '../../../lib/mantine-theme'
-import { BookOpen, Book, FileText, Users, MessageSquareQuote, CalendarSearch, MessageSquare, Map } from 'lucide-react'
+import { BookOpen, MessageSquareQuote, CalendarSearch, MessageSquare } from 'lucide-react'
+import { CinematicCard, CinematicSectionHeader } from '../../../components/layouts/CinematicCard'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { pageEnter } from '../../../lib/motion-presets'
@@ -143,7 +141,7 @@ export default function ChapterPageClient({
           />
 
           <motion.div {...pageEnter}>
-            <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
+            <CinematicCard entityColor={entityColors.chapter} padding="md" style={{ borderRadius: 14 }}>
               <Tabs
                 value={activeTab}
                 onChange={(value) => value && setActiveTab(value)}
@@ -199,110 +197,78 @@ export default function ChapterPageClient({
                     {/* Main column */}
                     <Stack gap={theme.spacing.md}>
                       {/* Chapter Summary Section */}
-                      <Card withBorder radius="lg" shadow="lg" padding={0} style={getCardStyles(theme, entityColors.chapter)}>
-                        <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.chapter}, transparent 70%)` }} />
-                        <Box p="lg">
-                          <Group gap={10} mb={14} align="center">
-                            <Box style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.chapter, 0.15), border: `1px solid ${getAlphaColor(entityColors.chapter, 0.30)}` }}>
-                              <FileText size={16} color={entityColors.chapter} />
+                      <CinematicCard entityColor={entityColors.chapter}>
+                        <CinematicSectionHeader label="Chapter Summary" entityColor={entityColors.chapter} />
+                        {(initialChapter.description || initialChapter.summary) ? (
+                          <TimelineSpoilerWrapper chapterNumber={initialChapter.number}>
+                            <Box style={{ lineHeight: 1.6 }}>
+                              <Text style={{ fontSize: 14, lineHeight: 1.6 }}>{initialChapter.description || initialChapter.summary}</Text>
                             </Box>
-                            <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.chapter, opacity: 0.85 }}>Chapter Summary</Text>
-                            <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.chapter, 0.20)}, transparent)` }} />
-                          </Group>
-                          {(initialChapter.description || initialChapter.summary) ? (
-                            <TimelineSpoilerWrapper chapterNumber={initialChapter.number}>
-                              <Box style={{ lineHeight: 1.6 }}>
-                                <Text style={{ fontSize: 14, lineHeight: 1.6 }}>{initialChapter.description || initialChapter.summary}</Text>
-                              </Box>
-                            </TimelineSpoilerWrapper>
-                          ) : (
-                            <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
-                              No summary available for this chapter yet. Check back later for updates!
-                            </Text>
-                          )}
-                        </Box>
-                      </Card>
+                          </TimelineSpoilerWrapper>
+                        ) : (
+                          <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
+                            No summary available for this chapter yet. Check back later for updates!
+                          </Text>
+                        )}
+                      </CinematicCard>
 
                       {/* Featured Characters Section */}
                       {initialCharacters.length > 0 && (
-                        <Card withBorder radius="lg" shadow="lg" padding={0} style={getCardStyles(theme, entityColors.character)}>
-                          <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.character}, transparent 70%)` }} />
-                          <Box p="md">
-                            <Group gap={10} mb={14} align="center">
-                              <Box style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.character, 0.15), border: `1px solid ${getAlphaColor(entityColors.character, 0.30)}` }}>
-                                <Users size={16} color={entityColors.character} />
-                              </Box>
-                              <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.character, opacity: 0.85 }}>Featured Characters</Text>
-                              <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.character, 0.20)}, transparent)` }} />
-                            </Group>
-                            <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                              {initialCharacters.map((character) => (
-                                <Box
-                                  key={character.id}
-                                  component={Link}
-                                  href={`/characters/${character.id}`}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#131313', border: '1px solid #222', borderRadius: 8, padding: '6px 10px', textDecoration: 'none', cursor: 'pointer', transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease` }}
-                                  onMouseEnter={(e: React.MouseEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = entityColors.character }}
-                                  onMouseLeave={(e: React.MouseEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#222' }}
-                                >
-                                  <Box style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.character, 0.20), border: `1px solid ${getAlphaColor(entityColors.character, 0.40)}`, fontSize: 10, fontWeight: 700, color: entityColors.character }}>
-                                    {character.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
-                                  </Box>
-                                  <Text style={{ fontSize: 13, fontWeight: 600, color: '#ddd' }}>{character.name}</Text>
+                        <CinematicCard entityColor={entityColors.character} padding="md">
+                          <CinematicSectionHeader label="Featured Characters" entityColor={entityColors.character} />
+                          <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {initialCharacters.map((character) => (
+                              <Box
+                                key={character.id}
+                                component={Link}
+                                href={`/characters/${character.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#131313', border: '1px solid #222', borderRadius: 8, padding: '6px 10px', textDecoration: 'none', cursor: 'pointer', transition: `all ${theme.other?.transitions?.durationShort || 200}ms ease` }}
+                                onMouseEnter={(e: React.MouseEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = entityColors.character }}
+                                onMouseLeave={(e: React.MouseEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#222' }}
+                              >
+                                <Box style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.character, 0.20), border: `1px solid ${getAlphaColor(entityColors.character, 0.40)}`, fontSize: 10, fontWeight: 700, color: entityColors.character }}>
+                                  {character.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
                                 </Box>
-                              ))}
-                            </Box>
+                                <Text style={{ fontSize: 13, fontWeight: 600, color: '#ddd' }}>{character.name}</Text>
+                              </Box>
+                            ))}
                           </Box>
-                        </Card>
+                        </CinematicCard>
                       )}
                     </Stack>
 
                     {/* Aside column */}
                     <Stack gap={theme.spacing.sm}>
                       {/* Details card */}
-                      <Card withBorder radius="lg" shadow="md" padding={0} style={getCardStyles(theme, entityColors.chapter)}>
-                        <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.chapter}, transparent 70%)` }} />
-                        <Box p="md">
-                          <Group gap={10} mb={14} align="center">
-                            <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.chapter, opacity: 0.85 }}>Details</Text>
-                            <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.chapter, 0.20)}, transparent)` }} />
-                          </Group>
-                          <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #161616' }}>
-                            <Box style={{ width: 24, height: 24, borderRadius: 5, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.chapter, 0.10), border: `1px solid ${getAlphaColor(entityColors.chapter, 0.20)}` }}>
-                              <BookOpen size={14} color={entityColors.chapter} />
-                            </Box>
-                            <Text style={{ fontSize: 11, color: '#555', flex: 1 }}>Chapter</Text>
-                            <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.chapter }}>#{initialChapter.number}</Text>
-                          </Box>
-                          {initialChapter.volume != null && (
-                            <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #161616' }}>
-                              <Box style={{ width: 24, height: 24, borderRadius: 5, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.chapter, 0.10), border: `1px solid ${getAlphaColor(entityColors.chapter, 0.20)}` }}>
-                                <Book size={14} color={entityColors.volume} />
-                              </Box>
-                              <Text style={{ fontSize: 11, color: '#555', flex: 1 }}>Volume</Text>
-                              <Text component={Link} href={`/volumes/${initialChapter.volume.id}`} style={{ fontSize: 12, fontWeight: 700, color: entityColors.volume, textDecoration: 'none' }}>
-                                Vol. {initialChapter.volume.number}{initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
-                              </Text>
-                            </Box>
-                          )}
-                          {initialArc != null && (
-                            <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #161616' }}>
-                              <Box style={{ width: 24, height: 24, borderRadius: 5, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.chapter, 0.10), border: `1px solid ${getAlphaColor(entityColors.chapter, 0.20)}` }}>
-                                <Map size={14} color={entityColors.arc} />
-                              </Box>
-                              <Text style={{ fontSize: 11, color: '#555', flex: 1 }}>Arc</Text>
-                              <Text component={Link} href={`/arcs/${initialArc.id}`} style={{ fontSize: 12, fontWeight: 700, color: entityColors.arc, textDecoration: 'none' }}>{initialArc.name}</Text>
-                            </Box>
-                          )}
-                          <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                            <Box style={{ width: 24, height: 24, borderRadius: 5, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.chapter, 0.10), border: `1px solid ${getAlphaColor(entityColors.chapter, 0.20)}` }}>
-                              <CalendarSearch size={14} color={entityColors.chapter} />
-                            </Box>
-                            <Text style={{ fontSize: 11, color: '#555', flex: 1 }}>Events</Text>
-                            <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.chapter }}>{initialEvents?.length ?? 0}</Text>
-                          </Box>
+                      <CinematicCard entityColor={entityColors.chapter} padding="md">
+                        <CinematicSectionHeader label="Details" entityColor={entityColors.chapter} />
+                        <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.chapter}14` }}>
+                          <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.chapter, flexShrink: 0 }} />
+                          <Text style={{ fontSize: 11, color: `${entityColors.chapter}66`, flex: 1 }}>Chapter</Text>
+                          <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.chapter }}>#{initialChapter.number}</Text>
                         </Box>
-                      </Card>
+                        {initialChapter.volume != null && (
+                          <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.chapter}14` }}>
+                            <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.chapter, flexShrink: 0 }} />
+                            <Text style={{ fontSize: 11, color: `${entityColors.chapter}66`, flex: 1 }}>Volume</Text>
+                            <Text component={Link} href={`/volumes/${initialChapter.volume.id}`} style={{ fontSize: 12, fontWeight: 700, color: entityColors.volume, textDecoration: 'none' }}>
+                              Vol. {initialChapter.volume.number}{initialChapter.volume.title ? `: ${initialChapter.volume.title}` : ''}
+                            </Text>
+                          </Box>
+                        )}
+                        {initialArc != null && (
+                          <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.chapter}14` }}>
+                            <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.arc, flexShrink: 0 }} />
+                            <Text style={{ fontSize: 11, color: `${entityColors.chapter}66`, flex: 1 }}>Arc</Text>
+                            <Text component={Link} href={`/arcs/${initialArc.id}`} style={{ fontSize: 12, fontWeight: 700, color: entityColors.arc, textDecoration: 'none' }}>{initialArc.name}</Text>
+                          </Box>
+                        )}
+                        <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                          <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.event, flexShrink: 0 }} />
+                          <Text style={{ fontSize: 11, color: `${entityColors.chapter}66`, flex: 1 }}>Events</Text>
+                          <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.chapter }}>{initialEvents?.length ?? 0}</Text>
+                        </Box>
+                      </CinematicCard>
 
                       {/* Events compact list */}
                       <RelatedContentSection
@@ -335,16 +301,8 @@ export default function ChapterPageClient({
 
                 <Tabs.Panel value="events" pt={theme.spacing.md}>
                   <Stack gap={theme.spacing.lg}>
-                    <Card withBorder radius="lg" shadow="lg" padding={0} style={getCardStyles(theme, entityColors.event)}>
-                      <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.event}, transparent 70%)` }} />
-                      <Box p="md">
-                        <Group gap={10} mb={14} align="center">
-                          <Box style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.event, 0.15), border: `1px solid ${getAlphaColor(entityColors.event, 0.30)}` }}>
-                            <CalendarSearch size={16} color={entityColors.event} />
-                          </Box>
-                          <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.event, opacity: 0.85 }}>Chapter Events</Text>
-                          <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.event, 0.20)}, transparent)` }} />
-                        </Group>
+                    <CinematicCard entityColor={entityColors.event} padding="md">
+                      <CinematicSectionHeader label="Chapter Events" entityColor={entityColors.event} />
                         <Stack gap={6}>
                           {Array.isArray(initialEvents) && initialEvents.map((event) => {
                             const typeColor = event.type ? (eventTypeColor[event.type] ?? entityColors.event) : entityColors.event
@@ -372,47 +330,36 @@ export default function ChapterPageClient({
                             )
                           })}
                         </Stack>
-                      </Box>
-                    </Card>
+                    </CinematicCard>
                   </Stack>
                 </Tabs.Panel>
 
                 <Tabs.Panel value="quotes" pt={theme.spacing.md}>
                   <Stack gap={theme.spacing.lg}>
-                    <Card withBorder radius="lg" shadow="lg" padding={0} style={getCardStyles(theme, entityColors.quote)}>
-                      <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.quote}, transparent 70%)` }} />
-                      <Box p="md">
-                        <Group gap={10} mb={14} align="center">
-                          <Box style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.quote, 0.15), border: `1px solid ${getAlphaColor(entityColors.quote, 0.30)}` }}>
-                            <MessageSquareQuote size={16} color={entityColors.quote} />
-                          </Box>
-                          <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.quote, opacity: 0.85 }}>Memorable Quotes</Text>
-                          <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.quote, 0.20)}, transparent)` }} />
-                        </Group>
-                        <Stack gap={theme.spacing.sm}>
-                          {Array.isArray(initialQuotes) && initialQuotes.map((quote) => (
-                            <Card key={quote.id} radius="xl" padding={0} style={getCardStyles(theme, entityColors.quote)}>
-                              <Box style={{ height: 3, borderRadius: '12px 12px 0 0', background: `linear-gradient(90deg, ${entityColors.quote}, transparent 70%)` }} />
-                              <Box p="md" style={{ position: 'relative' }}>
-                                <Box style={{ position: 'absolute', top: 8, left: 14, fontSize: 60, lineHeight: 1, color: entityColors.quote, opacity: 0.12, fontFamily: 'Georgia, serif', pointerEvents: 'none', userSelect: 'none' } as React.CSSProperties}>
-                                  &ldquo;
-                                </Box>
-                                <Text style={{ position: 'relative', fontStyle: 'italic', fontSize: 14, lineHeight: 1.65, paddingLeft: 10, borderLeft: `2px solid ${getAlphaColor(entityColors.quote, 0.40)}` }}>
-                                  {quote.text}
-                                </Text>
-                                <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                                  {quote.character && (
-                                    <Box style={{ borderRadius: 20, padding: '3px 10px', background: getAlphaColor(entityColors.quote, 0.12), border: `1px solid ${getAlphaColor(entityColors.quote, 0.25)}`, fontSize: 12, fontWeight: 600, color: entityColors.quote }}>
-                                      — {quote.character.name}
-                                    </Box>
-                                  )}
-                                </Box>
+                    <CinematicCard entityColor={entityColors.quote} padding="md">
+                      <CinematicSectionHeader label="Memorable Quotes" entityColor={entityColors.quote} />
+                      <Stack gap={theme.spacing.sm}>
+                        {Array.isArray(initialQuotes) && initialQuotes.map((quote) => (
+                          <CinematicCard key={quote.id} entityColor={entityColors.quote} padding="md">
+                            <Box p={0} style={{ position: 'relative' }}>
+                              <Box style={{ position: 'absolute', top: 8, left: 14, fontSize: 60, lineHeight: 1, color: entityColors.quote, opacity: 0.12, fontFamily: 'Georgia, serif', pointerEvents: 'none', userSelect: 'none' } as React.CSSProperties}>
+                                &ldquo;
                               </Box>
-                            </Card>
-                          ))}
-                        </Stack>
-                      </Box>
-                    </Card>
+                              <Text style={{ position: 'relative', fontStyle: 'italic', fontSize: 14, lineHeight: 1.65, paddingLeft: 10, borderLeft: `2px solid ${getAlphaColor(entityColors.quote, 0.40)}` }}>
+                                {quote.text}
+                              </Text>
+                              <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                                {quote.character && (
+                                  <Box style={{ borderRadius: 20, padding: '3px 10px', background: getAlphaColor(entityColors.quote, 0.12), border: `1px solid ${getAlphaColor(entityColors.quote, 0.25)}`, fontSize: 12, fontWeight: 600, color: entityColors.quote }}>
+                                    — {quote.character.name}
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
+                          </CinematicCard>
+                        ))}
+                      </Stack>
+                    </CinematicCard>
                   </Stack>
                 </Tabs.Panel>
 
@@ -425,7 +372,7 @@ export default function ChapterPageClient({
                   />
                 </Tabs.Panel>
               </Tabs>
-            </Card>
+            </CinematicCard>
 
           </motion.div>
         </Stack>
