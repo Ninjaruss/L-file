@@ -246,9 +246,14 @@ export class CharacterRelationshipsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Verify a character relationship (Moderator/Admin)' })
+  @ApiOperation({
+    summary: 'Verify a character relationship (Moderator/Admin)',
+  })
   @ApiParam({ name: 'id', description: 'Relationship ID' })
-  @ApiResponse({ status: 200, description: 'Relationship verified successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Relationship verified successfully',
+  })
   @ApiResponse({ status: 403, description: 'Cannot verify your own edit' })
   @ApiResponse({ status: 404, description: 'Relationship not found' })
   async verify(

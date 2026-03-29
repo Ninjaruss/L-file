@@ -369,7 +369,9 @@ export class CharacterRelationshipsService {
   ): Promise<CharacterRelationship> {
     const rel = await this.repo.findOne({ where: { id } });
     if (!rel)
-      throw new NotFoundException(`CharacterRelationship with id ${id} not found`);
+      throw new NotFoundException(
+        `CharacterRelationship with id ${id} not found`,
+      );
     if (!isAdmin) {
       const lastEdit = await this.editLogService.findLastMajorEdit(
         EditLogEntityType.CHARACTER_RELATIONSHIP,

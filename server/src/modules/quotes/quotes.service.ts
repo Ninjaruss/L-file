@@ -97,9 +97,13 @@ export class QuotesService {
     }
 
     if (options?.status) {
-      queryBuilder.andWhere('quote.status = :status', { status: options.status });
+      queryBuilder.andWhere('quote.status = :status', {
+        status: options.status,
+      });
     } else if (!options?.includeAll) {
-      queryBuilder.andWhere('quote.status = :status', { status: QuoteStatus.APPROVED });
+      queryBuilder.andWhere('quote.status = :status', {
+        status: QuoteStatus.APPROVED,
+      });
     }
 
     const total = await queryBuilder.getCount();
@@ -153,7 +157,9 @@ export class QuotesService {
       });
     }
 
-    queryBuilder.andWhere('quote.status = :approvedStatus', { approvedStatus: QuoteStatus.APPROVED });
+    queryBuilder.andWhere('quote.status = :approvedStatus', {
+      approvedStatus: QuoteStatus.APPROVED,
+    });
 
     const quote = await queryBuilder.getOne();
 
@@ -274,7 +280,9 @@ export class QuotesService {
       });
     }
 
-    queryBuilder.andWhere('quote.status = :status', { status: QuoteStatus.APPROVED });
+    queryBuilder.andWhere('quote.status = :status', {
+      status: QuoteStatus.APPROVED,
+    });
 
     if (options?.limit) {
       queryBuilder.limit(options.limit);

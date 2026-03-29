@@ -54,14 +54,21 @@ describe('QuotesService', () => {
     });
 
     it('throws BadRequestException when quote is not pending', async () => {
-      mockQuoteRepo.findOne.mockResolvedValue({ id: 1, status: QuoteStatus.APPROVED });
+      mockQuoteRepo.findOne.mockResolvedValue({
+        id: 1,
+        status: QuoteStatus.APPROVED,
+      });
       await expect(service.approve(1)).rejects.toThrow(BadRequestException);
     });
 
     it('approves a pending quote', async () => {
       const quote = { id: 1, status: QuoteStatus.PENDING };
       mockQuoteRepo.findOne.mockResolvedValue(quote);
-      mockQuoteRepo.save.mockResolvedValue({ ...quote, status: QuoteStatus.APPROVED, rejectionReason: null });
+      mockQuoteRepo.save.mockResolvedValue({
+        ...quote,
+        status: QuoteStatus.APPROVED,
+        rejectionReason: null,
+      });
       const result = await service.approve(1);
       expect(result.status).toBe(QuoteStatus.APPROVED);
     });
@@ -70,18 +77,29 @@ describe('QuotesService', () => {
   describe('reject()', () => {
     it('throws NotFoundException when quote not found', async () => {
       mockQuoteRepo.findOne.mockResolvedValue(null);
-      await expect(service.reject(99, 'reason')).rejects.toThrow(NotFoundException);
+      await expect(service.reject(99, 'reason')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws BadRequestException when quote is not pending', async () => {
-      mockQuoteRepo.findOne.mockResolvedValue({ id: 1, status: QuoteStatus.APPROVED });
-      await expect(service.reject(1, 'reason')).rejects.toThrow(BadRequestException);
+      mockQuoteRepo.findOne.mockResolvedValue({
+        id: 1,
+        status: QuoteStatus.APPROVED,
+      });
+      await expect(service.reject(1, 'reason')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('rejects a pending quote with a reason', async () => {
       const quote = { id: 1, status: QuoteStatus.PENDING };
       mockQuoteRepo.findOne.mockResolvedValue(quote);
-      mockQuoteRepo.save.mockResolvedValue({ ...quote, status: QuoteStatus.REJECTED, rejectionReason: 'Low quality' });
+      mockQuoteRepo.save.mockResolvedValue({
+        ...quote,
+        status: QuoteStatus.REJECTED,
+        rejectionReason: 'Low quality',
+      });
       const result = await service.reject(1, 'Low quality');
       expect(result.status).toBe(QuoteStatus.REJECTED);
       expect(result.rejectionReason).toBe('Low quality');

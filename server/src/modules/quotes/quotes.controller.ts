@@ -322,7 +322,11 @@ export class QuotesController {
   @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all pending quotes (Moderator/Admin)' })
-  @ApiResponse({ status: 200, description: 'Pending quotes retrieved', type: [Quote] })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending quotes retrieved',
+    type: [Quote],
+  })
   getPendingQuotes(): Promise<Quote[]> {
     return this.quotesService.getPendingQuotes();
   }

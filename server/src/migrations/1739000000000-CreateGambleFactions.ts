@@ -25,7 +25,9 @@ export class CreateGambleFactions1739000000000 implements MigrationInterface {
       )
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_gamble_factions_gambleId" ON "gamble_factions" ("gambleId")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_gamble_factions_gambleId" ON "gamble_factions" ("gambleId")`,
+    );
 
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "gamble_faction_members" (
@@ -41,15 +43,25 @@ export class CreateGambleFactions1739000000000 implements MigrationInterface {
       )
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_gamble_faction_members_factionId" ON "gamble_faction_members" ("factionId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_gamble_faction_members_characterId" ON "gamble_faction_members" ("characterId")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_gamble_faction_members_factionId" ON "gamble_faction_members" ("factionId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_gamble_faction_members_characterId" ON "gamble_faction_members" ("characterId")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gamble_faction_members_characterId"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gamble_faction_members_factionId"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_gamble_faction_members_characterId"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_gamble_faction_members_factionId"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "gamble_faction_members"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gamble_factions_gambleId"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_gamble_factions_gambleId"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "gamble_factions"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "faction_member_role_enum"`);
   }

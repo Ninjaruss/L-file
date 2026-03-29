@@ -114,7 +114,8 @@ export class VolumesController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Volumes ready for homepage showcase, grouped into primary/secondary slots',
+    description:
+      'Volumes ready for homepage showcase, grouped into primary/secondary slots',
     schema: {
       type: 'array',
       items: {
@@ -267,15 +268,25 @@ export class VolumesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get showcase image upload status for a volume (admin)' })
+  @ApiOperation({
+    summary: 'Get showcase image upload status for a volume (admin)',
+  })
   @ApiParam({ name: 'id', type: 'number', description: 'Volume database ID' })
   @ApiResponse({
     status: 200,
     description: 'Upload status of each showcase image type',
     schema: {
       properties: {
-        background: { type: 'string', nullable: true, enum: ['approved', 'pending', 'rejected', null] },
-        popout: { type: 'string', nullable: true, enum: ['approved', 'pending', 'rejected', null] },
+        background: {
+          type: 'string',
+          nullable: true,
+          enum: ['approved', 'pending', 'rejected', null],
+        },
+        popout: {
+          type: 'string',
+          nullable: true,
+          enum: ['approved', 'pending', 'rejected', null],
+        },
       },
     },
   })

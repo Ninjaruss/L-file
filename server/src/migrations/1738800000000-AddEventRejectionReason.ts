@@ -4,10 +4,14 @@ export class AddEventRejectionReason1738800000000 implements MigrationInterface 
   name = 'AddEventRejectionReason1738800000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "event" ADD COLUMN IF NOT EXISTS "rejectionReason" VARCHAR(500)`);
+    await queryRunner.query(
+      `ALTER TABLE "event" ADD COLUMN IF NOT EXISTS "rejectionReason" VARCHAR(500)`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "event" DROP COLUMN IF EXISTS "rejectionReason"`);
+    await queryRunner.query(
+      `ALTER TABLE "event" DROP COLUMN IF EXISTS "rejectionReason"`,
+    );
   }
 }

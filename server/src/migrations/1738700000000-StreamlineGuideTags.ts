@@ -14,9 +14,15 @@ export class StreamlineGuideTags1738700000000 implements MigrationInterface {
       ON CONFLICT ("name") DO NOTHING
     `);
 
-    const gambleBreakdownTag = await queryRunner.query(`SELECT id FROM "tag" WHERE name = 'Gamble Breakdown'`);
-    const characterStudyTag = await queryRunner.query(`SELECT id FROM "tag" WHERE name = 'Character Study'`);
-    const plotAnalysisTag = await queryRunner.query(`SELECT id FROM "tag" WHERE name = 'Plot Analysis'`);
+    const gambleBreakdownTag = await queryRunner.query(
+      `SELECT id FROM "tag" WHERE name = 'Gamble Breakdown'`,
+    );
+    const characterStudyTag = await queryRunner.query(
+      `SELECT id FROM "tag" WHERE name = 'Character Study'`,
+    );
+    const plotAnalysisTag = await queryRunner.query(
+      `SELECT id FROM "tag" WHERE name = 'Plot Analysis'`,
+    );
 
     const gambleBreakdownId = gambleBreakdownTag[0]?.id;
     const characterStudyId = characterStudyTag[0]?.id;
@@ -27,20 +33,29 @@ export class StreamlineGuideTags1738700000000 implements MigrationInterface {
     }
 
     // Remap guide_tags
-    await queryRunner.query(`
+    await queryRunner.query(
+      `
       UPDATE "guide_tags" SET "tagId" = $1
       WHERE "tagId" IN (SELECT id FROM "tag" WHERE name IN ('Gambling', 'High Stakes', 'Tournament', 'Strategy'))
-    `, [gambleBreakdownId]);
+    `,
+      [gambleBreakdownId],
+    );
 
-    await queryRunner.query(`
+    await queryRunner.query(
+      `
       UPDATE "guide_tags" SET "tagId" = $1
       WHERE "tagId" IN (SELECT id FROM "tag" WHERE name IN ('Character Development', 'Backstory', 'Psychological', 'Lie Detection'))
-    `, [characterStudyId]);
+    `,
+      [characterStudyId],
+    );
 
-    await queryRunner.query(`
+    await queryRunner.query(
+      `
       UPDATE "guide_tags" SET "tagId" = $1
       WHERE "tagId" IN (SELECT id FROM "tag" WHERE name IN ('Plot Twist', 'Mystery', 'Action', 'Alliance', 'Betrayal', 'Life or Death', 'Kakerou'))
-    `, [plotAnalysisId]);
+    `,
+      [plotAnalysisId],
+    );
 
     // Remove duplicate guide_tags
     await queryRunner.query(`
@@ -54,20 +69,29 @@ export class StreamlineGuideTags1738700000000 implements MigrationInterface {
       SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tag_events_event')
     `);
     if (tagEventsExists[0]?.exists) {
-      await queryRunner.query(`
+      await queryRunner.query(
+        `
         UPDATE "tag_events_event" SET "tagId" = $1
         WHERE "tagId" IN (SELECT id FROM "tag" WHERE name IN ('Gambling', 'High Stakes', 'Tournament', 'Strategy'))
-      `, [gambleBreakdownId]);
+      `,
+        [gambleBreakdownId],
+      );
 
-      await queryRunner.query(`
+      await queryRunner.query(
+        `
         UPDATE "tag_events_event" SET "tagId" = $1
         WHERE "tagId" IN (SELECT id FROM "tag" WHERE name IN ('Character Development', 'Backstory', 'Psychological', 'Lie Detection'))
-      `, [characterStudyId]);
+      `,
+        [characterStudyId],
+      );
 
-      await queryRunner.query(`
+      await queryRunner.query(
+        `
         UPDATE "tag_events_event" SET "tagId" = $1
         WHERE "tagId" IN (SELECT id FROM "tag" WHERE name IN ('Plot Twist', 'Mystery', 'Action', 'Alliance', 'Betrayal', 'Life or Death', 'Kakerou'))
-      `, [plotAnalysisId]);
+      `,
+        [plotAnalysisId],
+      );
 
       await queryRunner.query(`
         DELETE FROM "tag_events_event" a

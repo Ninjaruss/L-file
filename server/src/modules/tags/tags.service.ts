@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tag } from '../../entities/tag.entity';
@@ -60,11 +64,20 @@ export class TagsService {
   async create(data: Partial<Tag>, userId: number): Promise<Tag> {
     const tag = this.repo.create(data);
     const saved = await this.repo.save(tag);
-    await this.editLogService.logCreate(EditLogEntityType.TAG, saved.id, userId);
+    await this.editLogService.logCreate(
+      EditLogEntityType.TAG,
+      saved.id,
+      userId,
+    );
     return saved;
   }
 
-  async update(id: number, data: Partial<Tag>, userId: number, isMinorEdit = false): Promise<Tag> {
+  async update(
+    id: number,
+    data: Partial<Tag>,
+    userId: number,
+    isMinorEdit = false,
+  ): Promise<Tag> {
     const tag = await this.findOne(id);
     Object.assign(tag, data);
     if (!isMinorEdit) {
@@ -73,22 +86,34 @@ export class TagsService {
       tag.verifiedAt = null;
     }
     const saved = await this.repo.save(tag);
-    const changedFields = Object.keys(data).filter((k) => data[k as keyof typeof data] !== undefined);
-    await this.editLogService.logUpdate(EditLogEntityType.TAG, id, userId, changedFields, isMinorEdit);
+    const changedFields = Object.keys(data).filter(
+      (k) => data[k as keyof typeof data] !== undefined,
+    );
+    await this.editLogService.logUpdate(
+      EditLogEntityType.TAG,
+      id,
+      userId,
+      changedFields,
+      isMinorEdit,
+    );
     return saved;
   }
 
   async remove(id: number, userId: number): Promise<{ deleted: boolean }> {
     await this.editLogService.logDelete(EditLogEntityType.TAG, id, userId);
     const result = await this.repo.delete(id);
-    if (result.affected === 0) throw new NotFoundException(`Tag with ID ${id} not found`);
+    if (result.affected === 0)
+      throw new NotFoundException(`Tag with ID ${id} not found`);
     return { deleted: true };
   }
 
   async verify(id: number, verifierId: number, isAdmin: boolean): Promise<Tag> {
     const tag = await this.findOne(id);
     if (!isAdmin) {
-      const lastEdit = await this.editLogService.findLastMajorEdit(EditLogEntityType.TAG, id);
+      const lastEdit = await this.editLogService.findLastMajorEdit(
+        EditLogEntityType.TAG,
+        id,
+      );
       if (lastEdit && lastEdit.userId === verifierId) {
         throw new ForbiddenException('You cannot verify your own edit');
       }

@@ -40,10 +40,18 @@ export class CreateAnnotations1737400000000 implements MigrationInterface {
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_annotation_status" ON annotation (status)`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_annotation_owner" ON annotation ("ownerType", "ownerId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_annotation_author" ON annotation ("authorId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_annotation_created" ON annotation ("createdAt")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_annotation_status" ON annotation (status)`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_annotation_owner" ON annotation ("ownerType", "ownerId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_annotation_author" ON annotation ("authorId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_annotation_created" ON annotation ("createdAt")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

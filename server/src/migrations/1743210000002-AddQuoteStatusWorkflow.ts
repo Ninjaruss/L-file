@@ -18,12 +18,18 @@ export class AddQuoteStatusWorkflow1743210000002 implements MigrationInterface {
     `);
 
     // Approve all existing quotes so they stay visible
-    await queryRunner.query(`UPDATE "quote" SET "status" = 'approved' WHERE "status" = 'pending'`);
+    await queryRunner.query(
+      `UPDATE "quote" SET "status" = 'approved' WHERE "status" = 'pending'`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "quote" DROP COLUMN IF EXISTS "rejectionReason"`);
-    await queryRunner.query(`ALTER TABLE "quote" DROP COLUMN IF EXISTS "status"`);
+    await queryRunner.query(
+      `ALTER TABLE "quote" DROP COLUMN IF EXISTS "rejectionReason"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "quote" DROP COLUMN IF EXISTS "status"`,
+    );
     await queryRunner.query(`DROP TYPE IF EXISTS "quote_status_enum"`);
   }
 }

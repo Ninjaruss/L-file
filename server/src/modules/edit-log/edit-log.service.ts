@@ -259,7 +259,14 @@ export class EditLogService {
     changedFields: string[],
     isMinorEdit = false,
   ): Promise<EditLog> {
-    return this.logEdit(entityType, entityId, EditLogAction.UPDATE, userId, changedFields, isMinorEdit);
+    return this.logEdit(
+      entityType,
+      entityId,
+      EditLogAction.UPDATE,
+      userId,
+      changedFields,
+      isMinorEdit,
+    );
   }
 
   async logDelete(

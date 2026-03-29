@@ -422,7 +422,12 @@ export class GamblesController {
     @Body('isMinorEdit') isMinorEdit: boolean,
     @CurrentUser() user: User,
   ): Promise<Gamble> {
-    const result = await this.gamblesService.update(id, data, user.id, isMinorEdit ?? false);
+    const result = await this.gamblesService.update(
+      id,
+      data,
+      user.id,
+      isMinorEdit ?? false,
+    );
     if (!result) {
       throw new NotFoundException(`Gamble with id ${id} not found`);
     }
@@ -442,7 +447,11 @@ export class GamblesController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,
   ): Promise<Gamble> {
-    return this.gamblesService.verify(id, user.id, user.role === UserRole.ADMIN);
+    return this.gamblesService.verify(
+      id,
+      user.id,
+      user.role === UserRole.ADMIN,
+    );
   }
 
   @Delete(':id')

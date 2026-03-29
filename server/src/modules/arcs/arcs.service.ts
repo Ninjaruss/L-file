@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Arc } from '../../entities/arc.entity';
@@ -117,7 +121,12 @@ export class ArcsService {
     return saved;
   }
 
-  async update(id: number, data: Partial<Arc>, userId: number, isMinorEdit = false) {
+  async update(
+    id: number,
+    data: Partial<Arc>,
+    userId: number,
+    isMinorEdit = false,
+  ) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException(`Arc with id ${id} not found`);
     Object.assign(entity, data);
@@ -144,7 +153,10 @@ export class ArcsService {
     const arc = await this.repo.findOne({ where: { id } });
     if (!arc) throw new NotFoundException(`Arc with id ${id} not found`);
     if (!isAdmin) {
-      const lastEdit = await this.editLogService.findLastMajorEdit(EditLogEntityType.ARC, id);
+      const lastEdit = await this.editLogService.findLastMajorEdit(
+        EditLogEntityType.ARC,
+        id,
+      );
       if (lastEdit && lastEdit.userId === verifierId) {
         throw new ForbiddenException('You cannot verify your own edit');
       }

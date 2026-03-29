@@ -127,6 +127,8 @@ export class MediaUploadHardening1738300000000 implements MigrationInterface {
       DROP COLUMN IF EXISTS "usageType"
     `);
     await queryRunner.query(`DROP TYPE IF EXISTS media_usagetype_enum`);
-    console.log('UUID to integer rollback not implemented - would require complex data migration');
+    console.log(
+      'UUID to integer rollback not implemented - would require complex data migration',
+    );
   }
 }

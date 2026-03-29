@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeleteResult, In } from 'typeorm';
 import { Gamble } from '../../entities/gamble.entity';
@@ -243,11 +247,18 @@ export class GamblesService {
     return result;
   }
 
-  async verify(id: number, verifierId: number, isAdmin: boolean): Promise<Gamble> {
+  async verify(
+    id: number,
+    verifierId: number,
+    isAdmin: boolean,
+  ): Promise<Gamble> {
     const gamble = await this.gamblesRepository.findOne({ where: { id } });
     if (!gamble) throw new NotFoundException(`Gamble with id ${id} not found`);
     if (!isAdmin) {
-      const lastEdit = await this.editLogService.findLastMajorEdit(EditLogEntityType.GAMBLE, id);
+      const lastEdit = await this.editLogService.findLastMajorEdit(
+        EditLogEntityType.GAMBLE,
+        id,
+      );
       if (lastEdit && lastEdit.userId === verifierId) {
         throw new ForbiddenException('You cannot verify your own edit');
       }

@@ -33,9 +33,15 @@ export class CreateEditLog1737400000001 implements MigrationInterface {
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_edit_log_user" ON edit_log ("userId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_edit_log_entity" ON edit_log ("entityType", "entityId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_edit_log_created" ON edit_log ("createdAt")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_edit_log_user" ON edit_log ("userId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_edit_log_entity" ON edit_log ("entityType", "entityId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_edit_log_created" ON edit_log ("createdAt")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

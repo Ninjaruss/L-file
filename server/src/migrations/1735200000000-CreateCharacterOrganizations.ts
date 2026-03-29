@@ -21,9 +21,15 @@ export class CreateCharacterOrganizations1735200000000 implements MigrationInter
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_organization_character" ON character_organization ("characterId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_organization_organization" ON character_organization ("organizationId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_organization_spoiler" ON character_organization ("spoilerChapter")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_organization_character" ON character_organization ("characterId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_organization_organization" ON character_organization ("organizationId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_organization_spoiler" ON character_organization ("spoilerChapter")`,
+    );
 
     await queryRunner.query(`
       DO $$ BEGIN
@@ -55,7 +61,9 @@ export class CreateCharacterOrganizations1735200000000 implements MigrationInter
       END $$;
     `);
 
-    await queryRunner.query(`DROP TABLE IF EXISTS "organization_characters_character"`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "organization_characters_character"`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -66,8 +74,12 @@ export class CreateCharacterOrganizations1735200000000 implements MigrationInter
         CONSTRAINT "PK_organization_characters_character" PRIMARY KEY ("organizationId", "characterId")
       );
     `);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_organization_characters_character_org" ON "organization_characters_character" ("organizationId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_organization_characters_character_char" ON "organization_characters_character" ("characterId")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_organization_characters_character_org" ON "organization_characters_character" ("organizationId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_organization_characters_character_char" ON "organization_characters_character" ("characterId")`,
+    );
     await queryRunner.query(`
       DO $$ BEGIN
         ALTER TABLE "organization_characters_character"
@@ -89,9 +101,15 @@ export class CreateCharacterOrganizations1735200000000 implements MigrationInter
       SELECT DISTINCT "organizationId", "characterId" FROM "character_organization"
       ON CONFLICT DO NOTHING;
     `);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_organization_spoiler"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_organization_organization"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_organization_character"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_organization_spoiler"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_organization_organization"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_organization_character"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "character_organization"`);
   }
 }

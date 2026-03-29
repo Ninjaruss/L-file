@@ -81,11 +81,15 @@ export class Arc {
   // Media relationships are now handled polymorphically through the Media entity
   // with ownerType='arc' and ownerId=arc.id
 
-  @ApiProperty({ description: 'Whether this arc page has been verified by a moderator' })
+  @ApiProperty({
+    description: 'Whether this arc page has been verified by a moderator',
+  })
   @Column({ default: false })
   isVerified: boolean;
 
-  @ApiPropertyOptional({ description: 'ID of the moderator who last verified this page' })
+  @ApiPropertyOptional({
+    description: 'ID of the moderator who last verified this page',
+  })
   @Column({ nullable: true })
   verifiedById: number;
 

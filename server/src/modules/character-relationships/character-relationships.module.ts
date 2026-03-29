@@ -7,7 +7,10 @@ import { Character } from '../../entities/character.entity';
 import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CharacterRelationship, Character]), EditLogModule],
+  imports: [
+    TypeOrmModule.forFeature([CharacterRelationship, Character]),
+    EditLogModule,
+  ],
   providers: [CharacterRelationshipsService],
   controllers: [CharacterRelationshipsController],
   exports: [CharacterRelationshipsService],

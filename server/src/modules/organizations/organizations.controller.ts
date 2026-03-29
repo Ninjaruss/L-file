@@ -229,7 +229,10 @@ export class OrganizationsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify an organization page (Moderator/Admin)' })
   @ApiParam({ name: 'id', description: 'Organization ID' })
-  @ApiResponse({ status: 200, description: 'Organization verified successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Organization verified successfully',
+  })
   @ApiResponse({ status: 403, description: 'Cannot verify your own edit' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
   async verify(

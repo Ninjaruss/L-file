@@ -150,7 +150,9 @@ export class VolumesService {
       ),
     ]);
     return {
-      background: bg ? (bg.status as 'approved' | 'pending' | 'rejected') : null,
+      background: bg
+        ? (bg.status as 'approved' | 'pending' | 'rejected')
+        : null,
       popout: pop ? (pop.status as 'approved' | 'pending' | 'rejected') : null,
     };
   }

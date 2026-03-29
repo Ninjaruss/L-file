@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { User } from './user.entity';
 
@@ -29,11 +36,15 @@ export class Chapter {
   @Column({ type: 'text', nullable: true })
   summary: string;
 
-  @ApiProperty({ description: 'Whether this chapter page has been verified by a moderator' })
+  @ApiProperty({
+    description: 'Whether this chapter page has been verified by a moderator',
+  })
   @Column({ default: false })
   isVerified: boolean;
 
-  @ApiPropertyOptional({ description: 'ID of the moderator who last verified this page' })
+  @ApiPropertyOptional({
+    description: 'ID of the moderator who last verified this page',
+  })
   @Column({ nullable: true })
   verifiedById: number;
 

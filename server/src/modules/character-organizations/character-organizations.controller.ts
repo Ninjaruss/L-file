@@ -234,7 +234,9 @@ export class CharacterOrganizationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MODERATOR, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Verify a character organization membership (Moderator/Admin)' })
+  @ApiOperation({
+    summary: 'Verify a character organization membership (Moderator/Admin)',
+  })
   @ApiParam({ name: 'id', description: 'Membership ID' })
   @ApiResponse({ status: 200, description: 'Membership verified successfully' })
   @ApiResponse({ status: 403, description: 'Cannot verify your own edit' })

@@ -28,7 +28,9 @@ export class TrimProfilePictureTypes1740500000000 implements MigrationInterface 
     `);
 
     // Drop the _new type if it exists from a partial previous run
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."user_profilepicturetype_enum_new"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."user_profilepicturetype_enum_new"`,
+    );
 
     await queryRunner.query(`
       CREATE TYPE "public"."user_profilepicturetype_enum_new"
@@ -36,7 +38,9 @@ export class TrimProfilePictureTypes1740500000000 implements MigrationInterface 
     `);
 
     // Drop default before type change — Postgres can't auto-cast the default expression
-    await queryRunner.query(`ALTER TABLE "user" ALTER COLUMN "profilePictureType" DROP DEFAULT`);
+    await queryRunner.query(
+      `ALTER TABLE "user" ALTER COLUMN "profilePictureType" DROP DEFAULT`,
+    );
 
     await queryRunner.query(`
       ALTER TABLE "user"
@@ -45,7 +49,9 @@ export class TrimProfilePictureTypes1740500000000 implements MigrationInterface 
       USING "profilePictureType"::text::"public"."user_profilepicturetype_enum_new"
     `);
 
-    await queryRunner.query(`DROP TYPE "public"."user_profilepicturetype_enum"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."user_profilepicturetype_enum"`,
+    );
 
     await queryRunner.query(`
       ALTER TYPE "public"."user_profilepicturetype_enum_new"
@@ -54,7 +60,9 @@ export class TrimProfilePictureTypes1740500000000 implements MigrationInterface 
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."user_profilepicturetype_enum_old"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."user_profilepicturetype_enum_old"`,
+    );
 
     await queryRunner.query(`
       CREATE TYPE "public"."user_profilepicturetype_enum_old"
@@ -68,7 +76,9 @@ export class TrimProfilePictureTypes1740500000000 implements MigrationInterface 
       USING "profilePictureType"::text::"public"."user_profilepicturetype_enum_old"
     `);
 
-    await queryRunner.query(`DROP TYPE "public"."user_profilepicturetype_enum"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."user_profilepicturetype_enum"`,
+    );
 
     await queryRunner.query(`
       ALTER TYPE "public"."user_profilepicturetype_enum_old"

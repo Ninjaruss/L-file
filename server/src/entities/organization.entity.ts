@@ -40,11 +40,16 @@ export class Organization {
   @OneToMany(() => CharacterOrganization, (co) => co.organization)
   characterMemberships: CharacterOrganization[];
 
-  @ApiProperty({ description: 'Whether this organization page has been verified by a moderator' })
+  @ApiProperty({
+    description:
+      'Whether this organization page has been verified by a moderator',
+  })
   @Column({ default: false })
   isVerified: boolean;
 
-  @ApiPropertyOptional({ description: 'ID of the moderator who last verified this page' })
+  @ApiPropertyOptional({
+    description: 'ID of the moderator who last verified this page',
+  })
   @Column({ nullable: true })
   verifiedById: number;
 

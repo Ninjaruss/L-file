@@ -43,8 +43,14 @@ describe('CharactersService', () => {
         CharactersService,
         { provide: getRepositoryToken(Character), useValue: mockRepo },
         { provide: getRepositoryToken(Gamble), useValue: { find: jest.fn() } },
-        { provide: getRepositoryToken(Organization), useValue: { find: jest.fn() } },
-        { provide: PageViewsService, useValue: { recordView: jest.fn(), getCount: jest.fn() } },
+        {
+          provide: getRepositoryToken(Organization),
+          useValue: { find: jest.fn() },
+        },
+        {
+          provide: PageViewsService,
+          useValue: { recordView: jest.fn(), getCount: jest.fn() },
+        },
         { provide: MediaService, useValue: { findByOwner: jest.fn() } },
         { provide: EditLogService, useValue: mockEditLogService },
       ],
@@ -60,17 +66,26 @@ describe('CharactersService', () => {
   describe('verify()', () => {
     it('throws NotFoundException when character does not exist', async () => {
       mockRepo.findOne.mockResolvedValue(null);
-      await expect(service.verify(99, 1, false)).rejects.toThrow(NotFoundException);
+      await expect(service.verify(99, 1, false)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws ForbiddenException when non-admin verifies their own major edit', async () => {
       mockRepo.findOne.mockResolvedValue({ ...mockCharacter });
       mockEditLogService.findLastMajorEdit.mockResolvedValue({ userId: 5 });
-      await expect(service.verify(1, 5, false)).rejects.toThrow(ForbiddenException);
+      await expect(service.verify(1, 5, false)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('allows verify when there is no prior major edit', async () => {
-      const saved = { ...mockCharacter, isVerified: true, verifiedById: 3, verifiedAt: new Date() };
+      const saved = {
+        ...mockCharacter,
+        isVerified: true,
+        verifiedById: 3,
+        verifiedAt: new Date(),
+      };
       mockRepo.findOne.mockResolvedValue({ ...mockCharacter });
       mockEditLogService.findLastMajorEdit.mockResolvedValue(null);
       mockRepo.save.mockResolvedValue(saved);
@@ -80,7 +95,12 @@ describe('CharactersService', () => {
     });
 
     it('allows a different moderator to verify', async () => {
-      const saved = { ...mockCharacter, isVerified: true, verifiedById: 7, verifiedAt: new Date() };
+      const saved = {
+        ...mockCharacter,
+        isVerified: true,
+        verifiedById: 7,
+        verifiedAt: new Date(),
+      };
       mockRepo.findOne.mockResolvedValue({ ...mockCharacter });
       mockEditLogService.findLastMajorEdit.mockResolvedValue({ userId: 5 });
       mockRepo.save.mockResolvedValue(saved);
@@ -89,7 +109,12 @@ describe('CharactersService', () => {
     });
 
     it('allows admin to verify their own edit', async () => {
-      const saved = { ...mockCharacter, isVerified: true, verifiedById: 5, verifiedAt: new Date() };
+      const saved = {
+        ...mockCharacter,
+        isVerified: true,
+        verifiedById: 5,
+        verifiedAt: new Date(),
+      };
       mockRepo.findOne.mockResolvedValue({ ...mockCharacter });
       mockRepo.save.mockResolvedValue(saved);
       const result = await service.verify(1, 5, true); // isAdmin=true

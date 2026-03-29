@@ -70,7 +70,9 @@ export class EditLog {
   @Column({ type: 'jsonb', nullable: true })
   changedFields: string[] | null;
 
-  @ApiPropertyOptional({ description: 'Whether this edit was marked as a minor change' })
+  @ApiPropertyOptional({
+    description: 'Whether this edit was marked as a minor change',
+  })
   @Column({ default: false })
   isMinorEdit: boolean;
 

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chapter } from '../../entities/chapter.entity';
@@ -80,7 +84,12 @@ export class ChaptersService {
     return saved;
   }
 
-  async update(id: number, data: Partial<Chapter>, userId: number, isMinorEdit = false) {
+  async update(
+    id: number,
+    data: Partial<Chapter>,
+    userId: number,
+    isMinorEdit = false,
+  ) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException(`Chapter with id ${id} not found`);
     Object.assign(entity, data);
@@ -103,11 +112,19 @@ export class ChaptersService {
     return saved;
   }
 
-  async verify(id: number, verifierId: number, isAdmin: boolean): Promise<Chapter> {
+  async verify(
+    id: number,
+    verifierId: number,
+    isAdmin: boolean,
+  ): Promise<Chapter> {
     const chapter = await this.repo.findOne({ where: { id } });
-    if (!chapter) throw new NotFoundException(`Chapter with id ${id} not found`);
+    if (!chapter)
+      throw new NotFoundException(`Chapter with id ${id} not found`);
     if (!isAdmin) {
-      const lastEdit = await this.editLogService.findLastMajorEdit(EditLogEntityType.CHAPTER, id);
+      const lastEdit = await this.editLogService.findLastMajorEdit(
+        EditLogEntityType.CHAPTER,
+        id,
+      );
       if (lastEdit && lastEdit.userId === verifierId) {
         throw new ForbiddenException('You cannot verify your own edit');
       }

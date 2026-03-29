@@ -42,20 +42,42 @@ export class CreateCharacterRelationships1735084800000 implements MigrationInter
       );
     `);
 
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_relationship_source" ON character_relationship ("sourceCharacterId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_relationship_target" ON character_relationship ("targetCharacterId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_relationship_type" ON character_relationship ("relationshipType")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_character_relationship_spoiler" ON character_relationship ("spoilerChapter")`);
-    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_character_relationship_unique" ON character_relationship ("sourceCharacterId", "targetCharacterId", "startChapter")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_relationship_source" ON character_relationship ("sourceCharacterId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_relationship_target" ON character_relationship ("targetCharacterId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_relationship_type" ON character_relationship ("relationshipType")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_character_relationship_spoiler" ON character_relationship ("spoilerChapter")`,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_character_relationship_unique" ON character_relationship ("sourceCharacterId", "targetCharacterId", "startChapter")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_relationship_unique"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_relationship_spoiler"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_relationship_type"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_relationship_target"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_character_relationship_source"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_relationship_unique"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_relationship_spoiler"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_relationship_type"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_relationship_target"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_character_relationship_source"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS character_relationship`);
-    await queryRunner.query(`DROP TYPE IF EXISTS character_relationship_type_enum`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS character_relationship_type_enum`,
+    );
   }
 }

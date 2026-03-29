@@ -245,9 +245,16 @@ export class CharacterOrganizationsService {
   /**
    * Verify a membership (Moderator/Admin)
    */
-  async verify(id: number, verifierId: number, isAdmin: boolean): Promise<CharacterOrganization> {
+  async verify(
+    id: number,
+    verifierId: number,
+    isAdmin: boolean,
+  ): Promise<CharacterOrganization> {
     const membership = await this.repo.findOne({ where: { id } });
-    if (!membership) throw new NotFoundException(`CharacterOrganization with id ${id} not found`);
+    if (!membership)
+      throw new NotFoundException(
+        `CharacterOrganization with id ${id} not found`,
+      );
     if (!isAdmin) {
       const lastEdit = await this.editLogService.findLastMajorEdit(
         EditLogEntityType.CHARACTER_ORGANIZATION,

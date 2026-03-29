@@ -4,7 +4,6 @@
 - Add a proper data backup; update security for supabase data
 - QA passthrough of specific detail pages like gambles
 - Sync reading progress with other trackers? (i.e. myanimelist, anilist, etc.)
-- Editor role showing for frontend
 
 ## 2026-03-28
 - Recent migration scripts fixed and ran
