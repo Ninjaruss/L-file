@@ -98,7 +98,7 @@ export class FluxerChatService {
         {
           method: 'POST',
           headers: {
-            Authorization: user.fluxerAccessToken,
+            Authorization: `Bearer ${user.fluxerAccessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ content }),
