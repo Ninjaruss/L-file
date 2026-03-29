@@ -820,6 +820,16 @@ export const getCardStyles = (theme: MantineTheme, entityColor?: string) => ({
   }
 })
 
+// Cinematic dark card styles — warm entity-color tinted gradient background
+// Used for all section cards on entity detail pages
+export const getCinematicCardStyles = (entityColor: string) => ({
+  background: `linear-gradient(135deg, ${entityColor}0d 0%, #0d0d0d 55%, #0a0a0a 100%)`,
+  border: `1px solid ${entityColor}22`,
+  borderRadius: 10,
+  overflow: 'hidden' as const,
+  position: 'relative' as const,
+})
+
 // Hero section styles generator
 export const getHeroStyles = (theme: MantineTheme, entityColor: string) => ({
   background: backgroundStyles.hero(theme, entityColor),
