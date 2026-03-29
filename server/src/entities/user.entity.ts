@@ -76,6 +76,9 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   fluxerAvatar: string | null;
 
+  @Column({ type: 'varchar', nullable: true, select: false })
+  fluxerAccessToken: string | null;
+
   // Email/password auth fields (nullable for OAuth-only users)
   @Column({ type: 'boolean', default: false })
   isEmailVerified: boolean;
