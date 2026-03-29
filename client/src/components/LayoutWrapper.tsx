@@ -4,6 +4,7 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 import { Box } from '@mantine/core'
 import { Footer } from './Footer'
+import { FluxerChatWidget } from './FluxerChatWidget'
 
 interface LayoutWrapperProps {
   children: React.ReactNode
@@ -25,6 +26,7 @@ export const LayoutWrapper: React.FC<LayoutWrapperProps> = ({ children }) => {
         {children}
       </Box>
       {!isAdminPage && <Footer />}
+      {!isAdminPage && <FluxerChatWidget />}
     </Box>
   )
 }
