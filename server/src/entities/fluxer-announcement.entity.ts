@@ -16,7 +16,7 @@ export class FluxerAnnouncement {
   id: number;
 
   @ApiProperty({
-    description: 'Discord message ID',
+    description: 'Fluxer message ID',
     example: '1234567890123456789',
   })
   @Column({ type: 'varchar' })
