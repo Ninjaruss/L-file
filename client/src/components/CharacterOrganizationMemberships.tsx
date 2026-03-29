@@ -210,19 +210,41 @@ export default function CharacterOrganizationMemberships({
               <Stack gap={spacing.sm}>
                 {/* Organization header */}
                 <Group gap={spacing.sm}>
-                  <Box
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      backgroundColor: getAlphaColor(entityColor, 0.15),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Building2 size={18} color={entityColor} />
-                  </Box>
+                  {org.imageFileName ? (
+                    <Box
+                      component="img"
+                      src={`/api/media/image/${org.imageFileName}`}
+                      alt={org.name}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 6,
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                        border: `1px solid ${entityColor}30`,
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 6,
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: `${entityColor}18`,
+                        border: `1px solid ${entityColor}30`,
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: entityColor,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {(org.name ?? '?').slice(0, 2)}
+                    </Box>
+                  )}
                   <Box style={{ flex: 1 }}>
                     <Link
                       href={`/organizations/${orgId}`}
