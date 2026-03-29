@@ -27,7 +27,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async validateFluxerUser(profile: any): Promise<User> {
+  async validateFluxerUser(profile: any, accessToken?: string): Promise<User> {
     const {
       id: fluxerId,
       username: fluxerUsername,
@@ -54,13 +54,20 @@ export class AuthService {
         username: siteUsername,
         email: email || null,
         role: isAdmin ? UserRole.ADMIN : UserRole.USER,
+        fluxerAccessToken: accessToken ?? null,
       });
     } else {
       // Update existing user's Fluxer info (store hash only)
       await this.usersService.updateFluxerInfo(user.id, {
         fluxerUsername,
         fluxerAvatar: avatar || null,
+        fluxerAccessToken: accessToken ?? null,
       });
+    }
+
+    // Attach token in-memory so linkFluxerToUser can read it from req.user
+    if (accessToken) {
+      (user as any)._fluxerAccessToken = accessToken;
     }
 
     return user;
@@ -285,6 +292,7 @@ export class AuthService {
     const fluxerId = fluxerUser.fluxerId;
     const fluxerUsername = fluxerUser.fluxerUsername;
     const fluxerAvatar = fluxerUser.fluxerAvatar;
+    const fluxerAccessToken = (fluxerUser as any)._fluxerAccessToken ?? null;
 
     if (!fluxerId) {
       throw new ForbiddenException('Fluxer profile data is missing');
@@ -308,6 +316,7 @@ export class AuthService {
       fluxerId,
       fluxerUsername,
       fluxerAvatar: fluxerAvatar || null,
+      fluxerAccessToken,
     });
   }
 
