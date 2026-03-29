@@ -472,6 +472,7 @@ export class UsersService {
       fluxerId: null as any,
       fluxerUsername: null as any,
       fluxerAvatar: null as any,
+      fluxerAccessToken: null as any,
     });
   }
 
