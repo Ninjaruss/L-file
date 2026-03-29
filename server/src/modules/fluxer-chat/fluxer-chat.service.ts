@@ -26,6 +26,7 @@ export interface FluxerMessage {
 export class FluxerChatService {
   private readonly botToken: string;
   private readonly channelId: string;
+  private readonly webhookUrl: string;
   // 2-second in-memory cache to prevent burst requests
   private messagesCache: { data: FluxerMessage[]; expiresAt: number } | null =
     null;
@@ -39,6 +40,7 @@ export class FluxerChatService {
   ) {
     this.botToken = this.configService.get<string>('FLUXER_BOT_TOKEN')!;
     this.channelId = this.configService.get<string>('FLUXER_CHAT_CHANNEL_ID')!;
+    this.webhookUrl = this.configService.get<string>('FLUXER_WEBHOOK_URL')!;
   }
 
   async getMessages(): Promise<FluxerMessage[]> {
@@ -80,45 +82,33 @@ export class FluxerChatService {
   }
 
   async sendMessage(userId: number, content: string): Promise<FluxerMessage> {
-    // Explicitly select fluxerAccessToken (column has select:false)
-    const user = await this.userRepo
-      .createQueryBuilder('user')
-      .select(['user.id', 'user.fluxerId', 'user.fluxerAccessToken'])
-      .where('user.id = :id', { id: userId })
-      .getOne();
+    const user = await this.userRepo.findOne({ where: { id: userId } });
 
-    if (!user?.fluxerAccessToken) {
+    if (!user?.fluxerId) {
       throw new ForbiddenException('FLUXER_TOKEN_MISSING');
     }
 
+    const avatarUrl = user.fluxerAvatar
+      ? `https://fluxerusercontent.com/avatars/${user.fluxerId}/${user.fluxerAvatar}.png`
+      : undefined;
+
     let res: Response;
     try {
-      res = await fetch(
-        `https://api.fluxer.app/v1/channels/${this.channelId}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${user.fluxerAccessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ content }),
-        },
-      );
+      res = await fetch(`${this.webhookUrl}?wait=true`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          username: user.fluxerUsername ?? user.username,
+          ...(avatarUrl && { avatar_url: avatarUrl }),
+        }),
+      });
     } catch {
-      throw new BadRequestException('Failed to reach Fluxer API');
-    }
-
-    if (res.status === 401) {
-      await this.userRepo.update(userId, { fluxerAccessToken: null });
-      throw new ForbiddenException('FLUXER_TOKEN_EXPIRED');
-    }
-
-    if (res.status === 403) {
-      throw new ForbiddenException('FLUXER_NO_PERMISSION');
+      throw new BadRequestException('Failed to reach Fluxer webhook');
     }
 
     if (!res.ok) {
-      throw new BadRequestException('Failed to send message to Fluxer');
+      throw new BadRequestException('Failed to send message via Fluxer webhook');
     }
 
     return this.formatMessage(await res.json());

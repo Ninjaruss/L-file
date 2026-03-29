@@ -46,18 +46,16 @@ function relativeTime(iso: string): string {
 }
 
 export function FluxerChatWidget() {
-  const { user, loginWithFluxer, linkFluxer } = useAuth()
+  const { user, loginWithFluxer } = useAuth()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<FluxerMsg[]>([])
   const [announcement, setAnnouncement] = useState<Announcement>(null)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
-  const [tokenError, setTokenError] = useState<'missing' | 'expired' | 'no_permission' | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const announcePollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const hasFluxerLinked = Boolean(user?.fluxerId)
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -115,7 +113,7 @@ export function FluxerChatWidget() {
       author: {
         id: user?.fluxerId ?? 'me',
         username: user?.fluxerUsername ?? user?.username ?? 'You',
-        avatar: user?.fluxerAvatar ?? null,
+        avatar: user?.fluxerId && user?.fluxerAvatar ? user.fluxerAvatar : null,
       },
     }
     setMessages(prev => [...prev, optimistic])
@@ -124,17 +122,12 @@ export function FluxerChatWidget() {
 
     try {
       await api.sendFluxerMessage(trimmed)
-      setTokenError(null)
-    } catch (err: any) {
+      setSendError(null)
+    } catch {
       // Remove optimistic message on failure
       setMessages(prev => prev.filter(m => m.id !== optimistic.id))
       setInput(trimmed)
-      const code = err?.details?.message ?? err?.message ?? ''
-      if (code.includes('FLUXER_TOKEN_EXPIRED') || code.includes('FLUXER_TOKEN_MISSING')) {
-        setTokenError('expired')
-      } else if (code.includes('FLUXER_NO_PERMISSION')) {
-        setTokenError('no_permission')
-      }
+      setSendError('Failed to send message. Please try again.')
     } finally {
       setSending(false)
     }
@@ -302,108 +295,46 @@ export function FluxerChatWidget() {
 
             {/* Footer */}
             <div style={{ padding: 10, borderTop: '1px solid #2a2a4a', background: '#111122', flexShrink: 0 }}>
-              {/* Full chat: Fluxer linked and no token error */}
-              {hasFluxerLinked && !tokenError && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <TextInput
-                    value={input}
-                    onChange={(e) => setInput(e.currentTarget.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Message #usogui..."
-                    disabled={sending}
-                    size="xs"
-                    styles={{
-                      root: { flex: 1 },
-                      input: {
-                        background: 'rgba(255,255,255,0.07)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: '#fff',
-                        fontSize: 12,
-                      },
-                    }}
-                  />
-                  <ActionIcon
-                    onClick={handleSend}
-                    disabled={!input.trim() || sending}
-                    size={30}
-                    radius="md"
-                    style={{
-                      background: 'linear-gradient(135deg, #5865f2, #7c3aed)',
-                      color: '#fff',
-                      flexShrink: 0,
-                    }}
-                    aria-label="Send message"
-                  >
-                    <Send size={14} />
-                  </ActionIcon>
-                </div>
-              )}
-
-              {/* Token expired / re-link needed */}
-              {hasFluxerLinked && tokenError && (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: '#f87171', fontSize: 12, marginBottom: 8 }}>
-                    {tokenError === 'no_permission'
-                      ? 'You need to join the server to chat.'
-                      : 'Your Fluxer session expired. Re-link to chat.'}
-                  </div>
-                  {tokenError !== 'no_permission' && (
-                    <button
-                      onClick={() => { linkFluxer(); setTokenError(null) }}
-                      style={{
-                        background: 'linear-gradient(135deg, #5865f2, #7c3aed)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '6px 14px',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        fontWeight: 600,
-                      }}
-                    >
-                      Re-link Fluxer
-                    </button>
+              {/* Logged in — can chat via webhook */}
+              {user && (
+                <div>
+                  {sendError && (
+                    <div style={{ color: '#f87171', fontSize: 11, marginBottom: 6, textAlign: 'center' }}>
+                      {sendError}
+                    </div>
                   )}
-                </div>
-              )}
-
-              {/* Logged in but no Fluxer linked */}
-              {user && !hasFluxerLinked && (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: '#aaa', fontSize: 12, marginBottom: 8 }}>
-                    Link your Fluxer account to chat
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                    <button
-                      onClick={linkFluxer}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <TextInput
+                      value={input}
+                      onChange={(e) => setInput(e.currentTarget.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Message #usogui..."
+                      disabled={sending}
+                      size="xs"
+                      styles={{
+                        root: { flex: 1 },
+                        input: {
+                          background: 'rgba(255,255,255,0.07)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: '#fff',
+                          fontSize: 12,
+                        },
+                      }}
+                    />
+                    <ActionIcon
+                      onClick={handleSend}
+                      disabled={!input.trim() || sending}
+                      size={30}
+                      radius="md"
                       style={{
                         background: 'linear-gradient(135deg, #5865f2, #7c3aed)',
                         color: '#fff',
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '6px 14px',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        fontWeight: 600,
+                        flexShrink: 0,
                       }}
+                      aria-label="Send message"
                     >
-                      Link Fluxer
-                    </button>
-                    <a
-                      href={FLUXER_SERVER_INVITE}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        background: 'rgba(255,255,255,0.08)',
-                        color: '#ccc',
-                        borderRadius: 6,
-                        padding: '6px 14px',
-                        fontSize: 12,
-                        textDecoration: 'none',
-                      }}
-                    >
-                      Join Server
-                    </a>
+                      <Send size={14} />
+                    </ActionIcon>
                   </div>
                 </div>
               )}
@@ -412,7 +343,7 @@ export function FluxerChatWidget() {
               {!user && (
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#aaa', fontSize: 12, marginBottom: 8 }}>
-                    Log in with Fluxer to chat
+                    Log in to chat
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                     <button
