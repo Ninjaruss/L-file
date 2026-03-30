@@ -12,6 +12,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class EventsService {
@@ -420,12 +421,7 @@ export class EventsService {
           : undefined;
     }
 
-    // First update the basic event data
-    if (Object.keys(cleanedUpdateData).length > 0) {
-      await this.repo.update(id, cleanedUpdateData);
-    }
-
-    // Get the event with current relationships
+    // Load the event BEFORE mutations to snapshot pre-update state
     const event = await this.repo.findOne({
       where: { id },
       relations: ['characters'],
@@ -433,6 +429,14 @@ export class EventsService {
 
     if (!event) {
       throw new NotFoundException(`Event with ID ${id} not found`);
+    }
+
+    const changedFields = diffFields(event, updateData);
+    if (characterIds !== undefined) changedFields.push('characters');
+
+    // First update the basic event data
+    if (Object.keys(cleanedUpdateData).length > 0) {
+      await this.repo.update(id, cleanedUpdateData);
     }
 
     // Update character relationships if provided
@@ -460,10 +464,6 @@ export class EventsService {
       throw new NotFoundException(`Event with ID ${id} not found after update`);
     }
     if (userId !== undefined) {
-      const changedFields = Object.keys(updateData).filter(
-        (k) => updateData[k as keyof typeof updateData] !== undefined,
-      );
-      if (characterIds !== undefined) changedFields.push('characters');
       await this.editLogService.logUpdate(
         EditLogEntityType.EVENT,
         id,
