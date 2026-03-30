@@ -15,6 +15,7 @@ import { MediaService } from '../media/media.service';
 import { MediaOwnerType } from '../../entities/media.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class GamblesService {
@@ -194,6 +195,27 @@ export class GamblesService {
   ): Promise<Gamble> {
     const gamble = await this.findOne(id); // Validates existence and loads relations
 
+    // Snapshot scalar fields before mutation for accurate diffing
+    const scalarSnapshot = {
+      name: gamble.name,
+      description: gamble.description,
+      rules: gamble.rules,
+      winCondition: gamble.winCondition,
+      explanation: gamble.explanation,
+      chapterId: gamble.chapterId,
+    };
+    const scalarDto = {
+      name: updateGambleDto.name,
+      description: updateGambleDto.description,
+      rules: updateGambleDto.rules,
+      winCondition: updateGambleDto.winCondition,
+      explanation: updateGambleDto.explanation,
+      chapterId: updateGambleDto.chapterId,
+    };
+    const changedFields = diffFields(scalarSnapshot, scalarDto);
+    if (updateGambleDto.participantIds !== undefined) changedFields.push('participants');
+    if (updateGambleDto.factions !== undefined) changedFields.push('factions');
+
     // Update basic fields
     gamble.name = updateGambleDto.name ?? gamble.name;
     gamble.description = updateGambleDto.description ?? gamble.description;
@@ -234,9 +256,6 @@ export class GamblesService {
 
     // Return the updated gamble with all relations
     const result = await this.findOne(id);
-    const changedFields = Object.keys(updateGambleDto).filter(
-      (k) => updateGambleDto[k as keyof UpdateGambleDto] !== undefined,
-    );
     await this.editLogService.logUpdate(
       EditLogEntityType.GAMBLE,
       id,
