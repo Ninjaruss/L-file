@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Chapter } from '../../entities/chapter.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class ChaptersService {
@@ -92,6 +93,7 @@ export class ChaptersService {
   ) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException(`Chapter with id ${id} not found`);
+    const changedFields = diffFields(entity, data);
     Object.assign(entity, data);
     if (!isMinorEdit) {
       entity.isVerified = false;
@@ -99,9 +101,6 @@ export class ChaptersService {
       entity.verifiedAt = null;
     }
     const saved = await this.repo.save(entity);
-    const changedFields = Object.keys(data).filter(
-      (k) => data[k as keyof typeof data] !== undefined,
-    );
     await this.editLogService.logUpdate(
       EditLogEntityType.CHAPTER,
       id,

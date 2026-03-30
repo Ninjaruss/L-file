@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Tag } from '../../entities/tag.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class TagsService {
@@ -79,6 +80,7 @@ export class TagsService {
     isMinorEdit = false,
   ): Promise<Tag> {
     const tag = await this.findOne(id);
+    const changedFields = diffFields(tag, data);
     Object.assign(tag, data);
     if (!isMinorEdit) {
       tag.isVerified = false;
@@ -86,9 +88,6 @@ export class TagsService {
       tag.verifiedAt = null;
     }
     const saved = await this.repo.save(tag);
-    const changedFields = Object.keys(data).filter(
-      (k) => data[k as keyof typeof data] !== undefined,
-    );
     await this.editLogService.logUpdate(
       EditLogEntityType.TAG,
       id,

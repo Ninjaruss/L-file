@@ -11,6 +11,7 @@ import { MediaService } from '../media/media.service';
 import { MediaOwnerType } from '../../entities/media.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class OrganizationsService {
@@ -113,6 +114,7 @@ export class OrganizationsService {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity)
       throw new NotFoundException(`Organization with ID ${id} not found`);
+    const changedFields = diffFields(entity, data);
     Object.assign(entity, data);
     if (!isMinorEdit) {
       entity.isVerified = false;
@@ -120,9 +122,6 @@ export class OrganizationsService {
       entity.verifiedAt = null;
     }
     await this.repo.save(entity);
-    const changedFields = Object.keys(data).filter(
-      (k) => data[k as keyof typeof data] !== undefined,
-    );
     await this.editLogService.logUpdate(
       EditLogEntityType.ORGANIZATION,
       id,

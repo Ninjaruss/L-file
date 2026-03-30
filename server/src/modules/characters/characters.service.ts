@@ -16,6 +16,7 @@ import { MediaService } from '../media/media.service';
 import { MediaOwnerType } from '../../entities/media.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class CharactersService {
@@ -181,6 +182,7 @@ export class CharactersService {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
     const { organizationIds: _ignored, ...characterData } = updateCharacterDto;
+    const changedFields = diffFields(character, characterData);
     Object.assign(character, characterData);
     if (!isMinorEdit) {
       character.isVerified = false;
@@ -188,9 +190,6 @@ export class CharactersService {
       character.verifiedAt = null;
     }
     const saved = await this.repo.save(character);
-    const changedFields = Object.keys(characterData).filter(
-      (k) => characterData[k as keyof typeof characterData] !== undefined,
-    );
     await this.editLogService.logUpdate(
       EditLogEntityType.CHARACTER,
       id,
