@@ -378,6 +378,7 @@ export interface CharacterOrganization {
     id: number;
     name: string;
     description?: string;
+    imageFileName?: string | null;
   };
   role: string;
   startChapter: number;

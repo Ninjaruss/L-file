@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   Box,
-  Button,
   Card,
   Container,
   Group,
@@ -14,13 +13,11 @@ import {
 } from '@mantine/core'
 import {
   getEntityThemeColor,
-  getAlphaColor,
   textColors,
   setTabAccentColors,
   backgroundStyles,
-  getCardStyles
 } from '../../../lib/mantine-theme'
-import { Users, Shield, Image as ImageIcon, Crown } from 'lucide-react'
+import { Users, Shield, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
 import { motion } from 'motion/react'
@@ -29,6 +26,7 @@ import MediaGallery from '../../../components/MediaGallery'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 import { RelatedContentSection } from '../../../components/layouts/RelatedContentSection'
+import { CinematicCard, CinematicSectionHeader } from '../../../components/layouts/CinematicCard'
 import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import OrganizationMembers from '../../../components/OrganizationMembers'
@@ -113,7 +111,7 @@ export default function OrganizationPageClient({
       />
 
       <motion.div {...pageEnter}>
-        <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={getCardStyles(theme)}>
+        <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={{ background: backgroundStyles.card, border: `1px solid ${entityColors.organization}22` }}>
         <Tabs
           value={activeTab}
           onChange={(value) => value && setActiveTab(value)}
@@ -142,57 +140,38 @@ export default function OrganizationPageClient({
               {/* Main column */}
               <Stack gap={theme.spacing.md}>
                 {/* Organization Description Section */}
-                <Card withBorder radius="lg" shadow="lg" padding={0} style={getCardStyles(theme, entityColors.organization)}>
-                  <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.organization}, transparent 70%)` }} />
-                  <Box p="lg">
-                    <Group gap={10} mb={14} align="center">
-                      <Box style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.organization, 0.15), border: `1px solid ${getAlphaColor(entityColors.organization, 0.30)}` }}>
-                        <Shield size={16} color={entityColors.organization} />
+                <CinematicCard entityColor={entityColors.organization}>
+                  <CinematicSectionHeader label="Organization Overview" entityColor={entityColors.organization} />
+                  {initialOrganization.description ? (
+                    <TimelineSpoilerWrapper chapterNumber={1}>
+                      <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                        <EnhancedSpoilerMarkdown content={initialOrganization.description} enableEntityEmbeds compactEntityCards={false} />
                       </Box>
-                      <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.organization, opacity: 0.85 }}>Organization Overview</Text>
-                      <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.organization, 0.20)}, transparent)` }} />
-                    </Group>
-                    {initialOrganization.description ? (
-                      <TimelineSpoilerWrapper chapterNumber={1}>
-                        <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
-                          <EnhancedSpoilerMarkdown content={initialOrganization.description} enableEntityEmbeds compactEntityCards={false} />
-                        </Box>
-                      </TimelineSpoilerWrapper>
-                    ) : (
-                      <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
-                        No description available for this organization yet. Check back later for updates!
-                      </Text>
-                    )}
-                  </Box>
-                </Card>
+                    </TimelineSpoilerWrapper>
+                  ) : (
+                    <Text size="sm" c={textColors.tertiary} style={{ fontStyle: 'italic', textAlign: 'center', padding: theme.spacing.xl }}>
+                      No description available for this organization yet. Check back later for updates!
+                    </Text>
+                  )}
+                </CinematicCard>
               </Stack>
 
               {/* Aside column */}
               <Stack gap={theme.spacing.sm}>
                 {/* Details card */}
-                <Card withBorder radius="lg" shadow="md" padding={0} style={getCardStyles(theme, entityColors.organization)}>
-                  <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${entityColors.organization}, transparent 70%)` }} />
-                  <Box p="md">
-                    <Group gap={10} mb={14} align="center">
-                      <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: entityColors.organization, opacity: 0.85 }}>Details</Text>
-                      <Box style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${getAlphaColor(entityColors.organization, 0.20)}, transparent)` }} />
-                    </Group>
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #161616' }}>
-                      <Box style={{ width: 24, height: 24, borderRadius: 5, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.organization, 0.10), border: `1px solid ${getAlphaColor(entityColors.organization, 0.20)}` }}>
-                        <Users size={14} color={entityColors.character} />
-                      </Box>
-                      <Text style={{ fontSize: 11, color: '#555', flex: 1 }}>Members</Text>
-                      <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.character }}>{initialMembers?.length ?? 0}</Text>
-                    </Box>
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                      <Box style={{ width: 24, height: 24, borderRadius: 5, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(entityColors.organization, 0.10), border: `1px solid ${getAlphaColor(entityColors.organization, 0.20)}` }}>
-                        <Crown size={14} color={entityColors.gamble} />
-                      </Box>
-                      <Text style={{ fontSize: 11, color: '#555', flex: 1 }}>Gambles</Text>
-                      <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.gamble }}>{initialGambles?.length ?? 0}</Text>
-                    </Box>
+                <CinematicCard entityColor={entityColors.organization} padding="md">
+                  <CinematicSectionHeader label="Details" entityColor={entityColors.organization} />
+                  <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.organization}14` }}>
+                    <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.organization, flexShrink: 0 }} />
+                    <Text style={{ fontSize: 11, color: `${entityColors.organization}66`, flex: 1 }}>Members</Text>
+                    <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.character }}>{initialMembers?.length ?? 0}</Text>
                   </Box>
-                </Card>
+                  <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                    <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.organization, flexShrink: 0 }} />
+                    <Text style={{ fontSize: 11, color: `${entityColors.organization}66`, flex: 1 }}>Gambles</Text>
+                    <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.gamble }}>{initialGambles?.length ?? 0}</Text>
+                  </Box>
+                </CinematicCard>
 
                 {/* Members compact list */}
                 <RelatedContentSection
@@ -229,33 +208,17 @@ export default function OrganizationPageClient({
 
           <Tabs.Panel value="media" pt={theme.spacing.md}>
             <Stack gap="md">
-              <Card withBorder radius="lg" shadow="lg" padding={0} style={{ background: backgroundStyles.card, border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'media'), 0.4)}` }}>
-                <Box style={{ height: 3, borderRadius: '6px 6px 0 0', background: `linear-gradient(90deg, ${getEntityThemeColor(theme, 'media')}, transparent 70%)` }} />
-                <Box p="md">
-                  <Group justify="space-between" align="center" mb={14}>
-                    <Group gap={10} align="center">
-                      <Box style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: getAlphaColor(getEntityThemeColor(theme, 'media'), 0.15), border: `1px solid ${getAlphaColor(getEntityThemeColor(theme, 'media'), 0.30)}` }}>
-                        <ImageIcon size={16} color={getEntityThemeColor(theme, 'media')} />
-                      </Box>
-                      <Text style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: getEntityThemeColor(theme, 'media'), opacity: 0.85 }}>
-                        Media Gallery
-                      </Text>
-                    </Group>
-                    <Button component={Link} href={`/media?ownerType=organization&ownerId=${initialOrganization.id}`} variant="outline" c={getEntityThemeColor(theme, 'media')} size="sm" radius="xl">
-                      View All
-                    </Button>
-                  </Group>
-                  <MediaGallery
-                    ownerType="organization"
-                    ownerId={initialOrganization.id}
-                    purpose="gallery"
-                    showTitle={false}
-                    compactMode={false}
-                    showFilters
-                    allowMultipleTypes
-                  />
-                </Box>
-              </Card>
+              <CinematicCard entityColor={entityColors.media} padding="md">
+                <Group justify="space-between" align="center" mb={14}>
+                  <Box style={{ fontSize: '0.55rem', fontWeight: 900, letterSpacing: '0.22em', textTransform: 'uppercase', borderRadius: 4, padding: '3px 8px', background: `${entityColors.media}18`, border: `1px solid ${entityColors.media}30`, color: entityColors.media }}>
+                    Media Gallery
+                  </Box>
+                  <Box component={Link} href={`/media?ownerType=organization&ownerId=${initialOrganization.id}`} style={{ fontSize: 11, color: `${entityColors.media}88`, textDecoration: 'none' }}>
+                    View All →
+                  </Box>
+                </Group>
+                <MediaGallery ownerType="organization" ownerId={initialOrganization.id} purpose="gallery" limit={8} showTitle={false} compactMode showFilters={false} />
+              </CinematicCard>
             </Stack>
           </Tabs.Panel>
         </Tabs>
