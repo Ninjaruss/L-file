@@ -579,9 +579,7 @@ export class GuidesService {
 
     // Snapshot guide before transaction mutations for accurate diffing
     const guideSnapshot = Object.fromEntries(
-      Object.entries(guideData)
-        .filter(([k]) => k !== 'tagNames' && k !== 'characterIds')
-        .map(([k]) => [k, (guide as any)[k]])
+      Object.entries(guideData).map(([k]) => [k, (guide as any)[k]])
     );
 
     const result = await this.guideRepository.manager.transaction(
@@ -744,11 +742,8 @@ export class GuidesService {
       },
     );
 
-    // Log the edit
-    const scalarGuideData = Object.fromEntries(
-      Object.entries(guideData).filter(([k]) => k !== 'tagNames' && k !== 'characterIds'),
-    );
-    const changedFieldNames = diffFields(guideSnapshot, scalarGuideData);
+    // Log the edit — guideData already excludes tagNames/characterIds (destructured above)
+    const changedFieldNames = diffFields(guideSnapshot, guideData);
     if (tagNames !== undefined) changedFieldNames.push('tags');
     if (characterIds !== undefined) changedFieldNames.push('characters');
     await this.editLogService.logUpdate(
