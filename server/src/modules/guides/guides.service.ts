@@ -20,6 +20,7 @@ import { PageViewsService } from '../page-views/page-views.service';
 import { PageType } from '../../entities/page-view.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class GuidesService {
@@ -737,9 +738,10 @@ export class GuidesService {
     );
 
     // Log the edit
-    const changedFieldNames = Object.keys(guideData).filter(
-      (k) => k !== 'tagNames' && k !== 'characterIds',
+    const scalarGuideData = Object.fromEntries(
+      Object.entries(guideData).filter(([k]) => k !== 'tagNames' && k !== 'characterIds'),
     );
+    const changedFieldNames = diffFields(guide, scalarGuideData);
     if (tagNames !== undefined) changedFieldNames.push('tags');
     if (characterIds !== undefined) changedFieldNames.push('characters');
     await this.editLogService.logUpdate(
