@@ -187,7 +187,7 @@ export default function GamblesPageContent({
 
   const { data: pageData, loading: pageLoading, prefetch } = usePaged<Gamble>(
     'gambles', currentPage, fetcher,
-    { gambleName: searchQuery, character: characterFilter, sort: sortBy },
+    { name: searchQuery, character: characterFilter, sort: sortBy },
     { ttlMs: pagedCacheConfig.lists.gambles.ttlMs, persist: pagedCacheConfig.defaults.persist, maxEntries: pagedCacheConfig.lists.gambles.maxEntries }
   )
 
