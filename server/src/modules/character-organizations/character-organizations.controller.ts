@@ -72,6 +72,18 @@ export class CharacterOrganizationsController {
     type: Number,
     description: 'Items per page (default: 25)',
   })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    description: 'Field to sort by (id, createdAt, or startChapter)',
+    example: 'id',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    description: 'Sort order (ASC or DESC)',
+    example: 'DESC',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of character-organization memberships',
