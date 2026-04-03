@@ -29,6 +29,7 @@ import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
 import { UserRole } from '../../entities/user.entity';
 import { CloudflareR2Service } from '../../services/cloudflare-r2.service';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class MediaService {
@@ -541,6 +542,15 @@ export class MediaService {
       throw new ForbiddenException('Cannot edit approved submissions');
     }
 
+    // Snapshot scalar fields before mutation for accurate diffing
+    const mediaSnapshot = {
+      description: media.description,
+      ownerType: media.ownerType,
+      ownerId: media.ownerId,
+      chapterNumber: media.chapterNumber,
+      url: media.url,
+    };
+
     // Update metadata fields if provided
     if (updateData.description !== undefined) {
       media.description = updateData.description;
@@ -638,14 +648,14 @@ export class MediaService {
 
     const saved = await this.mediaRepo.save(media);
 
-    const changedFieldNames: string[] = [];
-    if (updateData.description !== undefined)
-      changedFieldNames.push('description');
-    if (updateData.ownerType !== undefined) changedFieldNames.push('ownerType');
-    if (updateData.ownerId !== undefined) changedFieldNames.push('ownerId');
-    if (updateData.chapterNumber !== undefined)
-      changedFieldNames.push('chapterNumber');
-    if (updateData.url !== undefined && !file) changedFieldNames.push('url');
+    const mediaDtoScalars = {
+      description: updateData.description,
+      ownerType: updateData.ownerType,
+      ownerId: updateData.ownerId,
+      chapterNumber: updateData.chapterNumber,
+      url: !file ? updateData.url : undefined,
+    };
+    const changedFieldNames = diffFields(mediaSnapshot, mediaDtoScalars);
     if (file) changedFieldNames.push('file');
 
     await this.editLogService.logUpdate(
