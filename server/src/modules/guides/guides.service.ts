@@ -577,6 +577,13 @@ export class GuidesService {
     const { tagNames, authorId, characterIds, arcId, gambleIds, ...guideData } =
       updateGuideDto;
 
+    // Snapshot guide before transaction mutations for accurate diffing
+    const guideSnapshot = Object.fromEntries(
+      Object.entries(guideData)
+        .filter(([k]) => k !== 'tagNames' && k !== 'characterIds')
+        .map(([k]) => [k, (guide as any)[k]])
+    );
+
     const result = await this.guideRepository.manager.transaction(
       async (manager) => {
         const guideRepo = manager.getRepository(Guide);
@@ -741,7 +748,7 @@ export class GuidesService {
     const scalarGuideData = Object.fromEntries(
       Object.entries(guideData).filter(([k]) => k !== 'tagNames' && k !== 'characterIds'),
     );
-    const changedFieldNames = diffFields(guide, scalarGuideData);
+    const changedFieldNames = diffFields(guideSnapshot, scalarGuideData);
     if (tagNames !== undefined) changedFieldNames.push('tags');
     if (characterIds !== undefined) changedFieldNames.push('characters');
     await this.editLogService.logUpdate(
