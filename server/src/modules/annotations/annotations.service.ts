@@ -85,6 +85,7 @@ export class AnnotationsService {
       page = 1,
       limit = 20,
       sortOrder = 'DESC',
+      sort = 'createdAt',
     } = query;
 
     const queryBuilder = this.annotationRepository
@@ -121,7 +122,13 @@ export class AnnotationsService {
       queryBuilder.andWhere('annotation.authorId = :authorId', { authorId });
     }
 
-    queryBuilder.orderBy('annotation.createdAt', sortOrder);
+    const ANNOTATION_SORT_FIELDS: Record<string, string> = {
+      id: 'annotation.id',
+      title: 'annotation.title',
+      createdAt: 'annotation.createdAt',
+    };
+    const sortField = ANNOTATION_SORT_FIELDS[sort] ?? 'annotation.createdAt';
+    queryBuilder.orderBy(sortField, sortOrder);
 
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
@@ -333,8 +340,13 @@ export class AnnotationsService {
 
     // Compute changed fields before mutations
     const changedFields = diffFields(annotation, rest);
-    if (isSpoiler !== undefined && isSpoiler !== annotation.isSpoiler) changedFields.push('isSpoiler');
-    if (spoilerChapter !== undefined && spoilerChapter !== annotation.spoilerChapter) changedFields.push('spoilerChapter');
+    if (isSpoiler !== undefined && isSpoiler !== annotation.isSpoiler)
+      changedFields.push('isSpoiler');
+    if (
+      spoilerChapter !== undefined &&
+      spoilerChapter !== annotation.spoilerChapter
+    )
+      changedFields.push('spoilerChapter');
 
     // Handle spoiler logic
     if (isSpoiler !== undefined) {
