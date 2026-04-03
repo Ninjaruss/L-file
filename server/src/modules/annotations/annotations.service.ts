@@ -21,6 +21,7 @@ import { UpdateAnnotationDto } from './dto/update-annotation.dto';
 import { AnnotationQueryDto } from './dto/annotation-query.dto';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class AnnotationsService {
@@ -330,6 +331,11 @@ export class AnnotationsService {
 
     const { isSpoiler, spoilerChapter, ...rest } = updateAnnotationDto;
 
+    // Compute changed fields before mutations
+    const changedFields = diffFields(annotation, rest);
+    if (isSpoiler !== undefined && isSpoiler !== annotation.isSpoiler) changedFields.push('isSpoiler');
+    if (spoilerChapter !== undefined && spoilerChapter !== annotation.spoilerChapter) changedFields.push('spoilerChapter');
+
     // Handle spoiler logic
     if (isSpoiler !== undefined) {
       annotation.isSpoiler = isSpoiler;
@@ -348,10 +354,6 @@ export class AnnotationsService {
     Object.assign(annotation, rest);
 
     const saved = await this.annotationRepository.save(annotation);
-
-    const changedFields = Object.keys(rest);
-    if (isSpoiler !== undefined) changedFields.push('isSpoiler');
-    if (spoilerChapter !== undefined) changedFields.push('spoilerChapter');
 
     await this.editLogService.logUpdate(
       EditLogEntityType.ANNOTATION,
