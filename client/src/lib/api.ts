@@ -543,7 +543,7 @@ class ApiClient {
     }>(`/arcs/${arcId}/gambles`)
   }
 
-  async getGambles(params?: { page?: number; limit?: number; name?: string }) {
+  async getGambles(params?: { page?: number; limit?: number; name?: string; sort?: string; order?: 'ASC' | 'DESC' }) {
     const searchParams = new URLSearchParams()
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

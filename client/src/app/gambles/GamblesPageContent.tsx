@@ -177,7 +177,7 @@ export default function GamblesPageContent({
       return { data: [], total: 0, page: 1, perPage: 12, totalPages: 1 }
     }
 
-    const params: any = { page, limit: 12 }
+    const params: { page: number; limit: number; name?: string; sort?: string; order?: 'ASC' | 'DESC' } = { page, limit: 12 }
     if (searchQuery) params.name = searchQuery
     if (sortBy === 'name') { params.sort = 'name'; params.order = 'ASC' }
     else if (sortBy === 'chapter') { params.sort = 'chapterId'; params.order = 'ASC' }
