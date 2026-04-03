@@ -150,6 +150,8 @@ export class QuotesController {
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('status') status?: string,
+    @Query('sort') sort?: string,
+    @Query('order') order?: 'ASC' | 'DESC',
     @CurrentUser() user?: User,
   ): Promise<{
     data: Quote[];
@@ -174,6 +176,8 @@ export class QuotesController {
       submittedById,
       page,
       limit,
+      sort,
+      order,
       status: status as QuoteStatus | undefined,
       includeAll,
     });

@@ -51,6 +51,8 @@ export class QuotesService {
     limit?: number;
     includeAll?: boolean;
     status?: QuoteStatus;
+    sort?: string;
+    order?: 'ASC' | 'DESC';
   }): Promise<{
     data: Quote[];
     total: number;
@@ -58,11 +60,19 @@ export class QuotesService {
     perPage?: number;
     totalPages?: number;
   }> {
+    const QUOTE_SORT_FIELDS: Record<string, string> = {
+      id: 'quote.id',
+      chapterNumber: 'quote.chapterNumber',
+      createdAt: 'quote.createdAt',
+    };
+    const sortField = QUOTE_SORT_FIELDS[options?.sort ?? ''] ?? 'quote.chapterNumber';
+    const sortDir: 'ASC' | 'DESC' = options?.order === 'ASC' ? 'ASC' : 'DESC';
+
     const queryBuilder = this.quotesRepository
       .createQueryBuilder('quote')
       .leftJoinAndSelect('quote.character', 'character')
       .leftJoinAndSelect('quote.submittedBy', 'submittedBy')
-      .orderBy('quote.createdAt', 'DESC');
+      .orderBy(sortField, sortDir);
 
     if (options?.characterId) {
       queryBuilder.andWhere('quote.characterId = :characterId', {
