@@ -21,6 +21,59 @@ import Link from 'next/link'
 import { api } from '../../lib/api'
 import { textColors } from '../../lib/mantine-theme'
 
+const FIELD_LABELS: Record<string, string> = {
+  name: 'Name',
+  title: 'Title',
+  summary: 'Summary',
+  description: 'Description',
+  imageUrl: 'Image URL',
+  status: 'Status',
+  tags: 'Tags',
+  type: 'Type',
+  startChapter: 'Start Chapter',
+  endChapter: 'End Chapter',
+  outcome: 'Outcome',
+  rules: 'Rules',
+  winCondition: 'Win Condition',
+  explanation: 'Explanation',
+  factions: 'Factions',
+  participants: 'Participants',
+  characters: 'Characters',
+  organizations: 'Organizations',
+  strategies: 'Strategies',
+  isCanon: 'Is Canon',
+  number: 'Number',
+  arcId: 'Arc',
+  volumeId: 'Volume',
+  chapterId: 'Chapter',
+  chapterNumber: 'Chapter Number',
+  relationshipType: 'Relationship Type',
+  sourceCharacterId: 'Character',
+  targetCharacterId: 'Related Character',
+  organizationId: 'Organization',
+  roleInGamble: 'Role',
+  notes: 'Notes',
+  content: 'Content',
+  fileName: 'File Name',
+  ownerType: 'Owner Type',
+  ownerId: 'Owner',
+  url: 'URL',
+  file: 'File',
+  isSpoiler: 'Spoiler Flag',
+  spoilerChapter: 'Spoiler Chapter',
+  isVerified: 'Verified',
+}
+
+function labelField(field: string): string {
+  return (
+    FIELD_LABELS[field] ??
+    field
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (c) => c.toUpperCase())
+      .trim()
+  )
+}
+
 type FilterType = 'all' | 'submissions'
 type EntityFilter = 'all' | 'character' | 'gamble' | 'arc' | 'organization' | 'event' | 'guide' | 'media' | 'annotation' | 'chapter'
 
@@ -141,9 +194,9 @@ const PAGE_LIMIT = 20
 
 function formatChangedFields(fields: string[] | null | undefined): string {
   if (!fields?.length) return ''
-  const filtered = fields.filter(f => !f.startsWith('priorStatus:'))
+  const filtered = fields.filter((f) => !f.startsWith('priorStatus:'))
   if (!filtered.length) return ''
-  const shown = filtered.slice(0, 4).map(f => f.charAt(0).toUpperCase() + f.slice(1))
+  const shown = filtered.slice(0, 4).map(labelField)
   const rest = filtered.length - 4
   return rest > 0 ? `${shown.join(', ')} +${rest} more` : shown.join(', ')
 }
