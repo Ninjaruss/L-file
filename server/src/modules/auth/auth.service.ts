@@ -292,7 +292,7 @@ export class AuthService {
     const fluxerId = fluxerUser.fluxerId;
     const fluxerUsername = fluxerUser.fluxerUsername;
     const fluxerAvatar = fluxerUser.fluxerAvatar;
-    const fluxerAccessToken = (fluxerUser as any)._fluxerAccessToken ?? null;
+    const fluxerAccessToken = fluxerUser._fluxerAccessToken ?? null;
 
     if (!fluxerId) {
       throw new ForbiddenException('Fluxer profile data is missing');

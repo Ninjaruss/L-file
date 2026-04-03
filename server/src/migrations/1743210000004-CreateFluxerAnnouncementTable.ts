@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateFluxerAnnouncementTable1743210000004
-  implements MigrationInterface
-{
+export class CreateFluxerAnnouncementTable1743210000004 implements MigrationInterface {
   name = 'CreateFluxerAnnouncementTable1743210000004';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -17,7 +15,9 @@ export class CreateFluxerAnnouncementTable1743210000004
         "updatedAt" timestamptz NOT NULL DEFAULT now()
       )
     `);
-    await queryRunner.query(`ALTER TABLE "fluxer_announcement" ENABLE ROW LEVEL SECURITY`);
+    await queryRunner.query(
+      `ALTER TABLE "fluxer_announcement" ENABLE ROW LEVEL SECURITY`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

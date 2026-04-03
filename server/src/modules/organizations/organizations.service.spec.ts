@@ -36,7 +36,10 @@ describe('OrganizationsService', () => {
         OrganizationsService,
         { provide: getRepositoryToken(Organization), useValue: mockRepo },
         { provide: MediaService, useValue: { findByEntity: jest.fn() } },
-        { provide: EditLogService, useValue: { logEdit: jest.fn(), create: jest.fn() } },
+        {
+          provide: EditLogService,
+          useValue: { logEdit: jest.fn(), create: jest.fn() },
+        },
       ],
     }).compile();
 

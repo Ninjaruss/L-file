@@ -36,7 +36,10 @@ describe('FluxerChatService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FluxerChatService,
-        { provide: getRepositoryToken(FluxerAnnouncement), useValue: mockAnnouncementRepo },
+        {
+          provide: getRepositoryToken(FluxerAnnouncement),
+          useValue: mockAnnouncementRepo,
+        },
         { provide: getRepositoryToken(User), useValue: mockUserRepo },
         { provide: ConfigService, useValue: mockConfigService },
       ],
@@ -51,10 +54,18 @@ describe('FluxerChatService', () => {
 
   describe('sendMessage', () => {
     it('throws FLUXER_TOKEN_MISSING when user has no access token', async () => {
-      mockUserRepo.createQueryBuilder().getOne.mockResolvedValue({ id: 1, fluxerId: 'f1', fluxerAccessToken: null });
+      mockUserRepo.createQueryBuilder().getOne.mockResolvedValue({
+        id: 1,
+        fluxerId: 'f1',
+        fluxerAccessToken: null,
+      });
 
-      await expect(service.sendMessage(1, 'hello')).rejects.toThrow(ForbiddenException);
-      await expect(service.sendMessage(1, 'hello')).rejects.toThrow('FLUXER_TOKEN_MISSING');
+      await expect(service.sendMessage(1, 'hello')).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.sendMessage(1, 'hello')).rejects.toThrow(
+        'FLUXER_TOKEN_MISSING',
+      );
     });
   });
 });

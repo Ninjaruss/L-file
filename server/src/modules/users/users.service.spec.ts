@@ -41,8 +41,14 @@ describe('UsersService', () => {
         { provide: getRepositoryToken(Quote), useValue: mockRepo },
         { provide: getRepositoryToken(Gamble), useValue: mockRepo },
         { provide: getRepositoryToken(Character), useValue: mockRepo },
-        { provide: getRepositoryToken(UserFavoriteCharacter), useValue: mockRepo },
-        { provide: EmailService, useValue: { sendEmail: jest.fn(), sendPasswordReset: jest.fn() } },
+        {
+          provide: getRepositoryToken(UserFavoriteCharacter),
+          useValue: mockRepo,
+        },
+        {
+          provide: EmailService,
+          useValue: { sendEmail: jest.fn(), sendPasswordReset: jest.fn() },
+        },
       ],
     }).compile();
 

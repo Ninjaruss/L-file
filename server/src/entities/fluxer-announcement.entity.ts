@@ -1,9 +1,4 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryColumn, Column, UpdateDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('fluxer_announcement')
@@ -51,7 +46,8 @@ export class FluxerAnnouncement {
   timestamp: Date;
 
   @ApiProperty({
-    description: 'Timestamp when the announcement was last updated in the database',
+    description:
+      'Timestamp when the announcement was last updated in the database',
     example: '2026-03-28T12:00:00Z',
   })
   @UpdateDateColumn()

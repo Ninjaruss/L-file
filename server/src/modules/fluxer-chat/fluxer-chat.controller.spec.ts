@@ -15,7 +15,9 @@ describe('FluxerChatController', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FluxerChatController],
-      providers: [{ provide: FluxerChatService, useValue: mockFluxerChatService }],
+      providers: [
+        { provide: FluxerChatService, useValue: mockFluxerChatService },
+      ],
     }).compile();
 
     controller = module.get<FluxerChatController>(FluxerChatController);
@@ -26,7 +28,14 @@ describe('FluxerChatController', () => {
   });
 
   it('getMessages delegates to service', async () => {
-    const messages = [{ id: '1', content: 'hi', timestamp: '2026-01-01T00:00:00Z', author: { id: 'u1', username: 'Baku', avatar: null } }];
+    const messages = [
+      {
+        id: '1',
+        content: 'hi',
+        timestamp: '2026-01-01T00:00:00Z',
+        author: { id: 'u1', username: 'Baku', avatar: null },
+      },
+    ];
     mockFluxerChatService.getMessages.mockResolvedValue(messages);
     expect(await controller.getMessages()).toEqual(messages);
     expect(mockFluxerChatService.getMessages).toHaveBeenCalled();

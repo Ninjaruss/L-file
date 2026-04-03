@@ -579,7 +579,7 @@ export class GuidesService {
 
     // Snapshot guide before transaction mutations for accurate diffing
     const guideSnapshot = Object.fromEntries(
-      Object.entries(guideData).map(([k]) => [k, (guide as any)[k]])
+      Object.entries(guideData).map(([k]) => [k, (guide as any)[k]]),
     );
 
     const result = await this.guideRepository.manager.transaction(

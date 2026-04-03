@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -43,7 +37,11 @@ export class FluxerChatController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Send a message to #usogui as the logged-in user' })
   @ApiOkResponse({ description: 'The created message' })
-  @ApiResponse({ status: 403, description: 'FLUXER_TOKEN_MISSING | FLUXER_TOKEN_EXPIRED | FLUXER_NO_PERMISSION' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'FLUXER_TOKEN_MISSING | FLUXER_TOKEN_EXPIRED | FLUXER_NO_PERMISSION',
+  })
   async sendMessage(
     @CurrentUser() user: User,
     @Body() dto: SendMessageDto,

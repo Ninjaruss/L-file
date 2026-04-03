@@ -37,7 +37,10 @@ describe('EventsService', () => {
         EventsService,
         { provide: getRepositoryToken(Event), useValue: mockRepo },
         { provide: getRepositoryToken(Character), useValue: mockRepo },
-        { provide: EditLogService, useValue: { logEdit: jest.fn(), create: jest.fn() } },
+        {
+          provide: EditLogService,
+          useValue: { logEdit: jest.fn(), create: jest.fn() },
+        },
       ],
     }).compile();
 

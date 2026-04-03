@@ -34,7 +34,10 @@ describe('TagsService', () => {
       providers: [
         TagsService,
         { provide: getRepositoryToken(Tag), useValue: mockRepo },
-        { provide: EditLogService, useValue: { logEdit: jest.fn(), create: jest.fn() } },
+        {
+          provide: EditLogService,
+          useValue: { logEdit: jest.fn(), create: jest.fn() },
+        },
       ],
     }).compile();
 

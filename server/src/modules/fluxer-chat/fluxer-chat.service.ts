@@ -59,7 +59,9 @@ export class FluxerChatService {
       );
       if (!res.ok) {
         const body = await res.text().catch(() => '');
-        this.logger.error(`Failed to fetch Fluxer messages: ${res.status} ${res.statusText} — ${body}`);
+        this.logger.error(
+          `Failed to fetch Fluxer messages: ${res.status} ${res.statusText} — ${body}`,
+        );
         return this.messagesCache?.data ?? [];
       }
       raw = await res.json();
@@ -69,7 +71,10 @@ export class FluxerChatService {
     }
 
     if (!Array.isArray(raw)) {
-      this.logger.error('Unexpected Fluxer messages response shape:', JSON.stringify(raw).slice(0, 200));
+      this.logger.error(
+        'Unexpected Fluxer messages response shape:',
+        JSON.stringify(raw).slice(0, 200),
+      );
       return this.messagesCache?.data ?? [];
     }
 
@@ -118,7 +123,9 @@ export class FluxerChatService {
     }
 
     if (!res.ok) {
-      throw new BadRequestException('Failed to send message via Fluxer webhook');
+      throw new BadRequestException(
+        'Failed to send message via Fluxer webhook',
+      );
     }
 
     return this.formatMessage(await res.json());

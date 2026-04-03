@@ -34,7 +34,10 @@ describe('ChaptersService', () => {
       providers: [
         ChaptersService,
         { provide: getRepositoryToken(Chapter), useValue: mockRepo },
-        { provide: EditLogService, useValue: { logEdit: jest.fn(), create: jest.fn() } },
+        {
+          provide: EditLogService,
+          useValue: { logEdit: jest.fn(), create: jest.fn() },
+        },
       ],
     }).compile();
 
