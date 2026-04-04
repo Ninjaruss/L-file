@@ -4,14 +4,12 @@ import {
   Box,
   Text,
   Grid,
-  Badge,
   Group,
   Avatar,
   Image,
   useMantineTheme,
   rgba
 } from '@mantine/core'
-import { getEntityThemeColor } from '../lib/mantine-theme'
 import { Crown, Trophy, Heart, User } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
