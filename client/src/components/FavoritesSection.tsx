@@ -74,10 +74,6 @@ export function FavoritesSection() {
 
   const { favoriteQuotes, favoriteGambles, favoriteCharacterMedia, favoriteCharacters } = favoritesData
 
-  const listDividerStyle: React.CSSProperties = {
-    borderBottom: '1px solid rgba(255,255,255,0.05)',
-  }
-
   return (
     <Box style={{ marginBottom: '2rem' }}>
       <motion.div
@@ -169,7 +165,7 @@ export function FavoritesSection() {
                   >
                     <Box
                       style={{
-                        ...listDividerStyle,
+                        borderBottom: index === favoriteCharacterMedia.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
                         paddingTop: index === 0 ? 0 : '0.4375rem',
                         paddingBottom: index === favoriteCharacterMedia.length - 1 ? 0 : '0.4375rem',
                         opacity: index === 0 ? 1 : index === 1 ? 0.55 : 0.3,
@@ -232,7 +228,7 @@ export function FavoritesSection() {
                   >
                     <Box
                       style={{
-                        ...listDividerStyle,
+                        borderBottom: index === favoriteQuotes.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
                         paddingTop: index === 0 ? 0 : '0.4375rem',
                         paddingBottom: index === favoriteQuotes.length - 1 ? 0 : '0.4375rem',
                         opacity: index === 0 ? 1 : index === 1 ? 0.55 : 0.3,
@@ -300,7 +296,7 @@ export function FavoritesSection() {
                   >
                     <Box
                       style={{
-                        ...listDividerStyle,
+                        borderBottom: index === favoriteGambles.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
                         paddingTop: index === 0 ? 0 : '0.4375rem',
                         paddingBottom: index === favoriteGambles.length - 1 ? 0 : '0.4375rem',
                         opacity: index === 0 ? 1 : index === 1 ? 0.55 : 0.3,
