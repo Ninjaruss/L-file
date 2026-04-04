@@ -118,94 +118,69 @@ export function FavoriteCharactersSection({ data }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay }}
           >
-            {/* Winner row */}
-            <Link
-              href={`/characters/${items[0].character.id}`}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <Group
-                gap={10}
-                wrap="nowrap"
-                style={{
-                  padding: '0.5rem',
-                  background: withAlpha(characterColor, 0.06, 'rgba(59,130,246,0.06)'),
-                  border: `1px solid ${withAlpha(characterColor, 0.15, 'rgba(59,130,246,0.15)')}`,
-                  borderRadius: '0.4375rem',
-                  marginBottom: '0.375rem',
-                  cursor: 'pointer',
-                }}
+            <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              {/* #1 portrait tile */}
+              <Link
+                href={`/characters/${items[0].character.id}`}
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                {renderCharacterImage(items[0].character.entityImageUrl, items[0].character.name, 44)}
-                <Box style={{ flex: 1, minWidth: 0 }}>
-                  <Text
-                    fw={700}
-                    style={{
-                      fontSize: '0.75rem',
-                      color: '#fff',
-                      lineHeight: 1.2,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
+                <Box style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.3125rem',
+                  padding: '0.5rem 0.375rem 0.625rem',
+                  background: withAlpha(characterColor, 0.06, 'rgba(59,130,246,0.06)'),
+                  border: `1px solid ${withAlpha(characterColor, 0.12, 'rgba(59,130,246,0.12)')}`,
+                  borderRadius: '0.5rem',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                }}>
+                  <Text style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.08em', color: characterColor }}>#1</Text>
+                  {renderCharacterImage(items[0].character.entityImageUrl, items[0].character.name, 64)}
+                  <Text fw={700} style={{ fontSize: '0.625rem', color: '#fff', lineHeight: 1.2, marginTop: '0.25rem' }}>
                     {items[0].character.name}
                   </Text>
-                  <Text style={{ fontSize: '0.625rem', color: subtleText, marginTop: 2 }}>
+                  <Text style={{ fontSize: '0.5625rem', color: subtleText }}>
                     {getLabel(items[0])}
                   </Text>
                 </Box>
-                <Badge
-                  variant="light"
-                  size="xs"
-                  style={{
-                    color: getEntityThemeColor(theme, 'character'),
-                    flexShrink: 0,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  #1
-                </Badge>
-              </Group>
-            </Link>
-
-            {/* Runner-up row */}
-            {items[1] && (
-              <Link
-                href={`/characters/${items[1].character.id}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <Group
-                  gap={8}
-                  wrap="nowrap"
-                  style={{
-                    padding: '0.3125rem 0.5rem',
-                    borderRadius: '0.375rem',
-                    opacity: 0.55,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {renderCharacterImage(items[1].character.entityImageUrl, items[1].character.name, 30)}
-                  <Text
-                    style={{
-                      fontSize: '0.6875rem',
-                      fontWeight: 500,
-                      color: 'rgba(255,255,255,0.7)',
-                      flex: 1,
-                      minWidth: 0,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {items[1].character.name}
-                  </Text>
-                  <Text style={{ fontSize: '0.625rem', color: subtleText, whiteSpace: 'nowrap' }}>
-                    {getLabel(items[1])}
-                  </Text>
-                </Group>
               </Link>
-            )}
+
+              {/* #2 portrait tile */}
+              {items[1] ? (
+                <Link
+                  href={`/characters/${items[1].character.id}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Box style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.3125rem',
+                    padding: '0.5rem 0.375rem 0.625rem',
+                    opacity: 0.45,
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                  }}>
+                    <Text style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.28)' }}>#2</Text>
+                    <Box style={{ marginTop: '0.5rem' }}>
+                      {renderCharacterImage(items[1].character.entityImageUrl, items[1].character.name, 48)}
+                    </Box>
+                    <Text style={{ fontSize: '0.625rem', fontWeight: 500, color: 'rgba(255,255,255,0.6)', lineHeight: 1.2, marginTop: '0.5rem' }}>
+                      {items[1].character.name}
+                    </Text>
+                    <Text style={{ fontSize: '0.5625rem', color: subtleText }}>
+                      {getLabel(items[1])}
+                    </Text>
+                  </Box>
+                </Link>
+              ) : (
+                <Box style={{ opacity: 0.2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text size="xs" style={{ color: subtleText }}>—</Text>
+                </Box>
+              )}
+            </Box>
           </motion.div>
         ) : (
           <Text size="sm" style={{ color: subtleText, textAlign: 'center', padding: '0.5rem 0' }}>
