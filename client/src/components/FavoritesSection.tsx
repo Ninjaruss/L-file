@@ -177,7 +177,7 @@ export function FavoritesSection() {
                         <Avatar
                           src={favoriteCharacterMedia[0].media.url}
                           alt={favoriteCharacterMedia[0].media.character.name}
-                          size={52}
+                          size={80}
                           radius="xl"
                           style={{ border: `1px solid ${withAlpha(theme.other?.usogui?.character || theme.colors.blue?.[6] || accent, 0.3, 'rgba(59,130,246,0.3)')}`, flexShrink: 0 }}
                         />
@@ -220,7 +220,7 @@ export function FavoritesSection() {
                           <Avatar
                             src={item.media.url}
                             alt={item.media.character.name}
-                            size={idx === 0 ? 28 : 22}
+                            size={idx === 0 ? 36 : 28}
                             radius="xl"
                             style={{ border: `1px solid ${withAlpha(theme.other?.usogui?.character || theme.colors.blue?.[6] || accent, 0.3, 'rgba(59,130,246,0.3)')}`, flexShrink: 0 }}
                           />
