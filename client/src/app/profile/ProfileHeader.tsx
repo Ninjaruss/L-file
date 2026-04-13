@@ -13,7 +13,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { Edit, Check, X, Settings } from 'lucide-react'
 import { outlineStyles } from '../../lib/mantine-theme'
-import UserProfileImage from '../../components/UserProfileImage'
+import ExpandableProfileImage from '../../components/ExpandableProfileImage'
 import UserBadges from '../../components/UserBadges'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import { MAX_CHAPTER } from '../../lib/constants'
@@ -107,7 +107,7 @@ export default function ProfileHeader({
             style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
             onClick={onOpenProfilePictureSelector}
           >
-            <UserProfileImage user={user} size={72} style={{ borderRadius: '4px', border: '1px solid #2a2a2a', boxShadow: '0 0 0 2px rgba(225,29,72,0.15)' }} />
+            <ExpandableProfileImage user={user} size={72} />
             <Box
               style={{
                 position: 'absolute', bottom: '-4px', right: '-4px',
