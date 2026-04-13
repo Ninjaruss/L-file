@@ -4,30 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import UserProfileImage from './UserProfileImage'
+import type { UserProfileImageUser as UserShape } from './UserProfileImage'
 import { useHoverModal } from '../hooks/useHoverModal'
-
-interface UserShape {
-  id: number
-  username: string
-  profilePictureType?: 'fluxer' | 'character_media' | 'exclusive_artwork' | null
-  selectedCharacterMediaId?: number | null
-  selectedCharacterMedia?: {
-    id: number
-    url: string
-    fileName?: string
-    description?: string
-    ownerType?: string
-    ownerId?: number
-    chapterNumber?: number
-    character?: {
-      id: number
-      name: string
-      firstAppearanceChapter?: number
-    }
-  } | null
-  fluxerId?: string | null
-  fluxerAvatar?: string | null
-}
 
 interface ExpandableProfileImageProps {
   user: UserShape

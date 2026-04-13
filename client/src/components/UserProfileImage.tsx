@@ -34,6 +34,8 @@ interface UserProfileImageProps {
   showHoverInfo?: boolean
 }
 
+export type UserProfileImageUser = UserProfileImageProps['user']
+
 export default function UserProfileImage({
   user,
   size = 60,
