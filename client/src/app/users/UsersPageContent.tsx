@@ -29,7 +29,7 @@ import { usePaged } from '../../hooks/usePagedCache'
 import { pagedCacheConfig } from '../../config/pagedCacheConfig'
 import { motion } from 'motion/react'
 import { pageEnter } from '../../lib/motion-presets'
-import UserProfileImage from '../../components/UserProfileImage'
+import ExpandableProfileImage from '../../components/ExpandableProfileImage'
 import UserBadges from '../../components/UserBadges'
 import { UserRoleDisplay } from '../../components/BadgeDisplay'
 import { CardGridSkeleton } from '../../components/CardGridSkeleton'
@@ -349,7 +349,7 @@ export default function UsersPageContent() {
                               <Box p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <Stack gap="xs" align="center" style={{ height: '100%' }}>
                                   <Box style={{ boxShadow: '0 0 0 3px rgba(168,85,247,0.2)', borderRadius: '50%', overflow: 'hidden' }}>
-                                    <UserProfileImage
+                                    <ExpandableProfileImage
                                       user={user}
                                       size={72}
                                       showFallback
