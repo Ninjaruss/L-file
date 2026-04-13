@@ -20,7 +20,7 @@ import { Eye, FileText, Heart, Star } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { api } from '../../../lib/api'
-import UserProfileImage from '../../../components/UserProfileImage'
+import ExpandableProfileImage from '../../../components/ExpandableProfileImage'
 // GambleChip removed — using inline Badge chips for favorite gamble
 import UserBadges from '../../../components/UserBadges'
 import { UserRoleDisplay } from '../../../components/BadgeDisplay'
@@ -200,7 +200,7 @@ export default function UserProfileClient({ initialUser }: UserProfileClientProp
             <Group align="flex-end" gap="lg">
               {/* Avatar */}
               <Box style={{ borderRadius: '4px', border: '1px solid #2a2a2a', boxShadow: '0 0 0 2px rgba(225,29,72,0.15)', flexShrink: 0 }}>
-                <UserProfileImage user={user} size={72} />
+                <ExpandableProfileImage user={user} size={72} />
               </Box>
 
               {/* Name + role */}
