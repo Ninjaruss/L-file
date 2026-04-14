@@ -1133,7 +1133,7 @@ class ApiClient {
     return this.get<{
       data: Array<{
         id: number
-        type: 'guide' | 'media' | 'annotation'
+        type: 'guide' | 'media' | 'annotation' | 'quote'
         title?: string
         entityType?: string
         entityId?: number

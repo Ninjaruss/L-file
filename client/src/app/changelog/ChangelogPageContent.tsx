@@ -75,7 +75,7 @@ function labelField(field: string): string {
 }
 
 type FilterType = 'all' | 'submissions'
-type EntityFilter = 'all' | 'character' | 'gamble' | 'arc' | 'organization' | 'event' | 'guide' | 'media' | 'annotation' | 'chapter'
+type EntityFilter = 'all' | 'character' | 'gamble' | 'arc' | 'organization' | 'event' | 'guide' | 'media' | 'annotation' | 'chapter' | 'quote'
 
 interface EditEntry {
   id: number
@@ -92,7 +92,7 @@ interface EditEntry {
 interface SubmissionEntry {
   id: number
   kind: 'submission'
-  type: 'guide' | 'media' | 'annotation'
+  type: 'guide' | 'media' | 'annotation' | 'quote'
   title?: string
   entityType?: string
   entityId?: number
@@ -121,6 +121,7 @@ function entityLink(entityType: string, entityId: number): string {
     media: '/media',
     annotation: '#',
     chapter: '/chapters',
+    quote: '/quotes',
   }
   return `${map[entityType.toLowerCase()] ?? '#'}/${entityId}`
 }
@@ -136,6 +137,7 @@ function entityColor(entityType: string): string {
     media: textColors.media,
     annotation: textColors.annotation,
     chapter: textColors.chapter,
+    quote: textColors.quote,
   }
   return map[entityType.toLowerCase()] ?? textColors.secondary
 }
@@ -176,6 +178,7 @@ const ALL_ENTITY_OPTIONS = [
   { label: 'Guides', value: 'guide' },
   { label: 'Media', value: 'media' },
   { label: 'Annotations', value: 'annotation' },
+  { label: 'Quotes', value: 'quote' },
 ]
 
 const SUBMISSION_ENTITY_OPTIONS = [
@@ -183,6 +186,7 @@ const SUBMISSION_ENTITY_OPTIONS = [
   { label: 'Guides', value: 'guide' },
   { label: 'Media', value: 'media' },
   { label: 'Annotations', value: 'annotation' },
+  { label: 'Quotes', value: 'quote' },
 ]
 
 const TYPE_FILTER_OPTIONS: { label: string; value: FilterType }[] = [

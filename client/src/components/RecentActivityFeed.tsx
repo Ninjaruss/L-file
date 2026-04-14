@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Box, Text, Group, Avatar, Stack, Anchor, Badge, Skeleton } from '@mantine/core'
-import { Clock, ArrowRight, BookOpen, Image, FileText, Edit3, Plus, Trash2 } from 'lucide-react'
+import { Clock, ArrowRight, BookOpen, Image, FileText, Edit3, Plus, Trash2, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { api } from '../lib/api'
@@ -22,7 +22,7 @@ interface EditEntry {
 interface SubmissionEntry {
   id: number
   kind: 'submission'
-  type: 'guide' | 'media' | 'annotation'
+  type: 'guide' | 'media' | 'annotation' | 'quote'
   title?: string
   entityType?: string
   entityId?: number
@@ -50,6 +50,7 @@ function entityLink(entityType: string, entityId: number): string {
     guide: '/guides',
     media: '/media',
     annotation: '#',
+    quote: '/quotes',
   }
   const base = map[entityType.toLowerCase()] ?? '#'
   return entityId ? `${base}/${entityId}` : base
@@ -65,6 +66,7 @@ function entityLabel(entityType: string): string {
     guide: 'Guide',
     media: 'Media',
     annotation: 'Annotation',
+    quote: 'Quote',
   }
   return map[entityType.toLowerCase()] ?? entityType
 }
@@ -79,6 +81,7 @@ function entityColor(entityType: string): string {
     guide: textColors.guide,
     media: textColors.media,
     annotation: textColors.secondary,
+    quote: textColors.quote,
   }
   return map[entityType.toLowerCase()] ?? textColors.secondary
 }
@@ -92,6 +95,7 @@ function actionIcon(action: string) {
 function submissionIcon(type: string) {
   if (type === 'guide') return <FileText size={12} />
   if (type === 'media') return <Image size={12} />
+  if (type === 'quote') return <MessageSquare size={12} />
   return <BookOpen size={12} />
 }
 
