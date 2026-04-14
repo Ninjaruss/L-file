@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timeline Revamp — Mockup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page:        #0d0d0d;
+      --bg-card:        #161616;
+      --bg-card-hover:  #1e1e1e;
+      --bg-surface:     #1a1a1a;
+      --border:         rgba(255,255,255,0.08);
+      --border-strong:  rgba(255,255,255,0.14);
+      --text-primary:   #f0f0f0;
+      --text-secondary: #a0a0a0;
+      --text-dimmed:    #666;
+
+      /* Entity accent — event = amber */
+      --accent-event:   #ca8a04;
+      --accent-event-dim: rgba(202,138,4,0.15);
+
+      /* Event type colors */
+      --c-gamble:     #ff5555;
+      --c-decision:   #f39c12;
+      --c-reveal:     #4dabf7;
+      --c-shift:      #a855f7;
+      --c-resolution: #51cf66;
+
+      /* Phase colors */
+      --c-setup:      #4dabf7;
+      --c-gamblemain: #ff6b35;
+      --c-reveals:    #d946ef;
+      --c-res:        #51cf66;
+    }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 0;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    .page-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-dimmed);
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 40px;
+    }
+
+    /* ── Tab bar (context switcher) ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab {
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      margin-bottom: -1px;
+    }
+    .tab.active { color: var(--accent-event); border-bottom-color: var(--accent-event); }
+    .tab:hover:not(.active) { color: var(--text-primary); }
+
+    /* ── Panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Card shell (wraps each timeline) ── */
+    .timeline-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+    }
+
+    /* ── Card header ── */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-header-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--accent-event-dim);
+      border: 1px solid rgba(202,138,4,.3);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent-event);
+      font-size: 16px;
+    }
+    .card-header-title { font-weight: 700; font-size: 15px; }
+    .card-header-link {
+      font-size: 12px;
+      color: var(--accent-event);
+      text-decoration: none;
+      padding: 5px 12px;
+      border: 1px solid rgba(202,138,4,.35);
+      border-radius: 6px;
+      transition: background .15s;
+    }
+    .card-header-link:hover { background: var(--accent-event-dim); }
+
+    /* ── First Appearance badge ── */
+    .first-appearance {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(236,72,153,.12);
+      border: 1px solid rgba(236,72,153,.3);
+      color: #f472b6;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    /* ── Type filter ── */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .filter-label {
+      font-size: 11px;
+      color: var(--text-dimmed);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-right: 2px;
+    }
+    .filter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid currentColor;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+      opacity: .65;
+    }
+    .filter-badge.active { opacity: 1; }
+    .filter-badge:hover { opacity: 1; }
+    .filter-badge.gamble    { color: var(--c-gamble); }
+    .filter-badge.decision  { color: var(--c-decision); }
+    .filter-badge.reveal    { color: var(--c-reveal); }
+    .filter-badge.shift     { color: var(--c-shift); }
+    .filter-badge.resolution{ color: var(--c-resolution); }
+    .filter-badge.active.gamble     { background: rgba(255,85,85,.14); }
+    .filter-badge.active.decision   { background: rgba(243,156,18,.14); }
+    .filter-badge.active.reveal     { background: rgba(77,171,247,.14); }
+    .filter-badge.active.shift      { background: rgba(168,85,247,.14); }
+    .filter-badge.active.resolution { background: rgba(81,207,102,.14); }
+
+    /* ── Quick nav ── */
+    .quick-nav {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .quick-nav-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .nav-label { font-size: 10px; color: var(--text-dimmed); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; min-width: 80px; }
+    .nav-chip {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 5px;
+      border: 1px solid rgba(202,138,4,.35);
+      color: var(--accent-event);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .nav-chip:hover { background: var(--accent-event-dim); }
+    .nav-chip.chapter { border-color: rgba(236,72,153,.3); color: #f472b6; }
+    .nav-chip.chapter:hover { background: rgba(236,72,153,.1); }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .section-accent-bar {
+      width: 3px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      align-self: stretch;
+      min-height: 36px;
+    }
+    .section-header-content { flex: 1; }
+    .section-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+    .section-subtitle { font-size: 11px; color: var(--text-dimmed); }
+    .section-count {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 5px;
+      border: 1px solid currentColor;
+      opacity: .7;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 4px;
+    }
+
+    /* ── Vertical rail ── */
+    .rail-container {
+      position: relative;
+      padding-left: 20px;
+      margin-top: 12px;
+      margin-bottom: 24px;
+    }
+    .rail-line {
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      border-radius: 1px;
+      background: linear-gradient(to bottom, currentColor, transparent);
+      opacity: .2;
+    }
+
+    /* ── Event entry ── */
+    .event-entry {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .event-dot-col {
+      position: absolute;
+      left: -20px;
+      top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .event-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-card);
+      box-shadow: 0 0 0 2px currentColor;
+      flex-shrink: 0;
+    }
+    .event-connector {
+      width: 2px;
+      flex: 1;
+      background: currentColor;
+      opacity: .15;
+      min-height: 10px;
+      margin-top: 2px;
+    }
+
+    /* ── Event card ── */
+    .event-card {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: background .15s, border-color .15s, box-shadow .15s;
+      cursor: pointer;
+    }
+    .event-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-strong);
+      box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    }
+    .event-card-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .event-card-body { flex: 1; min-width: 0; }
+    .event-card-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; line-height: 1.35; }
+    .event-card-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .event-card-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      border: 1px solid currentColor;
+      white-space: nowrap;
+    }
+    .badge-outline { background: transparent; }
+    .badge-filled { opacity: 1; }
+    .badge.chapter { color: #4dabf7; border-color: rgba(77,171,247,.4); background: rgba(77,171,247,.08); }
+    .badge.page    { color: var(--text-dimmed); border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+    .badge.gamble     { color: var(--c-gamble);     background: rgba(255,85,85,.10);    border-color: rgba(255,85,85,.3); }
+    .badge.decision   { color: var(--c-decision);   background: rgba(243,156,18,.10);   border-color: rgba(243,156,18,.3); }
+    .badge.reveal     { color: var(--c-reveal);     background: rgba(77,171,247,.10);   border-color: rgba(77,171,247,.3); }
+    .badge.shift      { color: var(--c-shift);      background: rgba(168,85,247,.10);   border-color: rgba(168,85,247,.3); }
+    .badge.resolution { color: var(--c-resolution); background: rgba(81,207,102,.10);   border-color: rgba(81,207,102,.3); }
+
+    /* ── Spoiler card ── */
+    .event-card.spoiler { position: relative; }
+    .spoiler-inner { opacity: .2; filter: blur(3px); pointer-events: none; flex: 1; display: flex; align-items: flex-start; gap: 12px; }
+    .spoiler-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      background: rgba(180,20,20,.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+    .spoiler-label { font-size: 11px; font-weight: 700; color: #fff; }
+    .spoiler-hint  { font-size: 10px; color: rgba(255,255,255,.75); }
+
+    /* ── Show more ── */
+    .show-more {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .show-more-btn {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 16px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .show-more-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+
+    /* ── Gamble phase divider ── */
+    .phase-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 6px 0 4px;
+      opacity: .5;
+    }
+    .phase-divider-line { flex: 1; height: 1px; background: currentColor; }
+    .phase-divider-icon { font-size: 14px; }
+
+    /* ── Annotation (annotation below mockup) ── */
+    .annotation {
+      background: rgba(77,171,247,.06);
+      border: 1px solid rgba(77,171,247,.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #7dd3fc;
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .annotation-icon { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Grid layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── SVG icons (inline) ── */
+    svg { vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-title">Mockup — Events Revamp</div>
+  <div class="page-subtitle">Unified Timeline Component — All Three Contexts</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('character')">Character Timeline</div>
+    <div class="tab" onclick="switchTab('arc')">Arc Timeline</div>
+    <div class="tab" onclick="switchTab('gamble')">Gamble Timeline</div>
+    <div class="tab" onclick="switchTab('cards')">Event Card Close-up</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       CHARACTER TIMELINE
+  ═══════════════════════════════════════════════════ -->
+  <div id="panel-character" class="panel active">
+    <div class="timeline-card">
+
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-header-icon">
+            <!-- calendar icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <span class="card-header-title">Baku Madarame — Timeline</span>
+        </div>
+        <a href="#" class="card-header-link">View All Events ↗</a>
+      </div>
+
+      <!-- First appearance -->
+      <div class="first-appearance">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        First Appearance: Chapter 1
+      </div>
+
+      <!-- Type filter -->
+      <div class="filter-row">
+        <span class="filter-label">Filter</span>
+        <span class="filter-badge gamble active">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+          Gamble
+        </span>
+        <span class="filter-badge decision">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Decision
+        </span>
+        <span class="filter-badge reveal">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Reveal
+        </span>
+        <span class="filter-badge shift">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="2" x2="12" y2="22"/><polyline points="17 7 12 2 7 7"/><polyline points="7 17 12 22 17 17"/></svg>
+          Shift
+        </span>
+        <span class="filter-badge resolution">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Resolution
+        </span>
+      </div>
+
+      <!-- Quick nav -->
+      <div class="quick-nav">
+        <div class="quick-nav-row">
+          <span class="nav-label">Jump to Arc</span>
+          <span class="nav-chip">The 17 Steps</span>
+          <span class="nav-chip">Eagle Eye Arc</span>
+          <span class="nav-chip">Batting Arc</span>
+        </div>
+        <div class="quick-nav-row">
+          <span class="nav-label">Jump to Ch.</span>
+          <span class="nav-chip chapter">Ch. 1</span>
+          <span class="nav-chip chapter">Ch. 22</span>
+          <span class="nav-chip chapter">Ch. 45</span>
+          <span class="nav-chip chapter">Ch. 78</span>
+          <span class="nav-chip chapter">Ch. 112</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Section: The 17 Steps Arc -->
+      <div class="section-header">
+        <div class="section-accent-bar" style="background: #ca8a04;"></div>
+        <div class="section-header-content">
+          <div class="section-title" style="color: #ca8a04;">The 17 Steps</div>
+          <div class="section-subtitle">Chapters 1 – 22</div>
+        </div>
+        <span class="section-count" style="color: #ca8a04;">3 events</span>
+      </div>
+
+      <div class="rail-container" style="color: #ca8a04;">
+        <div class="rail-line"></div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-gamble); box-shadow: 0 0 0 2px var(--c-gamble);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(255,85,85,.12); color: var(--c-gamble);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">The 17 Steps Tournament</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 1</span>
+                <span class="badge gamble">Gamble</span>
+              </div>
+              <div class="event-card-desc">Baku enters the underground gambling den and faces the notorious 17-step staircase challenge against a seasoned opponent.</div>
+            </div>
+          </a>
+        </div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-decision); box-shadow: 0 0 0 2px var(--c-decision);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(243,156,18,.12); color: var(--c-decision);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Baku Chooses His Faction</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 8</span>
+                <span class="badge page">p. 14</span>
+                <span class="badge decision">Decision</span>
+              </div>
+              <div class="event-card-desc">Faced with a critical choice, Baku sides with Kaji over the rival faction, setting the course for the arc's final confrontation.</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Spoiler event -->
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-reveal); box-shadow: 0 0 0 2px var(--c-reveal);"></div>
+          </div>
+          <div class="event-card spoiler">
+            <div class="spoiler-inner">
+              <div class="event-card-icon" style="background: rgba(77,171,247,.12); color: var(--c-reveal);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <div class="event-card-body">
+                <div class="event-card-title">Trick Revealed</div>
+                <div class="event-card-badges">
+                  <span class="badge chapter">Ch. 20</span>
+                  <span class="badge reveal">Reveal</span>
+                </div>
+                <div class="event-card-desc">The opponent's method is exposed…</div>
+              </div>
+            </div>
+            <div class="spoiler-overlay">
+              <span class="spoiler-label">⚠ Chapter 20 Spoiler</span>
+              <span class="spoiler-hint">You're at Ch. 12 · Click to reveal</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /rail -->
+
+      <!-- Section: Eagle Eye Arc -->
+      <div class="section-header">
+        <div class="section-accent-bar" style="background: #a855f7;"></div>
+        <div class="section-header-content">
+          <div class="section-title" style="color: #a855f7;">Eagle Eye Arc</div>
+          <div class="section-subtitle">Chapters 23 – 45</div>
+        </div>
+        <span class="section-count" style="color: #a855f7;">2 events</span>
+      </div>
+
+      <div class="rail-container" style="color: #a855f7;">
+        <div class="rail-line"></div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-shift); box-shadow: 0 0 0 2px var(--c-shift);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(168,85,247,.12); color: var(--c-shift);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><polyline points="17 7 12 2 7 7"/><polyline points="7 17 12 22 17 17"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">The Power Balance Shifts</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 32</span>
+                <span class="badge shift">Shift</span>
+              </div>
+              <div class="event-card-desc">Baku's unexpected move tilts the advantage, forcing the Eagle Eye group to reconsider their entire strategy mid-game.</div>
+            </div>
+          </a>
+        </div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-resolution); box-shadow: 0 0 0 2px var(--c-resolution);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(81,207,102,.12); color: var(--c-resolution);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Eagle Eye Concedes</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 44</span>
+                <span class="badge resolution">Resolution</span>
+              </div>
+              <div class="event-card-desc">The gamble concludes as the Eagle Eye faction admits defeat, with Baku claiming the prize and establishing his reputation.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="show-more">
+        <button class="show-more-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Show all 4 arcs
+        </button>
+      </div>
+
+    </div><!-- /timeline-card -->
+
+    <div class="annotation">
+      <span class="annotation-icon">ℹ</span>
+      <span><strong>Character context:</strong> Sections are arc names. The Quick Nav (jump to arc / jump to chapter) remains. Type filter collapses/expands the event list. Spoiler events are blurred until clicked.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       ARC TIMELINE
+  ═══════════════════════════════════════════════════ -->
+  <div id="panel-arc" class="panel">
+    <div class="timeline-card">
+
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-header-icon" style="background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.3); color: #ff6b35;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+          </div>
+          <span class="card-header-title">The 17 Steps — Event Timeline</span>
+        </div>
+        <span class="badge" style="color:#ff6b35; border-color:rgba(255,107,53,.35); background:rgba(255,107,53,.08);">Chapters 1–22</span>
+      </div>
+
+      <!-- Type filter -->
+      <div class="filter-row">
+        <span class="filter-label">Filter</span>
+        <span class="filter-badge gamble active">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/></svg>
+          Gamble
+        </span>
+        <span class="filter-badge decision active">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Decision
+        </span>
+        <span class="filter-badge reveal">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Reveal
+        </span>
+        <span class="filter-badge resolution">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Resolution
+        </span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Single section = the arc itself -->
+      <div class="section-header">
+        <div class="section-accent-bar" style="background: #ff6b35;"></div>
+        <div class="section-header-content">
+          <div class="section-title" style="color: #ff6b35;">The 17 Steps</div>
+          <div class="section-subtitle">All events in this arc · sorted by chapter</div>
+        </div>
+        <span class="section-count" style="color: #ff6b35;">5 events</span>
+      </div>
+
+      <div class="rail-container" style="color: #ff6b35;">
+        <div class="rail-line"></div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-gamble); box-shadow: 0 0 0 2px var(--c-gamble);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(255,85,85,.12); color: var(--c-gamble);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">The 17 Steps Tournament</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 1</span>
+                <span class="badge gamble">Gamble</span>
+              </div>
+              <div class="event-card-desc">Baku enters the underground gambling den and faces the notorious 17-step staircase challenge.</div>
+            </div>
+          </a>
+        </div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-decision); box-shadow: 0 0 0 2px var(--c-decision);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(243,156,18,.12); color: var(--c-decision);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Kaji's Gambit</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 5</span>
+                <span class="badge page">p. 7</span>
+                <span class="badge decision">Decision</span>
+              </div>
+              <div class="event-card-desc">Kaji proposes an alliance that shifts the dynamic of the entire tournament's second half.</div>
+            </div>
+          </a>
+        </div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-gamble); box-shadow: 0 0 0 2px var(--c-gamble);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(255,85,85,.12); color: var(--c-gamble);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Final Step — The Last Wager</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 18</span>
+                <span class="badge gamble">Gamble</span>
+              </div>
+              <div class="event-card-desc">Everything rides on the final step as both sides reveal their true hands in a climactic confrontation.</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Spoiler -->
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-reveal); box-shadow: 0 0 0 2px var(--c-reveal);"></div>
+          </div>
+          <div class="event-card spoiler">
+            <div class="spoiler-inner">
+              <div class="event-card-icon" style="background: rgba(77,171,247,.12); color: var(--c-reveal);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <div class="event-card-body">
+                <div class="event-card-title">The Method Exposed</div>
+                <div class="event-card-badges"><span class="badge chapter">Ch. 20</span><span class="badge reveal">Reveal</span></div>
+              </div>
+            </div>
+            <div class="spoiler-overlay">
+              <span class="spoiler-label">⚠ Chapter 20 Spoiler</span>
+              <span class="spoiler-hint">You're at Ch. 12 · Click to reveal</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">ℹ</span>
+      <span><strong>Arc context:</strong> Single section header for the arc itself. No hover modal (replaced by the event card link). Character filter removed from this view.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       GAMBLE TIMELINE
+  ═══════════════════════════════════════════════════ -->
+  <div id="panel-gamble" class="panel">
+    <div class="timeline-card">
+
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-header-icon" style="background: rgba(255,85,85,.12); border-color: rgba(255,85,85,.3); color: var(--c-gamble);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+          </div>
+          <span class="card-header-title">Gamble Timeline</span>
+        </div>
+      </div>
+
+      <!-- Type filter -->
+      <div class="filter-row">
+        <span class="filter-label">Filter</span>
+        <span class="filter-badge gamble active">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/></svg> Gamble
+        </span>
+        <span class="filter-badge decision active">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Decision
+        </span>
+        <span class="filter-badge reveal active">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Reveal
+        </span>
+        <span class="filter-badge resolution">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Resolution
+        </span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Phase 1: Setup -->
+      <div class="section-header">
+        <div class="section-accent-bar" style="background: var(--c-setup);"></div>
+        <div class="section-header-content">
+          <div class="section-title" style="color: var(--c-setup);">Setup &amp; Lead-up</div>
+          <div class="section-subtitle">Events leading to the gamble</div>
+        </div>
+        <span class="section-count" style="color: var(--c-setup);">2 events</span>
+      </div>
+
+      <div class="rail-container" style="color: var(--c-setup);">
+        <div class="rail-line"></div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-decision); box-shadow: 0 0 0 2px var(--c-decision);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(243,156,18,.12); color: var(--c-decision);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">The Challenge is Issued</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 40</span>
+                <span class="badge decision">Decision</span>
+              </div>
+              <div class="event-card-desc">The rival faction formally challenges Baku's group to a high-stakes game in the underground arena.</div>
+            </div>
+          </a>
+        </div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-decision); box-shadow: 0 0 0 2px var(--c-decision);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(243,156,18,.12); color: var(--c-decision);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Rules Negotiation</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 43</span>
+                <span class="badge page">p. 3</span>
+                <span class="badge decision">Decision</span>
+              </div>
+              <div class="event-card-desc">Both sides agree on the game's ruleset, with hidden clauses that will matter later.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Phase 2: The Gamble -->
+      <div class="section-header">
+        <div class="section-accent-bar" style="background: var(--c-gamblemain);"></div>
+        <div class="section-header-content">
+          <div class="section-title" style="color: var(--c-gamblemain);">The Gamble</div>
+          <div class="section-subtitle">Eagle Eye Final Wager</div>
+        </div>
+        <span class="section-count" style="color: var(--c-gamblemain);">1 event</span>
+      </div>
+
+      <div class="rail-container" style="color: var(--c-gamblemain);">
+        <div class="rail-line"></div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-gamble); box-shadow: 0 0 0 2px var(--c-gamble);"></div>
+          </div>
+          <a href="#" class="event-card" style="border-color: rgba(255,107,53,.25); background: rgba(255,107,53,.05);">
+            <div class="event-card-icon" style="background: rgba(255,85,85,.18); color: var(--c-gamble);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Eagle Eye Final Wager</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 45</span>
+                <span class="badge gamble">Gamble</span>
+              </div>
+              <div class="event-card-desc">The main event begins. Both sides reveal their true capabilities as the stakes reach their peak.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Phase 3: Reveals -->
+      <div class="section-header">
+        <div class="section-accent-bar" style="background: var(--c-reveals);"></div>
+        <div class="section-header-content">
+          <div class="section-title" style="color: var(--c-reveals);">Reveals &amp; Developments</div>
+          <div class="section-subtitle">Unfolding consequences and revelations</div>
+        </div>
+        <span class="section-count" style="color: var(--c-reveals);">2 events</span>
+      </div>
+
+      <div class="rail-container" style="color: var(--c-reveals);">
+        <div class="rail-line"></div>
+
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-reveal); box-shadow: 0 0 0 2px var(--c-reveal);"></div>
+          </div>
+          <a href="#" class="event-card">
+            <div class="event-card-icon" style="background: rgba(77,171,247,.12); color: var(--c-reveal);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">The Opponent's Trick Exposed</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 48</span>
+                <span class="badge reveal">Reveal</span>
+              </div>
+              <div class="event-card-desc">Baku deduces and exposes the hidden mechanism in the opponent's technique, swinging the momentum.</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Spoiler in gamble context -->
+        <div class="event-entry">
+          <div class="event-dot-col">
+            <div class="event-dot" style="color: var(--c-shift); box-shadow: 0 0 0 2px var(--c-shift);"></div>
+          </div>
+          <div class="event-card spoiler">
+            <div class="spoiler-inner">
+              <div class="event-card-icon" style="background: rgba(168,85,247,.12); color: var(--c-shift);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><polyline points="17 7 12 2 7 7"/><polyline points="7 17 12 22 17 17"/></svg>
+              </div>
+              <div class="event-card-body">
+                <div class="event-card-title">Final Power Shift</div>
+                <div class="event-card-badges"><span class="badge chapter">Ch. 51</span><span class="badge shift">Shift</span></div>
+              </div>
+            </div>
+            <div class="spoiler-overlay">
+              <span class="spoiler-label">⚠ Chapter 51 Spoiler</span>
+              <span class="spoiler-hint">You're at Ch. 12 · Click to reveal</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">ℹ</span>
+      <span><strong>Gamble context:</strong> Four phase sections (Setup / The Gamble / Reveals / Resolution). Same card, same rail, same spoiler overlay — only the section headers differ.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       EVENT CARD CLOSE-UP
+  ═══════════════════════════════════════════════════ -->
+  <div id="panel-cards" class="panel">
+    <div style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
+      All four states the event card can appear in, at full size.
+    </div>
+
+    <div class="two-col">
+
+      <!-- Normal -->
+      <div>
+        <div style="font-size: 11px; color: var(--text-dimmed); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;">Default</div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:0;">
+            <div style="width:14px;height:14px;border-radius:50%;background:var(--c-gamble);border:2px solid var(--bg-card);box-shadow:0 0 0 2px var(--c-gamble);"></div>
+          </div>
+          <a href="#" class="event-card" style="flex:1;">
+            <div class="event-card-icon" style="background:rgba(255,85,85,.12);color:var(--c-gamble);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="white"/><circle cx="8" cy="16" r="1.5" fill="white"/><circle cx="16" cy="8" r="1.5" fill="white"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">The 17 Steps Tournament</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 1</span>
+                <span class="badge gamble">Gamble</span>
+              </div>
+              <div class="event-card-desc">Baku enters the underground gambling den and faces the notorious 17-step staircase challenge against a seasoned opponent.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- With page number -->
+      <div>
+        <div style="font-size: 11px; color: var(--text-dimmed); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;">With Page Number</div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:0;">
+            <div style="width:14px;height:14px;border-radius:50%;background:var(--c-decision);border:2px solid var(--bg-card);box-shadow:0 0 0 2px var(--c-decision);"></div>
+          </div>
+          <a href="#" class="event-card" style="flex:1;">
+            <div class="event-card-icon" style="background:rgba(243,156,18,.12);color:var(--c-decision);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Baku Chooses His Faction</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 8</span>
+                <span class="badge page">p. 14</span>
+                <span class="badge decision">Decision</span>
+              </div>
+              <div class="event-card-desc">Faced with a critical choice, Baku sides with Kaji over the rival faction, setting the course for the arc's final confrontation.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Spoiler -->
+      <div>
+        <div style="font-size: 11px; color: var(--text-dimmed); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;">Spoiler — Locked</div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:0;">
+            <div style="width:14px;height:14px;border-radius:50%;background:var(--c-reveal);border:2px solid var(--bg-card);box-shadow:0 0 0 2px var(--c-reveal);"></div>
+          </div>
+          <div class="event-card spoiler" style="flex:1;min-height:100px;">
+            <div class="spoiler-inner">
+              <div class="event-card-icon" style="background:rgba(77,171,247,.12);color:var(--c-reveal);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <div class="event-card-body">
+                <div class="event-card-title">Hidden Technique Revealed</div>
+                <div class="event-card-badges"><span class="badge chapter">Ch. 20</span><span class="badge reveal">Reveal</span></div>
+                <div class="event-card-desc">The true nature of the opponent's method is finally laid bare in a stunning confrontation.</div>
+              </div>
+            </div>
+            <div class="spoiler-overlay">
+              <span class="spoiler-label">⚠ Chapter 20 Spoiler</span>
+              <span class="spoiler-hint">You're at Ch. 12 · Click to reveal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No description -->
+      <div>
+        <div style="font-size: 11px; color: var(--text-dimmed); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;">Resolution — No description</div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:0;">
+            <div style="width:14px;height:14px;border-radius:50%;background:var(--c-resolution);border:2px solid var(--bg-card);box-shadow:0 0 0 2px var(--c-resolution);"></div>
+          </div>
+          <a href="#" class="event-card" style="flex:1;">
+            <div class="event-card-icon" style="background:rgba(81,207,102,.12);color:var(--c-resolution);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="event-card-body">
+              <div class="event-card-title">Eagle Eye Concedes</div>
+              <div class="event-card-badges">
+                <span class="badge chapter">Ch. 44</span>
+                <span class="badge resolution">Resolution</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="annotation" style="margin-top: 24px;">
+      <span class="annotation-icon">ℹ</span>
+      <span><strong>Shared card component:</strong> One <code>TimelineEventCard</code> used across all three timelines. The rail dot color matches the event type. Page number badge appears only when present. Spoiler overlay is applied by the wrapping <code>TimelineSpoilerWrapper</code>.</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+    const tabs = document.querySelectorAll('.tab')
+    const order = ['character', 'arc', 'gamble', 'cards']
+    tabs[order.indexOf(name)].classList.add('active')
+    document.getElementById('panel-' + name).classList.add('active')
+  }
+</script>
+</body>
+</html>
