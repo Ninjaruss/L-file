@@ -358,7 +358,7 @@ export class EventsService {
     });
   }
 
-  async create(data: CreateEventDto): Promise<Event> {
+  async create(data: CreateEventDto, userId?: number): Promise<Event> {
     const { characterIds, ...eventData } = data;
 
     // Clean up numeric fields to handle NaN values
@@ -391,7 +391,17 @@ export class EventsService {
       }
     }
 
-    return this.repo.save(event);
+    const saved = await this.repo.save(event);
+
+    if (userId) {
+      await this.editLogService.logCreate(
+        EditLogEntityType.EVENT,
+        saved.id,
+        userId,
+      );
+    }
+
+    return saved;
   }
 
   async update(

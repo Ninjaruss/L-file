@@ -324,8 +324,11 @@ export class EventsController {
     description: 'Create a new event (requires authentication)',
   })
   @ApiBody({ type: CreateEventDto })
-  async create(@Body(ValidationPipe) createEventDto: CreateEventDto) {
-    return await this.service.create(createEventDto);
+  async create(
+    @Body(ValidationPipe) createEventDto: CreateEventDto,
+    @CurrentUser() user: User,
+  ) {
+    return await this.service.create(createEventDto, user.id);
   }
 
   @Put(':id/own')
