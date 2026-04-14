@@ -55,11 +55,11 @@ export class Event {
 
   @ApiPropertyOptional({ description: 'Page number within the chapter for sub-chapter ordering', example: 14 })
   @Column({ nullable: true })
-  pageNumber: number;
+  pageNumber: number | null;
 
   @ApiPropertyOptional({ description: 'Chapter number required before showing this event (spoiler protection)', example: 44 })
   @Column({ nullable: true })
-  spoilerChapter: number;
+  spoilerChapter: number | null;
 
   @ApiPropertyOptional({ description: 'Story arc this event belongs to', type: () => Arc })
   @ManyToOne(() => Arc, { nullable: true })
