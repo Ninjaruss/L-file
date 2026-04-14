@@ -23,6 +23,7 @@ export enum EditLogEntityType {
   TAG = 'tag',
   CHARACTER_RELATIONSHIP = 'character_relationship',
   CHARACTER_ORGANIZATION = 'character_organization',
+  QUOTE = 'quote',
 }
 
 export enum EditLogAction {
