@@ -466,6 +466,14 @@ export class MediaService {
     media.status = MediaStatus.APPROVED;
     const savedMedia = await this.mediaRepo.save(media);
 
+    if (media.submittedBy?.id) {
+      await this.editLogService.logCreate(
+        EditLogEntityType.MEDIA,
+        savedMedia.id,
+        media.submittedBy.id,
+      );
+    }
+
     // Skip email for test user, if no submitter, or if no email
     if (media.submittedBy?.email && !this.isTestUser(media.submittedBy.email)) {
       await this.emailService.sendMediaApprovalNotification(
