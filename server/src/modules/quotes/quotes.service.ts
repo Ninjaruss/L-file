@@ -11,6 +11,9 @@ import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { User, UserRole } from '../../entities/user.entity';
 import { Character } from '../../entities/character.entity';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
+import { diffFields } from '../../common/utils/diff-fields';
 
 @Injectable()
 export class QuotesService {
@@ -19,6 +22,7 @@ export class QuotesService {
     private quotesRepository: Repository<Quote>,
     @InjectRepository(Character)
     private charactersRepository: Repository<Character>,
+    private readonly editLogService: EditLogService,
   ) {}
 
   async create(createQuoteDto: CreateQuoteDto, user: User): Promise<Quote> {
@@ -217,7 +221,6 @@ export class QuotesService {
   ): Promise<Quote> {
     const quote = await this.findOne(id);
 
-    // Check if user can update this quote (only submitter, moderator, or admin)
     if (
       quote.submittedBy.id !== user.id &&
       user.role !== UserRole.MODERATOR &&
@@ -226,7 +229,6 @@ export class QuotesService {
       throw new ForbiddenException('You can only update your own quotes');
     }
 
-    // If changing character, verify it exists
     if (
       updateQuoteDto.characterId &&
       updateQuoteDto.characterId !== quote.character.id
@@ -241,14 +243,22 @@ export class QuotesService {
       }
     }
 
+    const changedFields = diffFields(quote, updateQuoteDto);
     await this.quotesRepository.update(id, updateQuoteDto);
+    if (changedFields.length > 0) {
+      await this.editLogService.logUpdate(
+        EditLogEntityType.QUOTE,
+        id,
+        user.id,
+        changedFields,
+      );
+    }
     return this.findOne(id);
   }
 
   async remove(id: number, user: User): Promise<void> {
     const quote = await this.findOne(id);
 
-    // Check if user can delete this quote (only submitter, moderator, or admin)
     if (
       quote.submittedBy.id !== user.id &&
       user.role !== UserRole.MODERATOR &&
@@ -258,6 +268,7 @@ export class QuotesService {
     }
 
     await this.quotesRepository.remove(quote);
+    await this.editLogService.logDelete(EditLogEntityType.QUOTE, id, user.id);
   }
 
   async getQuotesByChapter(chapterNumber: number): Promise<Quote[]> {
@@ -314,14 +325,25 @@ export class QuotesService {
   }
 
   async approve(id: number): Promise<Quote> {
-    const quote = await this.quotesRepository.findOne({ where: { id } });
+    const quote = await this.quotesRepository.findOne({
+      where: { id },
+      relations: ['submittedBy'],
+    });
     if (!quote) throw new NotFoundException(`Quote with ID ${id} not found`);
     if (quote.status !== QuoteStatus.PENDING) {
       throw new BadRequestException('Only pending quotes can be approved');
     }
     quote.status = QuoteStatus.APPROVED;
     quote.rejectionReason = null;
-    return this.quotesRepository.save(quote);
+    const saved = await this.quotesRepository.save(quote);
+    if (quote.submittedBy?.id) {
+      await this.editLogService.logCreate(
+        EditLogEntityType.QUOTE,
+        saved.id,
+        quote.submittedBy.id,
+      );
+    }
+    return saved;
   }
 
   async reject(id: number, rejectionReason: string): Promise<Quote> {
