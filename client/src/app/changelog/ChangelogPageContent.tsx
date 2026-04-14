@@ -156,7 +156,7 @@ function relativeTime(dateStr: string): string {
 }
 
 function getActionLabel(entry: EditEntry): string {
-  const isSubmissionType = ['guide', 'media', 'annotation'].includes(entry.entityType)
+  const isSubmissionType = ['guide', 'media', 'annotation', 'quote'].includes(entry.entityType)
   if (isSubmissionType && entry.action === 'update') {
     const priorStatusField = (entry.changedFields ?? []).find(
       (f) => f.startsWith('priorStatus:')
