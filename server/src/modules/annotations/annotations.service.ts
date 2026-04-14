@@ -418,7 +418,13 @@ export class AnnotationsService {
 
     annotation.status = AnnotationStatus.APPROVED;
     annotation.rejectionReason = null;
-    return await this.annotationRepository.save(annotation);
+    const saved = await this.annotationRepository.save(annotation);
+    await this.editLogService.logCreate(
+      EditLogEntityType.ANNOTATION,
+      saved.id,
+      annotation.author.id,
+    );
+    return saved;
   }
 
   async reject(
