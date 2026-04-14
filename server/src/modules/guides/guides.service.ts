@@ -798,7 +798,13 @@ export class GuidesService {
     guide.status = GuideStatus.APPROVED;
     guide.rejectionReason = null; // Clear any previous rejection reason
 
-    return await this.guideRepository.save(guide);
+    const saved = await this.guideRepository.save(guide);
+    await this.editLogService.logCreate(
+      EditLogEntityType.GUIDE,
+      saved.id,
+      guide.authorId,
+    );
+    return saved;
   }
 
   async reject(
