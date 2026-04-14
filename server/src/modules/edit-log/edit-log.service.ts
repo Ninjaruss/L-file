@@ -15,6 +15,7 @@ import { Arc } from '../../entities/arc.entity';
 import { Organization } from '../../entities/organization.entity';
 import { Event } from '../../entities/event.entity';
 import { Chapter } from '../../entities/chapter.entity';
+import { Quote, QuoteStatus } from '../../entities/quote.entity';
 
 @Injectable()
 export class EditLogService {
@@ -39,6 +40,8 @@ export class EditLogService {
     private eventRepository: Repository<Event>,
     @InjectRepository(Chapter)
     private chapterRepository: Repository<Chapter>,
+    @InjectRepository(Quote)
+    private quoteRepository: Repository<Quote>,
   ) {}
 
   private async resolveEntityNames(
@@ -167,6 +170,22 @@ export class EditLogService {
             }
           })()
         : Promise.resolve(),
+      groups.has(EditLogEntityType.QUOTE)
+        ? (async () => {
+            const ids = groups.get(EditLogEntityType.QUOTE)!;
+            const rows = await this.quoteRepository.find({
+              where: { id: In(ids) } as any,
+              select: ['id', 'text'] as any,
+            });
+            for (const row of rows) {
+              if (row.text) {
+                const truncated =
+                  row.text.length > 80 ? row.text.slice(0, 80) + '…' : row.text;
+                nameMap.set(`${EditLogEntityType.QUOTE}:${row.id}`, truncated);
+              }
+            }
+          })()
+        : Promise.resolve(),
     ]);
 
     return nameMap;
@@ -217,6 +236,20 @@ export class EditLogService {
         for (const row of rows) {
           const label = `Ch. ${row.number}${row.title ? ` — ${row.title}` : ''}`;
           nameMap.set(row.id, label);
+        }
+        break;
+      }
+      case 'quote': {
+        const rows = await this.quoteRepository.find({
+          where: { id: In(ids) } as any,
+          select: ['id', 'text'] as any,
+        });
+        for (const row of rows) {
+          if (row.text) {
+            const truncated =
+              row.text.length > 80 ? row.text.slice(0, 80) + '…' : row.text;
+            nameMap.set(row.id, truncated);
+          }
         }
         break;
       }
@@ -294,6 +327,7 @@ export class EditLogService {
           EditLogEntityType.GUIDE,
           EditLogEntityType.MEDIA,
           EditLogEntityType.ANNOTATION,
+          EditLogEntityType.QUOTE,
         ]),
       },
       order: { createdAt: 'DESC' },
@@ -346,6 +380,7 @@ export class EditLogService {
       [EditLogEntityType.TAG]: 0,
       [EditLogEntityType.CHARACTER_RELATIONSHIP]: 0,
       [EditLogEntityType.CHARACTER_ORGANIZATION]: 0,
+      [EditLogEntityType.QUOTE]: 0,
     };
 
     for (const result of results) {
@@ -441,7 +476,7 @@ export class EditLogService {
   }): Promise<{
     data: Array<{
       id: number | string;
-      type: 'guide' | 'media' | 'annotation';
+      type: 'guide' | 'media' | 'annotation' | 'quote';
       title?: string;
       entityType?: string;
       entityId?: number;
@@ -460,7 +495,7 @@ export class EditLogService {
   }> {
     const { page = 1, limit = 20 } = options;
 
-    const [guides, media, annotations] = await Promise.all([
+    const [guides, media, annotations, quotes] = await Promise.all([
       this.guideRepository.find({
         where: { status: GuideStatus.APPROVED },
         relations: ['author'],
@@ -476,11 +511,16 @@ export class EditLogService {
         relations: ['author'],
         order: { createdAt: 'DESC' },
       }),
+      this.quoteRepository.find({
+        where: { status: QuoteStatus.APPROVED },
+        relations: ['submittedBy'],
+        order: { createdAt: 'DESC' },
+      }),
     ]);
 
     const combined: Array<{
       id: number | string;
-      type: 'guide' | 'media' | 'annotation';
+      type: 'guide' | 'media' | 'annotation' | 'quote';
       title?: string;
       entityType?: string;
       entityId?: number;
@@ -541,6 +581,22 @@ export class EditLogService {
             }
           : null,
       })),
+      ...quotes
+        .filter((q) => q.submittedBy)
+        .map((q) => ({
+          id: q.id,
+          type: 'quote' as const,
+          title: q.text.length > 80 ? q.text.slice(0, 80) + '…' : q.text,
+          createdAt: q.createdAt,
+          submittedBy: q.submittedBy
+            ? {
+                id: q.submittedBy.id,
+                username: q.submittedBy.username,
+                fluxerAvatar: q.submittedBy.fluxerAvatar ?? undefined,
+                fluxerId: q.submittedBy.fluxerId ?? undefined,
+              }
+            : null,
+        })),
     ];
 
     // Sort by date descending
