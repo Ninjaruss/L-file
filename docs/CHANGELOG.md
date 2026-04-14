@@ -3,8 +3,8 @@
 ## TODO
 - Add a proper data backup; update security for supabase data
 - Sync reading progress with other trackers? (i.e. myanimelist, anilist, etc.)
-- Prevent accidental click on inserted entity embed navigating to a different page while editing a page
 - Add quotes detail page
+- Revamp events page and data to be more simplified and easier to use
 
 
 ## 2026-04-03

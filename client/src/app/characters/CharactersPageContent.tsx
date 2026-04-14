@@ -307,7 +307,7 @@ export default function CharactersPageContent({
         href={`/characters/${character.id}`}
         entityId={character.id}
         name={character.name}
-        chapterBadge={character.firstAppearanceChapter ? `Ch. ${character.firstAppearanceChapter}` : undefined}
+
         imagePriority={index < 6}
         initialMedia={initialMediaMap?.[character.id]}
         onClick={handleCardClick}
