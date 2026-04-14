@@ -30,6 +30,7 @@ function EntityEmbedNodeView({ node }: NodeViewProps) {
         id={entityId}
         displayText={displayText ?? undefined}
         inline
+        disableNavigation
       />
     </NodeViewWrapper>
   )

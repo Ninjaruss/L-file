@@ -45,6 +45,7 @@ interface EntityCardProps {
   compact?: boolean
   showImage?: boolean
   inline?: boolean
+  disableNavigation?: boolean
 }
 
 type EntityAccentMap = Partial<Record<EntityCardProps['type'], EntityAccentKey>>
@@ -90,7 +91,8 @@ const EntityCard: React.FC<EntityCardProps> = ({
   displayText,
   compact = false,
   showImage = true,
-  inline = false
+  inline = false,
+  disableNavigation = false,
 }) => {
   const theme = useMantineTheme()
   const { userProgress } = useProgress()
@@ -335,63 +337,77 @@ const EntityCard: React.FC<EntityCardProps> = ({
 
     const isHoverSpoilered = shouldHideSpoiler(entityChapterNumber, userProgress, spoilerSettings)
 
+    const chipStyle: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: rem(7),
+      padding: `${rem(3)} ${rem(10)} ${rem(3)} ${rem(4)}`,
+      borderRadius: rem(6),
+      backgroundColor: '#1a2535',
+      border: `1px solid ${rgba(accentColor, 0.3)}`,
+      color: accentColor,
+      textDecoration: 'none',
+      fontSize: rem(13),
+      fontWeight: 500,
+      lineHeight: 1.4,
+      verticalAlign: 'middle',
+      cursor: disableNavigation ? 'default' : 'pointer',
+      transition: 'filter 120ms ease',
+      whiteSpace: 'nowrap',
+      maxWidth: rem(240),
+    }
+
+    const chipInner = (
+      <>
+        {/* 20×20 avatar square: type icon */}
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: rem(20),
+          height: rem(20),
+          borderRadius: rem(3),
+          backgroundColor: rgba(accentColor, 0.2),
+          color: accentColor,
+          flexShrink: 0,
+          fontSize: rem(11)
+        }}>
+          {ICON_MAP_SM[type]}
+        </span>
+        <Text
+          component="span"
+          size="sm"
+          fw={500}
+          lineClamp={1}
+          style={{ color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
+          {chipDisplayText}
+        </Text>
+      </>
+    )
+
     return (
       <HoverCard width={340} shadow="lg" openDelay={200} closeDelay={100} position="top" withinPortal disabled={isHoverSpoilered}>
         <HoverCard.Target>
           <span style={{ display: 'inline' }}>
-            <Link
-              href={linkHref}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: rem(7),
-                padding: `${rem(3)} ${rem(10)} ${rem(3)} ${rem(4)}`,
-                borderRadius: rem(6),
-                backgroundColor: '#1a2535',
-                border: `1px solid ${rgba(accentColor, 0.3)}`,
-                color: accentColor,
-                textDecoration: 'none',
-                fontSize: rem(13),
-                fontWeight: 500,
-                lineHeight: 1.4,
-                verticalAlign: 'middle',
-                cursor: 'pointer',
-                transition: 'filter 120ms ease',
-                whiteSpace: 'nowrap',
-                maxWidth: rem(240)
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.filter = 'brightness(1.1)'
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.filter = 'brightness(1)'
-              }}
-            >
-              {/* 20×20 avatar square: type icon */}
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: rem(20),
-                height: rem(20),
-                borderRadius: rem(3),
-                backgroundColor: rgba(accentColor, 0.2),
-                color: accentColor,
-                flexShrink: 0,
-                fontSize: rem(11)
-              }}>
-                {ICON_MAP_SM[type]}
+            {disableNavigation ? (
+              <span style={chipStyle}>
+                {chipInner}
               </span>
-              <Text
-                component="span"
-                size="sm"
-                fw={500}
-                lineClamp={1}
-                style={{ color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            ) : (
+              <Link
+                href={linkHref}
+                style={chipStyle}
+                onMouseEnter={(event) => {
+                  event.currentTarget.style.filter = 'brightness(1.1)'
+                }}
+                onMouseLeave={(event) => {
+                  event.currentTarget.style.filter = 'brightness(1)'
+                }}
               >
-                {chipDisplayText}
-              </Text>
-            </Link>
+                {chipInner}
+              </Link>
+            )}
           </span>
         </HoverCard.Target>
         <HoverCard.Dropdown
