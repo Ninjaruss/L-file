@@ -87,6 +87,7 @@ interface EditEntry {
   changedFields?: string[] | null
   createdAt: string
   user?: { id: number; username: string; fluxerAvatar?: string; fluxerId?: string } | null
+  count?: number
 }
 
 interface SubmissionEntry {
@@ -196,6 +197,58 @@ const TYPE_FILTER_OPTIONS: { label: string; value: FilterType }[] = [
 
 const PAGE_LIMIT = 20
 
+const EVENT_CONSOLIDATION_WINDOW_MS = 5 * 60 * 1000 // 5 minutes
+
+function groupEntries(entries: FeedEntry[]): FeedEntry[] {
+  const result: FeedEntry[] = []
+  let i = 0
+  while (i < entries.length) {
+    const entry = entries[i]
+    if (
+      entry.kind === 'edit' &&
+      (entry as EditEntry).action === 'create' &&
+      (entry as EditEntry).entityType === 'event'
+    ) {
+      const editEntry = entry as EditEntry
+      const group: EditEntry[] = [editEntry]
+      let j = i + 1
+      while (j < entries.length) {
+        const next = entries[j]
+        if (
+          next.kind === 'edit' &&
+          (next as EditEntry).action === 'create' &&
+          (next as EditEntry).entityType === 'event' &&
+          (next as EditEntry).user?.id === editEntry.user?.id &&
+          Math.abs(
+            new Date(next.createdAt).getTime() -
+              new Date(editEntry.createdAt).getTime(),
+          ) <= EVENT_CONSOLIDATION_WINDOW_MS
+        ) {
+          group.push(next as EditEntry)
+          j++
+        } else {
+          break
+        }
+      }
+      if (group.length > 1) {
+        result.push({
+          ...editEntry,
+          entityName: `${group.length} events`,
+          count: group.length,
+        })
+        i = j
+      } else {
+        result.push(entry)
+        i++
+      }
+    } else {
+      result.push(entry)
+      i++
+    }
+  }
+  return result
+}
+
 function formatChangedFields(fields: string[] | null | undefined): string {
   if (!fields?.length) return ''
   const filtered = fields.filter((f) => !f.startsWith('priorStatus:'))
@@ -249,11 +302,12 @@ export function ChangelogPageContent() {
         entityName: s.entityName,
         createdAt: s.createdAt, submittedBy: s.submittedBy,
       }))
-      const combined = [...editEntries, ...submissionEntries]
+      const sorted = [...editEntries, ...submissionEntries]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT)
+      const sliced = sorted.slice((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT)
+      const grouped = groupEntries(sliced)
       const totalCombined = (edits?.total ?? 0) + (submissions?.total ?? 0)
-      setEntries(combined)
+      setEntries(grouped)
       setTotalPages(Math.ceil(totalCombined / PAGE_LIMIT))
     } catch {
       setEntries([])
@@ -415,14 +469,20 @@ export function ChangelogPageContent() {
         ) : (
           entries.map((entry) => {
             if (entry.kind === 'edit') {
-              const user = entry.user
-              const link = entityLink(entry.entityType, entry.entityId)
-              const displayName = entry.entityName ?? `#${entry.entityId}`
-              const entityTypeLabel = entry.entityType.charAt(0).toUpperCase() + entry.entityType.slice(1).toLowerCase()
-              const eColor = entityColor(entry.entityType)
+              const editEntry = entry as EditEntry
+              const user = editEntry.user
+              const isConsolidated = (editEntry.count ?? 1) > 1
+              const link = isConsolidated ? '#' : entityLink(editEntry.entityType, editEntry.entityId)
+              const displayName = isConsolidated
+                ? editEntry.entityName!
+                : (editEntry.entityName ?? `#${editEntry.entityId}`)
+              const entityTypeLabel = isConsolidated
+                ? ''
+                : editEntry.entityType.charAt(0).toUpperCase() + editEntry.entityType.slice(1).toLowerCase()
+              const eColor = entityColor(editEntry.entityType)
               return (
                 <Box
-                  key={`edit-${entry.id}`}
+                  key={`edit-${editEntry.id}`}
                   style={{
                     display: 'flex',
                     gap: rem(12),
@@ -450,34 +510,53 @@ export function ChangelogPageContent() {
                       <Badge
                         size="sm"
                         variant="light"
-                        color={entry.action === 'create' ? 'green' : entry.action === 'delete' ? 'red' : 'blue'}
+                        color={editEntry.action === 'create' ? 'green' : editEntry.action === 'delete' ? 'red' : 'blue'}
                         style={{ textTransform: 'capitalize', flexShrink: 0 }}
                       >
-                        {getActionLabel(entry)}
+                        {getActionLabel(editEntry)}
                       </Badge>
-                      <Anchor
-                        component={Link}
-                        href={link}
-                        size="sm"
-                        fw={500}
-                        style={{
-                          color: eColor,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {displayName}
-                      </Anchor>
+                      {isConsolidated ? (
+                        <Text
+                          size="sm"
+                          fw={500}
+                          style={{
+                            color: eColor,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {displayName}
+                        </Text>
+                      ) : (
+                        <Anchor
+                          component={Link}
+                          href={link}
+                          size="sm"
+                          fw={500}
+                          style={{
+                            color: eColor,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {displayName}
+                        </Anchor>
+                      )}
                     </Group>
                     <Group gap={4}>
-                      <Text size="xs" style={{ color: eColor, fontWeight: 600 }}>{entityTypeLabel}</Text>
-                      <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>·</Text>
+                      {!isConsolidated && (
+                        <Text size="xs" style={{ color: eColor, fontWeight: 600 }}>{entityTypeLabel}</Text>
+                      )}
+                      {!isConsolidated && (
+                        <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>·</Text>
+                      )}
                       <Clock size={11} style={{ color: textColors.tertiary, opacity: 0.5 }} />
-                      <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>{relativeTime(entry.createdAt)}</Text>
+                      <Text size="xs" c="dimmed" style={{ opacity: 0.5 }}>{relativeTime(editEntry.createdAt)}</Text>
                     </Group>
                     {(() => {
-                      const fieldsLabel = formatChangedFields(entry.changedFields)
+                      const fieldsLabel = formatChangedFields(editEntry.changedFields)
                       return fieldsLabel ? (
                         <Text size="xs" style={{ color: '#666', marginTop: '2px' }}>
                           {fieldsLabel}
