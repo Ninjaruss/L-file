@@ -565,16 +565,24 @@ class ApiClient {
     return this.get<any>(`/gambles/${id}`)
   }
 
-  async getEvents(params?: { page?: number; limit?: number; title?: string; type?: string; status?: string; character?: string }) {
-    const searchParams = new URLSearchParams()
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          searchParams.append(key, value.toString())
-        }
-      })
-    }
-    const query = searchParams.toString()
+  async getEvents(params?: {
+    page?: number
+    limit?: number
+    search?: string
+    type?: string
+    arcId?: number
+    gambleId?: number
+    chapterNumber?: number
+    characterId?: number
+    userProgress?: number
+    sort?: string
+    order?: string
+  }) {
+    const query = params ? new URLSearchParams(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== '')
+        .map(([k, v]) => [k, String(v)])
+    ).toString() : ''
     return this.get<{
       data: any[]
       total: number
@@ -609,10 +617,6 @@ class ApiClient {
 
   async getEvent(id: number) {
     return this.get<any>(`/events/${id}`)
-  }
-
-  async getEventsByChapter(chapterNumber: number) {
-    return this.get<any[]>(`/events/by-chapter/${chapterNumber}`)
   }
 
   async search(options: {
@@ -1449,43 +1453,11 @@ class ApiClient {
   }
 
   async updateEvent(id: number, data: any) {
-    return this.put<any>(`/events/${id}`, data)
-  }
-
-  async updateOwnEvent(id: number, data: any) {
-    return this.put<any>(`/events/${id}/own`, data)
-  }
-
-  async getMyEventSubmission(id: number) {
-    return this.get<any>(`/events/${id}`)
+    return this.patch<any>(`/events/${id}`, data)
   }
 
   async deleteEvent(id: number) {
     return this.delete<any>(`/events/${id}`)
-  }
-
-  async approveEvent(id: number) {
-    return this.put<any>(`/events/${id}/approve`, {})
-  }
-
-  async rejectEvent(id: number, rejectionReason: string) {
-    return this.put<any>(`/events/${id}/reject`, { rejectionReason })
-  }
-
-  async getEventsByArc(arcId: number, options?: { status?: string; userProgress?: number }) {
-    const params = new URLSearchParams()
-    if (options?.status) params.append('status', options.status)
-    if (options?.userProgress) params.append('userProgress', options.userProgress.toString())
-    const query = params.toString()
-    return this.get<any[]>(`/events/by-arc/${arcId}${query ? `?${query}` : ''}`)
-  }
-
-  async getEventsByGamble(gambleId: number, options?: { status?: string; userProgress?: number }) {
-    const params = new URLSearchParams()
-    if (options?.status) params.append('status', options.status)
-    if (options?.userProgress) params.append('userProgress', options.userProgress.toString())
-    const query = params.toString()
-    return this.get<any[]>(`/events/by-gamble/${gambleId}${query ? `?${query}` : ''}`)
   }
 
   // Admin guide methods (authenticated)

@@ -54,35 +54,34 @@ export interface Character {
 }
 
 export interface Event {
-  id: number;
-  title: string;
-  description: string;
-  chapterNumber: number;
-  spoilerChapter?: number;
-  type: 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution';
-  status: EventStatus;
-  rejectionReason?: string | null;
-  gambleId?: number;
-  gamble?: Gamble;
-  arcId?: number;
+  id: number
+  title: string
+  description: string
+  chapterNumber: number
+  pageNumber?: number | null
+  spoilerChapter?: number
+  type: 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution'
+  gambleId?: number
+  gamble?: Gamble
+  arcId?: number
   arc?: {
-    id: number;
-    name: string;
-  };
+    id: number
+    name: string
+  }
   characters: Array<{
-    id: number;
-    name: string;
-  }>;
+    id: number
+    name: string
+  }>
   tags?: Array<{
-    id: number;
-    name: string;
-  }>;
+    id: number
+    name: string
+  }>
   createdBy?: {
-    id: number;
-    username: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+    id: number
+    username: string
+  }
+  createdAt: string
+  updatedAt: string
 }
 
 export enum BadgeType {
@@ -178,12 +177,6 @@ export enum GuideStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
 }
-export enum EventStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-}
-
 export enum AnnotationStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
