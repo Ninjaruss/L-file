@@ -65,7 +65,6 @@ import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 // Note: Removed EntityEmbedHelperWithSearch import to avoid Mantine/MUI conflicts
 import { EVENT_TYPES } from '../../lib/constants'
-import { ApproveRejectToolbar } from './EditToolbar'
 
 const EventTypeField = () => {
   const record = useRecordContext()
@@ -1089,7 +1088,6 @@ export const EventEdit = () => {
           <CardContent sx={{ p: 4 }}>
             <SimpleForm
               validate={validateEventForm}
-              toolbar={<ApproveRejectToolbar resource="events" showDelete={false} />}
               sx={{
               '& .MuiTextField-root': {
                 mb: 3,
