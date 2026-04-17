@@ -36,6 +36,7 @@ export interface EventFormData {
   title: string
   description: string
   chapterNumber: number | ''
+  pageNumber: number | ''
   type: string
   spoilerChapter: number | ''
   characterIds: number[]
@@ -147,6 +148,15 @@ export default function EventFormCard({
               onChange={(value) => handleChange('chapterNumber', value)}
               required
               min={1}
+              styles={inputStyles}
+            />
+            <NumberInput
+              label="Page Number"
+              description="Optional. Helps order events within the same chapter."
+              placeholder="e.g. 14"
+              min={1}
+              value={data.pageNumber}
+              onChange={(val) => onChange({ ...data, pageNumber: val as number | '' })}
               styles={inputStyles}
             />
             <Select

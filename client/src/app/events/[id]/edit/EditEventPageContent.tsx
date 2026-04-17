@@ -50,13 +50,12 @@ interface ExistingEvent {
   title: string
   description: string
   chapterNumber: number
+  pageNumber?: number | null
   type?: string | null
   arcId?: number | null
   gambleId?: number | null
   spoilerChapter?: number | null
   characters?: Array<{ id: number; name: string }>
-  status: 'pending' | 'approved' | 'rejected'
-  rejectionReason?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -82,6 +81,7 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
     title: '',
     description: '',
     chapterNumber: 1 as number | '',
+    pageNumber: '' as number | '',
     type: '' as string,
     arcId: null as number | null,
     gambleId: null as number | null,
@@ -123,10 +123,11 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
 
     setLoading(true)
     try {
-      await api.updateOwnEvent(id, {
+      await api.updateEvent(id, {
         title: formData.title.trim(),
         description: formData.description.trim(),
         chapterNumber: formData.chapterNumber as number,
+        pageNumber: formData.pageNumber ? Number(formData.pageNumber) : undefined,
         type: formData.type || undefined,
         arcId: formData.arcId ?? undefined,
         gambleId: formData.gambleId ?? undefined,
@@ -145,7 +146,7 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
     const load = async () => {
       try {
         const [event, charactersRes, arcsRes, gamblesRes] = await Promise.all([
-          api.getMyEventSubmission(id),
+          api.getEvent(id),
           api.getCharacters({ limit: 500 }),
           api.getArcs({ limit: 200 }),
           api.getGambles({ limit: 500 }),
@@ -155,6 +156,7 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
           title: event.title || '',
           description: event.description || '',
           chapterNumber: event.chapterNumber || 1,
+          pageNumber: event.pageNumber ?? ('' as number | ''),
           type: event.type || '',
           arcId: event.arcId ?? null,
           gambleId: event.gambleId ?? null,
@@ -233,11 +235,10 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
         type="event"
         accentColor={accentColor}
         submissionTitle={existingEvent.title}
-        status={existingEvent.status}
+        status="approved"
         submittedAt={existingEvent.createdAt ?? new Date().toISOString()}
         updatedAt={existingEvent.updatedAt}
         submissionId={existingEvent.id}
-        rejectionReason={existingEvent.rejectionReason}
       >
         {showSuccess ? (
           <SubmissionSuccess
@@ -345,6 +346,24 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
                         required
                         min={1}
                         styles={inputStyles}
+                      />
+                      <NumberInput
+                        label={
+                          <span>
+                            Page Number
+                            {isDirty('pageNumber') && (
+                              <span style={{ fontSize: rem(10), background: 'rgba(245,158,11,0.1)', color: AMBER, border: '1px solid rgba(245,158,11,0.25)', borderRadius: 3, padding: '1px 5px', marginLeft: 6 }}>
+                                edited
+                              </span>
+                            )}
+                          </span>
+                        }
+                        description="Optional. Helps order events within the same chapter."
+                        placeholder="e.g. 14"
+                        value={formData.pageNumber}
+                        onChange={(value) => handleInputChange('pageNumber', value)}
+                        min={1}
+                        styles={dimmedInputStyles}
                       />
                     </Stack>
                   </FormSection>

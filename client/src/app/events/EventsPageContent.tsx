@@ -26,7 +26,6 @@ import { useSpoilerSettings } from '../../hooks/useSpoilerSettings'
 import { api } from '../../lib/api'
 import { usePaged } from '../../hooks/usePagedCache'
 import type { Arc, Event } from '../../types'
-import { EventStatus } from '../../types'
 import { ListPageLayout } from '../../components/layouts/ListPageLayout'
 import TimelineSpoilerWrapper from '../../components/TimelineSpoilerWrapper'
 import { shouldHideSpoiler } from '../../lib/spoiler-utils'
@@ -40,12 +39,6 @@ const eventTypeOptions = [
   { value: 'resolution', label: 'Resolution' }
 ]
 
-const eventStatusOptions = [
-  { value: '', label: 'All Statuses' },
-  { value: EventStatus.APPROVED, label: 'Verified' },
-  { value: EventStatus.PENDING, label: 'Unverified' },
-  { value: EventStatus.REJECTED, label: 'Rejected' }
-]
 
 interface EventsPageContentProps {
   initialGroupedEvents: {
@@ -54,7 +47,6 @@ interface EventsPageContentProps {
   }
   initialSearch: string
   initialType: string
-  initialStatus: string
   initialCharacter: string
   initialError: string
 }
@@ -66,7 +58,6 @@ export default function EventsPageContent({
   initialGroupedEvents,
   initialSearch,
   initialType,
-  initialStatus,
   initialCharacter,
   initialError
 }: EventsPageContentProps) {
@@ -83,7 +74,6 @@ export default function EventsPageContent({
   const [error, setError] = useState(initialError)
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [selectedType, setSelectedType] = useState(initialType)
-  const [selectedStatus, setSelectedStatus] = useState(initialStatus)
   const [selectedCharacter, setSelectedCharacter] = useState(initialCharacter)
   const searchDebounceRef = useRef<number | null>(null)
 
@@ -97,7 +87,7 @@ export default function EventsPageContent({
   const hoveredElementRef = useRef<HTMLElement | null>(null)
 
   const hasSearchQuery = searchTerm.trim().length > 0
-  const hasAnyFilter = Boolean(searchTerm.trim() || selectedType || selectedStatus || selectedCharacter)
+  const hasAnyFilter = Boolean(searchTerm.trim() || selectedType || selectedCharacter)
 
   const shouldHideEventSpoiler = (event: Event) => {
     const chapterNumber = event.spoilerChapter || event.chapterNumber
@@ -105,11 +95,10 @@ export default function EventsPageContent({
   }
 
   const updateUrl = useCallback(
-    (search: string, type: string, status: string, character: string) => {
+    (search: string, type: string, character: string) => {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       if (type) params.set('type', type)
-      if (status) params.set('status', status)
       if (character) params.set('character', character)
       const qs = params.toString()
       router.push(qs ? `/events?${qs}` : '/events', { scroll: false })
@@ -120,7 +109,6 @@ export default function EventsPageContent({
   const fetcher = useCallback(async () => {
     if (searchTerm) {
       const params: Record<string, string | number> = { page: 1, limit: 100, title: searchTerm }
-      if (selectedStatus) params.status = selectedStatus
       if (selectedType) params.type = selectedType
       if (selectedCharacter) params.character = selectedCharacter
       const resAny = await api.getEvents(params)
@@ -129,17 +117,16 @@ export default function EventsPageContent({
     }
 
     const params: Record<string, string> = {}
-    if (selectedStatus) params.status = selectedStatus
     if (selectedType) params.type = selectedType
     if (selectedCharacter) params.character = selectedCharacter
     const grouped = await api.getEventsGroupedByArc(params)
     const total = grouped.arcs.reduce((sum: number, g: any) => sum + (g.events?.length || 0), 0) + (grouped.noArc?.length || 0)
     return { data: grouped, total, page: 1, perPage: total || 1, totalPages: 1 } as any
-  }, [searchTerm, selectedType, selectedStatus, selectedCharacter])
+  }, [searchTerm, selectedType, selectedCharacter])
 
   const { data: pageData, loading: pageLoading, error: pageError } = usePaged(
     'events', 1, fetcher,
-    { search: searchTerm, type: selectedType, status: selectedStatus, character: selectedCharacter },
+    { search: searchTerm, type: selectedType, character: selectedCharacter },
     { ttlMs: 120_000, persist: true, maxEntries: 100 }
   )
 
@@ -201,12 +188,12 @@ export default function EventsPageContent({
     setSearchTerm(value)
     if (value.trim() === '' && searchTerm.trim() !== '') {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
-      updateUrl('', selectedType, selectedStatus, selectedCharacter)
+      updateUrl('', selectedType, selectedCharacter)
       return
     }
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = window.setTimeout(() => {
-      updateUrl(value, selectedType, selectedStatus, selectedCharacter)
+      updateUrl(value, selectedType, selectedCharacter)
     }, 300)
   }
 
@@ -214,21 +201,14 @@ export default function EventsPageContent({
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     setSearchTerm('')
     setSelectedType('')
-    setSelectedStatus('')
     setSelectedCharacter('')
-    updateUrl('', '', '', '')
+    updateUrl('', '', '')
   }, [updateUrl])
 
   const handleTypeChange = (value: string | null) => {
     const newType = value || ''
     setSelectedType(newType)
-    updateUrl(searchTerm, newType, selectedStatus, selectedCharacter)
-  }
-
-  const handleStatusChange = (value: string | null) => {
-    const newStatus = value || ''
-    setSelectedStatus(newStatus)
-    updateUrl(searchTerm, selectedType, newStatus, selectedCharacter)
+    updateUrl(searchTerm, newType, selectedCharacter)
   }
 
   const handleEventMouseEnter = (event: Event, mouseEvent: React.MouseEvent) => {
@@ -272,15 +252,6 @@ export default function EventsPageContent({
       case 'shift': return '#9b59b6'
       case 'resolution': return '#27ae60'
       default: return getEntityThemeColor(theme, 'event')
-    }
-  }
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case EventStatus.APPROVED: return '#51cf66'
-      case EventStatus.PENDING: return '#ffd43b'
-      case EventStatus.REJECTED: return '#ff6b6b'
-      default: return '#adb5bd'
     }
   }
 
@@ -449,24 +420,6 @@ export default function EventsPageContent({
               }
             }}
           />
-          <Select
-            placeholder="All Statuses"
-            value={selectedStatus}
-            onChange={handleStatusChange}
-            data={eventStatusOptions}
-            clearable
-            size="md"
-            style={{ minWidth: rem(140), flex: '1 1 140px' }}
-            styles={{
-              input: {
-                backgroundColor: 'rgba(15, 10, 10, 0.65)',
-                border: `1px solid ${accentEvent}35`,
-                backdropFilter: 'blur(8px)',
-                fontSize: rem(14),
-                '&:focus': { borderColor: accentEvent }
-              }
-            }}
-          />
         </Group>
       }
       activeFilterBadges={
@@ -477,7 +430,7 @@ export default function EventsPageContent({
               value={selectedCharacter}
               onClear={() => {
                 setSelectedCharacter('')
-                updateUrl(searchTerm, selectedType, selectedStatus, '')
+                updateUrl(searchTerm, selectedType, '')
               }}
               accentColor={accentEvent}
             />
@@ -537,11 +490,6 @@ export default function EventsPageContent({
                   <Text size="sm" ta="center" lineClamp={3} style={{ color: theme.colors.gray[6], lineHeight: 1.4 }}>
                     {hoveredEvent.description}
                   </Text>
-                  <Group justify="center">
-                    <Badge c={statusColor(hoveredEvent.status)} variant="light" size="sm" style={{ backgroundColor: `${statusColor(hoveredEvent.status)}20`, borderColor: statusColor(hoveredEvent.status) }}>
-                      {hoveredEvent.status === 'pending' ? 'Unverified' : hoveredEvent.status === 'approved' ? 'Verified' : hoveredEvent.status}
-                    </Badge>
-                  </Group>
                 </Stack>
               </Paper>
             </motion.div>

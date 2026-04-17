@@ -44,7 +44,7 @@ export default function SubmitEventPageContent() {
   const deferredGambleId = useDeferredValue(sharedGambleId)
 
   const [batchEvents, setBatchEvents] = useState<EventFormData[]>([
-    { title: '', description: '', chapterNumber: '' as number | '', type: '', spoilerChapter: '' as number | '', characterIds: [] }
+    { title: '', description: '', chapterNumber: '' as number | '', pageNumber: '' as number | '', type: '', spoilerChapter: '' as number | '', characterIds: [] }
   ])
 
   const [loading, setLoading] = useState(false)
@@ -85,6 +85,7 @@ export default function SubmitEventPageContent() {
           title: event.title.trim(),
           description: event.description.trim(),
           chapterNumber: event.chapterNumber as number,
+          pageNumber: event.pageNumber ? Number(event.pageNumber) : undefined,
           type: event.type || undefined,
           arcId: sharedArcId ?? undefined,
           gambleId: sharedGambleId ?? undefined,
@@ -102,7 +103,7 @@ export default function SubmitEventPageContent() {
 
     if (results.failed === 0) {
       setShowSuccess(true)
-      setBatchEvents([{ title: '', description: '', chapterNumber: '' as number | '', type: '', spoilerChapter: '' as number | '', characterIds: [] }])
+      setBatchEvents([{ title: '', description: '', chapterNumber: '' as number | '', pageNumber: '' as number | '', type: '', spoilerChapter: '' as number | '', characterIds: [] }])
     } else if (results.success > 0) {
       setShowSuccess(true)
       setError(`${results.failed} event${results.failed !== 1 ? 's' : ''} failed: ${results.errors.join('; ')}`)
@@ -112,7 +113,7 @@ export default function SubmitEventPageContent() {
   }
 
   const addEvent = () => {
-    setBatchEvents([...batchEvents, { title: '', description: '', chapterNumber: '' as number | '', type: '', spoilerChapter: '' as number | '', characterIds: [] }])
+    setBatchEvents([...batchEvents, { title: '', description: '', chapterNumber: '' as number | '', pageNumber: '' as number | '', type: '', spoilerChapter: '' as number | '', characterIds: [] }])
   }
   const removeEvent = (index: number) => {
     if (batchEvents.length > 1) setBatchEvents(batchEvents.filter((_, i) => i !== index))

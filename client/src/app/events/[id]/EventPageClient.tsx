@@ -57,10 +57,7 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
   usePageView('event', initialEvent.id.toString(), true)
 
   // Check if current user can edit this event
-  const canEdit = user &&
-    initialEvent.createdBy?.id === user.id &&
-    (initialEvent.status === 'pending' || initialEvent.status === 'rejected')
-  const isRejected = initialEvent.status === 'rejected'
+  const canEdit = user && ['editor', 'moderator', 'admin'].includes(user.role ?? '')
 
   // Set tab accent colors for event entity
   useEffect(() => {
@@ -234,29 +231,19 @@ export default function EventPageClient({ initialEvent }: EventPageClientProps) 
                             <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.event, textTransform: 'capitalize' }}>{initialEvent.type}</Text>
                           </Box>
                         )}
-                        {/* Status row */}
-                        {initialEvent.status != null && (
-                          <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: canEdit ? `1px solid ${entityColors.event}14` : undefined }}>
-                            <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.event, flexShrink: 0 }} />
-                            <Text style={{ fontSize: 11, color: `${entityColors.event}66`, flex: 1 }}>Status</Text>
-                            <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.event, textTransform: 'capitalize' }}>
-                              {initialEvent.status === 'pending' ? 'Unverified' : initialEvent.status === 'approved' ? 'Verified' : initialEvent.status}
-                            </Text>
-                          </Box>
-                        )}
                         {canEdit && (
                           <Button
                             component={Link}
-                            href={`/submit-event?edit=${initialEvent.id}`}
+                            href={`/events/${initialEvent.id}/edit`}
                             variant="outline"
                             size="sm"
                             radius="xl"
                             leftSection={<Edit size={14} />}
-                            color={isRejected ? 'orange' : 'gray'}
+                            color="gray"
                             style={{ fontWeight: 600, marginTop: 12 }}
                             fullWidth
                           >
-                            {isRejected ? 'Edit & Resubmit' : 'Edit'}
+                            Edit
                           </Button>
                         )}
                       </CinematicCard>

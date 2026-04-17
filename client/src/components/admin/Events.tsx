@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import {
   List,
   Datagrid,
@@ -20,22 +20,14 @@ import {
   AutocompleteArrayInput,
   SingleFieldList,
   ChipField,
-  usePermissions,
-  Button,
   useRecordContext,
-  useNotify,
-  useRefresh,
-  Filter,
   Loading,
   useListContext,
-  useUnselectAll,
   FunctionField,
   TabbedForm,
-  FormTab,
-  FormDataConsumer
+  FormTab
 } from 'react-admin'
 import { useFormContext } from 'react-hook-form'
-import { EventStatus } from '../../types'
 import {
   Box,
   Chip,
@@ -47,19 +39,12 @@ import {
   Avatar,
   Button as MuiButton,
   ButtonGroup,
-  Toolbar,
-  AppBar,
   TextField as MuiTextField,
   Tab,
-  Tabs,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
+  Tabs
 } from '@mui/material'
 import {
   Check,
-  X,
   Calendar,
   Clock,
   User,
@@ -75,57 +60,12 @@ import {
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { api } from '../../lib/api'
+
 import EnhancedSpoilerMarkdown from '../EnhancedSpoilerMarkdown'
 import { EntityDisplayMediaSection } from './EntityDisplayMediaSection'
 // Note: Removed EntityEmbedHelperWithSearch import to avoid Mantine/MUI conflicts
 import { EVENT_TYPES } from '../../lib/constants'
 import { ApproveRejectToolbar } from './EditToolbar'
-
-const STATUS_CHOICES = [
-  { id: EventStatus.PENDING, name: 'Pending' },
-  { id: EventStatus.APPROVED, name: 'Approved' },
-  { id: EventStatus.REJECTED, name: 'Rejected' },
-]
-
-const EventStatusField = ({ source }: { source: string }) => {
-  const record = useRecordContext()
-  if (!record) return null
-
-  const status = record[source]
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case EventStatus.APPROVED: return 'success'
-      case EventStatus.REJECTED: return 'error'
-      case EventStatus.PENDING: return 'warning'
-      default: return 'warning'
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case EventStatus.APPROVED: return '✅'
-      case EventStatus.REJECTED: return '❌'
-      case EventStatus.PENDING: return '⏳'
-      default: return '❓'
-    }
-  }
-
-  return (
-    <Chip
-      label={`${getStatusIcon(status)} ${status}`}
-      color={getStatusColor(status)}
-      size="small"
-      sx={{
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        fontSize: '0.75rem',
-        height: '28px',
-        minWidth: '100px'
-      }}
-    />
-  )
-}
 
 const EventTypeField = () => {
   const record = useRecordContext()
@@ -327,358 +267,9 @@ const EventRelatedEntitiesField = () => {
   )
 }
 
-// Bulk Approve Button for Events
-const BulkApproveButton = () => {
-  const { selectedIds, data } = useListContext()
-  const notify = useNotify()
-  const refresh = useRefresh()
-  const unselectAll = useUnselectAll('events')
-  const [loading, setLoading] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-
-  // Filter to only pending events
-  const pendingIds = selectedIds.filter(id => {
-    const event = data?.find((e: any) => e.id === id)
-    return event?.status === EventStatus.PENDING
-  })
-
-  const handleApprove = async () => {
-    if (pendingIds.length === 0) {
-      notify('No pending events selected', { type: 'warning' })
-      setConfirmOpen(false)
-      return
-    }
-
-    setLoading(true)
-    try {
-      await Promise.all(
-        pendingIds.map(id =>
-          api.put(`/events/${id}`, { status: EventStatus.APPROVED })
-        )
-      )
-
-      notify(`${pendingIds.length} event(s) approved successfully`, { type: 'success' })
-      unselectAll()
-      refresh()
-    } catch (error) {
-      console.error('Error approving events:', error)
-      notify('Error approving events', { type: 'error' })
-    } finally {
-      setLoading(false)
-      setConfirmOpen(false)
-    }
-  }
-
-  return (
-    <>
-      <MuiButton
-        onClick={() => setConfirmOpen(true)}
-        disabled={loading || selectedIds.length === 0}
-        variant="contained"
-        size="small"
-        startIcon={<Check size={16} />}
-        sx={{
-          backgroundColor: '#16a34a',
-          color: 'white',
-          '&:hover': { backgroundColor: '#15803d' },
-          fontWeight: 600,
-          textTransform: 'none'
-        }}
-      >
-        {loading ? 'Approving...' : `Approve (${selectedIds.length})`}
-      </MuiButton>
-
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ backgroundColor: '#16a34a', color: 'white' }}>
-          Confirm Bulk Approve
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Typography>
-            Are you sure you want to approve {pendingIds.length} event(s)?
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <MuiButton onClick={() => setConfirmOpen(false)} variant="outlined">
-            Cancel
-          </MuiButton>
-          <MuiButton
-            onClick={handleApprove}
-            variant="contained"
-            disabled={loading}
-            sx={{ backgroundColor: '#16a34a', '&:hover': { backgroundColor: '#15803d' } }}
-          >
-            {loading ? 'Approving...' : 'Approve'}
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-    </>
-  )
-}
-
-// Bulk Reject Button for Events
-const BulkRejectButton = () => {
-  const { selectedIds, data } = useListContext()
-  const notify = useNotify()
-  const refresh = useRefresh()
-  const unselectAll = useUnselectAll('events')
-  const [loading, setLoading] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-
-  // Filter to only pending events
-  const pendingIds = selectedIds.filter(id => {
-    const event = data?.find((e: any) => e.id === id)
-    return event?.status === EventStatus.PENDING
-  })
-
-  const handleReject = async () => {
-    if (pendingIds.length === 0) {
-      notify('No pending events selected', { type: 'warning' })
-      setConfirmOpen(false)
-      return
-    }
-
-    setLoading(true)
-    try {
-      await Promise.all(
-        pendingIds.map(id =>
-          api.put(`/events/${id}`, { status: EventStatus.REJECTED })
-        )
-      )
-
-      notify(`${pendingIds.length} event(s) rejected`, { type: 'success' })
-      unselectAll()
-      refresh()
-    } catch (error) {
-      console.error('Error rejecting events:', error)
-      notify('Error rejecting events', { type: 'error' })
-    } finally {
-      setLoading(false)
-      setConfirmOpen(false)
-    }
-  }
-
-  return (
-    <>
-      <MuiButton
-        onClick={() => setConfirmOpen(true)}
-        disabled={loading || selectedIds.length === 0}
-        variant="contained"
-        size="small"
-        startIcon={<X size={16} />}
-        sx={{
-          backgroundColor: '#dc2626',
-          color: 'white',
-          '&:hover': { backgroundColor: '#b91c1c' },
-          fontWeight: 600,
-          textTransform: 'none'
-        }}
-      >
-        {loading ? 'Rejecting...' : `Reject (${selectedIds.length})`}
-      </MuiButton>
-
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ backgroundColor: '#dc2626', color: 'white' }}>
-          Confirm Bulk Reject
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Typography>
-            Are you sure you want to reject {pendingIds.length} event(s)?
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <MuiButton onClick={() => setConfirmOpen(false)} variant="outlined">
-            Cancel
-          </MuiButton>
-          <MuiButton
-            onClick={handleReject}
-            variant="contained"
-            disabled={loading}
-            sx={{ backgroundColor: '#dc2626', '&:hover': { backgroundColor: '#b91c1c' } }}
-          >
-            {loading ? 'Rejecting...' : 'Reject'}
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-    </>
-  )
-}
-
-// Combined bulk action buttons component
-const EventBulkActionButtons = () => (
-  <Box sx={{ display: 'flex', gap: 1 }}>
-    <BulkApproveButton />
-    <BulkRejectButton />
-  </Box>
-)
-
-// Individual Approve Button
-const ApproveEventButton = () => {
-  const record = useRecordContext()
-  const notify = useNotify()
-  const refresh = useRefresh()
-
-  const handleApprove = async () => {
-    if (!record) return
-
-    try {
-      await api.approveEvent(Number(record.id))
-      notify('Event approved successfully')
-      refresh()
-    } catch (error: any) {
-      console.error('Error approving event:', error)
-      const errorMessage = error?.details?.message || error?.message || 'Error approving event'
-      notify(errorMessage, { type: 'error' })
-    }
-  }
-
-  if (record?.status !== EventStatus.PENDING) return null
-
-  return (
-    <Button
-      label="Approve"
-      onClick={handleApprove}
-      color="primary"
-      startIcon={<Check size={16} />}
-    />
-  )
-}
-
-// Event Rejection Modal
-const EventRejectionModal = ({ open, onClose, eventId, eventTitle, onSuccess }: {
-  open: boolean;
-  onClose: () => void;
-  eventId: number;
-  eventTitle: string;
-  onSuccess: () => void;
-}) => {
-  const [reason, setReason] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const notify = useNotify();
-
-  const handleSubmit = async () => {
-    if (!reason.trim()) {
-      notify('Please enter a rejection reason', { type: 'warning' });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await api.rejectEvent(eventId, reason.trim());
-      notify('Event rejected successfully', { type: 'success' });
-      onSuccess();
-      onClose();
-      setReason('');
-    } catch (error: any) {
-      console.error('Error rejecting event:', error);
-      const errorMessage = error?.details?.message || error?.message || 'Error rejecting event';
-      notify(errorMessage, { type: 'error' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleClose = () => {
-    if (!submitting) {
-      setReason('');
-      onClose();
-    }
-  };
-
-  return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        backgroundColor: 'rgba(244, 67, 54, 0.1)',
-        borderBottom: '1px solid rgba(244, 67, 54, 0.3)',
-        color: '#f44336',
-        fontWeight: 'bold'
-      }}>
-        <X size={24} />
-        Reject Event
-      </DialogTitle>
-      <DialogContent sx={{ pt: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <Typography variant="body1">
-            Are you sure you want to reject the event <strong>"{eventTitle}"</strong>?
-          </Typography>
-
-          <MuiTextField
-            fullWidth
-            required
-            multiline
-            rows={3}
-            label="Rejection Reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Explain why this event is being rejected..."
-            helperText="This reason will be shown to the author"
-            error={!reason.trim() && reason.length > 0}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: '#0f0f0f',
-              }
-            }}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: 2, gap: 1 }}>
-        <MuiButton onClick={handleClose} disabled={submitting} variant="outlined">
-          Cancel
-        </MuiButton>
-        <MuiButton
-          onClick={handleSubmit}
-          disabled={submitting || !reason.trim()}
-          variant="contained"
-          color="error"
-        >
-          {submitting ? 'Rejecting...' : 'Reject Event'}
-        </MuiButton>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
-// Individual Reject Button
-const RejectEventButton = () => {
-  const record = useRecordContext()
-  const refresh = useRefresh()
-  const [modalOpen, setModalOpen] = useState(false)
-
-  if (record?.status !== EventStatus.PENDING) return null
-
-  return (
-    <>
-      <Button
-        label="Reject"
-        onClick={() => setModalOpen(true)}
-        color="secondary"
-        startIcon={<X size={16} />}
-      />
-      {record && (
-        <EventRejectionModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          eventId={Number(record.id)}
-          eventTitle={record.title || 'Untitled Event'}
-          onSuccess={refresh}
-        />
-      )}
-    </>
-  )
-}
-
 // Custom Filter Toolbar Component
 const EventFilterToolbar = () => {
   const { filterValues, setFilters } = useListContext()
-
-  const statusFilters = [
-    { id: 'all', name: 'All', color: '#666', icon: '🗂️' },
-    { id: EventStatus.PENDING, name: 'Pending Review', color: '#f57c00', icon: '⏳' },
-    { id: EventStatus.APPROVED, name: 'Approved', color: '#4caf50', icon: '✅' },
-    { id: EventStatus.REJECTED, name: 'Rejected', color: '#f44336', icon: '❌' }
-  ]
 
   const typeFilters = [
     { id: 'all', name: 'All Types', color: '#666', icon: '📋' },
@@ -688,13 +279,6 @@ const EventFilterToolbar = () => {
     { id: 'shift', name: 'Shifts', color: '#ff5722', icon: '🔄' },
     { id: 'resolution', name: 'Resolutions', color: '#4caf50', icon: '✨' }
   ]
-
-  const handleStatusFilter = (status: string) => {
-    const newFilters = status === 'all'
-      ? { ...filterValues, status: undefined }
-      : { ...filterValues, status }
-    setFilters(newFilters, filterValues)
-  }
 
   const handleTypeFilter = (type: string) => {
     const newFilters = type === 'all'
@@ -713,7 +297,6 @@ const EventFilterToolbar = () => {
     setFilters(newFilters, filterValues)
   }
 
-  const currentStatus = filterValues?.status || 'all'
   const currentType = filterValues?.type || 'all'
 
   return (
@@ -800,44 +383,6 @@ const EventFilterToolbar = () => {
         </Grid>
       </Box>
 
-      {/* Status Filters */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{
-          color: '#e11d48',
-          fontWeight: 'bold',
-          mb: 1,
-          fontSize: '0.9rem'
-        }}>
-          📊 Filter by Status
-        </Typography>
-        <ButtonGroup variant="outlined" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-          {statusFilters.map((filter) => (
-            <MuiButton
-              key={filter.id}
-              onClick={() => handleStatusFilter(filter.id)}
-              variant={currentStatus === filter.id ? 'contained' : 'outlined'}
-              size="small"
-              sx={{
-                borderColor: filter.color,
-                color: currentStatus === filter.id ? '#fff' : filter.color,
-                backgroundColor: currentStatus === filter.id ? filter.color : 'transparent',
-                fontSize: '0.75rem',
-                minWidth: '90px',
-                height: '32px',
-                '&:hover': {
-                  backgroundColor: currentStatus === filter.id
-                    ? filter.color
-                    : `${filter.color}20`,
-                  borderColor: filter.color
-                }
-              }}
-            >
-              {filter.icon} {filter.name}
-            </MuiButton>
-          ))}
-        </ButtonGroup>
-      </Box>
-
       {/* Type Filters */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="subtitle2" sx={{
@@ -884,7 +429,7 @@ const EventFilterToolbar = () => {
         border: '1px solid rgba(37, 99, 235, 0.2)'
       }}>
         <Typography variant="body2" sx={{ color: '#2563eb', fontSize: '0.8rem' }}>
-          💡 <strong>Available Filters:</strong> Title, Description, Arc Name, Event Type, and Status.
+          💡 <strong>Available Filters:</strong> Title, Description, Arc Name, and Event Type.
           Use the search fields above to filter events by these criteria.
         </Typography>
       </Box>
@@ -895,7 +440,6 @@ const EventFilterToolbar = () => {
 export const EventList = () => (
   <List
     perPage={25}
-    filterDefaultValues={{ status: 'pending' }}
     sx={{
       '& .RaList-content': {
         '& > *:not(:last-child)': {
@@ -907,7 +451,6 @@ export const EventList = () => (
     <EventFilterToolbar />
     <Datagrid
       rowClick="show"
-      bulkActionButtons={<EventBulkActionButtons />}
       sx={{
         marginTop: 0,
         borderRadius: '0 0 8px 8px',
@@ -983,16 +526,8 @@ export const EventList = () => (
       {/* Related Entities */}
       <EventRelatedEntitiesField />
 
-      {/* Status - Prominent Display */}
-      <Box sx={{ width: '110px', display: 'flex', justifyContent: 'center' }}>
-        <EventStatusField source="status" />
-      </Box>
-
-      {/* Individual Actions */}
-      <Box sx={{ display: 'flex', gap: 1, minWidth: '160px', justifyContent: 'center' }}>
-        <ApproveEventButton />
-        <RejectEventButton />
-      </Box>
+      {/* Page Number */}
+      <NumberField source="pageNumber" label="Page" />
 
       {/* Event Details */}
       <EventDetailsField />
@@ -1062,9 +597,6 @@ const EventShowContent = () => {
               </Typography>
             </Box>
             <Box sx={{ textAlign: 'right' }}>
-              <Box sx={{ mb: 1 }}>
-                <EventStatusField source="status" />
-              </Box>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                 ID: {record?.id}
               </Typography>
@@ -1334,18 +866,6 @@ const EventShowContent = () => {
                 </Box>
               </Box>
 
-              <FunctionField
-                render={(record: any) =>
-                  record?.rejectionReason ? (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Rejection Reason
-                      </Typography>
-                      <Typography variant="body2" color="error.main">{record.rejectionReason}</Typography>
-                    </Box>
-                  ) : null
-                }
-              />
             </CardContent>
           </Card>
         </Grid>
@@ -1524,8 +1044,6 @@ const validateEventForm = (values: any) => {
 }
 
 export const EventEdit = () => {
-  const { permissions } = usePermissions()
-
   return (
     <Edit>
       <Box sx={{
@@ -1621,7 +1139,7 @@ export const EventEdit = () => {
                       label="Event Title"
                       helperText="Enter a descriptive title for this event"
                     />
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, mt: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2, mt: 2 }}>
                       <SelectInput
                         source="type"
                         choices={EVENT_TYPES}
@@ -1644,29 +1162,18 @@ export const EventEdit = () => {
                         label="Spoiler Chapter"
                         helperText="Spoiler chapter (optional)"
                       />
+                      <NumberInput
+                        source="pageNumber"
+                        min={1}
+                        label="Page Number"
+                        helperText="Optional — for ordering within a chapter"
+                      />
                     </Box>
                   </Box>
                 </Grid>
 
                 <Grid item xs={12}>
                   <ContentInputWithPreview />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Box sx={{
-                    p: 3,
-                    backgroundColor: 'rgba(245, 124, 0, 0.05)',
-                    borderRadius: 2,
-                    border: '1px solid rgba(245, 124, 0, 0.2)'
-                  }}>
-                    <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 'bold' }}>
-                      Publication Status
-                    </Typography>
-                    <EventStatusField source="status" />
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mt: 1 }}>
-                      Use the Approve / Reject buttons in the toolbar below to change status.
-                    </Typography>
-                  </Box>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -1828,36 +1335,21 @@ export const EventCreate = () => (
                 defaultValue="decision"
                 helperText="Event category"
               />
-              <SelectInput
-                source="status"
-                choices={STATUS_CHOICES}
-                required
-                defaultValue={EventStatus.PENDING}
-                helperText="Review status"
-              />
             </Box>
 
-            <FormDataConsumer>
-              {({ formData }) =>
-                formData.status === 'rejected' && (
-                  <TextInput
-                    source="rejectionReason"
-                    label="Rejection Reason"
-                    multiline
-                    fullWidth
-                    helperText="Explain why this event was rejected"
-                  />
-                )
-              }
-            </FormDataConsumer>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, mb: 3 }}>
               <NumberInput
                 source="chapterNumber"
                 required
                 max={539}
                 min={1}
                 helperText="Chapter (1-539)"
+              />
+              <NumberInput
+                source="pageNumber"
+                min={1}
+                helperText="Optional — for ordering within a chapter"
+                label="Page Number"
               />
               <NumberInput
                 source="spoilerChapter"
