@@ -10,6 +10,7 @@ interface SubmissionSuccessProps {
   type: 'guide' | 'media' | 'event' | 'annotation'
   isEdit?: boolean
   accentColor?: string
+  requiresApproval?: boolean
   onSubmitAnother: () => void
 }
 
@@ -19,6 +20,7 @@ export default function SubmissionSuccess({
   type,
   isEdit = false,
   accentColor = DEFAULT_ACCENT,
+  requiresApproval = true,
   onSubmitAnother
 }: SubmissionSuccessProps) {
   const router = useRouter()
@@ -91,39 +93,69 @@ export default function SubmissionSuccess({
           <Text size="sm" c="dimmed" fw={500}>
             What happens next
           </Text>
-          <List
-            size="sm"
-            spacing="xs"
-            styles={{ item: { color: 'rgba(255,255,255,0.7)' } }}
-          >
-            <List.Item>Moderators will review your submission within 48 hours</List.Item>
-            <List.Item>Check the status on your Profile page</List.Item>
-            <List.Item>Your {label.toLowerCase()} will appear publicly once approved</List.Item>
-            {isEdit && <List.Item>Your submission is now pending review again</List.Item>}
-          </List>
 
-          <Group gap="sm" mt="xs">
-            <Button
-              onClick={() => router.push('/profile')}
-              variant="light"
-              size="sm"
-              style={{
-                backgroundColor: `${accentColor}18`,
-                color: accentColor,
-                border: `1px solid ${accentColor}35`
-              }}
-            >
-              View My Submissions
-            </Button>
-            <Button
-              onClick={onSubmitAnother}
-              variant="subtle"
-              size="sm"
-              style={{ color: 'rgba(255,255,255,0.6)' }}
-            >
-              Submit Another {label}
-            </Button>
-          </Group>
+          {requiresApproval ? (
+            <>
+              <List
+                size="sm"
+                spacing="xs"
+                styles={{ item: { color: 'rgba(255,255,255,0.7)' } }}
+              >
+                <List.Item>Moderators will review your submission within 48 hours</List.Item>
+                <List.Item>Check the status on your Profile page</List.Item>
+                <List.Item>Your {label.toLowerCase()} will appear publicly once approved</List.Item>
+                {isEdit && <List.Item>Your submission is now pending review again</List.Item>}
+              </List>
+
+              <Group gap="sm" mt="xs">
+                <Button
+                  onClick={() => router.push('/profile')}
+                  variant="light"
+                  size="sm"
+                  style={{
+                    backgroundColor: `${accentColor}18`,
+                    color: accentColor,
+                    border: `1px solid ${accentColor}35`
+                  }}
+                >
+                  View My Submissions
+                </Button>
+                <Button
+                  onClick={onSubmitAnother}
+                  variant="subtle"
+                  size="sm"
+                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                >
+                  Submit Another {label}
+                </Button>
+              </Group>
+            </>
+          ) : (
+            <>
+              <List
+                size="sm"
+                spacing="xs"
+                styles={{ item: { color: 'rgba(255,255,255,0.7)' } }}
+              >
+                <List.Item>Your {label.toLowerCase()} is now live and publicly visible.</List.Item>
+              </List>
+
+              <Group gap="sm" mt="xs">
+                <Button
+                  onClick={onSubmitAnother}
+                  variant="light"
+                  size="sm"
+                  style={{
+                    backgroundColor: `${accentColor}18`,
+                    color: accentColor,
+                    border: `1px solid ${accentColor}35`
+                  }}
+                >
+                  Submit Another {label}
+                </Button>
+              </Group>
+            </>
+          )}
         </Stack>
       </Box>
     </motion.div>
