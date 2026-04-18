@@ -245,10 +245,9 @@ export default function QuotesPageContent({
           padding="md"
           className="hoverable-card hoverable-card-quote"
           style={{
-            height: '240px',
+            minHeight: '200px',
             cursor: 'pointer',
             position: 'relative',
-            overflow: 'hidden',
             backgroundColor: cardBgColor,
           }}
           onClick={(e) => {
@@ -267,14 +266,7 @@ export default function QuotesPageContent({
         >
           <Stack gap="xs" h="100%" justify="space-between">
             {/* Header */}
-            <Group justify="space-between" align="flex-start">
-              <Group gap="xs" wrap="wrap">
-                {quote.chapter && (
-                  <Badge color="gray" variant={grayBadgeVariant as any} size="md">
-                    Ch. {quote.chapter}
-                  </Badge>
-                )}
-              </Group>
+            <Group justify="flex-end" align="flex-start">
               <Quote size={20} color={accentQuote} />
             </Group>
 
@@ -282,7 +274,6 @@ export default function QuotesPageContent({
             <Box style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Text
                 size="lg"
-                lineClamp={4}
                 ta="center"
                 fw={600}
                 style={{
@@ -349,18 +340,6 @@ export default function QuotesPageContent({
                 {quote.chapter && `Ch. ${quote.chapter}`}
               </Text>
             )}
-
-            {/* Touch device hint */}
-            {isTouchDevice && hoveredQuote?.id !== quote.id && (
-              <Text
-                size="xs"
-                c="dimmed"
-                ta="center"
-                style={{ fontSize: rem(10), opacity: 0.7 }}
-              >
-                Tap to preview
-              </Text>
-            )}
           </Stack>
         </Card>
       </motion.div>
@@ -396,7 +375,7 @@ export default function QuotesPageContent({
       getKey={(q) => q.id}
       gridLayout="landscape"
       skeletonCardWidth={280}
-      skeletonCardHeight={240}
+      skeletonCardHeight={300}
       onPageChange={handlePageChange}
       entityNamePlural="quotes"
       emptyIcon={<Quote size={48} />}
