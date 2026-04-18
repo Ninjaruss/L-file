@@ -18,11 +18,12 @@ export interface EditPageShellProps {
   type: 'guide' | 'media' | 'annotation' | 'event'
   accentColor: string
   submissionTitle: string
-  status: 'pending' | 'approved' | 'rejected'
+  status?: 'pending' | 'approved' | 'rejected'
   submittedAt: string
   updatedAt?: string
   submissionId?: number | string   // optional — media uses UUID strings; omit to hide
   rejectionReason?: string | null
+  requiresApproval?: boolean
   children: React.ReactNode
 }
 
@@ -35,9 +36,10 @@ export function EditPageShell({
   updatedAt,
   submissionId,
   rejectionReason,
+  requiresApproval = true,
   children,
 }: EditPageShellProps) {
-  const statusInfo = STATUS_BADGE[status] ?? STATUS_BADGE.pending
+  const statusInfo = status ? (STATUS_BADGE[status] ?? STATUS_BADGE.pending) : null
   const typeLabel = type.charAt(0).toUpperCase() + type.slice(1)
 
   const submittedDate = submittedAt
@@ -138,17 +140,19 @@ export function EditPageShell({
               >
                 <Group gap={4} align="center"><Pencil size={10} />Editing</Group>
               </Badge>
-              <Badge
-                size="xs"
-                style={{
-                  backgroundColor: `${statusInfo.color}14`,
-                  color: statusInfo.color,
-                  borderColor: `${statusInfo.color}35`,
-                }}
-                variant="outline"
-              >
-                {statusInfo.label}
-              </Badge>
+              {requiresApproval && statusInfo && (
+                <Badge
+                  size="xs"
+                  style={{
+                    backgroundColor: `${statusInfo.color}14`,
+                    color: statusInfo.color,
+                    borderColor: `${statusInfo.color}35`,
+                  }}
+                  variant="outline"
+                >
+                  {statusInfo.label}
+                </Badge>
+              )}
             </Group>
 
             {/* Submission title */}
@@ -176,7 +180,7 @@ export function EditPageShell({
       </Box>
 
       {/* Status Context Panel */}
-      {status === 'rejected' && (
+      {requiresApproval && status === 'rejected' && (
         <Alert
           mb="md"
           icon={<AlertTriangle size={16} />}
@@ -195,7 +199,7 @@ export function EditPageShell({
         </Alert>
       )}
 
-      {status === 'approved' && (
+      {requiresApproval && status === 'approved' && (
         <Alert
           mb="md"
           icon={<Info size={16} />}
