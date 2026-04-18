@@ -338,11 +338,11 @@ export default function CharacterPageClient({
                     title="Quotes"
                     items={quotes}
                     previewCount={4}
-                    viewAllHref={`/quotes?character=${character.id}`}
+                    viewAllHref={`/quotes?characterId=${character.id}`}
                     getKey={(q) => q.id}
                     variant="compact"
                     getLabel={(q) => q.text?.slice(0, 60) ?? '(quote)'}
-                    getHref={(q) => `/quotes/${q.id}`}
+                    getHref={(q) => `/quotes?characterId=${character.id}`}
                     itemDotColor={entityColors.quote}
                   />
                 )}
