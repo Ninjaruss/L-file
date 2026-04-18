@@ -422,32 +422,6 @@ export default function QuotesPageContent({
                 )}
               </Title>
 
-              <Box style={{ position: 'relative' }}>
-                <Text
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    top: -8,
-                    left: -4,
-                    fontSize: '4rem',
-                    fontFamily: 'var(--font-opti-goudy-text), serif',
-                    color: 'rgba(32, 201, 151, 0.12)',
-                    lineHeight: 1,
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                  }}
-                >&quot;</Text>
-                <Text
-                  size="sm"
-                  ta="center"
-                  lineClamp={4}
-                  fs="italic"
-                  style={{ lineHeight: 1.4, paddingTop: rem(8), paddingLeft: rem(12), paddingRight: rem(12) }}
-                >
-                  &ldquo;{hoveredQuote.text}&rdquo;
-                </Text>
-              </Box>
-
               {hoveredQuote.context && (
                 <Box>
                   <Text size="xs" fw={600} style={{ color: theme.colors.gray[6] }} mb={4} ta="center">
@@ -457,7 +431,6 @@ export default function QuotesPageContent({
                     size="sm"
                     c={textColors.primary}
                     ta="center"
-                    lineClamp={4}
                     style={{ lineHeight: 1.4, fontWeight: 500 }}
                   >
                     {hoveredQuote.context}
