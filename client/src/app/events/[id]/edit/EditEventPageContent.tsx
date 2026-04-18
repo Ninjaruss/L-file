@@ -235,7 +235,7 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
         type="event"
         accentColor={accentColor}
         submissionTitle={existingEvent.title}
-        status="approved"
+        requiresApproval={false}
         submittedAt={existingEvent.createdAt ?? new Date().toISOString()}
         updatedAt={existingEvent.updatedAt}
         submissionId={existingEvent.id}
@@ -245,6 +245,7 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
             type="event"
             isEdit
             accentColor={accentColor}
+            requiresApproval={false}
             onSubmitAnother={() => router.push('/profile')}
           />
         ) : (
@@ -527,7 +528,6 @@ export default function EditEventPageContent({ id }: EditEventPageContentProps) 
                         Discard Changes
                       </Button>
                     </Group>
-                    <Text size="xs" c="dimmed">Sent back to moderators for review</Text>
                   </Group>
                 </Stack>
               </form>
