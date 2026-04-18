@@ -37,7 +37,10 @@ export class Event {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: 'Title of the event', example: 'The 17 Steps Tournament' })
+  @ApiProperty({
+    description: 'Title of the event',
+    example: 'The 17 Steps Tournament',
+  })
   @Column({ length: 200 })
   title: string;
 
@@ -45,37 +48,63 @@ export class Event {
   @Column({ type: 'text', nullable: false })
   description: string;
 
-  @ApiProperty({ description: 'Type of event', enum: EventType, default: EventType.DECISION })
+  @ApiProperty({
+    description: 'Type of event',
+    enum: EventType,
+    default: EventType.DECISION,
+  })
   @Column({ type: 'enum', enum: EventType, default: EventType.DECISION })
   type: EventType;
 
-  @ApiProperty({ description: 'Chapter number where this event occurs', example: 45 })
+  @ApiProperty({
+    description: 'Chapter number where this event occurs',
+    example: 45,
+  })
   @Column()
   chapterNumber: number;
 
-  @ApiPropertyOptional({ description: 'Page number within the chapter for sub-chapter ordering', example: 14 })
+  @ApiPropertyOptional({
+    description: 'Page number within the chapter for sub-chapter ordering',
+    example: 14,
+  })
   @Column({ nullable: true })
   pageNumber: number | null;
 
-  @ApiPropertyOptional({ description: 'Chapter number required before showing this event (spoiler protection)', example: 44 })
+  @ApiPropertyOptional({
+    description:
+      'Chapter number required before showing this event (spoiler protection)',
+    example: 44,
+  })
   @Column({ nullable: true })
   spoilerChapter: number | null;
 
-  @ApiPropertyOptional({ description: 'Story arc this event belongs to', type: () => Arc })
+  @ApiPropertyOptional({
+    description: 'Story arc this event belongs to',
+    type: () => Arc,
+  })
   @ManyToOne(() => Arc, { nullable: true })
   @JoinColumn({ name: 'arcId' })
   arc: Arc;
 
-  @ApiPropertyOptional({ description: 'ID of the arc this event belongs to', example: 1 })
+  @ApiPropertyOptional({
+    description: 'ID of the arc this event belongs to',
+    example: 1,
+  })
   @Column({ nullable: true })
   arcId: number;
 
-  @ApiPropertyOptional({ description: 'Gamble associated with this event', type: () => Gamble })
+  @ApiPropertyOptional({
+    description: 'Gamble associated with this event',
+    type: () => Gamble,
+  })
   @ManyToOne(() => Gamble, { nullable: true })
   @JoinColumn({ name: 'gambleId' })
   gamble: Gamble;
 
-  @ApiPropertyOptional({ description: 'ID of the gamble associated with this event', example: 1 })
+  @ApiPropertyOptional({
+    description: 'ID of the gamble associated with this event',
+    example: 1,
+  })
   @Column({ nullable: true })
   gambleId: number;
 

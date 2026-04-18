@@ -35,11 +35,10 @@ export const usePendingCounts = () => {
         const oneItem = { page: 1, perPage: 1 }
         const idSort = { field: 'id', order: 'ASC' as const }
 
-        const [guidesRes, mediaRes, eventsRes, annotationsRes, quotesRes,
+        const [guidesRes, mediaRes, annotationsRes, quotesRes,
                arcsRes, gamblesRes, chaptersRes, orgsRes] = await Promise.all([
           dataProvider.getList('guides', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
           dataProvider.getList('media', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
-          dataProvider.getList('events', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
           dataProvider.getList('annotations', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
           dataProvider.getList('quotes', { filter: { status: 'pending' }, pagination: oneItem, sort: idSort }),
           dataProvider.getList('arcs', { filter: unverifiedFilter, pagination: oneItem, sort: idSort }),
@@ -55,13 +54,13 @@ export const usePendingCounts = () => {
         const newCounts: PendingCounts = {
           guides: guidesRes.total || 0,
           media: mediaRes.total || 0,
-          events: eventsRes.total || 0,
+          events: 0,
           annotations: annotationsRes.total || 0,
           quotes: quotesRes.total || 0,
           unverifiedEditorial,
           total: 0,
         }
-        newCounts.total = newCounts.guides + newCounts.media + newCounts.events +
+        newCounts.total = newCounts.guides + newCounts.media +
                           newCounts.annotations + newCounts.quotes
 
         setCounts(newCounts)

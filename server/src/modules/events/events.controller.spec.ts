@@ -4,7 +4,9 @@ import { EventsService } from './events.service';
 import { NotFoundException } from '@nestjs/common';
 
 const mockService = {
-  findAll: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 0 }),
+  findAll: jest
+    .fn()
+    .mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 0 }),
   findOne: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
@@ -62,19 +64,27 @@ describe('EventsController', () => {
 
   describe('removed endpoints', () => {
     it('does not have an approve method', () => {
-      expect((controller as unknown as Record<string, unknown>).approve).toBeUndefined();
+      expect(
+        (controller as unknown as Record<string, unknown>).approve,
+      ).toBeUndefined();
     });
 
     it('does not have a reject method', () => {
-      expect((controller as unknown as Record<string, unknown>).reject).toBeUndefined();
+      expect(
+        (controller as unknown as Record<string, unknown>).reject,
+      ).toBeUndefined();
     });
 
     it('does not have updateOwnSubmission method', () => {
-      expect((controller as unknown as Record<string, unknown>).updateOwnSubmission).toBeUndefined();
+      expect(
+        (controller as unknown as Record<string, unknown>).updateOwnSubmission,
+      ).toBeUndefined();
     });
 
     it('does not have getByArc method', () => {
-      expect((controller as unknown as Record<string, unknown>).getByArc).toBeUndefined();
+      expect(
+        (controller as unknown as Record<string, unknown>).getByArc,
+      ).toBeUndefined();
     });
   });
 });

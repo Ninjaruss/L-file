@@ -4,7 +4,6 @@ import { EventsService } from './events.service';
 import { Event, EventType } from '../../entities/event.entity';
 import { Character } from '../../entities/character.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
-import { NotFoundException } from '@nestjs/common';
 
 const mockQueryBuilder = {
   select: jest.fn().mockReturnThis(),
@@ -70,10 +69,9 @@ describe('EventsService', () => {
       const qb = { ...mockQueryBuilder };
       mockRepo.createQueryBuilder.mockReturnValue(qb);
       await service.findAll({ arcId: 3 });
-      expect(qb.andWhere).toHaveBeenCalledWith(
-        'event.arcId = :arcId',
-        { arcId: 3 },
-      );
+      expect(qb.andWhere).toHaveBeenCalledWith('event.arcId = :arcId', {
+        arcId: 3,
+      });
     });
 
     it('applies search filter to title and description', async () => {
@@ -91,33 +89,51 @@ describe('EventsService', () => {
       mockRepo.createQueryBuilder.mockReturnValue(qb);
       await service.findAll({});
       const calls = qb.andWhere.mock.calls.map((c: unknown[]) => c[0]);
-      expect(calls.every((c: unknown) => !String(c).includes('status'))).toBe(true);
+      expect(calls.every((c: unknown) => !String(c).includes('status'))).toBe(
+        true,
+      );
     });
   });
 
   describe('create', () => {
     it('saves event without status field', async () => {
-      const mockEvent = { id: 1, title: 'Test', chapterNumber: 1, type: EventType.DECISION };
+      const mockEvent = {
+        id: 1,
+        title: 'Test',
+        chapterNumber: 1,
+        type: EventType.DECISION,
+      };
       mockRepo.create.mockReturnValue(mockEvent);
       mockRepo.save.mockResolvedValue(mockEvent);
 
-      await service.create({ title: 'Test', description: 'long enough desc', chapterNumber: 1 }, 1);
+      await service.create(
+        { title: 'Test', description: 'long enough desc', chapterNumber: 1 },
+        1,
+      );
 
       const createCall = mockRepo.create.mock.calls[0][0];
       expect(createCall).not.toHaveProperty('status');
     });
 
     it('saves pageNumber when provided', async () => {
-      const mockEvent = { id: 1, title: 'Test', chapterNumber: 1, pageNumber: 5 };
+      const mockEvent = {
+        id: 1,
+        title: 'Test',
+        chapterNumber: 1,
+        pageNumber: 5,
+      };
       mockRepo.create.mockReturnValue(mockEvent);
       mockRepo.save.mockResolvedValue(mockEvent);
 
-      await service.create({
-        title: 'Test',
-        description: 'long enough desc',
-        chapterNumber: 1,
-        pageNumber: 5,
-      }, 1);
+      await service.create(
+        {
+          title: 'Test',
+          description: 'long enough desc',
+          chapterNumber: 1,
+          pageNumber: 5,
+        },
+        1,
+      );
 
       const createCall = mockRepo.create.mock.calls[0][0];
       expect(createCall.pageNumber).toBe(5);
@@ -134,15 +150,21 @@ describe('EventsService', () => {
 
   describe('removed methods', () => {
     it('does not have updateOwnSubmission', () => {
-      expect((service as unknown as Record<string, unknown>).updateOwnSubmission).toBeUndefined();
+      expect(
+        (service as unknown as Record<string, unknown>).updateOwnSubmission,
+      ).toBeUndefined();
     });
 
     it('does not have findByArc', () => {
-      expect((service as unknown as Record<string, unknown>).findByArc).toBeUndefined();
+      expect(
+        (service as unknown as Record<string, unknown>).findByArc,
+      ).toBeUndefined();
     });
 
     it('does not have findByGamble', () => {
-      expect((service as unknown as Record<string, unknown>).findByGamble).toBeUndefined();
+      expect(
+        (service as unknown as Record<string, unknown>).findByGamble,
+      ).toBeUndefined();
     });
   });
 });

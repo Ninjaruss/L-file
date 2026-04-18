@@ -17,10 +17,16 @@ export class Chapter {
   id: number;
 
   @ApiProperty({
-    description: 'Chapter number (supports decimals for side stories, e.g. 20.5)',
+    description:
+      'Chapter number (supports decimals for side stories, e.g. 20.5)',
     example: 1,
   })
-  @Column({ type: 'numeric', precision: 5, scale: 1, transformer: { to: (v) => v, from: (v) => parseFloat(v) } })
+  @Column({
+    type: 'numeric',
+    precision: 5,
+    scale: 1,
+    transformer: { to: (v) => v, from: (v) => parseFloat(v) },
+  })
   number: number;
 
   @ApiPropertyOptional({

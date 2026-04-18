@@ -37,16 +37,29 @@ export class EventsController {
   constructor(private readonly service: EventsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all events', description: 'Paginated, filterable list of events' })
-  @ApiResponse({ status: 200, description: 'List of events with pagination metadata' })
-  async getAll(@Query(new ValidationPipe({ transform: true })) filters: FilterEventsDto) {
+  @ApiOperation({
+    summary: 'Get all events',
+    description: 'Paginated, filterable list of events',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of events with pagination metadata',
+  })
+  async getAll(
+    @Query(new ValidationPipe({ transform: true })) filters: FilterEventsDto,
+  ) {
     return this.service.findAll(filters);
   }
 
   @Get('grouped/by-arc')
-  @ApiOperation({ summary: 'Get events grouped by arc', description: 'All events grouped by story arc, ordered by chapter then page' })
+  @ApiOperation({
+    summary: 'Get events grouped by arc',
+    description:
+      'All events grouped by story arc, ordered by chapter then page',
+  })
   async getGroupedByArc(
-    @Query('userProgress', new ParseIntPipe({ optional: true })) userProgress?: number,
+    @Query('userProgress', new ParseIntPipe({ optional: true }))
+    userProgress?: number,
     @Query('type') type?: EventType,
   ) {
     return this.service.findGroupedByArc({ userProgress, type });
@@ -95,7 +108,10 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete an event (admin only)' })
   @ApiParam({ name: 'id', type: 'number' })
-  async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
     return this.service.remove(id, user.id);
   }
 }

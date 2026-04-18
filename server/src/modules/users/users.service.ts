@@ -21,7 +21,7 @@ import {
 import { Guide, GuideStatus } from '../../entities/guide.entity';
 import { GuideLike } from '../../entities/guide-like.entity';
 import { Annotation, AnnotationStatus } from '../../entities/annotation.entity';
-import { Event, EventStatus } from '../../entities/event.entity';
+import { Event } from '../../entities/event.entity';
 import { UserFavoriteCharacter } from '../../entities/user-favorite-character.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { randomBytes } from 'crypto';
@@ -247,12 +247,11 @@ export class UsersService {
       })
       .getCount();
 
-    // Get events submitted count (approved only)
+    // Get events submitted count
     const eventRepo = this.repo.manager.getRepository(Event);
     const eventsSubmitted = await eventRepo
       .createQueryBuilder('event')
       .where('event.createdBy = :userId', { userId: id })
-      .andWhere('event.status = :status', { status: EventStatus.APPROVED })
       .getCount();
 
     return {

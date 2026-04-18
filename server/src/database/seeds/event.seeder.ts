@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Event, EventType, EventStatus } from '../../entities/event.entity';
+import { Event, EventType } from '../../entities/event.entity';
 import { Character } from '../../entities/character.entity';
 import { Seeder } from './seeder.interface';
 
@@ -27,7 +27,7 @@ export class EventSeeder implements Seeder {
         type: EventType.REVEAL,
         chapterNumber: 1,
         spoilerChapter: 1,
-        status: EventStatus.APPROVED,
+
         characters: baku ? [baku] : [],
       },
       {
@@ -37,7 +37,7 @@ export class EventSeeder implements Seeder {
         type: EventType.REVEAL,
         chapterNumber: 5,
         spoilerChapter: 5,
-        status: EventStatus.APPROVED,
+
         characters: baku && marco ? [baku, marco] : [],
       },
       {
@@ -47,7 +47,7 @@ export class EventSeeder implements Seeder {
         type: EventType.GAMBLE,
         chapterNumber: 10,
         spoilerChapter: 10,
-        status: EventStatus.APPROVED,
+
         characters: baku ? [baku] : [],
       },
       {
@@ -57,7 +57,7 @@ export class EventSeeder implements Seeder {
         type: EventType.SHIFT,
         chapterNumber: 15,
         spoilerChapter: 15,
-        status: EventStatus.APPROVED,
+
         characters: baku && marco ? [baku, marco] : [],
       },
       {
@@ -67,7 +67,7 @@ export class EventSeeder implements Seeder {
         type: EventType.RESOLUTION,
         chapterNumber: 25,
         spoilerChapter: 25,
-        status: EventStatus.APPROVED,
+
         characters: baku && marco ? [baku, marco] : [],
       },
     ];

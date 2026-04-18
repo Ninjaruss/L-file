@@ -19,7 +19,12 @@ export class EventsService {
   ) {}
 
   async findAll(filters: FilterEventsDto) {
-    const { page = 1, limit = 20, sort = 'chapterNumber', order = 'ASC' } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sort = 'chapterNumber',
+      order = 'ASC',
+    } = filters;
 
     const query = this.repo
       .createQueryBuilder('event')
@@ -37,13 +42,19 @@ export class EventsService {
       query.andWhere('event.arcId = :arcId', { arcId: filters.arcId });
     }
     if (filters.gambleId) {
-      query.andWhere('event.gambleId = :gambleId', { gambleId: filters.gambleId });
+      query.andWhere('event.gambleId = :gambleId', {
+        gambleId: filters.gambleId,
+      });
     }
     if (filters.chapterNumber) {
-      query.andWhere('event.chapterNumber = :chapterNumber', { chapterNumber: filters.chapterNumber });
+      query.andWhere('event.chapterNumber = :chapterNumber', {
+        chapterNumber: filters.chapterNumber,
+      });
     }
     if (filters.characterId) {
-      query.andWhere('characters.id = :characterId', { characterId: filters.characterId });
+      query.andWhere('characters.id = :characterId', {
+        characterId: filters.characterId,
+      });
     }
     if (filters.type) {
       query.andWhere('event.type = :type', { type: filters.type });
@@ -114,28 +125,39 @@ export class EventsService {
     const saved = await this.repo.save(event);
 
     if (userId) {
-      await this.editLogService.logCreate(EditLogEntityType.EVENT, saved.id, userId);
+      await this.editLogService.logCreate(
+        EditLogEntityType.EVENT,
+        saved.id,
+        userId,
+      );
     }
 
     return saved;
   }
 
-  async update(id: number, data: UpdateEventDto, userId?: number): Promise<Event> {
+  async update(
+    id: number,
+    data: UpdateEventDto,
+    userId?: number,
+  ): Promise<Event> {
     const { characterIds, ...updateData } = data;
 
     const cleanedUpdateData = { ...updateData };
     if (cleanedUpdateData.chapterNumber !== undefined) {
-      cleanedUpdateData.chapterNumber = Number(cleanedUpdateData.chapterNumber) || 1;
+      cleanedUpdateData.chapterNumber =
+        Number(cleanedUpdateData.chapterNumber) || 1;
     }
     if (cleanedUpdateData.pageNumber !== undefined) {
       cleanedUpdateData.pageNumber =
-        cleanedUpdateData.pageNumber && !isNaN(Number(cleanedUpdateData.pageNumber))
+        cleanedUpdateData.pageNumber &&
+        !isNaN(Number(cleanedUpdateData.pageNumber))
           ? Number(cleanedUpdateData.pageNumber)
           : undefined;
     }
     if (cleanedUpdateData.spoilerChapter !== undefined) {
       cleanedUpdateData.spoilerChapter =
-        cleanedUpdateData.spoilerChapter && !isNaN(Number(cleanedUpdateData.spoilerChapter))
+        cleanedUpdateData.spoilerChapter &&
+        !isNaN(Number(cleanedUpdateData.spoilerChapter))
           ? Number(cleanedUpdateData.spoilerChapter)
           : undefined;
     }
@@ -146,7 +168,10 @@ export class EventsService {
           : undefined;
     }
 
-    const event = await this.repo.findOne({ where: { id }, relations: ['characters'] });
+    const event = await this.repo.findOne({
+      where: { id },
+      relations: ['characters'],
+    });
     if (!event) throw new NotFoundException(`Event with ID ${id} not found`);
 
     const changedFields = diffFields(event, cleanedUpdateData);
@@ -160,16 +185,24 @@ export class EventsService {
       const validIds = characterIds.filter((cid) => !isNaN(Number(cid)));
       event.characters =
         validIds.length > 0
-          ? await this.characterRepo.findByIds(validIds.map((cid) => Number(cid)))
+          ? await this.characterRepo.findByIds(
+              validIds.map((cid) => Number(cid)),
+            )
           : [];
       await this.repo.save(event);
     }
 
     const result = await this.findOne(id);
-    if (!result) throw new NotFoundException(`Event with ID ${id} not found after update`);
+    if (!result)
+      throw new NotFoundException(`Event with ID ${id} not found after update`);
 
     if (userId !== undefined) {
-      await this.editLogService.logUpdate(EditLogEntityType.EVENT, id, userId, changedFields);
+      await this.editLogService.logUpdate(
+        EditLogEntityType.EVENT,
+        id,
+        userId,
+        changedFields,
+      );
     }
 
     return result;
@@ -184,7 +217,10 @@ export class EventsService {
     return this.repo.delete(id);
   }
 
-  async findGroupedByArc(filters?: { userProgress?: number; type?: EventType }) {
+  async findGroupedByArc(filters?: {
+    userProgress?: number;
+    type?: EventType;
+  }) {
     const query = this.repo
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.arc', 'arc')

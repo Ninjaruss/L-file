@@ -69,7 +69,8 @@ export class QuotesService {
       chapterNumber: 'quote.chapterNumber',
       createdAt: 'quote.createdAt',
     };
-    const sortField = QUOTE_SORT_FIELDS[options?.sort ?? ''] ?? 'quote.chapterNumber';
+    const sortField =
+      QUOTE_SORT_FIELDS[options?.sort ?? ''] ?? 'quote.chapterNumber';
     const sortDir: 'ASC' | 'DESC' = options?.order === 'ASC' ? 'ASC' : 'DESC';
 
     const queryBuilder = this.quotesRepository
