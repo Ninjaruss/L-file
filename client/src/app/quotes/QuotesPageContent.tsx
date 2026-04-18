@@ -236,7 +236,7 @@ export default function QuotesPageContent({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        style={{ height: '100%' }}
+        style={{ width: '100%' }}
       >
         <Card
           withBorder
