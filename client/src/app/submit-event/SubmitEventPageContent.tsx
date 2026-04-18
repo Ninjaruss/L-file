@@ -217,6 +217,7 @@ export default function SubmitEventPageContent() {
         <SubmissionSuccess
           type="event"
           accentColor={accentColor}
+          requiresApproval={false}
           onSubmitAnother={() => { setShowSuccess(false) }}
         />
       )}
@@ -295,7 +296,6 @@ export default function SubmitEventPageContent() {
                     >
                       {loading ? 'Submitting…' : `Submit ${batchEvents.length} Event${batchEvents.length !== 1 ? 's' : ''}`}
                     </Button>
-                    <Text size="xs" c="dimmed">Reviewed before publishing</Text>
                   </Group>
                 </Stack>
               </Card>
