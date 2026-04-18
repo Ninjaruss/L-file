@@ -18,6 +18,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { EventsService } from './events.service';
@@ -57,6 +58,8 @@ export class EventsController {
     description:
       'All events grouped by story arc, ordered by chapter then page',
   })
+  @ApiQuery({ name: 'userProgress', required: false, type: Number })
+  @ApiQuery({ name: 'type', required: false, enum: EventType })
   async getGroupedByArc(
     @Query('userProgress', new ParseIntPipe({ optional: true }))
     userProgress?: number,
