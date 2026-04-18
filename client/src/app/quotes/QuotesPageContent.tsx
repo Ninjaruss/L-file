@@ -88,6 +88,11 @@ export default function QuotesPageContent({
   const [characterName, setCharacterName] = useState<string | null>(initialCharacterName)
   const [characterId, setCharacterId] = useState<string | undefined>(initialCharacterId)
 
+  // Sync characterName when server re-renders with new initialCharacterName (client navigation)
+  useEffect(() => {
+    setCharacterName(initialCharacterName ?? null)
+  }, [initialCharacterName])
+
   // Hover modal
   const {
     hoveredItem: hoveredQuote,
