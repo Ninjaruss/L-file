@@ -59,7 +59,7 @@ export class EventsController {
       'All events grouped by story arc, ordered by chapter then page',
   })
   @ApiQuery({ name: 'userProgress', required: false, type: Number })
-  @ApiQuery({ name: 'type', required: false, enum: EventType })
+  @ApiQuery({ name: 'type', required: false, enum: EventType, enumName: 'EventType' })
   async getGroupedByArc(
     @Query('userProgress', new ParseIntPipe({ optional: true }))
     userProgress?: number,

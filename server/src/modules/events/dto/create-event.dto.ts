@@ -36,6 +36,7 @@ export class CreateEventDto {
   @ApiPropertyOptional({
     description: 'Type of event',
     enum: EventType,
+    enumName: 'EventType',
     default: EventType.DECISION,
   })
   type?: EventType;

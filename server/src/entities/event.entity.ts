@@ -51,6 +51,7 @@ export class Event {
   @ApiProperty({
     description: 'Type of event',
     enum: EventType,
+    enumName: 'EventType',
     default: EventType.DECISION,
   })
   @Column({ type: 'enum', enum: EventType, default: EventType.DECISION })

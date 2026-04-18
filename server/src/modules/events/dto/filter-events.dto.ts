@@ -6,7 +6,7 @@ import { EventType } from '../../../entities/event.entity';
 export class FilterEventsDto {
   @IsEnum(EventType)
   @IsOptional()
-  @ApiPropertyOptional({ enum: EventType, description: 'Filter by event type' })
+  @ApiPropertyOptional({ enum: EventType, enumName: 'EventType', description: 'Filter by event type' })
   type?: EventType;
 
   @IsInt()
