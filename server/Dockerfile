@@ -29,6 +29,7 @@ WORKDIR /app
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
+ARG CACHE_BUST
 COPY . .
 
 # Build the NestJS application
