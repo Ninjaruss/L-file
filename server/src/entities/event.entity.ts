@@ -60,7 +60,7 @@ export class Event {
     description: 'Chapter number where this event occurs',
     example: 45,
   })
-  @Column()
+  @Column({ type: 'int' })
   chapterNumber: number;
 
   @ApiPropertyOptional({
@@ -75,7 +75,7 @@ export class Event {
       'Chapter number required before showing this event (spoiler protection)',
     example: 44,
   })
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   spoilerChapter: number | null;
 
   @ApiPropertyOptional({
@@ -90,7 +90,7 @@ export class Event {
     description: 'ID of the arc this event belongs to',
     example: 1,
   })
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   arcId: number;
 
   @ApiPropertyOptional({
@@ -105,7 +105,7 @@ export class Event {
     description: 'ID of the gamble associated with this event',
     example: 1,
   })
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   gambleId: number;
 
   @ManyToMany(() => Character)
