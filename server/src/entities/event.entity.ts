@@ -67,7 +67,7 @@ export class Event {
     description: 'Page number within the chapter for sub-chapter ordering',
     example: 14,
   })
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   pageNumber: number | null;
 
   @ApiPropertyOptional({
