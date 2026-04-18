@@ -333,7 +333,7 @@ export default function QuotesPageContent({
             )}
 
             {/* Footer */}
-            {quote.volume && (
+            {(quote.volume || quote.chapter) && (
               <Text size="xs" style={{ color: theme.colors.gray[6] }} ta="center">
                 {quote.volume && `Vol. ${quote.volume}`}
                 {quote.volume && quote.chapter && ' • '}
@@ -344,7 +344,7 @@ export default function QuotesPageContent({
         </Card>
       </motion.div>
     </TimelineSpoilerWrapper>
-  ), [isTouchDevice, hoveredQuote, accentQuote, cardBgColor, handleQuoteMouseEnter, handleQuoteMouseLeave, handleQuoteTap, theme])
+  ), [isTouchDevice, accentQuote, cardBgColor, handleQuoteMouseEnter, handleQuoteMouseLeave, handleQuoteTap, theme])
 
   return (
     <ListPageLayout
