@@ -77,16 +77,16 @@ export default function EventTimeline({ arcId, gambleId, arcName, gambleName, ac
 
         if (gambleId && arcId) {
           // Intersection: fetch by gamble, filter by arc
-          const gambleResponse = await api.getEventsByGamble(gambleId, { status: 'approved' })
+          const gambleResponse = await api.getEvents({ gambleId, limit: 200 })
           const allEvents = extractEvents(gambleResponse)
           eventsData = allEvents.filter(e => e.arc?.id === arcId || e.arcId === arcId)
           setSource('both')
         } else if (gambleId) {
-          const response = await api.getEventsByGamble(gambleId, { status: 'approved' })
+          const response = await api.getEvents({ gambleId, limit: 200 })
           eventsData = extractEvents(response)
           setSource('gamble')
         } else if (arcId) {
-          const response = await api.getEventsByArc(arcId, { status: 'approved' })
+          const response = await api.getEvents({ arcId, limit: 200 })
           eventsData = extractEvents(response)
           setSource('arc')
         }

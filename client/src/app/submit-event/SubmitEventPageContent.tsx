@@ -182,6 +182,28 @@ export default function SubmitEventPageContent() {
     )
   }
 
+  if (!['editor', 'moderator', 'admin'].includes(user.role)) {
+    return (
+      <Container size="md" py="xl">
+        <Box
+          style={{
+            backgroundColor: `${accentColor}0d`,
+            border: `1px solid ${accentColor}35`,
+            borderRadius: rem(12),
+            padding: rem(32),
+            textAlign: 'center'
+          }}
+        >
+          <Box mb="md" style={{ color: accentColor }}><Zap size={36} /></Box>
+          <Title order={4} style={{ fontFamily: 'var(--font-opti-goudy-text)', fontWeight: 400 }} mb="xs">
+            Access Restricted
+          </Title>
+          <Text size="sm" c="dimmed">Event submission is available to editors, moderators, and admins only.</Text>
+        </Box>
+      </Container>
+    )
+  }
+
   const arcOptions = arcs.filter((a) => a.id != null && a.name).map((a) => ({ value: String(a.id), label: a.name }))
   const gambleOptions = gambles.filter((g) => g.id != null && g.name).map((g) => ({ value: String(g.id), label: g.name }))
   const characterOptions = characters.filter((c) => c.id != null && c.name).map((c) => ({ value: String(c.id), label: c.name }))

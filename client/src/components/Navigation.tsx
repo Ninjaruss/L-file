@@ -290,7 +290,9 @@ const Navigation: React.FC = () => {
     submit: [
       { label: 'Submit Guide', href: '/submit-guide', icon: <BookOpen size={16} /> },
       { label: 'Submit Media', href: '/submit-media', icon: <Image size={16} /> },
-      { label: 'Submit Event', href: '/submit-event', icon: <Calendar size={16} /> },
+      ...((user?.role === 'editor' || user?.role === 'moderator' || user?.role === 'admin')
+        ? [{ label: 'Submit Event', href: '/submit-event', icon: <Calendar size={16} /> }]
+        : []),
       { label: 'Submit Annotation', href: '/submit-annotation', icon: <MessageSquare size={16} /> }
     ]
   }
@@ -587,8 +589,8 @@ const Navigation: React.FC = () => {
                 </Menu.Dropdown>
           </Menu>
 
-          {/* Submit Dropdown */}
-          <Menu
+          {/* Submit Dropdown — only for logged-in users */}
+          {user && <Menu
             trigger="hover"
             openDelay={0}
             closeDelay={300}
@@ -681,7 +683,7 @@ const Navigation: React.FC = () => {
                 </Menu.Item>
               ))}
                 </Menu.Dropdown>
-          </Menu>
+          </Menu>}
         </Group>
 
         {/* Right Side - Search + Profile */}
@@ -1392,44 +1394,47 @@ const Navigation: React.FC = () => {
               </Menu.Item>
             ))}
 
-            <Box style={{ margin: '4px 0' }}><Menu.Divider /></Box>
-
-            {/* Submit Section */}
-            <Menu.Label
-              style={{
-                color: '#7c3aed',
-                fontFamily: 'var(--font-noto-sans)',
-                fontWeight: 600,
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                paddingLeft: rem(12),
-                paddingTop: rem(5),
-                paddingBottom: rem(5),
-                borderLeft: '3px solid currentColor',
-                borderRadius: '0 3px 3px 0',
-                backgroundColor: 'rgba(124, 58, 237, 0.08)'
-              }}
-            >
-              Submit
-            </Menu.Label>
-            {navigationData.submit.map((item) => (
-              <Menu.Item
-                key={item.href}
-                component={Link}
-                href={item.href}
-                leftSection={item.icon}
-                onClick={handleMobileMenuClose}
-                style={{
-                  paddingLeft: rem(20),
-                  borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent',
-                  boxShadow: isActivePath(item.href) ? 'inset 3px 0 8px rgba(225,29,72,0.15)' : 'none'
-                }}
-                styles={{ item: menuHoverStyles }}
-              >
-                {item.label}
-              </Menu.Item>
-            ))}
+            {user && navigationData.submit.length > 0 && (
+              <>
+                <Box style={{ margin: '4px 0' }}><Menu.Divider /></Box>
+                {/* Submit Section — only for logged-in users */}
+                <Menu.Label
+                  style={{
+                    color: '#7c3aed',
+                    fontFamily: 'var(--font-noto-sans)',
+                    fontWeight: 600,
+                    fontSize: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    paddingLeft: rem(12),
+                    paddingTop: rem(5),
+                    paddingBottom: rem(5),
+                    borderLeft: '3px solid currentColor',
+                    borderRadius: '0 3px 3px 0',
+                    backgroundColor: 'rgba(124, 58, 237, 0.08)'
+                  }}
+                >
+                  Submit
+                </Menu.Label>
+                {navigationData.submit.map((item) => (
+                  <Menu.Item
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    leftSection={item.icon}
+                    onClick={handleMobileMenuClose}
+                    style={{
+                      paddingLeft: rem(20),
+                      borderLeft: isActivePath(item.href) ? '3px solid #e11d48' : '3px solid transparent',
+                      boxShadow: isActivePath(item.href) ? 'inset 3px 0 8px rgba(225,29,72,0.15)' : 'none'
+                    }}
+                    styles={{ item: menuHoverStyles }}
+                  >
+                    {item.label}
+                  </Menu.Item>
+                ))}
+              </>
+            )}
 
             {/* Logout at bottom */}
             {user && (
