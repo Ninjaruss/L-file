@@ -590,7 +590,12 @@ export const AdminDataProvider: DataProvider = {
       query.sortBy = field
       query.sortOrder = order
     } else if (['characters', 'arcs', 'events', 'gambles', 'organizations', 'tags', 'quotes', 'chapters', 'volumes', 'media', 'character-relationships', 'character-organizations', 'annotations'].includes(resource)) {
-      query.sort = field
+      let sortField = field
+      if (resource === 'events') {
+        const validEventSorts = ['chapterNumber', 'createdAt']
+        if (!validEventSorts.includes(sortField)) sortField = 'chapterNumber'
+      }
+      query.sort = sortField
       query.order = order
     }
     // Users and other resources don't support sorting

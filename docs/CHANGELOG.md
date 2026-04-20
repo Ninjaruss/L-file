@@ -3,8 +3,12 @@
 ## TODO
 - Add a proper data backup; update security for supabase data
 - Sync reading progress with other trackers? (i.e. myanimelist, anilist, etc.)
-- Add quotes detail page
-- Revamp events page and data to be more simplified and easier to use
+
+
+## 2026-04-18
+- Removed complicated event approval process
+- Fixed issues with the database (required migrations and clearing the docker cache)
+- Added quotes context modal and fixed quotes filtering
 
 
 ## 2026-04-03
