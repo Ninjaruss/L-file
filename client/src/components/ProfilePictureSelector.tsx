@@ -17,8 +17,7 @@ import {
   Button,
   Alert,
 } from '@mantine/core';
-import { api, API_BASE_URL } from '../lib/api';
-import { UserBadge, BadgeType } from '../types';
+import { api } from '../lib/api';
 import TimelineSpoilerWrapper from './TimelineSpoilerWrapper';
 import type { User } from '../providers/AuthProvider';
 
@@ -48,7 +47,8 @@ export default function ProfilePictureSelector({
   const [characterFilter, setCharacterFilter] = useState('');
   const [characterMedia, setCharacterMedia] = useState<any[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
-  const [userBadges, setUserBadges] = useState<UserBadge[]>([]);
+
+  const isEditor = user.role === 'editor' || user.role === 'admin';
 
   // Reset state when modal opens
   useEffect(() => {
@@ -59,15 +59,6 @@ export default function ProfilePictureSelector({
       setActiveTab('character_media');
     }
   }, [opened]);
-
-  // Fetch badges on open
-  useEffect(() => {
-    if (!opened || !currentUserId) return;
-    fetch(`${API_BASE_URL}/users/${currentUserId}/badges`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setUserBadges(Array.isArray(data) ? data : data?.data ?? []))
-      .catch(() => setUserBadges([]));
-  }, [opened, currentUserId]);
 
   const fetchCharacterMedia = useCallback(async () => {
     if (characterMedia.length > 0) return; // already loaded
@@ -86,16 +77,6 @@ export default function ProfilePictureSelector({
   useEffect(() => {
     if (activeTab === 'character_media') fetchCharacterMedia();
   }, [activeTab, fetchCharacterMedia]);
-
-  const hasActiveBadge = useCallback((type: BadgeType): boolean => {
-    return userBadges.some(ub =>
-      ub?.badge?.type === type &&
-      ub?.isActive &&
-      (!ub?.expiresAt || new Date(ub.expiresAt) > new Date())
-    );
-  }, [userBadges]);
-
-  const isSupporter = hasActiveBadge(BadgeType.SUPPORTER) || hasActiveBadge(BadgeType.ACTIVE_SUPPORTER) || hasActiveBadge(BadgeType.SPONSOR);
 
   // Group media by character id, sorted by earliest chapter number
   const characterGroups = React.useMemo(() => {
@@ -180,9 +161,9 @@ export default function ProfilePictureSelector({
           <Tabs.Tab value="fluxer">Fluxer</Tabs.Tab>
           <Tabs.Tab
             value="exclusive_artwork"
-            disabled={!isSupporter}
-            rightSection={!isSupporter && (
-              <Badge size="xs" variant="filled" color="yellow" style={{ marginLeft: 4 }}>SUPPORTER</Badge>
+            disabled={!isEditor}
+            rightSection={!isEditor && (
+              <Badge size="xs" variant="filled" color="violet" style={{ marginLeft: 4 }}>EDITOR</Badge>
             )}
           >
             ✦ Exclusive
@@ -220,7 +201,7 @@ export default function ProfilePictureSelector({
 
         {/* ── EXCLUSIVE TAB ── */}
         <Tabs.Panel value="exclusive_artwork">
-          <ExclusiveTab isSupporter={isSupporter} />
+          <ExclusiveTab isEditor={isEditor} />
         </Tabs.Panel>
       </Tabs>
 
@@ -728,8 +709,8 @@ function FluxerTab({ user, onSelect, isSelected, pendingMedia, pendingType }: Fl
   );
 }
 
-function ExclusiveTab({ isSupporter }: { isSupporter: boolean }) {
-  if (!isSupporter) {
+function ExclusiveTab({ isEditor }: { isEditor: boolean }) {
+  if (!isEditor) {
     return (
       <Box
         style={{
@@ -742,22 +723,11 @@ function ExclusiveTab({ isSupporter }: { isSupporter: boolean }) {
       >
         <Stack align="center" gap="lg" style={{ maxWidth: 320 }}>
           <Text size="xl" ta="center">✦</Text>
-          <Text fw={700} size="lg" ta="center">Supporter Exclusive</Text>
+          <Text fw={700} size="lg" ta="center">Editor Exclusive</Text>
           <Text size="sm" c="dimmed" ta="center">
-            Exclusive artwork profile pictures are available to supporters.
-            Support the database to unlock this feature and more!
+            Exclusive artwork profile pictures are available to editors and admins.
+            Apply for the editor role to unlock this feature.
           </Text>
-          <Button
-            component="a"
-            href="https://ko-fi.com/ninjaruss"
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="filled"
-            color="yellow"
-            size="sm"
-          >
-            ☕ Support on Ko-fi
-          </Button>
         </Stack>
       </Box>
     );
@@ -775,9 +745,9 @@ function ExclusiveTab({ isSupporter }: { isSupporter: boolean }) {
       }}
     >
       <Stack align="center" gap="md">
-        <Badge variant="filled" color="yellow" size="lg">✦ SUPPORTER</Badge>
+        <Badge variant="filled" color="violet" size="lg">✦ EDITOR</Badge>
         <Text size="sm" c="dimmed" ta="center">
-          Exclusive artwork will appear here when available. Thank you for your support!
+          Exclusive artwork will appear here when available.
         </Text>
       </Stack>
     </Box>

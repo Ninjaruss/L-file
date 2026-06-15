@@ -20,7 +20,7 @@ interface SettingsPanelUser {
 
 interface ProfileSettingsPanelProps {
   user: SettingsPanelUser
-  hasActiveSupporterBadge: boolean
+  isEditor: boolean
   customRole: string
   initialCustomRole: string
   savingCustomRole: boolean
@@ -41,7 +41,7 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 
 export default function ProfileSettingsPanel({
   user,
-  hasActiveSupporterBadge,
+  isEditor,
   customRole,
   initialCustomRole,
   savingCustomRole,
@@ -150,14 +150,11 @@ export default function ProfileSettingsPanel({
       {/* Custom Role */}
       <SectionCard>
         <Text fw={600} size="sm" mb="md">Custom Role</Text>
-        {!hasActiveSupporterBadge ? (
+        {!isEditor ? (
           <Alert style={{ color: getEntityThemeColor(theme, 'character') }} variant="light">
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Custom roles are exclusive to active supporters!</Text>
-              <Text size="sm">Support us on Ko-fi to unlock this feature.</Text>
-              <Button component="a" href="https://ko-fi.com/ninjaruss" target="_blank" rel="noopener noreferrer" size="sm">
-                ☕ Support on Ko-fi
-              </Button>
+              <Text size="sm" fw={500}>Custom roles are available to editors and admins.</Text>
+              <Text size="sm">Apply for the editor role to unlock this feature.</Text>
             </Stack>
           </Alert>
         ) : (

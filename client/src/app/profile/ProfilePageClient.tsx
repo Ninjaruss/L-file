@@ -75,7 +75,6 @@ export default function ProfilePageClient() {
   const [userGuides, setUserGuides] = useState<UserGuide[]>([])
   const [quotes, setQuotes] = useState<any[]>([])
   const [gambles, setGambles] = useState<any[]>([])
-  const [userBadges, setUserBadges] = useState<any[]>([])
   const [submissions, setSubmissions] = useState<any[]>([])
   const [submissionEdits, setSubmissionEdits] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +88,7 @@ export default function ProfilePageClient() {
 
   const isAuthenticated = !!user
 
-  const hasActiveSupporterBadge = userBadges.some(ub => ub.badge?.type === 'active_supporter')
+  const isEditor = user?.role === 'editor' || user?.role === 'admin'
 
   const stats = useMemo(() => ({
     guides:      userGuides.length,
@@ -128,11 +127,10 @@ export default function ProfilePageClient() {
         console.error('Failed to fetch profile or favorites:', err)
       }
 
-      const [guidesRes, quotesRes, gamblesRes, badgesRes, submissionsRes] = await Promise.allSettled([
+      const [guidesRes, quotesRes, gamblesRes, submissionsRes] = await Promise.allSettled([
         api.get('/guides/my-guides'),
         api.get('/quotes?limit=100'),
         api.get('/gambles?limit=100'),
-        user?.id && typeof user.id === 'number' ? api.getUserBadges(user.id) : Promise.resolve([]),
         api.getUserSubmissions(),
       ])
 
@@ -144,10 +142,6 @@ export default function ProfilePageClient() {
       if (gamblesRes.status === 'fulfilled') {
         const fetched = (gamblesRes.value as any).data || []
         setGambles(prev => { const ids = new Set(prev.map(g => g.id)); return [...prev, ...fetched.filter((g: any) => !ids.has(g.id))] })
-      }
-      if (badgesRes.status === 'fulfilled') {
-        const d = badgesRes.value as any
-        setUserBadges(Array.isArray(d) ? d : d?.data || [])
       }
       if (submissionsRes.status === 'fulfilled') {
         const d = submissionsRes.value as any
@@ -221,7 +215,7 @@ export default function ProfilePageClient() {
   }, [closeGambleModal])
 
   const handleSaveCustomRole = useCallback(async () => {
-    if (!hasActiveSupporterBadge) return
+    if (!isEditor) return
     setSavingCustomRole(true)
     try {
       await api.patch('/users/profile/custom-role', { customRole: profileData.customRole })
@@ -233,7 +227,7 @@ export default function ProfilePageClient() {
     } finally {
       setSavingCustomRole(false)
     }
-  }, [hasActiveSupporterBadge, refreshUser, profileData.customRole])
+  }, [isEditor, refreshUser, profileData.customRole])
 
   const handleUnlinkFluxer = useCallback(async () => {
     await api.unlinkFluxer()
@@ -348,7 +342,7 @@ export default function ProfilePageClient() {
               <Box p="md">
                 <ProfileSettingsPanel
                   user={user!}
-                  hasActiveSupporterBadge={hasActiveSupporterBadge}
+                  isEditor={isEditor}
                   customRole={profileData.customRole}
                   initialCustomRole={initialCustomRoleRef.current}
                   savingCustomRole={savingCustomRole}

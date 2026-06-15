@@ -124,19 +124,6 @@ export interface UserBadge {
   metadata?: any;
 }
 
-export interface Donation {
-  id: number;
-  userId: number | null;
-  amount: number;
-  currency: string;
-  donationDate: string;
-  provider: 'kofi' | 'manual';
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  message: string | null;
-  donorName: string | null;
-  isAnonymous: boolean;
-}
-
 export interface Organization {
   id: number;
   name: string;
