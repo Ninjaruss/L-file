@@ -11,9 +11,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { UserBadge } from './user-badge.entity';
 
 export enum BadgeType {
-  SUPPORTER = 'supporter',
-  ACTIVE_SUPPORTER = 'active_supporter',
-  SPONSOR = 'sponsor',
   CUSTOM = 'custom',
 }
 
@@ -32,7 +29,7 @@ export class Badge {
 
   @ApiPropertyOptional({
     description: 'Badge description',
-    example: 'Awarded to supporters who have made a donation',
+    example: 'Awarded for outstanding contributions to the community',
   })
   @Column({ type: 'text', nullable: true })
   description: string | null;
@@ -40,7 +37,7 @@ export class Badge {
   @ApiProperty({
     description: 'Badge type',
     enum: BadgeType,
-    example: BadgeType.SUPPORTER,
+    example: BadgeType.CUSTOM,
   })
   @Column({ type: 'enum', enum: BadgeType })
   type: BadgeType;

@@ -40,7 +40,7 @@ export class AwardBadgeDto {
 
   @ApiPropertyOptional({
     description:
-      'Expiration date for the badge (ISO string). Note: Active Supporter badges automatically expire after 1 year regardless of this value.',
+      'Expiration date for the badge (ISO string).',
     example: '2025-01-01T00:00:00.000Z',
   })
   @IsOptional()

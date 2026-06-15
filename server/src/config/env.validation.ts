@@ -124,10 +124,6 @@ class EnvironmentVariables {
   // --- Optional Integrations ---
   @IsString()
   @IsOptional()
-  KOFI_WEBHOOK_TOKEN?: string;
-
-  @IsString()
-  @IsOptional()
   CORS_ALLOWED_ORIGINS?: string;
 
   // SECURITY: Required only in development for dev-login bypass

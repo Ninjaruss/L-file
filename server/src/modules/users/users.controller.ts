@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   UseGuards,
   NotFoundException,
+  ForbiddenException,
   Patch,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -686,19 +687,15 @@ export class UsersController {
   })
   @ApiBody({ type: UpdateCustomRoleDto })
   @ApiResponse({ status: 200, description: 'Custom role updated successfully' })
-  @ApiResponse({ status: 403, description: 'Active supporter badge required' })
+  @ApiResponse({ status: 403, description: 'Editor or admin role required' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateCustomRole(
     @CurrentUser() user: User,
     @Body() updateCustomRoleDto: UpdateCustomRoleDto,
   ) {
-    const hasActiveBadge = await this.badgesService.hasActiveSupporterBadge(
-      user.id,
-    );
-
-    if (!hasActiveBadge) {
-      throw new NotFoundException(
-        'Active supporter badge required to set custom role',
+    if (user.role !== UserRole.EDITOR && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        'Editor or admin role required to set custom role',
       );
     }
 

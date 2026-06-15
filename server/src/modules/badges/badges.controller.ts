@@ -40,11 +40,11 @@ export class BadgesController {
     return this.badgesService.findAllBadges();
   }
 
-  @Get('supporters')
-  @ApiOperation({ summary: 'Get all supporters list' })
-  @ApiResponse({ status: 200, description: 'List of supporters' })
-  async getSupporters() {
-    return this.badgesService.getAllSupporters();
+  @Get('contributors')
+  @ApiOperation({ summary: 'Get contributors with custom badges' })
+  @ApiResponse({ status: 200, description: 'List of contributors' })
+  async getContributors() {
+    return this.badgesService.getContributors();
   }
 
   @Get(':id')

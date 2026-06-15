@@ -22,7 +22,6 @@ import { MediaModule } from './modules/media/media.module';
 import { GuidesModule } from './modules/guides/guides.module';
 import { PageViewsModule } from './modules/page-views/page-views.module';
 import { BadgesModule } from './modules/badges/badges.module';
-import { DonationsModule } from './modules/donations/donations.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { CharacterRelationshipsModule } from './modules/character-relationships/character-relationships.module';
 import { CharacterOrganizationsModule } from './modules/character-organizations/character-organizations.module';
@@ -108,7 +107,6 @@ import { Logger } from '@nestjs/common';
     GuidesModule,
     PageViewsModule,
     BadgesModule,
-    DonationsModule,
     TasksModule,
     CharacterRelationshipsModule,
     CharacterOrganizationsModule,

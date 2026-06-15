@@ -350,7 +350,6 @@ async function bootstrap() {
     )
     // Community Features
     .addTag('badges', 'Badges - User achievement and recognition system')
-    .addTag('donations', 'Donations - Support and contributor management')
     .addTag('page-views', 'Page Views - Analytics and usage tracking')
     .build();
 
