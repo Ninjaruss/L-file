@@ -16,26 +16,8 @@ import {
   rem
 } from '@mantine/core'
 import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
-import { Heart, Mail, Coffee, Github } from 'lucide-react'
+import { Mail, Github } from 'lucide-react'
 
-const supportItems = [
-  {
-    primary: 'Buy me a coffee',
-    secondary: 'Help cover hosting costs and development time'
-  },
-  {
-    primary: 'Contribute content',
-    secondary: 'Submit guides, character analyses, or media'
-  },
-  {
-    primary: 'Spread the word',
-    secondary: 'Share L-File with other Usogui fans'
-  },
-  {
-    primary: 'Report issues',
-    secondary: 'Help us improve by reporting bugs or suggesting features'
-  }
-]
 
 const resolveHex = (color: string | undefined, fallback: string) => {
   if (!color) return fallback
@@ -138,7 +120,7 @@ export function AboutPageContent() {
         </Box>
 
         <Grid gutter="xl">
-          {/* Support Section */}
+          {/* Contribute Section */}
           <Grid.Col span={12}>
             <Card radius="xl" p={0} style={accentCardStyle}>
               <Grid gutter={0}>
@@ -159,46 +141,48 @@ export function AboutPageContent() {
                         fontWeight: 400
                       }}
                     >
-                      Support the project.
+                      Become a contributor.
                     </Text>
                     <Text size="md" c={hexToRgba(whiteHex, 0.75)} style={{ maxWidth: rem(480) }}>
-                      L-File is an independent fan project built in spare time by someone who genuinely loves Usogui.
-                      Support helps cover hosting and development costs, keeping the site free and ad-free for the community.
+                      L-File is open source and community-driven. Editors help maintain and expand the database — adding characters, gambles, and event details.
+                      If you know Usogui well and want to help, apply for the editor role.
                     </Text>
                     <Group gap="sm" mt="sm">
                       <Button
                         component="a"
-                        href="https://ko-fi.com/ninjaruss"
+                        href="https://github.com/ninjaruss/l-file"
                         target="_blank"
                         rel="noopener noreferrer"
                         size="lg"
                         variant="gradient"
                         gradient={{ from: accentRedHex, to: accentPurpleHex }}
-                        leftSection={<Coffee size={20} />}
+                        leftSection={<Github size={20} />}
                       >
-                        Support on Ko-fi
+                        GitHub
                       </Button>
                       <Button
                         component="a"
-                        href="https://github.com/Ninjaruss/l-file"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`mailto:${user}@${domain}`}
                         size="lg"
                         variant="outline"
                         style={{
                           color: hexToRgba(whiteHex, 0.9),
                           borderColor: hexToRgba(whiteHex, 0.3)
                         }}
-                        leftSection={<Github size={20} />}
+                        leftSection={<Mail size={20} />}
                       >
-                        GitHub
+                        Apply as Editor
                       </Button>
                     </Group>
                   </Stack>
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }} style={{ padding: rem(40) }}>
                   <Stack gap="lg">
-                    {supportItems.slice(0, 3).map((item) => (
+                    {[
+                      { primary: 'Code contributions', secondary: 'Fix bugs, add features, and help build new tools for fans' },
+                      { primary: 'Content contributions', secondary: 'Submit guides, character analyses, quotes, and media' },
+                      { primary: 'Spread the word', secondary: 'Share L-File with other Usogui fans and readers' },
+                    ].map((item) => (
                       <Box
                         key={item.primary}
                         style={{
@@ -277,14 +261,11 @@ export function AboutPageContent() {
                       fontWeight: 400
                     }}
                   >
-                    Supporters
+                    Contributors
                   </Title>
                 </Box>
                 <Text size="md" c={hexToRgba(whiteHex, 0.8)}>
-                  Thank you to everyone who has supported L-File through contributions, feedback, and sharing the project with other readers.
-                </Text>
-                <Text size="sm" c={hexToRgba(whiteHex, 0.6)}>
-                  Ko-fi supporters automatically receive special badges on their profiles. Your support helps keep this project running!
+                  Thank you to everyone who has contributed to L-File — writing guides, editing content, submitting media, and helping the database grow.
                 </Text>
               </Stack>
             </Card>
@@ -346,16 +327,16 @@ export function AboutPageContent() {
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Group gap="sm">
-                      <Coffee size={20} />
+                      <Github size={20} />
                       <Anchor
-                        href="https://ko-fi.com/ninjaruss"
+                        href="https://github.com/ninjaruss/l-file"
                         target="_blank"
                         rel="noopener noreferrer"
                         c={whiteHex}
                         underline="hover"
                         size="md"
                       >
-                        ko-fi.com/ninjaruss
+                        github.com/ninjaruss/l-file
                       </Anchor>
                     </Group>
                   </Grid.Col>

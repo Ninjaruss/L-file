@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Box, Text, Anchor, Group, Container, Stack, Divider } from '@mantine/core'
-import { MessageCircle, Heart, ExternalLink, Info, BookOpen, Users, Dices, Image } from 'lucide-react'
+import { MessageCircle, Github, ExternalLink, Info, BookOpen, Users, Dices, Image } from 'lucide-react'
 import NextLink from 'next/link'
 import { motion } from 'motion/react'
 import { DiagonalStripes, SuitWatermark } from './decorative/MangaPatterns'
@@ -314,14 +314,14 @@ export const Footer: React.FC = () => {
               variants={fadeUp}
             >
               <Stack gap={10}>
-                <ColumnLabel>Support</ColumnLabel>
+                <ColumnLabel>Contribute</ColumnLabel>
                 <CtaLink
-                  href="https://ko-fi.com/ninjaruss"
-                  icon={Heart}
-                  ariaLabel="Support us on Ko-fi (opens in new tab)"
-                  accentColor="#ff5f5f"
+                  href="https://github.com/ninjaruss/l-file"
+                  icon={Github}
+                  ariaLabel="View source on GitHub (opens in new tab)"
+                  accentColor="#7c3aed"
                 >
-                  Support Us
+                  Open Source
                 </CtaLink>
                 <CtaLink
                   href="https://fluxer.gg/7ce7lrCc"

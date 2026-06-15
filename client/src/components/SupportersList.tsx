@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserBadge, BadgeType } from '../types';
+import { BadgeType } from '../types';
 import BadgeDisplay from './BadgeDisplay';
 import { API_BASE_URL } from '../lib/api';
 import CustomRoleDisplay from './CustomRoleDisplay';
@@ -44,7 +44,7 @@ export default function SupportersList() {
   useEffect(() => {
     const fetchSupporters = async () => {
       try {
-  const response = await fetch(`${API_BASE_URL}/badges/supporters`);
+  const response = await fetch(`${API_BASE_URL}/badges/contributors`);
         if (!response.ok) {
           throw new Error('Failed to fetch supporters');
         }
@@ -85,7 +85,7 @@ export default function SupportersList() {
   if (error) {
     return (
       <div className="bg-white/5 rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-bold mb-4 text-white">Our Supporters</h2>
+        <h2 className="text-xl font-bold mb-4 text-white">Contributors</h2>
         <p className="text-red-600 dark:text-red-400">Failed to load supporters: {error}</p>
       </div>
     );
@@ -94,9 +94,9 @@ export default function SupportersList() {
   if (supporters.length === 0) {
     return (
       <div className="bg-white/5 rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-bold mb-4 text-white">Our Supporters</h2>
+        <h2 className="text-xl font-bold mb-4 text-white">Contributors</h2>
         <p className="text-white/55">
-          No supporters yet. Be the first to support our database!
+          No contributors yet.
         </p>
       </div>
     );
@@ -120,12 +120,11 @@ export default function SupportersList() {
   return (
     <div className="bg-white/5 rounded-lg shadow-sm p-6">
       <div className="flex items-center gap-2 mb-6">
-        <h2 className="text-2xl font-bold text-white">Our Supporters</h2>
-        <span className="text-red-500">❤️</span>
+        <h2 className="text-2xl font-bold text-white">Contributors</h2>
       </div>
 
       <p className="text-white/55 mb-6">
-        Thank you to all our amazing supporters who help keep this database running!
+        Thank you to everyone who has contributed to the database.
       </p>
 
       {sortedGroups.map(([badgeType, groupSupporters]) => {
@@ -137,8 +136,6 @@ export default function SupportersList() {
           <div key={badgeType} className="mb-8 last:mb-0">
             <h3 className="text-lg font-semibold text-white/85 mb-4 flex items-center gap-2">
               <span>{groupSupporters[0].badge.icon}</span>
-              {badgeType === 'sponsor' && 'Sponsors'}
-              {badgeType === 'supporter' && 'Supporters'}
               {badgeType === 'custom' && 'Special Contributors'}
               <span className="text-sm font-normal text-white/40">
                 ({groupSupporters.length})
@@ -197,21 +194,7 @@ export default function SupportersList() {
         );
       })}
 
-      <div className="mt-8 pt-6 border-t border-white/10">
-        <div className="text-center">
-          <p className="text-sm text-white/55 mb-2">
-            Want to support us?
-          </p>
-          <a
-            href="https://ko-fi.com/ninjaruss"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors"
-          >
-            ☕ Support on Ko-fi
-          </a>
-        </div>
-      </div>
+
     </div>
   );
 }
