@@ -136,7 +136,7 @@ export default function SupportersList() {
           <div key={badgeType} className="mb-8 last:mb-0">
             <h3 className="text-lg font-semibold text-white/85 mb-4 flex items-center gap-2">
               <span>{groupSupporters[0].badge.icon}</span>
-              {badgeType === 'custom' && 'Special Contributors'}
+              {badgeType === 'custom' ? 'Special Contributors' : badgeType}
               <span className="text-sm font-normal text-white/40">
                 ({groupSupporters.length})
               </span>

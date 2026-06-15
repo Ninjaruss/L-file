@@ -15,7 +15,7 @@ import {
   useMantineTheme,
   rem
 } from '@mantine/core'
-import { getEntityThemeColor, backgroundStyles } from '../../lib/mantine-theme'
+import { backgroundStyles } from '../../lib/mantine-theme'
 import { Mail, Github } from 'lucide-react'
 
 
