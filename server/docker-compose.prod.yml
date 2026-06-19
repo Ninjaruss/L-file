@@ -1,7 +1,10 @@
 # =============================================================================
 # L-File Usogui Database - Production Docker Compose (Server Only)
 # =============================================================================
-# Used for standalone server deployment (e.g. Dokploy single-service mode).
+# Uses the pre-built image from GHCR (built by GitHub Actions) so Dokploy
+# never runs a builder on the Hetzner server.
+#
+# In Dokploy: set application source to "Docker Compose" and point to this file.
 # Set all environment variables via Dokploy's "Environment Variables" UI.
 #
 # Usage (local):
@@ -12,10 +15,8 @@
 
 services:
   server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runner
+    image: ghcr.io/ninjaruss/l-file/server:latest
+    pull_policy: always
     container_name: l-file-server
     restart: always
 

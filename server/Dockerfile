@@ -53,8 +53,8 @@ LABEL description="NestJS backend API for Usogui Database"
 LABEL build_date=$BUILD_DATE
 LABEL version=$VERSION
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# dumb-init for signal handling; wget for Docker/K8s health checks
+RUN apk add --no-cache dumb-init wget
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
