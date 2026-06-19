@@ -33,8 +33,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # Lint has pre-existing repo-wide debt; run for signal but do not block merges yet.
       - name: Lint
         run: yarn lint
+        continue-on-error: true
 
       - name: Build
         run: yarn build

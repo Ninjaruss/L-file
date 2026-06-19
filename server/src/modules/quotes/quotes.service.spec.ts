@@ -4,6 +4,13 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { QuotesService } from './quotes.service';
 import { Quote, QuoteStatus } from '../../entities/quote.entity';
 import { Character } from '../../entities/character.entity';
+import { EditLogService } from '../edit-log/edit-log.service';
+
+const mockEditLogService = {
+  logCreate: jest.fn(),
+  logUpdate: jest.fn(),
+  logDelete: jest.fn(),
+};
 
 const mockQuoteRepo = {
   findOne: jest.fn(),
@@ -38,6 +45,7 @@ describe('QuotesService', () => {
         QuotesService,
         { provide: getRepositoryToken(Quote), useValue: mockQuoteRepo },
         { provide: getRepositoryToken(Character), useValue: mockCharacterRepo },
+        { provide: EditLogService, useValue: mockEditLogService },
       ],
     }).compile();
     service = module.get<QuotesService>(QuotesService);
