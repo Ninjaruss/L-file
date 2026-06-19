@@ -93,7 +93,8 @@ class ApiClient {
     if (response.status === 401 && 
         endpoint !== '/auth/refresh' && 
         endpoint !== '/auth/login' &&
-        endpoint !== '/auth/logout') {
+        endpoint !== '/auth/logout' &&
+        endpoint !== '/auth/exchange-code') {
       debugLog('[API] Token expired, attempting to refresh...')
       try {
         // Try to refresh the token
@@ -222,8 +223,11 @@ class ApiClient {
     })
   }
 
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' })
+  async delete<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+      ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
+    })
   }
 
   // Auth methods
@@ -303,6 +307,28 @@ class ApiClient {
         description?: string
       } | null
     }>('/auth/me')
+  }
+
+  async exchangeOAuthCode(code: string) {
+    const response = await fetch(`${this.baseURL}/auth/exchange-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'Fetch',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ code }),
+    })
+
+    if (!response.ok) {
+      throw new Error('OAuth code exchange failed')
+    }
+
+    const data = await response.json()
+    if (data.access_token) {
+      this.setToken(data.access_token)
+    }
+    return data
   }
 
   async refreshToken() {
@@ -589,6 +615,11 @@ class ApiClient {
       page: number
       totalPages: number
     }>(`/events${query ? `?${query}` : ''}`)
+  }
+
+  async getEventsByChapter(chapterNumber: number) {
+    const result = await this.getEvents({ chapterNumber, limit: 100 })
+    return result.data
   }
 
   async getEventsGroupedByArc(params?: {
@@ -913,6 +944,10 @@ class ApiClient {
 
   async getUserBadges(userId: number) {
     return this.get<any>(`/users/${userId}/badges`)
+  }
+
+  async removeUserBadge(userId: number, badgeId: number, reason: string) {
+    return this.delete<void>(`/badges/user/${userId}/badge/${badgeId}`, { reason })
   }
 
   async getPublicUsers(params?: {

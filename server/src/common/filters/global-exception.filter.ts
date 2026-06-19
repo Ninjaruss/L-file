@@ -36,10 +36,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      message =
-        typeof exceptionResponse === 'string'
-          ? exceptionResponse
-          : (exceptionResponse as { message?: string }).message || message;
+      if (typeof exceptionResponse === 'string') {
+        message = exceptionResponse;
+      } else {
+        const responseMessage = (
+          exceptionResponse as { message?: string | string[] }
+        ).message;
+        if (Array.isArray(responseMessage)) {
+          message = responseMessage.join('; ');
+        } else if (typeof responseMessage === 'string') {
+          message = responseMessage;
+        }
+      }
     } else if (exception instanceof Error) {
       message = exception.message;
     }

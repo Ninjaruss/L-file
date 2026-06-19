@@ -243,7 +243,7 @@ async function bootstrap() {
     `Auth rate limiter: windowMs=${AUTH_RATE_LIMIT_WINDOW_MS}, max=${AUTH_RATE_LIMIT_MAX}`,
   );
   app.use(
-    '/auth',
+    '/api/auth',
     rateLimit({
       windowMs: AUTH_RATE_LIMIT_WINDOW_MS,
       max: AUTH_RATE_LIMIT_MAX,
@@ -308,71 +308,73 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   app.useGlobalGuards(new CsrfGuard(configService));
 
-  // API Documentation
-  const config = new DocumentBuilder()
-    .setTitle('L-file Usogui Database API')
-    .setDescription(
-      'Comprehensive API for managing Usogui manga content, user interactions, and community features',
-    )
-    .setVersion('1.0')
-    .addBearerAuth()
-    // Authentication & User Management
-    .addTag(
-      'auth',
-      'Authentication - User registration, login, and verification',
-    )
-    .addTag(
-      'users',
-      'User Management - User profiles, statistics, and account management',
-    )
-    // Core Content Management
-    .addTag('volumes', 'Volumes - Volume organization and chapter grouping')
-    .addTag('chapters', 'Chapters - Individual chapter management')
-    .addTag('arcs', 'Story Arcs - Narrative arc organization')
-    // Character & Content
-    .addTag('characters', 'Characters - Character profiles and information')
-    .addTag('events', 'Events - Story events and timeline management')
-    .addTag('organizations', 'Organizations - Groups and organizations')
-    .addTag('quotes', 'Quotes - Character quotes and memorable lines')
-    // Interactive Content
-    .addTag('gambles', 'Gambles - Gambling events and game management')
-    .addTag(
-      'guides',
-      'Guides - User-generated tutorials, strategies, and educational content',
-    )
-    .addTag('media', 'Media - Community fanart, videos, and submissions')
-    // Content Organization
-    .addTag('tags', 'Tags - Content categorization and tagging system')
-    .addTag('translations', 'Translations - Multi-language content support')
-    .addTag(
-      'search',
-      'Search - Text search across all content with spoiler protection',
-    )
-    // Community Features
-    .addTag('badges', 'Badges - User achievement and recognition system')
-    .addTag('page-views', 'Page Views - Analytics and usage tracking')
-    .build();
+  // API Documentation (disabled in production)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('L-file Usogui Database API')
+      .setDescription(
+        'Comprehensive API for managing Usogui manga content, user interactions, and community features',
+      )
+      .setVersion('1.0')
+      .addBearerAuth()
+      // Authentication & User Management
+      .addTag(
+        'auth',
+        'Authentication - User registration, login, and verification',
+      )
+      .addTag(
+        'users',
+        'User Management - User profiles, statistics, and account management',
+      )
+      // Core Content Management
+      .addTag('volumes', 'Volumes - Volume organization and chapter grouping')
+      .addTag('chapters', 'Chapters - Individual chapter management')
+      .addTag('arcs', 'Story Arcs - Narrative arc organization')
+      // Character & Content
+      .addTag('characters', 'Characters - Character profiles and information')
+      .addTag('events', 'Events - Story events and timeline management')
+      .addTag('organizations', 'Organizations - Groups and organizations')
+      .addTag('quotes', 'Quotes - Character quotes and memorable lines')
+      // Interactive Content
+      .addTag('gambles', 'Gambles - Gambling events and game management')
+      .addTag(
+        'guides',
+        'Guides - User-generated tutorials, strategies, and educational content',
+      )
+      .addTag('media', 'Media - Community fanart, videos, and submissions')
+      // Content Organization
+      .addTag('tags', 'Tags - Content categorization and tagging system')
+      .addTag('translations', 'Translations - Multi-language content support')
+      .addTag(
+        'search',
+        'Search - Text search across all content with spoiler protection',
+      )
+      // Community Features
+      .addTag('badges', 'Badges - User achievement and recognition system')
+      .addTag('page-views', 'Page Views - Analytics and usage tracking')
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-      tagsSorter: 'alpha',
-      operationsSorter: 'alpha',
-      docExpansion: 'none',
-      defaultModelsExpandDepth: 2,
-      defaultModelExpandDepth: 2,
-      displayRequestDuration: true,
-      filter: true,
-    },
-    customSiteTitle: 'L-file Usogui Database API Documentation',
-    customfavIcon: '/favicon.ico',
-    customCss: `
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api-docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+        docExpansion: 'none',
+        defaultModelsExpandDepth: 2,
+        defaultModelExpandDepth: 2,
+        displayRequestDuration: true,
+        filter: true,
+      },
+      customSiteTitle: 'L-file Usogui Database API Documentation',
+      customfavIcon: '/favicon.ico',
+      customCss: `
       .swagger-ui .topbar { display: none }
       .swagger-ui .info { margin: 50px 0; }
       .swagger-ui .info .title { color: #3b4151; }
     `,
-  });
+    });
+  }
 
   const port = process.env.PORT || 3001;
   console.log(`[Bootstrap] Calling app.listen() on port ${port}...`);
