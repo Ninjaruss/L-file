@@ -44,14 +44,8 @@ services:
       retries: 3
       start_period: 30s
 
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
+    mem_limit: 512m
+    cpus: 0.5
 
     networks:
       - dokploy-network

@@ -269,8 +269,8 @@ When you need to clean up orphaned files or estimate storage by feature, this ma
 **Don't build Next.js on your VPS.**
 Next.js builds are memory-hungry. A small VPS (2-4GB RAM) will struggle or fail. Build the Docker image in GitHub Actions and push it to GitHub Container Registry (GHCR). The server pulls the pre-built image. This is how the frontend CI is set up here.
 
-**Backend can build on the server.**
-NestJS builds are much lighter than Next.js builds. Dokploy building the backend directly from source is fine.
+**Don't build the backend on the VPS either.**
+Both frontend and backend images are built in GitHub Actions and pushed to GHCR. Dokploy only pulls pre-built images via `docker-compose.prod.yml` — the VPS never runs a Docker build.
 
 **`NEXT_PUBLIC_*` env vars bake into the bundle at build time.**
 If you need `NEXT_PUBLIC_API_URL` in the frontend, it must be set during the build (as a GitHub Actions secret), not as a server environment variable at runtime. This catches people off guard. Regular (non-public) env vars work the normal way.

@@ -13,9 +13,12 @@ on:
     branches: [main]
     paths:
       - 'client/**'
-      - 'server/**'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
+
+concurrency:
+  group: dokploy-deploy
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -96,7 +99,7 @@ jobs:
     name: Trigger Dokploy Redeploy
     runs-on: ubuntu-latest
     needs: [check-changes, build-and-push]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && (needs.check-changes.outputs.client-changed == 'true' || github.event_name == 'workflow_dispatch')
 
     steps:
       - name: Trigger Dokploy webhook

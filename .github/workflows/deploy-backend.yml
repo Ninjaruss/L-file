@@ -15,6 +15,10 @@ on:
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
+concurrency:
+  group: dokploy-deploy
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   # Hardcoded lowercase — github.repository returns "ninjaruss/L-file" which
