@@ -3,60 +3,27 @@
 import { Box, Container, Title, Text, Button, Group, Skeleton, SimpleGrid } from '@mantine/core'
 import { useMantineTheme } from '@mantine/core'
 import { CalendarSearch, Shield, FileText, MessageCircle, ExternalLink, Image } from 'lucide-react'
-import Link from 'next/link'
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar'
 import { DynamicVolumeShowcase } from '../components/DynamicVolumeShowcase'
-import type { VolumeShowcaseSlot } from '../lib/showcase-config'
-import type { ShowcaseSlot } from '../types'
-import { api } from '../lib/api'
 import { RecentActivityFeed } from '../components/RecentActivityFeed'
 import { FavoritesSection } from '../components/FavoritesSection'
 import { LazySection } from '../components/LazySection'
 import { useLandingData } from '../hooks/useLandingData'
+import { useSafeMotion } from '../hooks/useSafeMotion'
 import { motion } from 'motion/react'
 import Script from 'next/script'
 import { FAQ } from '@/components/FAQ'
 import { DiagonalStripes, SuitWatermark } from '../components/decorative/MangaPatterns'
-import { useState, useEffect } from 'react'
 
 export default function HomePage() {
   const theme = useMantineTheme()
-  const { data: landingData, loading: landingLoading, error: landingError } = useLandingData()
-
-  const [showcaseSlots, setShowcaseSlots] = useState<VolumeShowcaseSlot[] | null>(null)
-
-  useEffect(() => {
-    async function loadShowcase() {
-      try {
-        const items = await api.getShowcaseReadyVolumes()
-        if (items.length > 0) {
-          setShowcaseSlots(
-            items.map((slot: ShowcaseSlot) => ({
-              primary: {
-                id: slot.primary.volumeId,
-                backgroundImage: slot.primary.backgroundUrl,
-                popoutImage: slot.primary.popoutUrl,
-                title: slot.primary.title,
-              },
-              secondary: slot.secondary ? {
-                id: slot.secondary.volumeId,
-                backgroundImage: slot.secondary.backgroundUrl,
-                popoutImage: slot.secondary.popoutUrl,
-                title: slot.secondary.title,
-              } : undefined,
-            }))
-          )
-        } else {
-          setShowcaseSlots([])
-        }
-      } catch {
-        setShowcaseSlots([])
-      }
-    }
-    loadShowcase()
-  }, [])
-
-
+  const { data: landingData, showcaseSlots, loading: landingLoading, error: landingError, retry } = useLandingData()
+  const pageMotion = useSafeMotion({ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5 } })
+  const heroEyebrowMotion = useSafeMotion({ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.45, delay: 0.1 } })
+  const heroTitleMotion = useSafeMotion({ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay: 0.25 } })
+  const heroSubtitleMotion = useSafeMotion({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: 0.4 } })
+  const statsMotion = useSafeMotion({ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: 1.0 } })
+  const ctaMotion = useSafeMotion({ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: 1.1 } })
 
   // Structured data for SEO
   const structuredData = {
@@ -108,11 +75,7 @@ export default function HomePage() {
           paddingRight: 'clamp(1rem, 4vw, 2rem)'
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <motion.div {...pageMotion}>
         {/* Hero Section */}
         <Box
           style={{
@@ -139,7 +102,7 @@ export default function HomePage() {
           <Box style={{ position: 'relative', zIndex: 1 }}>
 
             {/* Eyebrow + suit divider */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }}>
+            <motion.div {...heroEyebrowMotion}>
               <Text style={{
                 fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em',
                 textTransform: 'uppercase', color: '#e11d48', marginBottom: '0.75rem',
@@ -150,7 +113,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* Large display title in OPTI Goudy */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}>
+            <motion.div {...heroTitleMotion}>
               <Title order={1} style={{
                 fontFamily: 'var(--font-opti-goudy-text)',
                 fontSize: 'clamp(4rem, 10vw, 7rem)',
@@ -163,8 +126,8 @@ export default function HomePage() {
             </motion.div>
 
             {/* Subtitle + search bar */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
-              <Text size="md" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '2rem', letterSpacing: '0.04em' }}>
+            <motion.div {...heroSubtitleMotion}>
+              <Text size="md" style={{ color: 'rgba(255,255,255,0.75)', marginBottom: '2rem', letterSpacing: '0.04em' }}>
                 A fan-built database dedicated to Usogui (Lie Eater)
               </Text>
               <Box style={{
@@ -205,17 +168,18 @@ export default function HomePage() {
         <Box aria-hidden="true" style={{ height: 1, margin: '0.5rem 0 2.5rem 0', background: 'linear-gradient(to right, transparent, rgba(225,29,72,0.2), transparent)' }} />
 
         {/* Site Statistics Section */}
-        {!landingError && (
+        {landingError ? (
+          <Box style={{ marginBottom: '2rem', textAlign: 'center' }}>
+            <Text size="sm" c="dimmed" mb="sm">Could not load site statistics.</Text>
+            <Button variant="light" size="sm" onClick={retry}>Retry</Button>
+          </Box>
+        ) : (
           <Box style={{ marginBottom: '2rem' }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.0 }}
-            >
+            <motion.div {...statsMotion}>
               {/* Section label with gradient lines */}
               <Group justify="center" gap="sm" style={{ marginBottom: '1.5rem' }}>
                 <Box style={{ height: 1, flex: 1, maxWidth: 120, background: 'linear-gradient(to right, transparent, rgba(225,29,72,0.3))' }} />
-                <Text style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
+                <Text style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>
                   Site Statistics
                 </Text>
                 <Box style={{ height: 1, flex: 1, maxWidth: 120, background: 'linear-gradient(to left, transparent, rgba(225,29,72,0.3))' }} />
@@ -324,11 +288,7 @@ export default function HomePage() {
         <Box aria-hidden="true" style={{ height: 1, margin: '0.5rem 0 2.5rem 0', background: 'linear-gradient(to right, transparent, rgba(225,29,72,0.2), transparent)' }} />
 
         {/* Fluxer CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.1 }}
-        >
+        <motion.div {...ctaMotion}>
           <Box
             className="manga-panel-border"
             style={{
@@ -357,7 +317,7 @@ export default function HomePage() {
               }}>
                 Join Our Fluxer Community
               </Title>
-              <Text size="lg" style={{ color: 'rgba(255,255,255,0.65)', maxWidth: 540, margin: '0 auto 2rem auto', lineHeight: 1.6 }}>
+              <Text size="lg" style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 540, margin: '0 auto 2rem auto', lineHeight: 1.6 }}>
                 Discuss gambles, character analysis, and ongoing reads with other Usogui fans — and help shape the database.
               </Text>
               <Button

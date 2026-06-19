@@ -107,13 +107,11 @@ export class AuthFluxerController {
         (req.user as User)?.username,
       );
 
-      // Pass both tokens in the redirect URL so the frontend can establish the
-      // session via a direct POST (cookies set on redirect responses are
-      // unreliable across browsers and cross-domain setups).
-      const rtParam = loginResult.refresh_token
-        ? `&rt=${encodeURIComponent(loginResult.refresh_token)}`
-        : '';
-      const redirectUrl = `${frontendUrl}/auth/callback?token=${loginResult.access_token}${rtParam}`;
+      const code = this.authService.createOAuthExchangeCode(
+        loginResult.refresh_token,
+        loginResult.access_token,
+      );
+      const redirectUrl = `${frontendUrl}/auth/callback?code=${encodeURIComponent(code)}`;
       console.log('[FLUXER CALLBACK] Redirecting to frontend callback');
       res.redirect(redirectUrl);
     } catch (err: any) {

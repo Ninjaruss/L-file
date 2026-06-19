@@ -50,6 +50,7 @@ import { useNavigationSearch } from '../hooks/useNavigationSearch'
 import { motion, AnimatePresence } from 'motion/react'
 import { NavigationData, getCategoryColor } from '../types/navigation'
 import { EntityAccentKey, getEntityAccent, getEntityThemeColor, semanticColors, textColors, outlineStyles } from '../lib/mantine-theme'
+import { LiveRegion } from './LiveRegion'
 
 interface SearchResult {
   id: number
@@ -66,6 +67,7 @@ const Navigation: React.FC = () => {
   const { user, logout } = useAuth()
   const pathname = usePathname()
   const theme = useMantineTheme()
+  const isHomePage = pathname === '/'
 
   // Mobile menu open state (controlled Menu)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -122,7 +124,8 @@ const Navigation: React.FC = () => {
     handleSearchResultClick,
     handleSearchKeyDown,
     handleSearchSubmit,
-    shouldShowSearchDropdown
+    shouldShowSearchDropdown,
+    searchAnnouncement,
   } = useNavigationSearch()
   const accentColor = theme.other?.usogui?.red ?? theme.colors.red?.[5] ?? '#e11d48'
   // Use centralized outline styles for consistency
@@ -130,12 +133,12 @@ const Navigation: React.FC = () => {
     transition: outlineStyles.transition,
     '&:hover': {
       boxShadow: `inset 0 0 0 1px ${outlineStyles.colors.hover}`,
-      outline: 'none'
     },
-    '&:focus': {
+    '&:focus-visible': {
       boxShadow: `inset 0 0 0 1px ${outlineStyles.colors.hover}`,
-      outline: 'none'
-    }
+      outline: '2px solid var(--usogui-red)',
+      outlineOffset: '2px',
+    },
   }
   // accountMenuHighlight removed - rely on CSS hover/focus styles instead
   const [mobileAccountHighlight, setMobileAccountHighlight] = useState<string | null>(null)
@@ -362,11 +365,13 @@ const Navigation: React.FC = () => {
 
         {/* Desktop Navigation - Center */}
         <Group
+          component="nav"
+          aria-label="Primary"
           gap="xl"
           visibleFrom="md"
           style={{ 
             alignItems: 'center',
-            flexGrow: 1
+            flexGrow: 1,
           }}
           data-testid="nav-buttons-container"
         >
@@ -688,7 +693,8 @@ const Navigation: React.FC = () => {
 
         {/* Right Side - Search + Profile */}
         <Group gap="md" align="center">
-          {/* Search Bar - Desktop */}
+          {/* Search Bar - Desktop (hidden on homepage — hero search is primary) */}
+          {!isHomePage && (
           <Box
             visibleFrom="md"
             style={{ 
@@ -881,6 +887,7 @@ const Navigation: React.FC = () => {
             )}
           </AnimatePresence>
           </Box>
+          )}
 
           {/* User Profile/Login Section */}
           {user ? (
@@ -1466,6 +1473,7 @@ const Navigation: React.FC = () => {
           </Menu.Dropdown>
         </Menu>
       </Group>
+      <LiveRegion message={searchAnnouncement} />
     </header>
   )
 }

@@ -26,9 +26,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const userId =
       typeof payload.sub === 'string' ? parseInt(payload.sub, 10) : payload.sub;
 
-    let user: User;
+    let user: User | null;
     try {
-      user = await this.usersService.getUserProfile(userId);
+      user = await this.usersService.findOneForAuth(userId);
     } catch (err) {
       // Re-throw database/infrastructure errors as 500 so they don't appear as
       // auth failures and don't trigger client-side refresh loops.
@@ -44,6 +44,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         );
       }
       // User no longer exists or was deleted - invalidate the token
+      throw new UnauthorizedException('User no longer exists');
+    }
+
+    if (!user) {
       throw new UnauthorizedException('User no longer exists');
     }
 

@@ -15,6 +15,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ExchangeCodeDto } from './dto/exchange-code.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { PasswordResetRequestDto } from './dto/password-reset-request.dto';
 import { PasswordResetConfirmDto } from './dto/password-reset-confirm.dto';
@@ -61,7 +62,6 @@ export class AuthController {
       path: '/',
     };
 
-    console.log('[AUTH COOKIE] Cookie options:', JSON.stringify(options));
     return options as CookieOptions;
   }
 
@@ -184,23 +184,50 @@ export class AuthController {
     },
   })
   @Post('refresh')
-  async refresh(@Req() req: AuthenticatedRequest) {
-    console.log(
-      '[AUTH REFRESH] All cookies received:',
-      JSON.stringify(req.cookies),
-    );
-    console.log('[AUTH REFRESH] Cookie header:', req.headers.cookie);
-    console.log('[AUTH REFRESH] Origin:', req.headers.origin);
-    console.log('[AUTH REFRESH] Referer:', req.headers.referer);
-
+  async refresh(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const refresh = req.cookies?.refreshToken;
     if (!refresh) {
-      console.error('[AUTH REFRESH] No refresh token in cookies');
       throw new UnauthorizedException('No refresh token');
     }
     const payload = await this.auth.refreshAccessToken(refresh);
-    // Return access token and canonical user so client can refresh its stored user
-    return { access_token: payload.access_token, user: payload.user };
+    if (payload.refresh_token) {
+      res.cookie(
+        'refreshToken',
+        payload.refresh_token,
+        this.getRefreshTokenCookieOptions(),
+      );
+    }
+    const { refresh_token: _refresh, ...safe } = payload;
+    return safe;
+  }
+
+  @ApiOperation({
+    summary: 'Exchange OAuth authorization code',
+    description:
+      'Exchanges a one-time authorization code from the OAuth callback for an access token and sets the refresh token cookie.',
+  })
+  @ApiOkResponse({ description: 'Session established successfully' })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired authorization code',
+  })
+  @Post('exchange-code')
+  async exchangeCode(
+    @Body() dto: ExchangeCodeDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const payload = await this.auth.exchangeOAuthCode(dto.code);
+    if (payload.refresh_token) {
+      res.cookie(
+        'refreshToken',
+        payload.refresh_token,
+        this.getRefreshTokenCookieOptions(),
+      );
+    }
+    const { refresh_token: _refresh, ...safe } = payload;
+    return safe;
   }
 
   @ApiOperation({
@@ -218,14 +245,13 @@ export class AuthController {
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token');
     }
-    // Validate the token is legitimate before setting the cookie
-    await this.auth.refreshAccessToken(refreshToken);
+    const payload = await this.auth.refreshAccessToken(refreshToken);
     res.cookie(
       'refreshToken',
-      refreshToken,
+      payload.refresh_token,
       this.getRefreshTokenCookieOptions(),
     );
-    return { success: true };
+    return { success: true, access_token: payload.access_token };
   }
 
   @ApiOperation({

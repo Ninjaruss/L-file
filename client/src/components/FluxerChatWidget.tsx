@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { ActionIcon, Transition, TextInput } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { MessageCircle, X, Send, ExternalLink } from 'lucide-react'
 import { useAuth } from '../providers/AuthProvider'
 import { api } from '../lib/api'
@@ -47,12 +48,14 @@ function relativeTime(iso: string): string {
 
 export function FluxerChatWidget() {
   const { user, loginWithFluxer } = useAuth()
+  const isMobile = useMediaQuery('(max-width: 480px)')
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<FluxerMsg[]>([])
   const [announcement, setAnnouncement] = useState<Announcement>(null)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const announcePollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -61,8 +64,9 @@ export function FluxerChatWidget() {
     try {
       const data = await api.getFluxerMessages()
       setMessages(data)
+      setLoadError(null)
     } catch {
-      // silent — show stale messages
+      setLoadError('Could not load messages.')
     }
   }, [])
 
@@ -88,9 +92,17 @@ export function FluxerChatWidget() {
     pollRef.current = setInterval(fetchMessages, POLL_INTERVAL_MS)
     announcePollRef.current = setInterval(fetchAnnouncement, ANNOUNCEMENT_POLL_MS)
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && open) {
+        fetchMessages()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
       if (announcePollRef.current) clearInterval(announcePollRef.current)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [open, fetchMessages, fetchAnnouncement])
 
@@ -174,14 +186,15 @@ export function FluxerChatWidget() {
             style={{
               ...styles,
               position: 'fixed',
-              bottom: 24,
-              left: 24,
+              bottom: isMobile ? 0 : 24,
+              left: isMobile ? 0 : 24,
+              right: isMobile ? 0 : 'auto',
               zIndex: 999,
-              width: 340,
-              maxHeight: 500,
+              width: isMobile ? '100%' : 340,
+              maxHeight: isMobile ? 'min(70vh, 500px)' : 500,
               display: 'flex',
               flexDirection: 'column',
-              borderRadius: 16,
+              borderRadius: isMobile ? '16px 16px 0 0' : 16,
               overflow: 'hidden',
               background: '#1a1a2e',
               border: '1px solid #2a2a4a',
@@ -236,12 +249,12 @@ export function FluxerChatWidget() {
                   <span style={{ color: '#a5b4fc', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     Latest Announcement
                   </span>
-                  <span style={{ color: '#555', fontSize: 10, marginLeft: 'auto' }}>
+                  <span style={{ color: '#9ca3af', fontSize: 10, marginLeft: 'auto' }}>
                     {relativeTime(announcement.timestamp)}
                   </span>
                 </div>
-                <div style={{ color: '#ddd', fontSize: 12, lineHeight: 1.5 }}>{announcement.content}</div>
-                <div style={{ color: '#888', fontSize: 11, marginTop: 3 }}>— {announcement.authorUsername}</div>
+                <div style={{ color: '#e5e7eb', fontSize: 12, lineHeight: 1.5 }}>{announcement.content}</div>
+                <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 3 }}>— {announcement.authorUsername}</div>
               </div>
             )}
 
@@ -255,8 +268,20 @@ export function FluxerChatWidget() {
               gap: 10,
               minHeight: 180,
             }}>
-              {messages.length === 0 && (
-                <div style={{ color: '#555', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
+              {loadError && (
+                <div style={{ color: '#f87171', fontSize: 11, textAlign: 'center', marginBottom: 8 }}>
+                  {loadError}{' '}
+                  <button
+                    type="button"
+                    onClick={fetchMessages}
+                    style={{ background: 'none', border: 'none', color: '#a5b4fc', cursor: 'pointer', textDecoration: 'underline', fontSize: 11 }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              {messages.length === 0 && !loadError && (
+                <div style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
                   No messages yet
                 </div>
               )}
@@ -282,9 +307,9 @@ export function FluxerChatWidget() {
                   <div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
                       <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{msg.author.username}</span>
-                      <span style={{ color: '#444', fontSize: 10 }}>{relativeTime(msg.timestamp)}</span>
+                      <span style={{ color: '#9ca3af', fontSize: 10 }}>{relativeTime(msg.timestamp)}</span>
                     </div>
-                    <div style={{ color: '#ccc', fontSize: 12, lineHeight: 1.4, wordBreak: 'break-word' }}>
+                    <div style={{ color: '#e5e7eb', fontSize: 12, lineHeight: 1.4, wordBreak: 'break-word' }}>
                       {msg.content}
                     </div>
                   </div>

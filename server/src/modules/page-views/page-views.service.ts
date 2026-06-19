@@ -25,6 +25,21 @@ export class PageViewsService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
+    if (ipAddress) {
+      const dedupeThreshold = new Date(Date.now() - 30 * 60 * 1000);
+      const recentDuplicate = await this.pageViewRepository.findOne({
+        where: {
+          pageType,
+          pageId,
+          ipAddress,
+        },
+        order: { createdAt: 'DESC' },
+      });
+      if (recentDuplicate && recentDuplicate.createdAt >= dedupeThreshold) {
+        return;
+      }
+    }
+
     const pageView = this.pageViewRepository.create({
       pageType,
       pageId,

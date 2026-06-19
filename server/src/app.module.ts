@@ -40,7 +40,6 @@ import { User } from './entities/user.entity';
 import { Annotation } from './entities/annotation.entity';
 import { EditLog } from './entities/edit-log.entity';
 import { UserFavoriteCharacter } from './entities/user-favorite-character.entity';
-import { Logger } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -57,17 +56,13 @@ import { Logger } from '@nestjs/common';
       useFactory: (configService: ConfigService) => {
         const dbConfig = getDatabaseConfig(configService);
 
-        // Add safeguards for production
+        // Block schema sync in production — it can destroy data
         if (
           configService.get('NODE_ENV') === 'production' &&
           configService.get('ENABLE_SCHEMA_SYNC') === 'true'
         ) {
-          const logger = new Logger('DatabaseConfig');
-          logger.warn(
-            'WARNING: Schema synchronization is enabled in production environment!',
-          );
-          logger.warn(
-            'This can cause data loss. Consider disabling ENABLE_SCHEMA_SYNC in production.',
+          throw new Error(
+            'FATAL: ENABLE_SCHEMA_SYNC=true is not allowed in production. Disable it and use migrations instead.',
           );
         }
 

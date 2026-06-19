@@ -7,7 +7,6 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
-  Patch,
   Request,
 } from '@nestjs/common';
 import {
@@ -25,7 +24,6 @@ import { UserRole } from '../../entities/user.entity';
 import {
   AwardBadgeDto,
   RevokeBadgeDto,
-  UpdateCustomRoleDto,
 } from './dto/award-badge.dto';
 
 @ApiTags('badges')
@@ -45,6 +43,16 @@ export class BadgesController {
   @ApiResponse({ status: 200, description: 'List of contributors' })
   async getContributors() {
     return this.badgesService.getContributors();
+  }
+
+  @Get('statistics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get badge statistics (admin only)' })
+  @ApiResponse({ status: 200, description: 'Badge statistics' })
+  async getBadgeStatistics() {
+    return this.badgesService.getBadgeStatistics();
   }
 
   @Get(':id')
@@ -70,7 +78,7 @@ export class BadgesController {
   async awardBadge(@Body() awardBadgeDto: AwardBadgeDto, @Request() req) {
     const { userId, badgeId, reason, metadata, year, expiresAt } =
       awardBadgeDto;
-    const awardedByUserId = req.user.userId;
+    const awardedByUserId = req.user.id;
 
     return this.badgesService.awardBadge(
       userId,
@@ -99,7 +107,7 @@ export class BadgesController {
     @Request() req,
   ) {
     const { reason } = revokeBadgeDto;
-    const revokedByUserId = req.user.userId;
+    const revokedByUserId = req.user.id;
 
     await this.badgesService.revokeBadge(
       userId,
@@ -124,15 +132,5 @@ export class BadgesController {
       message: 'Badge expiration check completed',
       expiredCount,
     };
-  }
-
-  @Get('statistics')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get badge statistics (admin only)' })
-  @ApiResponse({ status: 200, description: 'Badge statistics' })
-  async getBadgeStatistics() {
-    return this.badgesService.getBadgeStatistics();
   }
 }

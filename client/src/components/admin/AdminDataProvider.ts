@@ -524,7 +524,11 @@ export const AdminDataProvider: DataProvider = {
         const { entityType } = params.filter || {}
         if (entityType) query.entityType = entityType
 
-        const response = await api.get<unknown>('/edit-log/recent', { params: query })
+        const qs = new URLSearchParams(
+          Object.entries(query).map(([k, v]) => [k, String(v)])
+        ).toString()
+
+        const response = await api.get<unknown>(`/edit-log/recent${qs ? `?${qs}` : ''}`)
         const responseData = response as Record<string, unknown>
         const items = Array.isArray(response) ? response : responseData?.data ?? []
         const total = (responseData?.total as number) ?? (items as any[]).length

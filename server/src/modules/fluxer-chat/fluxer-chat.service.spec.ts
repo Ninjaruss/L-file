@@ -12,6 +12,7 @@ const mockAnnouncementRepo = {
 };
 
 const mockUserRepo = {
+  findOne: jest.fn(),
   createQueryBuilder: jest.fn().mockReturnValue({
     select: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
@@ -24,6 +25,7 @@ const mockConfigService = {
   get: jest.fn((key: string) => {
     if (key === 'FLUXER_BOT_TOKEN') return 'test-bot-token';
     if (key === 'FLUXER_CHAT_CHANNEL_ID') return '1234567890';
+    if (key === 'FLUXER_WEBHOOK_URL') return 'https://example.com/webhook';
     return undefined;
   }),
 };
@@ -53,11 +55,10 @@ describe('FluxerChatService', () => {
   });
 
   describe('sendMessage', () => {
-    it('throws FLUXER_TOKEN_MISSING when user has no access token', async () => {
-      mockUserRepo.createQueryBuilder().getOne.mockResolvedValue({
+    it('throws FLUXER_TOKEN_MISSING when user has no linked Fluxer account', async () => {
+      mockUserRepo.findOne.mockResolvedValue({
         id: 1,
-        fluxerId: 'f1',
-        fluxerAccessToken: null,
+        fluxerId: null,
       });
 
       await expect(service.sendMessage(1, 'hello')).rejects.toThrow(

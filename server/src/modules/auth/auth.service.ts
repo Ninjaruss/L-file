@@ -9,6 +9,7 @@ import { User, UserRole } from '../../entities/user.entity';
 import { randomBytes } from 'crypto';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { createAuthCode, consumeAuthCode } from './auth-code.store';
 
 @Injectable()
 export class AuthService {
@@ -182,7 +183,7 @@ export class AuthService {
     };
   }
 
-  // Refresh access token using a stored refresh token
+  // Refresh access token using a stored refresh token (rotates refresh token)
   async refreshAccessToken(refreshToken: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token provided');
@@ -193,8 +194,42 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid refresh token');
 
     const access_token = this.signToken(user);
+    const newRefreshToken = randomBytes(48).toString('hex');
+    await this.usersService.setRefreshToken(user.id, newRefreshToken);
+
     return {
       access_token,
+      refresh_token: newRefreshToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        fluxerId: user.fluxerId,
+        fluxerUsername: user.fluxerUsername,
+        fluxerAvatar: user.fluxerAvatar,
+      },
+    };
+  }
+
+  createOAuthExchangeCode(refreshToken: string, accessToken: string): string {
+    return createAuthCode(refreshToken, accessToken);
+  }
+
+  async exchangeOAuthCode(code: string) {
+    const entry = consumeAuthCode(code);
+    if (!entry) {
+      throw new UnauthorizedException('Invalid or expired authorization code');
+    }
+
+    const user = await this.usersService.findByRefreshToken(entry.refreshToken);
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired authorization code');
+    }
+
+    return {
+      access_token: entry.accessToken,
+      refresh_token: entry.refreshToken,
       user: {
         id: user.id,
         username: user.username,

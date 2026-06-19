@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThan, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole, ProfilePictureType } from '../../entities/user.entity';
 import { Quote } from '../../entities/quote.entity';
@@ -24,12 +24,16 @@ import { Annotation, AnnotationStatus } from '../../entities/annotation.entity';
 import { Event } from '../../entities/event.entity';
 import { UserFavoriteCharacter } from '../../entities/user-favorite-character.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { createQueryLimiter } from '../../utils/db-query-limiter';
 import { EmailService } from '../email/email.service';
 
 // Refresh token expiration duration (30 days)
 const REFRESH_TOKEN_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function hashRefreshToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 @Injectable()
 export class UsersService {
@@ -275,7 +279,11 @@ export class UsersService {
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.repo.findOne({ where: { username } });
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.username = :username', { username })
+      .getOne();
   }
 
   async findByFluxerId(fluxerId: string): Promise<User | null> {
@@ -283,15 +291,62 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.repo.findOne({ where: { email } });
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.email = :email', { email })
+      .getOne();
   }
 
   async findByVerificationToken(token: string): Promise<User | null> {
-    return this.repo.findOne({ where: { emailVerificationToken: token } });
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.emailVerificationToken')
+      .where('user.emailVerificationToken = :token', { token })
+      .getOne();
   }
 
   async findByPasswordResetToken(token: string): Promise<User | null> {
-    return this.repo.findOne({ where: { passwordResetToken: token } });
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect([
+        'user.passwordResetToken',
+        'user.passwordResetExpires',
+        'user.password',
+      ])
+      .where('user.passwordResetToken = :token', { token })
+      .getOne();
+  }
+
+  async findOneForAuth(userId: number): Promise<User | null> {
+    return this.repo.findOne({
+      where: { id: userId },
+      select: [
+        'id',
+        'username',
+        'email',
+        'role',
+        'customRole',
+        'isEmailVerified',
+        'userProgress',
+        'profilePictureType',
+        'selectedCharacterMediaId',
+        'favoriteQuoteId',
+        'favoriteGambleId',
+        'createdAt',
+        'fluxerId',
+        'fluxerUsername',
+        'fluxerAvatar',
+      ],
+    });
+  }
+
+  private async findOneWithPassword(userId: number): Promise<User | null> {
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.id = :userId', { userId })
+      .getOne();
   }
 
   // --- Create user ---
@@ -479,7 +534,7 @@ export class UsersService {
     userId: number,
     providerToRemove: 'fluxer',
   ): Promise<boolean> {
-    const user = await this.repo.findOne({ where: { id: userId } });
+    const user = await this.findOneWithPassword(userId);
     if (!user) return false;
 
     return !!user.password;
@@ -492,8 +547,7 @@ export class UsersService {
   // --- Refresh token helpers ---
   async setRefreshToken(userId: number, token: string): Promise<void> {
     const user = await this.findOne(userId);
-    user.refreshToken = token;
-    // SECURITY: Set expiration time for refresh token
+    user.refreshToken = hashRefreshToken(token);
     user.refreshTokenExpiresAt = new Date(
       Date.now() + REFRESH_TOKEN_EXPIRATION_MS,
     );
@@ -508,11 +562,15 @@ export class UsersService {
   }
 
   async verifyRefreshToken(userId: number, token: string): Promise<boolean> {
-    const user = await this.findOne(userId);
-    if (!user.refreshToken || user.refreshToken !== token) {
+    const user = await this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.refreshToken')
+      .addSelect('user.refreshTokenExpiresAt')
+      .where('user.id = :userId', { userId })
+      .getOne();
+    if (!user?.refreshToken || user.refreshToken !== hashRefreshToken(token)) {
       return false;
     }
-    // SECURITY: Check if refresh token has expired
     if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
       return false;
     }
@@ -521,13 +579,13 @@ export class UsersService {
 
   async findByRefreshToken(token: string): Promise<User | null> {
     if (!token) return null;
-    // SECURITY: Only return user if refresh token exists AND hasn't expired
-    return this.repo.findOne({
-      where: {
-        refreshToken: token,
-        refreshTokenExpiresAt: MoreThan(new Date()),
-      },
-    });
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.refreshToken')
+      .addSelect('user.refreshTokenExpiresAt')
+      .where('user.refreshToken = :token', { token: hashRefreshToken(token) })
+      .andWhere('user.refreshTokenExpiresAt > :now', { now: new Date() })
+      .getOne();
   }
 
   // --- Profile customization methods ---
@@ -1221,7 +1279,8 @@ export class UsersService {
     newEmail: string,
     currentPassword?: string,
   ): Promise<{ message: string }> {
-    const user = await this.findOne(userId);
+    const user = await this.findOneWithPassword(userId);
+    if (!user) throw new NotFoundException('User not found');
 
     if (user.password) {
       // Account has a password — current password is required
@@ -1257,7 +1316,8 @@ export class UsersService {
     newPassword: string,
     currentPassword?: string,
   ): Promise<{ message: string }> {
-    const user = await this.findOne(userId);
+    const user = await this.findOneWithPassword(userId);
+    if (!user) throw new NotFoundException('User not found');
 
     if (user.password) {
       // Account already has a password — current password is required

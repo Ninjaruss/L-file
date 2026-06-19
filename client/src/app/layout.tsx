@@ -1,9 +1,17 @@
 import type { Metadata } from 'next'
+import { Noto_Sans } from 'next/font/google'
 import './globals.css'
 import '../lib/jquery-stub'
 import { ClientProviders } from '../providers/ClientProviders'
 import { LayoutWrapper } from '../components/LayoutWrapper'
 import { ColorSchemeScript } from '@mantine/core'
+
+const notoSans = Noto_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-noto-sans-next',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -59,14 +67,11 @@ export default function RootLayout({
         <ColorSchemeScript defaultColorScheme="dark" forceColorScheme="dark" />
         {/* Preload local font to eliminate render-blocking */}
         <link rel="preload" href="/fonts/OPTIGoudy-Text.otf" as="font" type="font/otf" crossOrigin="anonymous" />
-        {/* Preconnect to Google Fonts (used in globals.css) */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Preconnect to R2 media storage — replace with your actual R2_PUBLIC_URL host */}
+        {/* Preconnect to R2 media storage */}
         <link rel="preconnect" href="https://pub-c63e2958587a4d85b5c93e7e867a569c.r2.dev" />
         <link rel="dns-prefetch" href="https://pub-c63e2958587a4d85b5c93e7e867a569c.r2.dev" />
       </head>
-      <body suppressHydrationWarning>
+      <body className={notoSans.variable} suppressHydrationWarning>
         <a href="#main-content" className="skip-to-content">
           Skip to main content
         </a>

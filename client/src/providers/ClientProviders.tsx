@@ -13,10 +13,10 @@ import { theme as muiTheme } from '../lib/theme'
 import { AuthProvider } from './AuthProvider'
 import { ProgressProvider } from './ProgressProvider'
 import { FloatingProgressIndicator } from '../components/FloatingProgressIndicator'
+import { NavigationSkeleton } from '../components/NavigationSkeleton'
 
-// Dynamically import Navigation with SSR disabled to prevent hydration issues
 const Navigation = dynamic(() => import('../components/Navigation'), {
-  ssr: false
+  loading: () => <NavigationSkeleton />,
 })
 
 interface ClientProvidersProps {
@@ -79,9 +79,9 @@ export function ClientProviders({ children }: ClientProvidersProps) {
             <Notifications />
             <AuthProvider>
               <ProgressProvider>
-                <main className="min-h-screen bg-usogui-black">
+                <div className="min-h-screen bg-usogui-black">
                   {children}
-                </main>
+                </div>
               </ProgressProvider>
             </AuthProvider>
           </ThemeProvider>
@@ -97,9 +97,9 @@ export function ClientProviders({ children }: ClientProvidersProps) {
       <AuthProvider>
         <ProgressProvider>
           <ConditionalNavigation />
-          <main className="min-h-screen bg-usogui-black">
+          <div className="min-h-screen bg-usogui-black">
             {children}
-          </main>
+          </div>
           <ConditionalFloatingProgress />
         </ProgressProvider>
       </AuthProvider>

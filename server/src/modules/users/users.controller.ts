@@ -40,6 +40,7 @@ import {
 import { BadgesService } from '../badges/badges.service';
 import { UpdateCustomRoleDto } from '../badges/dto/award-badge.dto';
 import { SetFavoriteCharactersDto } from './dto/set-favorite-characters.dto';
+import { sanitizeUser, sanitizeUsers } from './user.utils';
 
 @ApiTags('users')
 @Controller('users')
@@ -401,16 +402,17 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-  async getAll(@Query('page') page = '1', @Query('limit') limit = '1000') {
+  async getAll(@Query('page') page = '1', @Query('limit') limit = '100') {
     const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 1000;
+    const requestedLimit = parseInt(limit) || 100;
+    const limitNum = Math.min(requestedLimit, 100);
     const result = await this.service.findAll({
       page: pageNum,
       limit: limitNum,
     });
 
     return {
-      data: result.data,
+      data: sanitizeUsers(result.data),
       total: result.total,
       page: result.page,
       perPage: limitNum,
@@ -796,7 +798,7 @@ export class UsersController {
   async getOne(@Param('id', ParseIntPipe) id: number) {
     const user = await this.service.findOne(id);
     const stats = await this.service.getUserProfileStats(id);
-    return { ...user, stats };
+    return { ...sanitizeUser(user), stats };
   }
 
   @Post()
@@ -852,7 +854,7 @@ export class UsersController {
   create(
     @Body() data: { username: string; email: string; password: string },
   ): Promise<User> {
-    return this.service.create(data);
+    return this.service.create(data).then(sanitizeUser);
   }
 
   @Put(':id')
@@ -891,7 +893,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateUserDto,
   ): Promise<User> {
-    return this.service.update(id, data);
+    return this.service.update(id, data).then(sanitizeUser);
   }
 
   @Delete(':id')
