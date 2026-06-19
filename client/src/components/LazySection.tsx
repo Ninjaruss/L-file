@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, ReactNode } from 'react'
 import { Box, Skeleton } from '@mantine/core'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 
 interface LazySectionProps {
   children: ReactNode
@@ -21,6 +21,7 @@ export function LazySection({
   delay = 0,
   minHeight = 200
 }: LazySectionProps) {
+  const reduceMotion = useReducedMotion()
   const [isVisible, setIsVisible] = useState(false)
   const [shouldRender, setShouldRender] = useState(false)
   const elementRef = useRef<HTMLDivElement>(null)
@@ -65,6 +66,9 @@ export function LazySection({
   return (
     <Box ref={elementRef} style={{ minHeight: isVisible ? 'auto' : minHeight }}>
       {shouldRender ? (
+        reduceMotion ? (
+          children
+        ) : (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -72,6 +76,7 @@ export function LazySection({
         >
           {children}
         </motion.div>
+        )
       ) : (
         fallback || defaultFallback
       )}

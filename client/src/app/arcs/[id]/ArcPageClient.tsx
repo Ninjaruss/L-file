@@ -388,7 +388,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                   title: event.title,
                   chapterNumber: event.chapterNumber,
                   type: event.type as 'gamble' | 'decision' | 'reveal' | 'shift' | 'resolution',
-                  characters: event.characters?.map((char) => char.name),
+                  characters: event.characters?.map((char) => ({ id: char.id, name: char.name })),
                   description: event.description,
                   isSpoiler: event.chapterNumber > initialArc.startChapter
                 }))}

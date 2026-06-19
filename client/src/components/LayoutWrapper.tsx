@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Box } from '@mantine/core'
 import { Footer } from './Footer'
 import { FluxerChatWidget } from './FluxerChatWidget'
+import ErrorBoundary from './ErrorBoundary'
 
 interface LayoutWrapperProps {
   children: React.ReactNode
@@ -23,7 +24,7 @@ export const LayoutWrapper: React.FC<LayoutWrapperProps> = ({ children }) => {
       }}
     >
       <Box component="main" id="main-content" style={{ flex: 1 }}>
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
       </Box>
       {!isAdminPage && <Footer />}
       {!isAdminPage && <FluxerChatWidget />}

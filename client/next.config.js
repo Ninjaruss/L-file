@@ -3,9 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
+    // TODO: enable after admin panel type migration (30+ pre-existing errors in admin/*)
     ignoreBuildErrors: true,
   },
 
@@ -162,12 +163,31 @@ const nextConfig = {
             value: 'DENY',
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://l-file.com https://*.l-file.com https://*.r2.dev https://fluxerusercontent.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
+        ],
+      },
+      {
+        source: '/fonts/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -203,7 +223,7 @@ const nextConfig = {
 
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react', '@mantine/core', '@mantine/hooks'],
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react', '@mantine/core', '@mantine/hooks', 'motion/react', '@tiptap/react', '@tiptap/starter-kit'],
   },
 
   // Turbopack configuration for better performance in development
@@ -228,6 +248,12 @@ const nextConfig = {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             priority: 10,
+            enforce: true,
+          },
+          reactAdmin: {
+            test: /[\\/]node_modules[\\/](react-admin|ra-core)[\\/]/,
+            name: 'react-admin',
+            priority: 25,
             enforce: true,
           },
           mui: {

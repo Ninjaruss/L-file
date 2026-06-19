@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../lib/api'
 import { API_BASE_URL } from '../lib/api'
+import { devLog } from '../lib/devLog'
 
 // Extend Window interface to include authPopup
 declare global {
@@ -88,12 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Prevent multiple simultaneous initialization attempts
     if (isInitializing) {
-      console.log('[AUTH PROVIDER] Already initializing, skipping...')
+      devLog('[AUTH PROVIDER] Already initializing, skipping...')
       return
     }
 
     setIsInitializing(true)
-    console.log('[AUTH PROVIDER] Initializing auth...')
+    devLog('[AUTH PROVIDER] Initializing auth...')
 
     try {
       // Check for a one-time sessionStorage bridge token written by /auth/callback
@@ -106,11 +107,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const bridge = JSON.parse(bridgeStr)
           if (bridge.token && bridge.expires > Date.now()) {
-            console.log('[AUTH PROVIDER] Found OAuth token bridge, using it')
+            devLog('[AUTH PROVIDER] Found OAuth token bridge, using it')
             api.setToken(bridge.token)
             const userData = await api.getCurrentUser()
             setUser(userData)
-            console.log('[AUTH PROVIDER] User loaded from bridge token:', userData.username)
+            devLog('[AUTH PROVIDER] User loaded from bridge token:', userData.username)
             return
           }
         } catch {
@@ -124,26 +125,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Check if we have a token in memory (e.g., from a previous auth in this session)
       if (api.hasToken()) {
-        console.log('[AUTH PROVIDER] Token exists in memory, fetching user data')
+        devLog('[AUTH PROVIDER] Token exists in memory, fetching user data')
         try {
           const userData = await api.getCurrentUser()
-          console.log('[AUTH PROVIDER] User data received:', userData.username)
+          devLog('[AUTH PROVIDER] User data received:', userData.username)
           setUser(userData)
         } catch (error) {
           console.error('[AUTH PROVIDER] Error fetching user data:', error)
 
           // If token is expired, try refreshing it
           if ((error as any).status === 401) {
-            console.log('[AUTH PROVIDER] Token expired, attempting refresh...')
+            devLog('[AUTH PROVIDER] Token expired, attempting refresh...')
             try {
               const refreshResult = await api.refreshToken()
               if (refreshResult && refreshResult.access_token) {
-                console.log('[AUTH PROVIDER] Token refresh successful, setting user')
+                devLog('[AUTH PROVIDER] Token refresh successful, setting user')
                 api.setToken(refreshResult.access_token)
 
                 // Fetch user data again with new token
                 const userData = await api.getCurrentUser()
-                console.log('[AUTH PROVIDER] User data received after token refresh:', userData.username)
+                devLog('[AUTH PROVIDER] User data received after token refresh:', userData.username)
                 setUser(userData)
               } else {
                 console.error('[AUTH PROVIDER] Token refresh response missing data')
@@ -163,23 +164,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         // No token in memory - try silent refresh via httpOnly refresh token cookie
-        console.log('[AUTH PROVIDER] No token in memory, attempting silent refresh...')
+        devLog('[AUTH PROVIDER] No token in memory, attempting silent refresh...')
         try {
           const refreshResult = await api.refreshToken()
           if (refreshResult && refreshResult.access_token) {
-            console.log('[AUTH PROVIDER] Silent refresh successful, fetching user data')
+            devLog('[AUTH PROVIDER] Silent refresh successful, fetching user data')
             api.setToken(refreshResult.access_token)
 
             // Fetch user data with new token
             const userData = await api.getCurrentUser()
-            console.log('[AUTH PROVIDER] User data received after refresh:', userData.username)
+            devLog('[AUTH PROVIDER] User data received after refresh:', userData.username)
             setUser(userData)
           } else {
-            console.log('[AUTH PROVIDER] No refresh token available or refresh failed')
+            devLog('[AUTH PROVIDER] No refresh token available or refresh failed')
             setUser(null)
           }
         } catch (refreshError) {
-          console.log('[AUTH PROVIDER] No refresh token available, user remains null')
+          devLog('[AUTH PROVIDER] No refresh token available, user remains null')
           // This is expected if no refresh token exists
           setUser(null)
         }
@@ -189,7 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       api.setToken(null)
       setUser(null)
     } finally {
-      console.log('[AUTH PROVIDER] Auth initialization complete, setting loading to false')
+      devLog('[AUTH PROVIDER] Auth initialization complete, setting loading to false')
       setLoading(false)
       setIsInitializing(false)
     }
@@ -231,7 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleStorageChange = (event: StorageEvent) => {
       // Only handle logout signals - tokens are not in localStorage anymore
       if (event.key === 'logout_signal' && event.newValue) {
-        console.log('[AUTH PROVIDER] Logout signal detected from another tab')
+        devLog('[AUTH PROVIDER] Logout signal detected from another tab')
         api.setToken(null)
         setUser(null)
         // Clear sessionStorage to remove cached data (like guide likes)
@@ -245,19 +246,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for postMessage from auth callback tab
     const handleMessage = async (event: MessageEvent) => {
-      console.log('[AUTH PROVIDER] Received message:', event.origin, event.data)
+      devLog('[AUTH PROVIDER] Received message:', event.origin, event.data)
 
       // Ensure the message is from our domain
       if (event.origin !== window.location.origin) {
-        console.log('[AUTH PROVIDER] Message origin mismatch:', event.origin, 'vs', window.location.origin)
+        devLog('[AUTH PROVIDER] Message origin mismatch:', event.origin, 'vs', window.location.origin)
         return
       }
 
       if (event.data.type === 'CLOSE_AUTH_POPUP') {
-        console.log('[AUTH PROVIDER] Received close popup message')
+        devLog('[AUTH PROVIDER] Received close popup message')
         // Close the popup window if it exists
         if (window.authPopup && !window.authPopup.closed) {
-          console.log('[AUTH PROVIDER] Closing auth popup window via close message')
+          devLog('[AUTH PROVIDER] Closing auth popup window via close message')
           window.authPopup.close()
           window.authPopup = null
         }
@@ -265,11 +266,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event.data.type === 'OAUTH_AUTH_SUCCESS') {
-        console.log('[AUTH PROVIDER] OAuth auth success message received')
+        devLog('[AUTH PROVIDER] OAuth auth success message received')
 
         // Close the popup window if it exists
         if (window.authPopup && !window.authPopup.closed) {
-          console.log('[AUTH PROVIDER] Closing auth popup window')
+          devLog('[AUTH PROVIDER] Closing auth popup window')
           window.authPopup.close()
           window.authPopup = null
         }
@@ -277,7 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Process authentication success
         const { token, refreshUser } = event.data
         if (token) {
-          console.log('[AUTH PROVIDER] Processing token from message')
+          devLog('[AUTH PROVIDER] Processing token from message')
 
           // SECURITY: Token stored in memory only (not localStorage)
           api.setToken(token)
@@ -286,20 +287,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Get user data and set it
             const userData = await api.getCurrentUser()
             setUser(userData)
-            console.log('[AUTH PROVIDER] User data fetched and set:', userData.username)
+            devLog('[AUTH PROVIDER] User data fetched and set:', userData.username)
 
             // Check for return URL (still using sessionStorage for non-sensitive data)
             const returnUrl = sessionStorage.getItem('authReturnUrl')
             if (returnUrl) {
-              console.log('[AUTH PROVIDER] Redirecting to return URL:', returnUrl)
+              devLog('[AUTH PROVIDER] Redirecting to return URL:', returnUrl)
               sessionStorage.removeItem('authReturnUrl')
               window.location.href = returnUrl
             } else if (window.location.pathname === '/login') {
-              console.log('[AUTH PROVIDER] Redirecting to homepage')
+              devLog('[AUTH PROVIDER] Redirecting to homepage')
               window.location.href = '/'
             } else if (refreshUser) {
               // If not on login page and refreshUser flag is set, refresh the current page
-              console.log('[AUTH PROVIDER] Refreshing current page after auth')
+              devLog('[AUTH PROVIDER] Refreshing current page after auth')
               window.location.reload()
             }
           } catch (error) {
@@ -309,7 +310,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event.data.type === 'ACCOUNT_LINKED') {
-        console.log('[AUTH PROVIDER] Account linked message received:', event.data.provider)
+        devLog('[AUTH PROVIDER] Account linked message received:', event.data.provider)
         if (window.authPopup && !window.authPopup.closed) {
           window.authPopup.close()
           window.authPopup = null
@@ -334,14 +335,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for BroadcastChannel messages
     const handleBroadcastMessage = async (event: MessageEvent) => {
-      console.log('[AUTH PROVIDER] Received broadcast message:', event.data)
+      devLog('[AUTH PROVIDER] Received broadcast message:', event.data)
       
       if (event.data.type === 'OAUTH_AUTH_SUCCESS') {
-        console.log('[AUTH PROVIDER] OAuth auth success broadcast received')
+        devLog('[AUTH PROVIDER] OAuth auth success broadcast received')
 
         // Close the popup window if it exists
         if (window.authPopup && !window.authPopup.closed) {
-          console.log('[AUTH PROVIDER] Closing auth popup window from broadcast')
+          devLog('[AUTH PROVIDER] Closing auth popup window from broadcast')
           window.authPopup.close()
           window.authPopup = null
         }
@@ -349,31 +350,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Process authentication success
         const { token, refreshUser } = event.data
         if (token) {
-          console.log('[AUTH PROVIDER] Processing token from broadcast - Token length:', token.length)
+          devLog('[AUTH PROVIDER] Processing token from broadcast - Token length:', token.length)
 
           // SECURITY: Token stored in memory only (not localStorage)
           api.setToken(token)
 
-          console.log('[AUTH PROVIDER] Token set in memory, attempting to fetch user data...')
+          devLog('[AUTH PROVIDER] Token set in memory, attempting to fetch user data...')
 
           try {
             // Get user data and set it
             const userData = await api.getCurrentUser()
             setUser(userData)
-            console.log('[AUTH PROVIDER] User data fetched from broadcast:', userData.username, 'Role:', userData.role)
+            devLog('[AUTH PROVIDER] User data fetched from broadcast:', userData.username, 'Role:', userData.role)
 
             // Check for return URL (using sessionStorage for non-sensitive data)
             const returnUrl = sessionStorage.getItem('authReturnUrl')
             if (returnUrl) {
-              console.log('[AUTH PROVIDER] Redirecting to return URL from broadcast:', returnUrl)
+              devLog('[AUTH PROVIDER] Redirecting to return URL from broadcast:', returnUrl)
               sessionStorage.removeItem('authReturnUrl')
               window.location.href = returnUrl
             } else if (window.location.pathname === '/login') {
-              console.log('[AUTH PROVIDER] Redirecting to homepage from broadcast')
+              devLog('[AUTH PROVIDER] Redirecting to homepage from broadcast')
               window.location.href = '/'
             } else if (refreshUser) {
               // If not on login page and refreshUser flag is set, refresh the current page
-              console.log('[AUTH PROVIDER] Refreshing current page after broadcast auth')
+              devLog('[AUTH PROVIDER] Refreshing current page after broadcast auth')
               window.location.reload()
             }
           } catch (error) {
@@ -385,7 +386,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event.data.type === 'ACCOUNT_LINKED') {
-        console.log('[AUTH PROVIDER] Account linked broadcast received:', event.data.provider)
+        devLog('[AUTH PROVIDER] Account linked broadcast received:', event.data.provider)
         if (window.authPopup && !window.authPopup.closed) {
           window.authPopup.close()
           window.authPopup = null
@@ -413,10 +414,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for custom event from auth callback
     const handleCustomEvent = async (event: Event) => {
       const customEvent = event as CustomEvent
-      console.log('[AUTH PROVIDER] Custom event received:', customEvent.detail)
+      devLog('[AUTH PROVIDER] Custom event received:', customEvent.detail)
 
       if (customEvent.detail && customEvent.detail.token) {
-        console.log('[AUTH PROVIDER] Processing token from custom event')
+        devLog('[AUTH PROVIDER] Processing token from custom event')
         const { token, refreshUser } = customEvent.detail
 
         // SECURITY: Token stored in memory only (not localStorage)
@@ -426,20 +427,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Get user data and set it
           const userData = await api.getCurrentUser()
           setUser(userData)
-          console.log('[AUTH PROVIDER] User data fetched from custom event:', userData.username)
+          devLog('[AUTH PROVIDER] User data fetched from custom event:', userData.username)
 
           // Check for return URL (using sessionStorage for non-sensitive data)
           const returnUrl = sessionStorage.getItem('authReturnUrl')
           if (returnUrl) {
-            console.log('[AUTH PROVIDER] Redirecting to return URL from custom event:', returnUrl)
+            devLog('[AUTH PROVIDER] Redirecting to return URL from custom event:', returnUrl)
             sessionStorage.removeItem('authReturnUrl')
             window.location.href = returnUrl
           } else if (window.location.pathname === '/login') {
-            console.log('[AUTH PROVIDER] Redirecting to homepage from custom event')
+            devLog('[AUTH PROVIDER] Redirecting to homepage from custom event')
             window.location.href = '/'
           } else if (refreshUser) {
             // If not on login page and refreshUser flag is set, refresh the current page
-            console.log('[AUTH PROVIDER] Refreshing current page after custom event auth')
+            devLog('[AUTH PROVIDER] Refreshing current page after custom event auth')
             window.location.reload()
           }
         } catch (error) {
@@ -453,9 +454,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       authChannel = new BroadcastChannel('auth_channel')
       authChannel.addEventListener('message', handleBroadcastMessage)
-      console.log('[AUTH PROVIDER] BroadcastChannel setup successful')
+      devLog('[AUTH PROVIDER] BroadcastChannel setup successful')
     } catch (error) {
-      console.log('[AUTH PROVIDER] BroadcastChannel not supported:', error)
+      devLog('[AUTH PROVIDER] BroadcastChannel not supported:', error)
     }
 
     window.addEventListener('storage', handleStorageChange)
@@ -543,7 +544,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(data.user)
 
-      console.log('[AUTH PROVIDER] Dev login successful, user set:', data.user.username)
+      devLog('[AUTH PROVIDER] Dev login successful, user set:', data.user.username)
     } catch (error) {
       console.error('Dev login failed:', error)
       throw error

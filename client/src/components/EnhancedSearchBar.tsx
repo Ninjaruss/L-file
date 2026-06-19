@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '../lib/api'
 import { useProgress } from '../providers/ProgressProvider'
 import { motion, AnimatePresence } from 'motion/react'
+import { LiveRegion } from './LiveRegion'
 
 interface SearchResult {
   id: number
@@ -94,6 +95,7 @@ export const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({ trendingDa
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [searchError, setSearchError] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const { userProgress } = useProgress()
@@ -261,6 +263,7 @@ export const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({ trendingDa
     }
 
     setLoading(true)
+    setSearchError(false)
     try {
       const response = await api.search({
         query: searchQuery,
@@ -287,6 +290,7 @@ export const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({ trendingDa
       console.error('Search failed:', error)
       setResults([])
       setShowResults(false)
+      setSearchError(true)
     } finally {
       setLoading(false)
     }
@@ -394,8 +398,20 @@ export const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({ trendingDa
     )
   }
 
+  const trimmedQuery = query.trim()
+  const searchAnnouncement = loading
+    ? 'Searching...'
+    : searchError
+      ? 'Search failed. Please try again.'
+      : trimmedQuery.length >= 2 && results.length > 0
+        ? `${results.length} results found`
+        : trimmedQuery.length >= 2 && showResults
+          ? 'No results found'
+          : ''
+
   return (
     <Box ref={searchContainerRef} style={{ position: 'relative', width: '100%' }}>
+      <LiveRegion message={searchAnnouncement} />
       {/* Spotlight ring that glows when dropdown is open */}
       <Box
         className={showResults ? 'search-spotlight-ring active' : 'search-spotlight-ring'}

@@ -1,6 +1,3 @@
-/* Font imports must be first */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap');
-
 /* Mantine CSS imports */
 @import '@mantine/core/styles.css';
 @import '@mantine/notifications/styles.css';
@@ -19,7 +16,7 @@
 
 :root {
   --font-opti-goudy-text: 'OPTI Goudy Text', serif;
-  --font-noto-sans: 'Noto Sans', system-ui, sans-serif;
+  --font-noto-sans: var(--font-noto-sans-next), 'Noto Sans', system-ui, sans-serif;
 
   /* Usogui Theme Colors - Main Palette */
   --usogui-red: #e11d48;
@@ -34,16 +31,16 @@
      Green: guide, quote
      Purple: media, organization, volume
   */
-  --color-gamble: #ff5555;     /* Red group */
-  --color-character: #4dabf7;  /* Blue group */
-  --color-arc: #f97316;        /* Orange group */
-  --color-event: #f97316;      /* Orange group (shared with arc) */
-  --color-guide: #51cf66;      /* Green group */
-  --color-media: #a855f7;      /* Purple group */
-  --color-quote: #51cf66;      /* Green group (shared with guide) */
-  --color-volume: #a855f7;     /* Purple group (shared with media) */
-  --color-chapter: #4dabf7;    /* Blue group (shared with character) */
-  --color-organization: #a855f7; /* Purple group (shared with media) */
+  --color-gamble: #e63946;
+  --color-character: #f5a623;
+  --color-arc: #ff6b35;
+  --color-event: #ca8a04;
+  --color-guide: #16a34a;
+  --color-media: #ec4899;
+  --color-quote: #0d9488;
+  --color-volume: #8b5cf6;
+  --color-chapter: #38bdf8;
+  --color-organization: #0284c7;
 
   /* Semantic state colors */
   --color-success: #388e3c;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { API_BASE_URL } from '../../lib/api'
+import { api } from '../../lib/api'
 import { MAX_CHAPTER, PROFILE_PICTURE_TYPES, USER_ROLES } from '../../lib/constants'
 import BadgeDisplay from '../BadgeDisplay'
 import {
@@ -502,25 +502,7 @@ const UserBadgesField = () => {
     const { userBadge, badgeName } = badgeToRemove;
 
     try {
-      // Use the correct API endpoint: DELETE /badges/user/:userId/badge/:badgeId
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(
-        `${API_BASE_URL}/badges/user/${userBadge.userId}/badge/${userBadge.badgeId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ reason }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Delete response:', response.status, errorData);
-        throw new Error(`Failed to remove badge: ${response.status}`);
-      }
+      await api.removeUserBadge(userBadge.userId, userBadge.badgeId, reason);
 
       notify(`Badge "${badgeName}" removed successfully`, { type: 'success' });
       await queryClient.invalidateQueries({

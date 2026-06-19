@@ -30,6 +30,7 @@ export interface UseNavigationSearchReturn {
   handleSearchKeyDown: (e: React.KeyboardEvent) => void
   handleSearchSubmit: (e: React.FormEvent) => void
   shouldShowSearchDropdown: boolean
+  searchAnnouncement: string
 }
 
 export function useNavigationSearch(): UseNavigationSearchReturn {
@@ -39,6 +40,7 @@ export function useNavigationSearch(): UseNavigationSearchReturn {
   const [searchFocused, setSearchFocused] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeout = useRef<NodeJS.Timeout | null>(null)
 
@@ -62,6 +64,7 @@ export function useNavigationSearch(): UseNavigationSearchReturn {
     }
 
     setSearchLoading(true)
+    setSearchError(false)
     try {
       const response = await api.search({
         query: searchQuery,
@@ -88,6 +91,7 @@ export function useNavigationSearch(): UseNavigationSearchReturn {
       console.error('Search failed:', error)
       setSearchResults([])
       setShowSearchResults(false)
+      setSearchError(true)
     } finally {
       setSearchLoading(false)
     }
@@ -132,6 +136,17 @@ export function useNavigationSearch(): UseNavigationSearchReturn {
     }
   }, [router, searchValue])
 
+  const trimmedQuery = searchValue.trim()
+  const searchAnnouncement = searchLoading
+    ? 'Searching...'
+    : searchError
+      ? 'Search failed. Please try again.'
+      : trimmedQuery.length >= 2 && searchResults.length > 0
+        ? `${searchResults.length} results found`
+        : trimmedQuery.length >= 2 && showSearchResults
+          ? 'No results found'
+          : ''
+
   return {
     searchValue,
     setSearchValue,
@@ -145,6 +160,7 @@ export function useNavigationSearch(): UseNavigationSearchReturn {
     handleSearchResultClick,
     handleSearchKeyDown,
     handleSearchSubmit,
-    shouldShowSearchDropdown
+    shouldShowSearchDropdown,
+    searchAnnouncement,
   }
 }
