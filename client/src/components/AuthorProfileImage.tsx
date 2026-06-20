@@ -53,7 +53,8 @@ export default function AuthorProfileImage({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
-  const hasProfileData = author.profilePictureType || author.fluxerAvatar || author.selectedCharacterMedia
+  const hasProfileData =
+    !!author.fluxerAvatar || !!author.selectedCharacterMedia?.url
 
   useEffect(() => {
     if (!hasProfileData && !loading && !fullProfile) {

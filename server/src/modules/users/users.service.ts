@@ -319,26 +319,35 @@ export class UsersService {
   }
 
   async findOneForAuth(userId: number): Promise<User | null> {
-    return this.repo.findOne({
-      where: { id: userId },
-      select: [
-        'id',
-        'username',
-        'email',
-        'role',
-        'customRole',
-        'isEmailVerified',
-        'userProgress',
-        'profilePictureType',
-        'selectedCharacterMediaId',
-        'favoriteQuoteId',
-        'favoriteGambleId',
-        'createdAt',
-        'fluxerId',
-        'fluxerUsername',
-        'fluxerAvatar',
-      ],
-    });
+    return this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.selectedCharacterMedia', 'selectedCharacterMedia')
+      .where('user.id = :userId', { userId })
+      .select([
+        'user.id',
+        'user.username',
+        'user.email',
+        'user.role',
+        'user.customRole',
+        'user.isEmailVerified',
+        'user.userProgress',
+        'user.profilePictureType',
+        'user.selectedCharacterMediaId',
+        'user.favoriteQuoteId',
+        'user.favoriteGambleId',
+        'user.createdAt',
+        'user.fluxerId',
+        'user.fluxerUsername',
+        'user.fluxerAvatar',
+        'selectedCharacterMedia.id',
+        'selectedCharacterMedia.url',
+        'selectedCharacterMedia.fileName',
+        'selectedCharacterMedia.description',
+        'selectedCharacterMedia.ownerType',
+        'selectedCharacterMedia.ownerId',
+        'selectedCharacterMedia.chapterNumber',
+      ])
+      .getOne();
   }
 
   private async findOneWithPassword(userId: number): Promise<User | null> {
