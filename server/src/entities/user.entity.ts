@@ -15,7 +15,6 @@ import type { Quote } from './quote.entity';
 import type { Gamble } from './gamble.entity';
 import type { Media } from './media.entity';
 import type { UserBadge } from './user-badge.entity';
-import type { Donation } from './donation.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum UserRole {
@@ -189,12 +188,6 @@ export class User {
   get userBadges(): UserBadge[] {
     return this.badges || [];
   }
-
-  @OneToMany(
-    () => require('./donation.entity').Donation,
-    (donation: any) => donation.user,
-  )
-  donations: Donation[];
 
   @CreateDateColumn()
   createdAt: Date;
