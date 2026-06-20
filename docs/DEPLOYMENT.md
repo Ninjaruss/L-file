@@ -149,7 +149,7 @@ The production image uses a non-root `nestjs` user and `dumb-init` for proper si
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_HOST` | Supabase pooler host (`aws-0-us-west-2.pooler.supabase.com`) |
-| `DATABASE_PORT` | Pooler port (default `5432`) |
+| `DATABASE_PORT` | Supabase **session** pooler port (`5432`). Use `5432` when `RUN_MIGRATIONS=true`; transaction pooler (`6543`) can fail DDL on startup |
 | `DATABASE_USERNAME` | Supabase pooler username (`postgres.<project-id>`) |
 | `DATABASE_PASSWORD` | Supabase database password |
 | `DATABASE_NAME` | Database name (default `postgres`) |
@@ -161,6 +161,8 @@ The production image uses a non-root `nestjs` user and `dumb-init` for proper si
 | `FLUXER_CLIENT_SECRET` | Fluxer OAuth2 application client secret |
 | `FLUXER_CALLBACK_URL` | OAuth2 callback URL (e.g. `https://api.l-file.com/api/auth/fluxer/callback`) |
 | `ADMIN_FLUXER_ID` | Fluxer user ID to auto-promote to admin |
+| `FLUXER_BOT_TOKEN` | Fluxer bot token for the site chat widget (optional; widget disabled if unset) |
+| `FLUXER_CHAT_CHANNEL_ID` | Fluxer channel ID for the site chat widget (optional; widget disabled if unset) |
 | `FRONTEND_URL` | Frontend origin (e.g. `https://l-file.com`) |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins |
 | `RESEND_API_KEY` | Resend API key for verification emails |

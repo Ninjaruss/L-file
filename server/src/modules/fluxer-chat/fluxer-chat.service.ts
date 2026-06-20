@@ -29,6 +29,7 @@ export class FluxerChatService {
   private readonly botToken: string;
   private readonly channelId: string;
   private readonly webhookUrl: string;
+  private readonly chatEnabled: boolean;
   // 2-second in-memory cache to prevent burst requests
   private messagesCache: { data: FluxerMessage[]; expiresAt: number } | null =
     null;
@@ -40,12 +41,23 @@ export class FluxerChatService {
     private readonly userRepo: Repository<User>,
     private readonly configService: ConfigService,
   ) {
-    this.botToken = this.configService.get<string>('FLUXER_BOT_TOKEN')!;
-    this.channelId = this.configService.get<string>('FLUXER_CHAT_CHANNEL_ID')!;
-    this.webhookUrl = this.configService.get<string>('FLUXER_WEBHOOK_URL')!;
+    this.botToken = this.configService.get<string>('FLUXER_BOT_TOKEN') ?? '';
+    this.channelId =
+      this.configService.get<string>('FLUXER_CHAT_CHANNEL_ID') ?? '';
+    this.webhookUrl = this.configService.get<string>('FLUXER_WEBHOOK_URL') ?? '';
+    this.chatEnabled = Boolean(this.botToken && this.channelId);
+    if (!this.chatEnabled) {
+      this.logger.warn(
+        'Fluxer chat disabled: set FLUXER_BOT_TOKEN and FLUXER_CHAT_CHANNEL_ID to enable',
+      );
+    }
   }
 
   async getMessages(): Promise<FluxerMessage[]> {
+    if (!this.chatEnabled) {
+      return [];
+    }
+
     const now = Date.now();
     if (this.messagesCache && this.messagesCache.expiresAt > now) {
       return this.messagesCache.data;

@@ -85,12 +85,14 @@ class EnvironmentVariables {
   @IsOptional()
   ADMIN_FLUXER_ID?: string;
 
-  // --- Fluxer Chat Bot ---
+  // --- Fluxer Chat Bot (optional — chat widget disabled when unset) ---
   @IsString()
-  FLUXER_BOT_TOKEN: string;
+  @IsOptional()
+  FLUXER_BOT_TOKEN?: string;
 
   @IsString()
-  FLUXER_CHAT_CHANNEL_ID: string;
+  @IsOptional()
+  FLUXER_CHAT_CHANNEL_ID?: string;
 
   // --- Cloudflare R2 Storage ---
   // SECURITY: Required for media uploads to work

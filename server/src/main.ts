@@ -378,9 +378,9 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   console.log(`[Bootstrap] Calling app.listen() on port ${port}...`);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(
-    `[Bootstrap] Server running on http://localhost:${port} in ${process.env.NODE_ENV} mode`,
+    `[Bootstrap] Server running on http://0.0.0.0:${port} in ${process.env.NODE_ENV} mode`,
   );
 }
 bootstrap();
