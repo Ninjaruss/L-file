@@ -24,10 +24,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       }
       console.error('========================');
     } else {
-      // In production, log minimal info for debugging without exposing sensitive details
-      console.error(
-        `[ERROR] ${request.method} ${request.url} - ${exception instanceof Error ? exception.message : 'Unknown error'}`,
-      );
+      const isExpectedAnonymousRefresh =
+        exception instanceof HttpException &&
+        exception.getStatus() === HttpStatus.UNAUTHORIZED &&
+        request.method === 'POST' &&
+        request.path === '/api/auth/refresh' &&
+        exception.message === 'No refresh token';
+
+      if (!isExpectedAnonymousRefresh) {
+        // In production, log minimal info for debugging without exposing sensitive details
+        console.error(
+          `[ERROR] ${request.method} ${request.url} - ${exception instanceof Error ? exception.message : 'Unknown error'}`,
+        );
+      }
     }
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;

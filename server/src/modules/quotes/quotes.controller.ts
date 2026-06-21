@@ -25,6 +25,10 @@ import { QuotesService } from './quotes.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { Quote, QuoteStatus } from '../../entities/quote.entity';
+import {
+  ParseChapterNumberOptionalPipe,
+  ParseChapterNumberPipe,
+} from '../../common/pipes/parse-chapter-number.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -138,11 +142,11 @@ export class QuotesController {
   async findAll(
     @Query('characterId', new ParseIntPipe({ optional: true }))
     characterId?: number,
-    @Query('chapterNumber', new ParseIntPipe({ optional: true }))
+    @Query('chapterNumber', new ParseChapterNumberOptionalPipe())
     chapterNumber?: number,
-    @Query('chapterStart', new ParseIntPipe({ optional: true }))
+    @Query('chapterStart', new ParseChapterNumberOptionalPipe())
     chapterStart?: number,
-    @Query('chapterEnd', new ParseIntPipe({ optional: true }))
+    @Query('chapterEnd', new ParseChapterNumberOptionalPipe())
     chapterEnd?: number,
     @Query('search') search?: string,
     @Query('submittedById', new ParseIntPipe({ optional: true }))
@@ -216,9 +220,9 @@ export class QuotesController {
   findRandom(
     @Query('characterId', new ParseIntPipe({ optional: true }))
     characterId?: number,
-    @Query('chapterStart', new ParseIntPipe({ optional: true }))
+    @Query('chapterStart', new ParseChapterNumberOptionalPipe())
     chapterStart?: number,
-    @Query('chapterEnd', new ParseIntPipe({ optional: true }))
+    @Query('chapterEnd', new ParseChapterNumberOptionalPipe())
     chapterEnd?: number,
   ): Promise<Quote> {
     const chapterRange =
@@ -316,7 +320,7 @@ export class QuotesController {
     type: [Quote],
   })
   getQuotesByChapter(
-    @Param('chapterNumber', ParseIntPipe) chapterNumber: number,
+    @Param('chapterNumber', ParseChapterNumberPipe) chapterNumber: number,
   ): Promise<Quote[]> {
     return this.quotesService.getQuotesByChapter(chapterNumber);
   }

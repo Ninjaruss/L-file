@@ -39,8 +39,7 @@ export class AwardBadgeDto {
   year?: number;
 
   @ApiPropertyOptional({
-    description:
-      'Expiration date for the badge (ISO string).',
+    description: 'Expiration date for the badge (ISO string).',
     example: '2025-01-01T00:00:00.000Z',
   })
   @IsOptional()

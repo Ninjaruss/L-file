@@ -321,7 +321,10 @@ export class UsersService {
   async findOneForAuth(userId: number): Promise<User | null> {
     return this.repo
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.selectedCharacterMedia', 'selectedCharacterMedia')
+      .leftJoinAndSelect(
+        'user.selectedCharacterMedia',
+        'selectedCharacterMedia',
+      )
       .where('user.id = :userId', { userId })
       .select([
         'user.id',

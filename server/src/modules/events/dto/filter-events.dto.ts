@@ -1,12 +1,23 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventType } from '../../../entities/event.entity';
 
 export class FilterEventsDto {
   @IsEnum(EventType)
   @IsOptional()
-  @ApiPropertyOptional({ enum: EventType, enumName: 'EventType', description: 'Filter by event type' })
+  @ApiPropertyOptional({
+    enum: EventType,
+    enumName: 'EventType',
+    description: 'Filter by event type',
+  })
   type?: EventType;
 
   @IsInt()
@@ -23,11 +34,13 @@ export class FilterEventsDto {
   @ApiPropertyOptional({ description: 'Filter by gamble ID' })
   gambleId?: number;
 
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 1 })
   @IsOptional()
-  @Min(1)
+  @Min(0.1)
   @Type(() => Number)
-  @ApiPropertyOptional({ description: 'Filter by chapter number' })
+  @ApiPropertyOptional({
+    description: 'Filter by chapter number (supports decimals, e.g. 361.5)',
+  })
   chapterNumber?: number;
 
   @IsInt()

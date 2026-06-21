@@ -44,7 +44,8 @@ export class FluxerChatService {
     this.botToken = this.configService.get<string>('FLUXER_BOT_TOKEN') ?? '';
     this.channelId =
       this.configService.get<string>('FLUXER_CHAT_CHANNEL_ID') ?? '';
-    this.webhookUrl = this.configService.get<string>('FLUXER_WEBHOOK_URL') ?? '';
+    this.webhookUrl =
+      this.configService.get<string>('FLUXER_WEBHOOK_URL') ?? '';
     this.chatEnabled = Boolean(this.botToken && this.channelId);
     if (!this.chatEnabled) {
       this.logger.warn(

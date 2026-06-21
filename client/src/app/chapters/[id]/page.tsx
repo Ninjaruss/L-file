@@ -13,13 +13,17 @@ interface PageProps {
 const getChapterData = cache(async (id: string): Promise<Chapter | null> => {
   try {
     if (!id || isNaN(Number(id))) {
-      throw new Error('Invalid chapter ID')
+      return null
     }
-    const chapterId = Number(id)
-    if (chapterId <= 0) {
-      throw new Error('Invalid chapter ID')
+    const parsed = Number(id)
+    if (parsed <= 0) {
+      return null
     }
-    return await api.getChapter(chapterId)
+    // Side-story chapters use decimal numbers (e.g. 361.5); URL segment is the chapter number, not DB id.
+    if (id.includes('.') || !Number.isInteger(parsed)) {
+      return await api.getChapterByNumber(parsed)
+    }
+    return await api.getChapter(parsed)
   } catch (error: unknown) {
     console.error('Error fetching chapter data:', error)
     return null

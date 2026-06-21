@@ -377,6 +377,19 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3001;
+
+  // Minimal responses for bots/crawlers hitting the API port directly (outside /api prefix)
+  const httpServer = app.getHttpAdapter().getInstance();
+  httpServer.get(
+    '/robots.txt',
+    (_req: express.Request, res: express.Response) => {
+      res.type('text/plain').send('User-agent: *\nDisallow: /\n');
+    },
+  );
+  httpServer.get('/', (_req: express.Request, res: express.Response) => {
+    res.json({ service: 'L-file Usogui API', health: '/api/health' });
+  });
+
   console.log(`[Bootstrap] Calling app.listen() on port ${port}...`);
   await app.listen(port, '0.0.0.0');
   console.log(

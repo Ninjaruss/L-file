@@ -11,6 +11,7 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
+import { ParseChapterNumberPipe } from '../../common/pipes/parse-chapter-number.pipe';
 import { ChaptersService } from './chapters.service';
 import { Chapter } from '../../entities/chapter.entity';
 import { CreateChapterDto } from './dto/create-chapter.dto';
@@ -176,7 +177,7 @@ export class ChaptersController {
   })
   @ApiNotFoundResponse({ description: 'Chapter not found' })
   async getByNumber(
-    @Param('number', ParseIntPipe) number: number,
+    @Param('number', ParseChapterNumberPipe) number: number,
   ): Promise<Chapter> {
     const chapter = await this.service.findByNumber(number);
     if (!chapter) {
