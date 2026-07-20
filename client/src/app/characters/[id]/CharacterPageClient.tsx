@@ -19,11 +19,10 @@ import {
   setTabAccentColors,
   backgroundStyles,
 } from '../../../lib/mantine-theme'
-import { CinematicCard, CinematicSectionHeader } from '../../../components/layouts/CinematicCard'
+import { CinematicCard } from '../../../components/layouts/CinematicCard'
 import { User, Calendar, Image as ImageIcon, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { pageEnter } from '../../../lib/motion-presets'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import CharacterTimeline, { TimelineEvent } from '../../../components/CharacterTimeline'
@@ -37,7 +36,9 @@ import { AnnotationSection } from '../../../components/annotations'
 import { useAuth } from '../../../providers/AuthProvider'
 import { AnnotationOwnerType } from '../../../types'
 import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
-import { RelatedContentSection } from '../../../components/layouts/RelatedContentSection'
+import { DocSection } from '../../../components/layouts/DocSection'
+import { RecordSheet, RecordBlock, RecordLink } from '../../../components/layouts/RecordSheet'
+import { calmEnter } from '../../../lib/motion-presets'
 
 interface Character {
   id: number
@@ -159,6 +160,7 @@ export default function CharacterPageClient({
         entityType="character"
         entityId={character.id}
         entityName={character.name}
+        subtitle={character.alternateNames?.length ? character.alternateNames.join(' · ') : undefined}
         stats={[
           { value: gambles.length, label: 'Gambles' },
           ...(character.firstAppearanceChapter != null
@@ -175,7 +177,7 @@ export default function CharacterPageClient({
         spoilerChapter={character.firstAppearanceChapter}
       />
 
-      <motion.div {...pageEnter}>
+      <motion.div {...calmEnter}>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl">
         <Tabs
           value={activeTab}
@@ -203,20 +205,18 @@ export default function CharacterPageClient({
             <Box
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 260px',
-                gap: 12,
+                gridTemplateColumns: 'minmax(0, 1fr) 320px',
+                gap: 44,
                 alignItems: 'start',
               }}
               className="detail-editorial-grid"
             >
-              {/* ── Main column ── */}
-              <Stack gap={theme.spacing.md}>
-                {/* Description */}
-                <CinematicCard entityColor={entityColors.character}>
-                  <CinematicSectionHeader label="Description" entityColor={entityColors.character} />
+              {/* ── Main column: document ── */}
+              <Box>
+                <DocSection no="01" title="Description" accent={entityColors.character}>
                   {character.description ? (
                     <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
-                      <Box style={{ lineHeight: 1.6, fontSize: 14 }}>
+                      <Box style={{ lineHeight: 1.7, fontSize: 16 }}>
                         <EnhancedSpoilerMarkdown
                           content={character.description}
                           enableEntityEmbeds
@@ -229,124 +229,73 @@ export default function CharacterPageClient({
                       No description available yet.
                     </Text>
                   )}
-                </CinematicCard>
+                </DocSection>
 
-                {/* Backstory */}
                 {character.backstory && (
-                  <CinematicCard entityColor={entityColors.character}>
-                    <CinematicSectionHeader label="Backstory" entityColor={entityColors.character} />
+                  <DocSection no="02" title="Backstory" accent={entityColors.character}>
                     <TimelineSpoilerWrapper chapterNumber={character.firstAppearanceChapter ?? undefined}>
-                      <Box style={{ lineHeight: 1.6, fontSize: 14 }}>
-                        <EnhancedSpoilerMarkdown
-                          content={character.backstory}
-                          enableEntityEmbeds
-                          compactEntityCards={false}
-                        />
+                      <Box style={{ lineHeight: 1.7, fontSize: 16 }}>
+                        <EnhancedSpoilerMarkdown content={character.backstory} enableEntityEmbeds compactEntityCards={false} />
                       </Box>
                     </TimelineSpoilerWrapper>
-                  </CinematicCard>
+                  </DocSection>
                 )}
 
-                {/* Relationships */}
-                <CharacterRelationships characterId={character.id} characterName={character.name} />
+                <DocSection no={character.backstory ? '03' : '02'} title="Relationships" accent={entityColors.character}>
+                  <CharacterRelationships characterId={character.id} characterName={character.name} />
+                </DocSection>
 
-                {/* Organization memberships */}
                 {character.organizations && character.organizations.length > 0 && (
-                  <CinematicCard entityColor={entityColors.organization} padding="md">
-                    <CinematicSectionHeader label="Organizations" entityColor={entityColors.organization} />
-                    <CharacterOrganizationMemberships
-                      characterId={character.id}
-                      characterName={character.name}
-                    />
-                  </CinematicCard>
+                  <DocSection no={character.backstory ? '04' : '03'} title="Organizations" accent={entityColors.organization}>
+                    <CharacterOrganizationMemberships characterId={character.id} characterName={character.name} />
+                  </DocSection>
                 )}
-              </Stack>
+              </Box>
 
-              {/* ── Aside column ── */}
-              <Stack gap={theme.spacing.sm}>
-                {/* Details card */}
-                <CinematicCard entityColor={entityColors.character} padding="md">
-                  <CinematicSectionHeader label="Details" entityColor={entityColors.character} />
-                  {character.firstAppearanceChapter != null && (
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.character}14` }}>
-                      <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.character, flexShrink: 0 }} />
-                      <Text style={{ fontSize: 11, color: `${entityColors.character}66`, flex: 1 }}>Debut</Text>
-                      <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.character }}>Ch. {character.firstAppearanceChapter}</Text>
-                    </Box>
-                  )}
-                  {character.organizations && character.organizations.length > 0 && (
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.character}14` }}>
-                      <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.character, flexShrink: 0 }} />
-                      <Text style={{ fontSize: 11, color: `${entityColors.character}66`, flex: 1 }}>Organization</Text>
-                      <Text
-                        component={Link}
-                        href={`/organizations/${character.organizations[0].id}`}
-                        style={{ fontSize: 12, fontWeight: 700, color: entityColors.organization, textDecoration: 'none' }}
-                      >
-                        {character.organizations[0].name}
-                      </Text>
-                    </Box>
-                  )}
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.character}14` }}>
-                    <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.character, flexShrink: 0 }} />
-                    <Text style={{ fontSize: 11, color: `${entityColors.character}66`, flex: 1 }}>Gambles</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.character }}>{gambles.length}</Text>
-                  </Box>
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                    <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.character, flexShrink: 0 }} />
-                    <Text style={{ fontSize: 11, color: `${entityColors.character}66`, flex: 1 }}>Arcs</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.character }}>{arcs.length}</Text>
-                  </Box>
-                </CinematicCard>
-
-                {/* Story Arcs compact */}
+              {/* ── Aside: record sheet ── */}
+              <RecordSheet
+                accent={entityColors.character}
+                details={[
+                  ...(character.firstAppearanceChapter != null
+                    ? [{ key: 'DEBUT', value: `Ch. ${character.firstAppearanceChapter}` }]
+                    : []),
+                  ...(character.organizations && character.organizations.length > 0
+                    ? [{
+                        key: 'ORGANIZATION',
+                        value: character.organizations[0].name,
+                        href: `/organizations/${character.organizations[0].id}`,
+                        valueColor: entityColors.organization,
+                      }]
+                    : []),
+                  { key: 'GAMBLES', value: gambles.length },
+                  { key: 'ARCS', value: arcs.length },
+                ]}
+              >
                 {arcs.length > 0 && (
-                  <RelatedContentSection
-                    entityType="arc"
-                    title="Story Arcs"
-                    items={arcs}
-                    previewCount={4}
-                    viewAllHref={`/arcs?character=${character.name}`}
-                    getKey={(arc) => arc.id}
-                    variant="compact"
-                    getLabel={(arc) => arc.name}
-                    getHref={(arc) => `/arcs/${arc.id}`}
-                    itemDotColor={entityColors.arc}
-                  />
+                  <RecordBlock title="Story Arcs">
+                    {arcs.slice(0, 4).map((arc) => (
+                      <RecordLink key={arc.id} label={arc.name} href={`/arcs/${arc.id}`} dotColor={entityColors.arc} />
+                    ))}
+                  </RecordBlock>
                 )}
-
-                {/* Gambles compact */}
                 {gambles.length > 0 && (
-                  <RelatedContentSection
-                    entityType="gamble"
-                    title="Gambles"
-                    items={gambles}
-                    previewCount={4}
-                    viewAllHref={`/gambles?character=${character.name}`}
-                    getKey={(g) => g.id}
-                    variant="compact"
-                    getLabel={(g) => g.name}
-                    getHref={(g) => `/gambles/${g.id}`}
-                    itemDotColor={entityColors.gamble}
-                  />
+                  <RecordBlock title="Gambles">
+                    {gambles.slice(0, 4).map((g) => (
+                      <RecordLink key={g.id} label={g.name} href={`/gambles/${g.id}`} dotColor={entityColors.gamble} />
+                    ))}
+                  </RecordBlock>
                 )}
-
-                {/* Quotes compact */}
                 {quotes && quotes.length > 0 && (
-                  <RelatedContentSection
-                    entityType="quote"
-                    title="Quotes"
-                    items={quotes}
-                    previewCount={4}
-                    viewAllHref={`/quotes?characterId=${character.id}`}
-                    getKey={(q) => q.id}
-                    variant="compact"
-                    getLabel={(q) => q.text?.slice(0, 60) ?? '(quote)'}
-                    getHref={(q) => `/quotes?characterId=${character.id}`}
-                    itemDotColor={entityColors.quote}
-                  />
+                  <RecordBlock title="Quotes">
+                    <Box style={{ padding: '4px 18px 16px' }}>
+                      <Box style={{ fontFamily: 'var(--font-editorial-serif)', fontStyle: 'italic', fontSize: 16, lineHeight: 1.5, color: '#fff' }}>
+                        <span style={{ color: entityColors.quote, fontSize: 22 }}>&ldquo;</span>
+                        {quotes[0].text?.slice(0, 160)}&rdquo;
+                      </Box>
+                    </Box>
+                  </RecordBlock>
                 )}
-              </Stack>
+              </RecordSheet>
             </Box>
           </Tabs.Panel>
 
