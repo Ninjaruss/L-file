@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Noto_Sans } from 'next/font/google'
+import { Noto_Sans, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import '../lib/jquery-stub'
 import { ClientProviders } from '../providers/ClientProviders'
@@ -11,6 +11,13 @@ const notoSans = Noto_Sans({
   weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-noto-sans-next',
+})
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-playfair-next',
 })
 
 export const metadata: Metadata = {
@@ -71,7 +78,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://pub-c63e2958587a4d85b5c93e7e867a569c.r2.dev" />
         <link rel="dns-prefetch" href="https://pub-c63e2958587a4d85b5c93e7e867a569c.r2.dev" />
       </head>
-      <body className={notoSans.variable} suppressHydrationWarning>
+      <body className={`${notoSans.variable} ${playfair.variable}`} suppressHydrationWarning>
         <a href="#main-content" className="skip-to-content">
           Skip to main content
         </a>

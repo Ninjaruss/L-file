@@ -686,6 +686,7 @@ export const setTabAccentColors = (entityType: EntityAccentKey, element?: HTMLEl
   const activeHoverBg = hexToRgba(accentColor, 0.15)
   const border = hexToRgba(accentColor, 0.2)
   
+  target.style.setProperty('--tab-accent', accentColor)
   target.style.setProperty('--tab-hover-bg', hoverBg)
   target.style.setProperty('--tab-hover-outline', hoverOutline)
   target.style.setProperty('--tab-focus-outline', focusOutline)

@@ -17,6 +17,7 @@
 :root {
   --font-opti-goudy-text: 'OPTI Goudy Text', serif;
   --font-noto-sans: var(--font-noto-sans-next), 'Noto Sans', system-ui, sans-serif;
+  --font-editorial-serif: var(--font-playfair-next), 'Playfair Display', Georgia, serif;
 
   /* Usogui Theme Colors - Main Palette */
   --usogui-red: #e11d48;
@@ -218,8 +219,8 @@ body {
   outline-offset: 2px;
 }
 
-/* Entity-specific tabs styling - using theme accent colors */
-/* Tab list pill container */
+/* Entity detail-page tabs — underlined "file-tab" style.
+   Per-entity accent comes from the --tab-accent CSS var set by setTabAccentColors(). */
 .character-tabs .mantine-Tabs-list,
 .gamble-tabs .mantine-Tabs-list,
 .arc-tabs .mantine-Tabs-list,
@@ -228,14 +229,14 @@ body {
 .organization-tabs .mantine-Tabs-list,
 .chapter-tabs .mantine-Tabs-list,
 .event-tabs .mantine-Tabs-list {
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 10px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  padding: 0;
   gap: 2px;
 }
 
-/* Base tab styles for all entity types */
 .character-tabs .mantine-Tabs-tab,
 .gamble-tabs .mantine-Tabs-tab,
 .arc-tabs .mantine-Tabs-tab,
@@ -244,174 +245,41 @@ body {
 .organization-tabs .mantine-Tabs-tab,
 .chapter-tabs .mantine-Tabs-tab,
 .event-tabs .mantine-Tabs-tab {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
   background-color: transparent !important;
-  border-radius: 7px !important;
-  font-weight: 500 !important;
-  padding: 12px 20px !important;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.02em !important;
+  padding: 14px 20px !important;
+  transition: color 150ms ease, border-color 150ms ease !important;
 }
 
-/* Hover states - Synced with mantine-theme.ts */
-.character-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(77, 171, 247, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
-.gamble-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(255, 85, 85, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
-.arc-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(249, 115, 22, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
-.guide-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(81, 207, 102, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
-.volume-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(255, 105, 180, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
-.organization-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(192, 132, 252, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
-.chapter-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(56, 189, 248, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
-}
-
+.character-tabs .mantine-Tabs-tab:hover,
+.gamble-tabs .mantine-Tabs-tab:hover,
+.arc-tabs .mantine-Tabs-tab:hover,
+.guide-tabs .mantine-Tabs-tab:hover,
+.volume-tabs .mantine-Tabs-tab:hover,
+.organization-tabs .mantine-Tabs-tab:hover,
+.chapter-tabs .mantine-Tabs-tab:hover,
 .event-tabs .mantine-Tabs-tab:hover {
-  background-color: rgba(243, 156, 18, 0.18) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  transform: translateY(-1px) !important;
-  border-radius: 7px !important;
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* Active states */
-.character-tabs .mantine-Tabs-tab[data-active="true"],
 .character-tabs .mantine-Tabs-tab[data-active],
-.character-tabs .mantine-Tabs-tab[aria-selected="true"],
-.character-tabs [data-active="true"],
-.character-tabs [data-active],
-.character-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(77, 171, 247, 0.45), rgba(77, 171, 247, 0.20)) !important;
-  border: 1px solid rgba(77, 171, 247, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(77, 171, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.gamble-tabs .mantine-Tabs-tab[data-active="true"],
 .gamble-tabs .mantine-Tabs-tab[data-active],
-.gamble-tabs .mantine-Tabs-tab[aria-selected="true"],
-.gamble-tabs [data-active="true"],
-.gamble-tabs [data-active],
-.gamble-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(255, 85, 85, 0.45), rgba(255, 85, 85, 0.20)) !important;
-  border: 1px solid rgba(255, 85, 85, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(255, 85, 85, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.arc-tabs .mantine-Tabs-tab[data-active="true"],
 .arc-tabs .mantine-Tabs-tab[data-active],
-.arc-tabs .mantine-Tabs-tab[aria-selected="true"],
-.arc-tabs [data-active="true"],
-.arc-tabs [data-active],
-.arc-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.45), rgba(249, 115, 22, 0.20)) !important;
-  border: 1px solid rgba(249, 115, 22, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.guide-tabs .mantine-Tabs-tab[data-active="true"],
 .guide-tabs .mantine-Tabs-tab[data-active],
-.guide-tabs .mantine-Tabs-tab[aria-selected="true"],
-.guide-tabs [data-active="true"],
-.guide-tabs [data-active],
-.guide-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(81, 207, 102, 0.45), rgba(81, 207, 102, 0.20)) !important;
-  border: 1px solid rgba(81, 207, 102, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(81, 207, 102, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.volume-tabs .mantine-Tabs-tab[data-active="true"],
 .volume-tabs .mantine-Tabs-tab[data-active],
-.volume-tabs .mantine-Tabs-tab[aria-selected="true"],
-.volume-tabs [data-active="true"],
-.volume-tabs [data-active],
-.volume-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(255, 105, 180, 0.45), rgba(255, 105, 180, 0.20)) !important;
-  border: 1px solid rgba(255, 105, 180, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(255, 105, 180, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.organization-tabs .mantine-Tabs-tab[data-active="true"],
 .organization-tabs .mantine-Tabs-tab[data-active],
-.organization-tabs .mantine-Tabs-tab[aria-selected="true"],
-.organization-tabs [data-active="true"],
-.organization-tabs [data-active],
-.organization-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(192, 132, 252, 0.45), rgba(192, 132, 252, 0.20)) !important;
-  border: 1px solid rgba(192, 132, 252, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(192, 132, 252, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.chapter-tabs .mantine-Tabs-tab[data-active="true"],
 .chapter-tabs .mantine-Tabs-tab[data-active],
-.chapter-tabs .mantine-Tabs-tab[aria-selected="true"],
-.chapter-tabs [data-active="true"],
-.chapter-tabs [data-active],
-.chapter-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(56, 189, 248, 0.20)) !important;
-  border: 1px solid rgba(56, 189, 248, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-}
-
-.event-tabs .mantine-Tabs-tab[data-active="true"],
-.event-tabs .mantine-Tabs-tab[data-active],
-.event-tabs .mantine-Tabs-tab[aria-selected="true"],
-.event-tabs [data-active="true"],
-.event-tabs [data-active],
-.event-tabs [aria-selected="true"] {
-  background: linear-gradient(135deg, rgba(243, 156, 18, 0.45), rgba(243, 156, 18, 0.20)) !important;
-  border: 1px solid rgba(243, 156, 18, 0.55) !important;
-  border-radius: 7px !important;
-  box-shadow: 0 0 16px rgba(243, 156, 18, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+.event-tabs .mantine-Tabs-tab[data-active] {
+  color: var(--tab-accent, #e11d48) !important;
+  background: transparent !important;
+  border-bottom: 2px solid var(--tab-accent, #e11d48) !important;
+  box-shadow: none !important;
 }
 
 /* Disabled tab states - clear visual feedback */
