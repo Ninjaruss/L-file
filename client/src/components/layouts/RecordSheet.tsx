@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Box } from '@mantine/core'
+import Link from 'next/link'
 
 /** A key/value detail row. `href` makes the value a link. `valueColor` overrides. */
 export interface RecordRow {
@@ -67,7 +68,7 @@ export function RecordSheet({ accent, details, children }: RecordSheetProps) {
           </Box>
           <Box style={{ fontSize: 13, fontWeight: 700, color: row.valueColor ?? '#fff', textAlign: 'right' }}>
             {row.href ? (
-              <a href={row.href} style={{ color: 'inherit', textDecoration: 'none' }}>{row.value}</a>
+              <Link href={row.href} style={{ color: 'inherit', textDecoration: 'none' }}>{row.value}</Link>
             ) : (
               row.value
             )}
@@ -117,7 +118,7 @@ interface RecordLinkProps {
 export function RecordLink({ label, href, dotColor }: RecordLinkProps) {
   return (
     <Box
-      component="a"
+      component={Link}
       href={href}
       style={{
         display: 'flex',

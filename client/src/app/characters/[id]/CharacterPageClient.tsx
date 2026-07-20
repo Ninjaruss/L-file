@@ -283,7 +283,7 @@ export default function CharacterPageClient({
                     ))}
                   </RecordBlock>
                 )}
-                {quotes && quotes.length > 0 && (
+                {quotes && quotes.length > 0 && quotes[0].text && (
                   <RecordBlock title="Quotes">
                     <Box style={{ padding: '4px 18px 16px' }}>
                       <Box style={{ fontFamily: 'var(--font-editorial-serif)', fontStyle: 'italic', fontSize: 16, lineHeight: 1.5, color: '#fff' }}>

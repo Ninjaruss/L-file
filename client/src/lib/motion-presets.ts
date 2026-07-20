@@ -20,17 +20,6 @@ export const pageEnter = {
 }
 
 /**
- * Calm page entrance — short fade, minimal translate.
- * The `animate` state is the visible end state so reduced-motion / no-JS
- * always shows content (never a lingering invisible resting state).
- */
-export const calmEnter = {
-  initial: { opacity: 0, y: 6 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.18, ease: easings.standard },
-}
-
-/**
  * Card entrance with stagger support
  */
 export const cardEnter = (index: number, staggerDelay = 0.04) => ({
