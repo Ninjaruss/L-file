@@ -487,7 +487,6 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                       <RecordLink
                         key={f.id}
                         label={f.name || (f.supportedGambler ? `${f.supportedGambler.name}'s Side` : 'Faction')}
-                        href="#"
                         dotColor={gambleColor}
                       />
                     ))}

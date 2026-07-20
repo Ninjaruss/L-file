@@ -109,33 +109,42 @@ export function RecordBlock({ title, children }: RecordBlockProps) {
 
 interface RecordLinkProps {
   label: string
-  href: string
+  /** Destination. Omit for a non-navigational informational row (renders without the chevron). */
+  href?: string
   /** Small leading dot color (entity color of the linked item). */
   dotColor: string
 }
 
-/** A single tappable related-item row inside a RecordBlock. */
+const recordLinkStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '10px 18px',
+  color: 'rgba(255,255,255,0.74)',
+  textDecoration: 'none',
+  fontSize: 13.5,
+}
+
+/**
+ * A related-item row inside a RecordBlock.
+ * Renders as a client-side link when `href` is provided; otherwise as a plain
+ * informational row (no chevron, not clickable) — e.g. gamble factions, which
+ * have no page of their own.
+ */
 export function RecordLink({ label, href, dotColor }: RecordLinkProps) {
-  return (
-    <Box
-      component={Link}
-      href={href}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 18px',
-        color: 'rgba(255,255,255,0.74)',
-        textDecoration: 'none',
-        fontSize: 13.5,
-      }}
-    >
+  const inner = (
+    <>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <Box aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
         <span>{label}</span>
       </Box>
-      <span aria-hidden style={{ color: 'rgba(255,255,255,0.38)', fontSize: 15 }}>›</span>
-    </Box>
+      {href && <span aria-hidden style={{ color: 'rgba(255,255,255,0.38)', fontSize: 15 }}>›</span>}
+    </>
+  )
+  return href ? (
+    <Box component={Link} href={href} style={recordLinkStyle}>{inner}</Box>
+  ) : (
+    <Box style={recordLinkStyle}>{inner}</Box>
   )
 }
 
