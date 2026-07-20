@@ -17,6 +17,7 @@
 :root {
   --font-opti-goudy-text: 'OPTI Goudy Text', serif;
   --font-noto-sans: var(--font-noto-sans-next), 'Noto Sans', system-ui, sans-serif;
+  --font-editorial-serif: var(--font-playfair-next), 'Playfair Display', Georgia, serif;
 
   /* Usogui Theme Colors - Main Palette */
   --usogui-red: #e11d48;
