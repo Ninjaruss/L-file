@@ -22,7 +22,6 @@ import {
 import { CinematicCard } from '../../../components/layouts/CinematicCard'
 import { User, Calendar, Image as ImageIcon, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
-import { motion } from 'motion/react'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import CharacterTimeline, { TimelineEvent } from '../../../components/CharacterTimeline'
@@ -38,7 +37,6 @@ import { AnnotationOwnerType } from '../../../types'
 import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
 import { DocSection } from '../../../components/layouts/DocSection'
 import { RecordSheet, RecordBlock, RecordLink } from '../../../components/layouts/RecordSheet'
-import { calmEnter } from '../../../lib/motion-presets'
 
 interface Character {
   id: number
@@ -177,7 +175,7 @@ export default function CharacterPageClient({
         spoilerChapter={character.firstAppearanceChapter}
       />
 
-      <motion.div {...calmEnter}>
+      <div>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl">
         <Tabs
           value={activeTab}
@@ -352,7 +350,7 @@ export default function CharacterPageClient({
           </Tabs.Panel>
         </Tabs>
       </Card>
-      </motion.div>
+      </div>
     </Stack>
 
     </Container>
