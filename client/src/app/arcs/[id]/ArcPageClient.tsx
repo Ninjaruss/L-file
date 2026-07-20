@@ -25,15 +25,14 @@ import { ArrowUp, BookOpen, Calendar, Image as ImageIcon, MessageSquare } from '
 import Link from 'next/link'
 import { BreadcrumbNav, createEntityBreadcrumbs } from '../../../components/Breadcrumb'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
-import { motion } from 'motion/react'
-import { pageEnter } from '../../../lib/motion-presets'
 import { usePageView } from '../../../hooks/usePageView'
 import MediaGallery from '../../../components/MediaGallery'
 import ArcTimeline from '../../../components/ArcTimeline'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
-import { RelatedContentSection } from '../../../components/layouts/RelatedContentSection'
-import { CinematicCard, CinematicSectionHeader } from '../../../components/layouts/CinematicCard'
+import { CinematicCard } from '../../../components/layouts/CinematicCard'
+import { DocSection } from '../../../components/layouts/DocSection'
+import { RecordSheet, RecordBlock, RecordLink } from '../../../components/layouts/RecordSheet'
 import { ArcStructuredData } from '../../../components/StructuredData'
 import { AnnotationSection } from '../../../components/annotations'
 import { useAuth } from '../../../providers/AuthProvider'
@@ -208,7 +207,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
         spoilerChapter={initialArc.startChapter}
       />
 
-      <motion.div {...pageEnter}>
+      <div>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={{
           background: backgroundStyles.card,
           border: `1px solid ${getAlphaColor(entityColors.arc, 0.4)}`
@@ -239,19 +238,17 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
             <Box
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 260px',
-                gap: 12,
+                gridTemplateColumns: 'minmax(0, 1fr) 320px',
+                gap: 44,
                 alignItems: 'start',
               }}
               className="detail-editorial-grid"
             >
-              {/* Main column */}
-              <Stack gap={theme.spacing.md}>
-                {/* Arc Description Section */}
-                <CinematicCard entityColor={entityColors.arc}>
-                  <CinematicSectionHeader label="About This Arc" entityColor={entityColors.arc} />
+              {/* ── Main column: document ── */}
+              <Box>
+                <DocSection no="01" title="About This Arc" accent={entityColors.arc}>
                   <TimelineSpoilerWrapper chapterNumber={initialArc.startChapter}>
-                    <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                    <Box style={{ fontSize: 16, lineHeight: 1.7 }}>
                       <EnhancedSpoilerMarkdown
                         content={initialArc.description}
                         className="arc-description"
@@ -260,12 +257,10 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                       />
                     </Box>
                   </TimelineSpoilerWrapper>
-                </CinematicCard>
+                </DocSection>
 
-                {/* Chapter Navigation */}
                 {initialChapters.length > 0 && (
-                  <CinematicCard entityColor={entityColors.arc} padding="md">
-                    <CinematicSectionHeader label="Chapters" entityColor={entityColors.arc} />
+                  <DocSection no="02" title="Chapters" accent={entityColors.arc}>
                     {(() => {
                       const COLLAPSE_THRESHOLD = 6
                       const PREVIEW_HEAD = 3
@@ -320,64 +315,38 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
                         </Box>
                       )
                     })()}
-                  </CinematicCard>
+                  </DocSection>
                 )}
-              </Stack>
+              </Box>
 
-              {/* Aside column */}
-              <Stack gap={theme.spacing.sm}>
-                {/* Details card */}
-                <CinematicCard entityColor={entityColors.arc} padding="md">
-                  <CinematicSectionHeader label="Details" entityColor={entityColors.arc} />
-                  {(initialArc.startChapter != null && initialArc.endChapter != null) && (
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.arc}14` }}>
-                      <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.arc, flexShrink: 0 }} />
-                      <Text style={{ fontSize: 11, color: `${entityColors.arc}66`, flex: 1 }}>Chapters</Text>
-                      <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.arc }}>Ch. {initialArc.startChapter}–{initialArc.endChapter}</Text>
-                    </Box>
-                  )}
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${entityColors.arc}14` }}>
-                    <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.arc, flexShrink: 0 }} />
-                    <Text style={{ fontSize: 11, color: `${entityColors.arc}66`, flex: 1 }}>Gambles</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.arc }}>{initialGambles.length}</Text>
-                  </Box>
-                  {initialArc.children && initialArc.children.length > 0 && (
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                      <Box style={{ width: 5, height: 5, borderRadius: '50%', background: entityColors.arc, flexShrink: 0 }} />
-                      <Text style={{ fontSize: 11, color: `${entityColors.arc}66`, flex: 1 }}>Sub-arcs</Text>
-                      <Text style={{ fontSize: 12, fontWeight: 700, color: entityColors.arc }}>{initialArc.children.length}</Text>
-                    </Box>
-                  )}
-                </CinematicCard>
-
-                {/* Gambles compact list */}
-                <RelatedContentSection
-                  entityType="gamble"
-                  title="Gambles"
-                  items={initialGambles ?? []}
-                  previewCount={4}
-                  getKey={(g) => g.id}
-                  variant="compact"
-                  getLabel={(g) => g.name}
-                  getHref={(g) => `/gambles/${g.id}`}
-                  itemDotColor={entityColors.gamble}
-                />
-
-                {/* Sub-arcs compact list */}
+              {/* ── Aside: record sheet ── */}
+              <RecordSheet
+                accent={entityColors.arc}
+                details={[
+                  ...(initialArc.startChapter != null && initialArc.endChapter != null
+                    ? [{ key: 'CHAPTERS', value: `Ch. ${initialArc.startChapter}–${initialArc.endChapter}` }]
+                    : []),
+                  { key: 'GAMBLES', value: initialGambles.length },
+                  ...(initialArc.children && initialArc.children.length > 0
+                    ? [{ key: 'SUB-ARCS', value: initialArc.children.length }]
+                    : []),
+                ]}
+              >
+                {initialGambles.length > 0 && (
+                  <RecordBlock title="Gambles">
+                    {initialGambles.slice(0, 4).map((g) => (
+                      <RecordLink key={g.id} label={g.name} href={`/gambles/${g.id}`} dotColor={entityColors.gamble} />
+                    ))}
+                  </RecordBlock>
+                )}
                 {initialArc.children != null && initialArc.children.length > 0 && (
-                  <RelatedContentSection
-                    entityType="arc"
-                    title="Sub-arcs"
-                    items={initialArc.children ?? []}
-                    previewCount={4}
-                    getKey={(a) => a.id}
-                    variant="compact"
-                    getLabel={(a) => a.name}
-                    getHref={(a) => `/arcs/${a.id}`}
-                    itemDotColor={entityColors.arc}
-                  />
+                  <RecordBlock title="Sub-arcs">
+                    {initialArc.children.slice(0, 4).map((a) => (
+                      <RecordLink key={a.id} label={a.name} href={`/arcs/${a.id}`} dotColor={entityColors.arc} />
+                    ))}
+                  </RecordBlock>
                 )}
-              </Stack>
+              </RecordSheet>
             </Box>
           </Tabs.Panel>
 
@@ -435,7 +404,7 @@ export default function ArcPageClient({ initialArc, initialEvents, initialGamble
         </Tabs>
       </Card>
 
-    </motion.div>
+    </div>
     </Stack>
 
     </Container>
