@@ -912,6 +912,13 @@ export const AdminDataProvider: DataProvider = {
       // Clean the create data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
 
+      // CreateMediaDto has no `status` field (media starts as pending / is set via
+      // the approve-reject workflow), and the backend rejects unknown fields — so a
+      // stray `status` in the create payload would 400 every media create.
+      if (resource === 'media') {
+        delete (cleanedData as Record<string, unknown>).status
+      }
+
       const response = await api.post<unknown>(`/${resource}`, cleanedData)
 
       const data = (response as Record<string, unknown>)?.data ?? response
