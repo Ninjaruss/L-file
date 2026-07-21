@@ -9,6 +9,7 @@ import { Repository, MoreThan, IsNull } from 'typeorm';
 import { Badge, BadgeType } from '../../entities/badge.entity';
 import { UserBadge } from '../../entities/user-badge.entity';
 import { User } from '../../entities/user.entity';
+import { CreateBadgeDto, UpdateBadgeDto } from './dto/badge.dto';
 
 @Injectable()
 export class BadgesService {
@@ -36,6 +37,22 @@ export class BadgesService {
       throw new NotFoundException(`Badge with ID ${id} not found`);
     }
     return badge;
+  }
+
+  async createBadge(data: CreateBadgeDto): Promise<Badge> {
+    const badge = this.badgeRepository.create(data);
+    return this.badgeRepository.save(badge);
+  }
+
+  async updateBadge(id: number, data: UpdateBadgeDto): Promise<Badge> {
+    const badge = await this.findBadgeById(id);
+    Object.assign(badge, data);
+    return this.badgeRepository.save(badge);
+  }
+
+  async removeBadge(id: number): Promise<void> {
+    const badge = await this.findBadgeById(id);
+    await this.badgeRepository.remove(badge);
   }
 
   async getUserBadges(userId: number): Promise<UserBadge[]> {
