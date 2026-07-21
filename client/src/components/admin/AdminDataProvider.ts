@@ -485,6 +485,22 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     return userCleaned
   }
 
+  if (resource === 'annotations') {
+    // Keep only the fields that are allowed in the UpdateAnnotationDto
+    const allowedFields = [
+      'title', 'content', 'sourceUrl', 'chapterReference', 'isSpoiler', 'spoilerChapter'
+    ]
+
+    const annotationCleaned: Record<string, unknown> = {}
+    allowedFields.forEach(field => {
+      if (cleaned[field] !== undefined) {
+        annotationCleaned[field] = cleaned[field]
+      }
+    })
+
+    return annotationCleaned
+  }
+
   // For all other resources, remove the id field as it should never be sent in update requests
   delete cleaned.id
   delete cleaned.createdAt
@@ -927,7 +943,7 @@ export const AdminDataProvider: DataProvider = {
       const cleanedData = cleanUpdateData(resource, params.data)
 
       // Use PATCH for resources that support it, PUT for others
-      const usePatch = ['quotes', 'guides', 'media', 'annotations'].includes(resource)
+      const usePatch = ['quotes', 'guides', 'media', 'annotations', 'events'].includes(resource)
       const response = usePatch
         ? await api.patch<unknown>(`/${resource}/${params.id}`, cleanedData)
         : await api.put<unknown>(`/${resource}/${params.id}`, cleanedData)
@@ -979,7 +995,7 @@ export const AdminDataProvider: DataProvider = {
       const cleanedData = cleanUpdateData(resource, params.data)
 
       // Use PATCH for resources that support it, PUT for others
-      const usePatch = ['quotes', 'guides', 'media', 'annotations'].includes(resource)
+      const usePatch = ['quotes', 'guides', 'media', 'annotations', 'events'].includes(resource)
       await Promise.all(
         params.ids.map((id) =>
           usePatch
