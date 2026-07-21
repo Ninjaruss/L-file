@@ -319,13 +319,19 @@ const EventFilterToolbar = () => {
           🔍 Search Events
         </Typography>
 
+        {/* Single search box mapped to the backend's `search` param, which matches
+            title OR description (see EventsService.findAll). The previous three boxes
+            sent `title`/`description`/`arc` keys that FilterEventsDto rejects, so the
+            strict forbidNonWhitelisted pipe 400'd the whole list on every keystroke.
+            Arc-name free-text search isn't supported by the backend (arc is filtered
+            by arcId), so that box was removed rather than left broken. */}
         <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12}>
             <MuiTextField
-              label="Search by title..."
+              label="Search by title or description..."
               fullWidth
               size="small"
-              defaultValue={filterValues?.title || ''}
+              defaultValue={filterValues?.search || ''}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: 'rgba(225, 29, 72, 0.05)',
@@ -335,47 +341,7 @@ const EventFilterToolbar = () => {
                 }
               }}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                handleTextSearch('title', e.target.value)
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <MuiTextField
-              label="Search by description..."
-              fullWidth
-              size="small"
-              defaultValue={filterValues?.description || ''}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'rgba(225, 29, 72, 0.05)',
-                  '& fieldset': { borderColor: 'rgba(225, 29, 72, 0.3)' },
-                  '&:hover fieldset': { borderColor: '#e11d48' },
-                  '&.Mui-focused fieldset': { borderColor: '#e11d48' }
-                }
-              }}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                handleTextSearch('description', e.target.value)
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <MuiTextField
-              label="Search by arc name..."
-              fullWidth
-              size="small"
-              defaultValue={filterValues?.arc || ''}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'rgba(225, 29, 72, 0.05)',
-                  '& fieldset': { borderColor: 'rgba(225, 29, 72, 0.3)' },
-                  '&:hover fieldset': { borderColor: '#e11d48' },
-                  '&.Mui-focused fieldset': { borderColor: '#e11d48' }
-                }
-              }}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                handleTextSearch('arc', e.target.value)
+                handleTextSearch('search', e.target.value)
               }}
             />
           </Grid>

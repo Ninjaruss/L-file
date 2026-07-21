@@ -896,11 +896,16 @@ export const AdminDataProvider: DataProvider = {
     try {
       // Special handling for badge awarding
       if (resource === 'badges/award') {
+        // AwardBadgeDto expects `year` and `expiresAt` as top-level fields.
+        // Previously `year` was nested under `metadata` and `expiresAt` was dropped,
+        // so every awarded badge saved with year=null / expiresAt=null (permanent),
+        // contradicting what the award modal showed.
         const awardData = {
           userId: params.data.userId,
           badgeId: params.data.badgeId,
           reason: params.data.reason || null,
-          metadata: params.data.year ? { year: params.data.year } : null,
+          year: params.data.year != null ? Number(params.data.year) : undefined,
+          expiresAt: params.data.expiresAt || undefined,
         }
 
         const response = await api.post<unknown>('/badges/award', awardData)
@@ -1003,14 +1008,28 @@ export const AdminDataProvider: DataProvider = {
 
       // Use PATCH for resources that support it, PUT for others
       const usePatch = ['quotes', 'guides', 'media', 'annotations', 'events'].includes(resource)
-      await Promise.all(
+      // Use allSettled so a partial failure reports which ids failed instead of
+      // rejecting the whole batch (some records may already have been mutated).
+      const results = await Promise.allSettled(
         params.ids.map((id) =>
-          usePatch
+          (usePatch
             ? api.patch(`/${resource}/${id}`, cleanedData)
             : api.put(`/${resource}/${id}`, cleanedData)
+          ).then(() => id)
         )
       )
-      return { data: params.ids }
+      const succeeded = results
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => (r as PromiseFulfilledResult<(typeof params.ids)[number]>).value)
+      const failed = params.ids.filter((id) => !succeeded.includes(id))
+      if (failed.length > 0) {
+        throw new HttpError(
+          `Updated ${succeeded.length} of ${params.ids.length} — failed for id(s): ${failed.join(', ')}`,
+          400,
+          { succeeded, failed }
+        )
+      }
+      return { data: succeeded }
     } catch (error: unknown) {
       console.error(`Error in updateMany for ${resource}:`, error)
       const err = error as { status?: number; name?: string; message?: string }
@@ -1035,10 +1054,23 @@ export const AdminDataProvider: DataProvider = {
 
   deleteMany: async (resource, params) => {
     try {
-      await Promise.all(
-        params.ids.map((id) => api.delete(`/${resource}/${id}`))
+      // Use allSettled so a partial failure reports which ids failed instead of
+      // rejecting the whole batch (some records may already have been deleted).
+      const results = await Promise.allSettled(
+        params.ids.map((id) => api.delete(`/${resource}/${id}`).then(() => id))
       )
-      return { data: params.ids }
+      const succeeded = results
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => (r as PromiseFulfilledResult<(typeof params.ids)[number]>).value)
+      const failed = params.ids.filter((id) => !succeeded.includes(id))
+      if (failed.length > 0) {
+        throw new HttpError(
+          `Deleted ${succeeded.length} of ${params.ids.length} — failed for id(s): ${failed.join(', ')}`,
+          400,
+          { succeeded, failed }
+        )
+      }
+      return { data: succeeded }
     } catch (error: unknown) {
       console.error(`Error in deleteMany for ${resource}:`, error)
       const err = error as { status?: number; name?: string; message?: string }
