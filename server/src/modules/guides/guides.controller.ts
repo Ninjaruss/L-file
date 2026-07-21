@@ -461,8 +461,8 @@ export class GuidesController {
       },
     },
   })
-  findAll(@Query() query: GuideQueryDto) {
-    return this.guidesService.findAll(query);
+  findAll(@Query() query: GuideQueryDto, @CurrentUser() user: User) {
+    return this.guidesService.findAll(query, user);
   }
 
   @Get('my-guides')

@@ -130,7 +130,10 @@ export class GuidesService {
     });
   }
 
-  async findAll(query: GuideQueryDto): Promise<{
+  async findAll(
+    query: GuideQueryDto,
+    user?: User,
+  ): Promise<{
     data: (Guide & { viewCount?: number })[];
     total: number;
     page: number;
@@ -200,6 +203,30 @@ export class GuidesService {
 
     if (authorId) {
       queryBuilder.andWhere('guide.authorId = :authorId', { authorId });
+    }
+
+    // Access control: non-privileged callers only see approved guides plus their
+    // own (any status). Without this scoping, any authenticated user could read
+    // everyone's pending/rejected drafts (incl. rejectionReason) via GET /guides.
+    const isPrivileged =
+      !!user &&
+      (user.role === UserRole.ADMIN ||
+        user.role === UserRole.MODERATOR ||
+        user.role === UserRole.EDITOR);
+    if (!isPrivileged) {
+      if (user) {
+        queryBuilder.andWhere(
+          '(guide.status = :approvedStatus OR guide.authorId = :currentUserId)',
+          {
+            approvedStatus: GuideStatus.APPROVED,
+            currentUserId: user.id,
+          },
+        );
+      } else {
+        queryBuilder.andWhere('guide.status = :approvedStatus', {
+          approvedStatus: GuideStatus.APPROVED,
+        });
+      }
     }
 
     if (tag) {
