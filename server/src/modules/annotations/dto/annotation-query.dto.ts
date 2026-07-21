@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsInt, IsIn, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  IsIn,
+  IsString,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import {
   AnnotationStatus,
@@ -69,4 +77,11 @@ export class AnnotationQueryDto {
   @IsOptional()
   @IsIn(['id', 'title', 'createdAt'])
   sort?: string = 'createdAt';
+
+  @ApiPropertyOptional({
+    description: 'Search by title or content (case-insensitive)',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
