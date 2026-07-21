@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -482,8 +483,29 @@ export class UsersService {
     await this.repo.save(user);
   }
 
+  /**
+   * Prevent removing the last remaining admin (which would lock everyone out of
+   * user management). Throws if `userId` is currently an admin and no other admin
+   * would remain after a demotion or deletion.
+   */
+  private async assertNotLastAdmin(userId: number): Promise<void> {
+    const user = await this.repo.findOne({ where: { id: userId } });
+    if (!user || user.role !== UserRole.ADMIN) return;
+    const adminCount = await this.repo.count({
+      where: { role: UserRole.ADMIN },
+    });
+    if (adminCount <= 1) {
+      throw new ForbiddenException(
+        'Cannot demote or delete the last remaining admin account.',
+      );
+    }
+  }
+
   // --- Update user ---
   async update(id: number, data: Partial<User>): Promise<User> {
+    if (data.role !== undefined && data.role !== UserRole.ADMIN) {
+      await this.assertNotLastAdmin(id);
+    }
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
     }
@@ -553,6 +575,9 @@ export class UsersService {
   }
 
   async updateRole(userId: number, role: UserRole): Promise<void> {
+    if (role !== UserRole.ADMIN) {
+      await this.assertNotLastAdmin(userId);
+    }
     await this.repo.update(userId, { role });
   }
 
@@ -1280,6 +1305,7 @@ export class UsersService {
 
   // --- Delete user ---
   async remove(id: number): Promise<void> {
+    await this.assertNotLastAdmin(id);
     const user = await this.findOne(id);
     // findOne already throws NotFoundException if user not found
     await this.repo.remove(user);
