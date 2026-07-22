@@ -30,6 +30,7 @@ import {
   useRefresh,
   useDataProvider,
   usePermissions,
+  useGetIdentity,
   SearchInput,
   BulkDeleteButton
 } from 'react-admin'
@@ -1013,6 +1014,14 @@ const RoleSelectInput = () => {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingRole, setPendingRole] = useState<string | null>(null)
   const notify = useNotify()
+  const { identity } = useGetIdentity()
+
+  // Prevent changing your OWN role (self-demotion). The backend also blocks
+  // demoting the last admin, but disabling the control avoids a confusing 403.
+  const isSelf =
+    identity?.id != null &&
+    record?.id != null &&
+    String(identity.id) === String(record.id)
 
   const isAdmin = permissions === 'admin'
   const isModerator = permissions === 'moderator'
@@ -1074,6 +1083,7 @@ const RoleSelectInput = () => {
           value={currentRole || record?.role || 'user'}
           onChange={handleRoleChange}
           label="Role"
+          disabled={isSelf}
         >
           {availableChoices.map((choice) => (
             <MenuItem key={choice.id} value={choice.id}>
@@ -1092,6 +1102,11 @@ const RoleSelectInput = () => {
         {isModerator && (
           <Typography variant="caption" sx={{ mt: 0.5, color: 'text.secondary' }}>
             Moderators cannot promote users to admin role
+          </Typography>
+        )}
+        {isSelf && (
+          <Typography variant="caption" sx={{ mt: 0.5, color: 'text.secondary' }}>
+            You can&apos;t change your own role.
           </Typography>
         )}
       </FormControl>
