@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   ConflictException,
   NotFoundException,
   BadRequestException,
@@ -25,6 +26,8 @@ import { Annotation, AnnotationStatus } from '../../entities/annotation.entity';
 import { Event } from '../../entities/event.entity';
 import { UserFavoriteCharacter } from '../../entities/user-favorite-character.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
 import { createHash, randomBytes } from 'crypto';
 import { createQueryLimiter } from '../../utils/db-query-limiter';
 import { EmailService } from '../email/email.service';
@@ -47,7 +50,19 @@ export class UsersService {
     @InjectRepository(UserFavoriteCharacter)
     private readonly favoriteCharacterRepo: Repository<UserFavoriteCharacter>,
     private readonly emailService: EmailService,
+    private readonly editLogService: EditLogService,
   ) {}
+
+  private readonly logger = new Logger(UsersService.name);
+
+  /** Run an audit-log write without letting a logging failure block the mutation. */
+  private async safeLog(fn: () => Promise<unknown>): Promise<void> {
+    try {
+      await fn();
+    } catch (err) {
+      this.logger.warn(`Edit-log write failed: ${String(err)}`);
+    }
+  }
 
   // --- Find methods ---
   async findAll(
@@ -502,7 +517,11 @@ export class UsersService {
   }
 
   // --- Update user ---
-  async update(id: number, data: Partial<User>): Promise<User> {
+  async update(
+    id: number,
+    data: Partial<User>,
+    actorId?: number,
+  ): Promise<User> {
     if (data.role !== undefined && data.role !== UserRole.ADMIN) {
       await this.assertNotLastAdmin(id);
     }
@@ -510,6 +529,16 @@ export class UsersService {
       data.password = await bcrypt.hash(data.password, 12);
     }
     await this.repo.update(id, data);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logUpdate(
+          EditLogEntityType.USER,
+          id,
+          actorId,
+          Object.keys(data).filter((k) => k !== 'password'),
+        ),
+      );
+    }
     return this.findOne(id);
   }
 
@@ -574,11 +603,22 @@ export class UsersService {
     return !!user.password;
   }
 
-  async updateRole(userId: number, role: UserRole): Promise<void> {
+  async updateRole(
+    userId: number,
+    role: UserRole,
+    actorId?: number,
+  ): Promise<void> {
     if (role !== UserRole.ADMIN) {
       await this.assertNotLastAdmin(userId);
     }
     await this.repo.update(userId, { role });
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logUpdate(EditLogEntityType.USER, userId, actorId, [
+          'role',
+        ]),
+      );
+    }
   }
 
   // --- Refresh token helpers ---
@@ -1304,11 +1344,16 @@ export class UsersService {
   }
 
   // --- Delete user ---
-  async remove(id: number): Promise<void> {
+  async remove(id: number, actorId?: number): Promise<void> {
     await this.assertNotLastAdmin(id);
     const user = await this.findOne(id);
     // findOne already throws NotFoundException if user not found
     await this.repo.remove(user);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logDelete(EditLogEntityType.USER, id, actorId),
+      );
+    }
   }
 
   // --- Credential changes (authenticated user) ---
