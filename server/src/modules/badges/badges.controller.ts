@@ -69,8 +69,8 @@ export class BadgesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a badge (admin only)' })
   @ApiResponse({ status: 201, description: 'Badge created' })
-  async createBadge(@Body() dto: CreateBadgeDto) {
-    return this.badgesService.createBadge(dto);
+  async createBadge(@Body() dto: CreateBadgeDto, @Request() req) {
+    return this.badgesService.createBadge(dto, req.user.id);
   }
 
   @Put(':id')
@@ -84,8 +84,9 @@ export class BadgesController {
   async updateBadge(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateBadgeDto,
+    @Request() req,
   ) {
-    return this.badgesService.updateBadge(id, dto);
+    return this.badgesService.updateBadge(id, dto, req.user.id);
   }
 
   @Delete(':id')
@@ -96,8 +97,8 @@ export class BadgesController {
   @ApiParam({ name: 'id', description: 'Badge ID' })
   @ApiResponse({ status: 200, description: 'Badge deleted' })
   @ApiResponse({ status: 404, description: 'Badge not found' })
-  async removeBadge(@Param('id', ParseIntPipe) id: number) {
-    await this.badgesService.removeBadge(id);
+  async removeBadge(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    await this.badgesService.removeBadge(id, req.user.id);
     return { message: 'Deleted successfully' };
   }
 

@@ -4,9 +4,10 @@ import { VolumesController } from './volumes.controller';
 import { VolumesService } from './volumes.service';
 import { Volume } from '../../entities/volume.entity';
 import { MediaModule } from '../media/media.module';
+import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Volume]), MediaModule],
+  imports: [TypeOrmModule.forFeature([Volume]), MediaModule, EditLogModule],
   controllers: [VolumesController],
   providers: [VolumesService],
   exports: [VolumesService],
