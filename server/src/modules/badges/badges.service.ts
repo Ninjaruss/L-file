@@ -10,6 +10,8 @@ import { Badge, BadgeType } from '../../entities/badge.entity';
 import { UserBadge } from '../../entities/user-badge.entity';
 import { User } from '../../entities/user.entity';
 import { CreateBadgeDto, UpdateBadgeDto } from './dto/badge.dto';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
 
 @Injectable()
 export class BadgesService {
@@ -22,7 +24,17 @@ export class BadgesService {
     private readonly userBadgeRepository: Repository<UserBadge>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly editLogService: EditLogService,
   ) {}
+
+  /** Run an audit-log write without letting a logging failure block the mutation. */
+  private async safeLog(fn: () => Promise<unknown>): Promise<void> {
+    try {
+      await fn();
+    } catch (err) {
+      this.logger.warn(`Edit-log write failed: ${String(err)}`);
+    }
+  }
 
   async findAllBadges(): Promise<Badge[]> {
     return this.badgeRepository.find({
@@ -39,20 +51,51 @@ export class BadgesService {
     return badge;
   }
 
-  async createBadge(data: CreateBadgeDto): Promise<Badge> {
-    const badge = this.badgeRepository.create(data);
-    return this.badgeRepository.save(badge);
+  async createBadge(data: CreateBadgeDto, actorId?: number): Promise<Badge> {
+    const saved = await this.badgeRepository.save(
+      this.badgeRepository.create(data),
+    );
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logCreate(
+          EditLogEntityType.BADGE,
+          saved.id,
+          actorId,
+        ),
+      );
+    }
+    return saved;
   }
 
-  async updateBadge(id: number, data: UpdateBadgeDto): Promise<Badge> {
+  async updateBadge(
+    id: number,
+    data: UpdateBadgeDto,
+    actorId?: number,
+  ): Promise<Badge> {
     const badge = await this.findBadgeById(id);
     Object.assign(badge, data);
-    return this.badgeRepository.save(badge);
+    const saved = await this.badgeRepository.save(badge);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logUpdate(
+          EditLogEntityType.BADGE,
+          id,
+          actorId,
+          Object.keys(data),
+        ),
+      );
+    }
+    return saved;
   }
 
-  async removeBadge(id: number): Promise<void> {
+  async removeBadge(id: number, actorId?: number): Promise<void> {
     const badge = await this.findBadgeById(id);
     await this.badgeRepository.remove(badge);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logDelete(EditLogEntityType.BADGE, id, actorId),
+      );
+    }
   }
 
   async getUserBadges(userId: number): Promise<UserBadge[]> {

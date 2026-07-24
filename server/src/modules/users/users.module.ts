@@ -9,6 +9,7 @@ import { Character } from '../../entities/character.entity';
 import { UserFavoriteCharacter } from '../../entities/user-favorite-character.entity';
 import { BadgesModule } from '../badges/badges.module';
 import { EmailModule } from '../email/email.module';
+import { EditLogModule } from '../edit-log/edit-log.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EmailModule } from '../email/email.module';
     ]),
     BadgesModule,
     EmailModule,
+    EditLogModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],

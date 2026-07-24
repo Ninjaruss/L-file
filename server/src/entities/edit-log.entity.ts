@@ -24,6 +24,9 @@ export enum EditLogEntityType {
   CHARACTER_RELATIONSHIP = 'character_relationship',
   CHARACTER_ORGANIZATION = 'character_organization',
   QUOTE = 'quote',
+  USER = 'user',
+  VOLUME = 'volume',
+  BADGE = 'badge',
 }
 
 export enum EditLogAction {
