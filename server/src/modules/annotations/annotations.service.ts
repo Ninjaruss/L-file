@@ -82,6 +82,7 @@ export class AnnotationsService {
       status,
       ownerType,
       authorId,
+      search,
       page = 1,
       limit = 20,
       order = 'DESC',
@@ -120,6 +121,13 @@ export class AnnotationsService {
 
     if (authorId) {
       queryBuilder.andWhere('annotation.authorId = :authorId', { authorId });
+    }
+
+    if (search && search.trim()) {
+      queryBuilder.andWhere(
+        '(LOWER(annotation.title) LIKE LOWER(:search) OR LOWER(annotation.content) LIKE LOWER(:search))',
+        { search: `%${search.trim()}%` },
+      );
     }
 
     const ANNOTATION_SORT_FIELDS: Record<string, string> = {

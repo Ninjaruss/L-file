@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Param,
   Body,
@@ -22,6 +23,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { AwardBadgeDto, RevokeBadgeDto } from './dto/award-badge.dto';
+import { CreateBadgeDto, UpdateBadgeDto } from './dto/badge.dto';
 
 @ApiTags('badges')
 @Controller('badges')
@@ -59,6 +61,45 @@ export class BadgesController {
   @ApiResponse({ status: 404, description: 'Badge not found' })
   async getBadgeById(@Param('id', ParseIntPipe) id: number) {
     return this.badgesService.findBadgeById(id);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a badge (admin only)' })
+  @ApiResponse({ status: 201, description: 'Badge created' })
+  async createBadge(@Body() dto: CreateBadgeDto, @Request() req) {
+    return this.badgesService.createBadge(dto, req.user.id);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a badge (admin only)' })
+  @ApiParam({ name: 'id', description: 'Badge ID' })
+  @ApiResponse({ status: 200, description: 'Badge updated' })
+  @ApiResponse({ status: 404, description: 'Badge not found' })
+  async updateBadge(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateBadgeDto,
+    @Request() req,
+  ) {
+    return this.badgesService.updateBadge(id, dto, req.user.id);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a badge (admin only)' })
+  @ApiParam({ name: 'id', description: 'Badge ID' })
+  @ApiResponse({ status: 200, description: 'Badge deleted' })
+  @ApiResponse({ status: 404, description: 'Badge not found' })
+  async removeBadge(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    await this.badgesService.removeBadge(id, req.user.id);
+    return { message: 'Deleted successfully' };
   }
 
   @Post('award')

@@ -2567,17 +2567,17 @@ export const GuideCreate = () => (
                   border: '1px solid rgba(25, 118, 210, 0.2)'
                 }}>
                   <Typography variant="h6" sx={{ color: '#1976d2', mb: 2, fontWeight: 'bold' }}>
-                    Author & Status
+                    Status
                   </Typography>
-                  <ReferenceInput source="authorId" reference="users" label="Author" perPage={200}>
-                    <AutocompleteInput optionText="username" />
-                  </ReferenceInput>
+                  {/* Author is always set to the current user on create by the backend
+                      (CreateGuideDto has no authorId); reassignment is an admin-only Edit action.
+                      rejectionReason is likewise not accepted on create. Both were removed to
+                      avoid the strict forbidNonWhitelisted 400 that broke every guide create. */}
                   <SelectInput source="status" choices={[
                     { id: GuideStatus.PENDING, name: 'Pending Review' },
                     { id: GuideStatus.APPROVED, name: 'Approved' },
                     { id: GuideStatus.REJECTED, name: 'Rejected' }
                   ]} defaultValue={GuideStatus.PENDING} />
-                  <TextInput source="rejectionReason" multiline rows={3} label="Rejection Reason" helperText="Required when status is rejected" />
                 </Box>
               </Grid>
 

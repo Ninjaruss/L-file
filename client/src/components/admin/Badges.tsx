@@ -345,9 +345,9 @@ export const BadgeCreate = () => (
                     <SelectInput
                       source="type"
                       choices={[
-                        { id: 'supporter', name: 'Supporter' },
-                        { id: 'active_supporter', name: 'Active Supporter' },
-                        { id: 'sponsor', name: 'Sponsor' },
+                        // Only 'custom' exists in the backend BadgeType enum. The
+                        // supporter/sponsor concepts live in the user-badge award flow
+                        // (year/expiresAt), not on the Badge entity itself.
                         { id: 'custom', name: 'Custom' },
                       ]}
                       required
@@ -494,9 +494,9 @@ export const BadgeEdit = () => (
                     <SelectInput
                       source="type"
                       choices={[
-                        { id: 'supporter', name: 'Supporter' },
-                        { id: 'active_supporter', name: 'Active Supporter' },
-                        { id: 'sponsor', name: 'Sponsor' },
+                        // Only 'custom' exists in the backend BadgeType enum. The
+                        // supporter/sponsor concepts live in the user-badge award flow
+                        // (year/expiresAt), not on the Badge entity itself.
                         { id: 'custom', name: 'Custom' },
                       ]}
                       required

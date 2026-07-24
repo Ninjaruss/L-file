@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Volume } from '../../entities/volume.entity';
@@ -7,6 +7,8 @@ import { UpdateVolumeDto } from './dto/update-volume.dto';
 
 import { MediaService } from '../media/media.service';
 import { MediaOwnerType, MediaUsageType } from '../../entities/media.entity';
+import { EditLogService } from '../edit-log/edit-log.service';
+import { EditLogEntityType } from '../../entities/edit-log.entity';
 
 export interface ShowcaseReadyVolume {
   volumeId: number;
@@ -23,10 +25,22 @@ export interface ShowcaseSlot {
 
 @Injectable()
 export class VolumesService {
+  private readonly logger = new Logger(VolumesService.name);
+
   constructor(
     @InjectRepository(Volume) private repo: Repository<Volume>,
     private readonly mediaService: MediaService,
+    private readonly editLogService: EditLogService,
   ) {}
+
+  /** Run an audit-log write without letting a logging failure block the mutation. */
+  private async safeLog(fn: () => Promise<unknown>): Promise<void> {
+    try {
+      await fn();
+    } catch (err) {
+      this.logger.warn(`Edit-log write failed: ${String(err)}`);
+    }
+  }
 
   /**
    * Get all volumes with pagination and filtering
@@ -73,23 +87,50 @@ export class VolumesService {
     return this.repo.findOne({ where: { id } });
   }
 
-  async create(data: CreateVolumeDto) {
+  async create(data: CreateVolumeDto, actorId?: number) {
     const volume = this.repo.create({
       number: data.number,
       startChapter: data.startChapter,
       endChapter: data.endChapter,
       description: data.description,
     });
-    return this.repo.save(volume);
+    const saved = await this.repo.save(volume);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logCreate(
+          EditLogEntityType.VOLUME,
+          saved.id,
+          actorId,
+        ),
+      );
+    }
+    return saved;
   }
 
-  update(id: number, data: UpdateVolumeDto) {
+  async update(id: number, data: UpdateVolumeDto, actorId?: number) {
     const updateData: any = { ...data };
-    return this.repo.update(id, updateData);
+    const result = await this.repo.update(id, updateData);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logUpdate(
+          EditLogEntityType.VOLUME,
+          id,
+          actorId,
+          Object.keys(data),
+        ),
+      );
+    }
+    return result;
   }
 
-  remove(id: number) {
-    return this.repo.delete(id);
+  async remove(id: number, actorId?: number) {
+    const result = await this.repo.delete(id);
+    if (actorId != null) {
+      await this.safeLog(() =>
+        this.editLogService.logDelete(EditLogEntityType.VOLUME, id, actorId),
+      );
+    }
+    return result;
   }
 
   /**

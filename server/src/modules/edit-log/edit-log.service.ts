@@ -381,6 +381,9 @@ export class EditLogService {
       [EditLogEntityType.CHARACTER_RELATIONSHIP]: 0,
       [EditLogEntityType.CHARACTER_ORGANIZATION]: 0,
       [EditLogEntityType.QUOTE]: 0,
+      [EditLogEntityType.USER]: 0,
+      [EditLogEntityType.VOLUME]: 0,
+      [EditLogEntityType.BADGE]: 0,
     };
 
     for (const result of results) {

@@ -607,10 +607,9 @@ const MediaFilterToolbar = () => {
   ]
 
   const handleStatusFilter = (status: string) => {
-    const newFilters = status === 'all'
-      ? { ...filterValues }
-      : { ...filterValues, status }
-    if (status === 'all') delete newFilters.status
+    // Send status=all explicitly. Omitting the param makes the backend default to
+    // approved-only, which would silently hide pending/rejected items behind "All".
+    const newFilters = { ...filterValues, status }
     setFilters(newFilters, filterValues)
   }
 

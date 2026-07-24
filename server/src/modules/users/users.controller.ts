@@ -892,8 +892,9 @@ export class UsersController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateUserDto,
+    @CurrentUser() actor: User,
   ): Promise<User> {
-    return this.service.update(id, data).then(sanitizeUser);
+    return this.service.update(id, data, actor.id).then(sanitizeUser);
   }
 
   @Delete(':id')
@@ -919,8 +920,8 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiParam({ name: 'id', description: 'User ID', example: 1 })
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.service.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() actor: User) {
+    await this.service.remove(id, actor.id);
     return { message: 'Deleted successfully' };
   }
 

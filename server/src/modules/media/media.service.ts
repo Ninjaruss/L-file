@@ -20,6 +20,7 @@ import {
 import { User } from '../../entities/user.entity';
 import { Character } from '../../entities/character.entity';
 import { CreateMediaDto } from './dto/create-media.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { UpdateOwnMediaDto } from './dto/update-own-media.dto';
 import { UrlNormalizerService } from './services/url-normalizer.service';
@@ -681,7 +682,8 @@ export class MediaService {
 
   async update(
     id: string,
-    updateData: Partial<CreateMediaDto>,
+    updateData: UpdateMediaDto,
+    userId?: number,
   ): Promise<Media> {
     const media = await this.mediaRepo.findOne({
       where: { id },
@@ -691,10 +693,27 @@ export class MediaService {
       throw new NotFoundException(`Media with id ${id} not found`);
     }
 
+    const before: Record<string, unknown> = { ...media };
+
     // Merge the update data
     Object.assign(media, updateData);
 
-    return this.mediaRepo.save(media);
+    const saved = await this.mediaRepo.save(media);
+
+    // Audit-log the edit — this generic update path previously wrote nothing to
+    // the edit log, unlike approve/reject/updateOwnSubmission.
+    if (userId) {
+      await this.editLogService.logUpdate(
+        EditLogEntityType.MEDIA,
+        // Media ids are UUID strings; the edit-log entityId is numeric. Matches the
+        // existing media logCreate/logUpdate calls in this service.
+        media.id as unknown as number,
+        userId,
+        diffFields(before, updateData as unknown as Record<string, unknown>),
+      );
+    }
+
+    return saved;
   }
 
   async remove(id: string, b2Service?: any): Promise<void> {

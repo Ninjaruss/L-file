@@ -485,6 +485,22 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
     return userCleaned
   }
 
+  if (resource === 'annotations') {
+    // Keep only the fields that are allowed in the UpdateAnnotationDto
+    const allowedFields = [
+      'title', 'content', 'sourceUrl', 'chapterReference', 'isSpoiler', 'spoilerChapter'
+    ]
+
+    const annotationCleaned: Record<string, unknown> = {}
+    allowedFields.forEach(field => {
+      if (cleaned[field] !== undefined) {
+        annotationCleaned[field] = cleaned[field]
+      }
+    })
+
+    return annotationCleaned
+  }
+
   // For all other resources, remove the id field as it should never be sent in update requests
   delete cleaned.id
   delete cleaned.createdAt
@@ -880,11 +896,16 @@ export const AdminDataProvider: DataProvider = {
     try {
       // Special handling for badge awarding
       if (resource === 'badges/award') {
+        // AwardBadgeDto expects `year` and `expiresAt` as top-level fields.
+        // Previously `year` was nested under `metadata` and `expiresAt` was dropped,
+        // so every awarded badge saved with year=null / expiresAt=null (permanent),
+        // contradicting what the award modal showed.
         const awardData = {
           userId: params.data.userId,
           badgeId: params.data.badgeId,
           reason: params.data.reason || null,
-          metadata: params.data.year ? { year: params.data.year } : null,
+          year: params.data.year != null ? Number(params.data.year) : undefined,
+          expiresAt: params.data.expiresAt || undefined,
         }
 
         const response = await api.post<unknown>('/badges/award', awardData)
@@ -895,6 +916,13 @@ export const AdminDataProvider: DataProvider = {
 
       // Clean the create data by removing read-only and relationship fields
       const cleanedData = cleanUpdateData(resource, params.data)
+
+      // CreateMediaDto has no `status` field (media starts as pending / is set via
+      // the approve-reject workflow), and the backend rejects unknown fields — so a
+      // stray `status` in the create payload would 400 every media create.
+      if (resource === 'media') {
+        delete (cleanedData as Record<string, unknown>).status
+      }
 
       const response = await api.post<unknown>(`/${resource}`, cleanedData)
 
@@ -927,7 +955,7 @@ export const AdminDataProvider: DataProvider = {
       const cleanedData = cleanUpdateData(resource, params.data)
 
       // Use PATCH for resources that support it, PUT for others
-      const usePatch = ['quotes', 'guides', 'media', 'annotations'].includes(resource)
+      const usePatch = ['quotes', 'guides', 'media', 'annotations', 'events'].includes(resource)
       const response = usePatch
         ? await api.patch<unknown>(`/${resource}/${params.id}`, cleanedData)
         : await api.put<unknown>(`/${resource}/${params.id}`, cleanedData)
@@ -979,15 +1007,29 @@ export const AdminDataProvider: DataProvider = {
       const cleanedData = cleanUpdateData(resource, params.data)
 
       // Use PATCH for resources that support it, PUT for others
-      const usePatch = ['quotes', 'guides', 'media', 'annotations'].includes(resource)
-      await Promise.all(
+      const usePatch = ['quotes', 'guides', 'media', 'annotations', 'events'].includes(resource)
+      // Use allSettled so a partial failure reports which ids failed instead of
+      // rejecting the whole batch (some records may already have been mutated).
+      const results = await Promise.allSettled(
         params.ids.map((id) =>
-          usePatch
+          (usePatch
             ? api.patch(`/${resource}/${id}`, cleanedData)
             : api.put(`/${resource}/${id}`, cleanedData)
+          ).then(() => id)
         )
       )
-      return { data: params.ids }
+      const succeeded = results
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => (r as PromiseFulfilledResult<(typeof params.ids)[number]>).value)
+      const failed = params.ids.filter((id) => !succeeded.includes(id))
+      if (failed.length > 0) {
+        throw new HttpError(
+          `Updated ${succeeded.length} of ${params.ids.length} — failed for id(s): ${failed.join(', ')}`,
+          400,
+          { succeeded, failed }
+        )
+      }
+      return { data: succeeded }
     } catch (error: unknown) {
       console.error(`Error in updateMany for ${resource}:`, error)
       const err = error as { status?: number; name?: string; message?: string }
@@ -1012,10 +1054,23 @@ export const AdminDataProvider: DataProvider = {
 
   deleteMany: async (resource, params) => {
     try {
-      await Promise.all(
-        params.ids.map((id) => api.delete(`/${resource}/${id}`))
+      // Use allSettled so a partial failure reports which ids failed instead of
+      // rejecting the whole batch (some records may already have been deleted).
+      const results = await Promise.allSettled(
+        params.ids.map((id) => api.delete(`/${resource}/${id}`).then(() => id))
       )
-      return { data: params.ids }
+      const succeeded = results
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => (r as PromiseFulfilledResult<(typeof params.ids)[number]>).value)
+      const failed = params.ids.filter((id) => !succeeded.includes(id))
+      if (failed.length > 0) {
+        throw new HttpError(
+          `Deleted ${succeeded.length} of ${params.ids.length} — failed for id(s): ${failed.join(', ')}`,
+          400,
+          { succeeded, failed }
+        )
+      }
+      return { data: succeeded }
     } catch (error: unknown) {
       console.error(`Error in deleteMany for ${resource}:`, error)
       const err = error as { status?: number; name?: string; message?: string }

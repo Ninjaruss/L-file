@@ -22,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { MediaUrlResolverService } from './services/media-url-resolver.service';
 import { CreateMediaDto } from './dto/create-media.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { UpdateOwnMediaDto } from './dto/update-own-media.dto';
 import {
@@ -900,8 +901,12 @@ export class MediaController {
       },
     },
   })
-  update(@Param('id') id: string, @Body() updateData: any) {
-    return this.mediaService.update(id, updateData);
+  update(
+    @Param('id') id: string,
+    @Body() updateData: UpdateMediaDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.mediaService.update(id, updateData, user.id);
   }
 
   @Patch(':id')
@@ -970,8 +975,12 @@ export class MediaController {
       },
     },
   })
-  patchUpdate(@Param('id') id: string, @Body() updateData: any) {
-    return this.mediaService.update(id, updateData);
+  patchUpdate(
+    @Param('id') id: string,
+    @Body() updateData: UpdateMediaDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.mediaService.update(id, updateData, user.id);
   }
 
   @Delete(':id')

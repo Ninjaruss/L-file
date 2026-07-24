@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   UseGuards,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -339,8 +340,8 @@ export class VolumesController {
     status: 403,
     description: 'Forbidden - Admin role required',
   })
-  create(@Body() data: CreateVolumeDto) {
-    return this.service.create(data);
+  create(@Body() data: CreateVolumeDto, @Request() req) {
+    return this.service.create(data, req.user.id);
   }
 
   @Put(':id')
@@ -375,8 +376,12 @@ export class VolumesController {
     description: 'Forbidden - Admin role required',
   })
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  async update(@Param('id') id: string, @Body() data: UpdateVolumeDto) {
-    const result = await this.service.update(+id, data);
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateVolumeDto,
+    @Request() req,
+  ) {
+    const result = await this.service.update(+id, data, req.user.id);
     if (result.affected === 0) {
       throw new NotFoundException('Volume not found');
     }
@@ -413,8 +418,8 @@ export class VolumesController {
     status: 403,
     description: 'Forbidden - Admin role required',
   })
-  async remove(@Param('id') id: string) {
-    const result = await this.service.remove(+id);
+  async remove(@Param('id') id: string, @Request() req) {
+    const result = await this.service.remove(+id, req.user.id);
     if (result.affected === 0) {
       throw new NotFoundException('Volume not found');
     }
