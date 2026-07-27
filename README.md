@@ -45,7 +45,7 @@ A comprehensive database dedicated to the **Usogui** manga series by Toshio Sako
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS 4, Mantine UI |
 | Backend | NestJS, TypeORM, PostgreSQL, JWT Authentication |
 | Auth | Fluxer OAuth2, Email/Password |
-| Storage | Backblaze B2 |
+| Storage | Cloudflare R2 (S3-compatible) |
 | Email | Resend |
 | Admin | React Admin |
 
