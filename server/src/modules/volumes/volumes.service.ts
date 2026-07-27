@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Volume } from '../../entities/volume.entity';
@@ -108,6 +108,18 @@ export class VolumesService {
   }
 
   async update(id: number, data: UpdateVolumeDto, actorId?: number) {
+    if (data.pairedVolumeId != null) {
+      if (data.pairedVolumeId === id) {
+        throw new BadRequestException('A volume cannot be paired with itself');
+      }
+      const pairedVolume = await this.repo.findOne({
+        where: { id: data.pairedVolumeId },
+      });
+      if (!pairedVolume) {
+        throw new BadRequestException('Paired volume not found');
+      }
+    }
+
     const updateData: any = { ...data };
     const result = await this.repo.update(id, updateData);
     if (actorId != null) {

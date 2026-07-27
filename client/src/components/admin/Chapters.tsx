@@ -324,9 +324,10 @@ export const ChapterEdit = () => (
                 <ChapterNumberInput isEdit={true} />
                 <TextInput
                   source="title"
+                  required
                   fullWidth
                   label="Title"
-                  helperText="Chapter title (optional)"
+                  helperText="Chapter title"
                 />
                 <TextInput
                   source="summary"
@@ -411,9 +412,10 @@ export const ChapterCreate = () => (
                 <ChapterNumberInput />
                 <TextInput
                   source="title"
+                  required
                   fullWidth
                   label="Title"
-                  helperText="Chapter title (optional)"
+                  helperText="Chapter title"
                 />
                 <TextInput
                   source="summary"

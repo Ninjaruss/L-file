@@ -18,7 +18,6 @@ import {
   useRecordContext,
   useGetList,
   usePermissions,
-  ReferenceInput,
   AutocompleteInput,
 } from 'react-admin'
 import { Typography, Chip, Box, Card, CardContent, Grid } from '@mui/material'
@@ -51,6 +50,37 @@ const VolumeNumberInput = ({ isEdit = false }: { isEdit?: boolean }) => {
         setValue(v !== '' && v !== undefined && v !== null ? Number(v) : undefined)
       }}
       helperText={isDuplicate ? '⚠️ A volume with this number already exists' : 'The volume number (e.g. 1, 2, 3...)'}
+    />
+  )
+}
+
+// M4: the backend list endpoint has no `id_neq` (or similar) filter support, so we
+// can't exclude the current record server-side. Fetch the full choice set and filter
+// out the record being edited client-side instead, so a volume can never be offered
+// as its own showcase pair.
+const PairedVolumeInput = () => {
+  const record = useRecordContext()
+  const { data: volumes = [] } = useGetList('volumes', {
+    pagination: { page: 1, perPage: 100 },
+    sort: { field: 'number', order: 'ASC' },
+  })
+  const choices = volumes.filter((v: any) => v.id !== record?.id)
+
+  return (
+    <AutocompleteInput
+      source="pairedVolumeId"
+      choices={choices}
+      optionText={(choice: any) => (choice ? `Vol. ${choice.number}${choice.title ? ` — ${choice.title}` : ''}` : '')}
+      optionValue="id"
+      label="Pair with Volume"
+      helperText="Volume to show alongside this one"
+      fullWidth
+      sx={{
+        '& .MuiInputBase-root': {
+          backgroundColor: 'rgba(10, 10, 10, 0.8)',
+          color: '#ffffff',
+        },
+      }}
     />
   )
 }
@@ -481,21 +511,7 @@ export const VolumeEdit = () => {
                     <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)', mb: 2 }}>
                       Select a second volume to display alongside this one in the homepage showcase (dual layout). Leave blank for single layout.
                     </Typography>
-                    <ReferenceInput source="pairedVolumeId" reference="volumes" perPage={100}>
-                      <AutocompleteInput
-                        optionText={(record) => record ? `Vol. ${record.number}${record.title ? ` — ${record.title}` : ''}` : ''}
-                        label="Pair with Volume"
-                        helperText="Volume to show alongside this one"
-                        fullWidth
-                        isClearable
-                        sx={{
-                          '& .MuiInputBase-root': {
-                            backgroundColor: 'rgba(10, 10, 10, 0.8)',
-                            color: '#ffffff',
-                          },
-                        }}
-                      />
-                    </ReferenceInput>
+                    <PairedVolumeInput />
                   </Box>
                 </Grid>
 
