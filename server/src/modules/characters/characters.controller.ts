@@ -61,6 +61,21 @@ export class CharactersController {
     description: 'Filter by description content',
   })
   @ApiQuery({
+    name: 'organizationId',
+    required: false,
+    description: 'Filter by organization ID (membership)',
+  })
+  @ApiQuery({
+    name: 'firstAppearanceChapter_gte',
+    required: false,
+    description: 'Filter by minimum first-appearance chapter',
+  })
+  @ApiQuery({
+    name: 'firstAppearanceChapter_lte',
+    required: false,
+    description: 'Filter by maximum first-appearance chapter',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     description: 'Page number (default: 1)',
@@ -118,6 +133,9 @@ export class CharactersController {
     @Query('arc') arc?: string,
     @Query('arcId') arcIdStr?: string,
     @Query('description') description?: string,
+    @Query('organizationId') organizationIdStr?: string,
+    @Query('firstAppearanceChapter_gte') firstAppearanceChapterGteStr?: string,
+    @Query('firstAppearanceChapter_lte') firstAppearanceChapterLteStr?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
     @Query('sort') sort?: string,
@@ -129,11 +147,23 @@ export class CharactersController {
     totalPages: number;
   }> {
     const arcId = arcIdStr ? parseInt(arcIdStr) : undefined;
+    const organizationId = organizationIdStr
+      ? parseInt(organizationIdStr)
+      : undefined;
+    const firstAppearanceChapterGte = firstAppearanceChapterGteStr
+      ? parseInt(firstAppearanceChapterGteStr)
+      : undefined;
+    const firstAppearanceChapterLte = firstAppearanceChapterLteStr
+      ? parseInt(firstAppearanceChapterLteStr)
+      : undefined;
     return this.service.findAll({
       name,
       arc,
       arcId,
       description,
+      organizationId,
+      firstAppearanceChapterGte,
+      firstAppearanceChapterLte,
       page: parseInt(page),
       limit: parseInt(limit),
       sort,
