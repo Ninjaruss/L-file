@@ -27,12 +27,14 @@ import {
   Button as RAButton,
   BooleanField,
   EditButton,
+  BulkDeleteButton,
 } from 'react-admin'
 import { Box, Chip, Typography, Divider } from '@mui/material'
 import { ArrowRight, CheckCircle, Clock } from 'lucide-react'
 import { api } from '../../lib/api'
 import { RelationshipType } from '../../types'
 import { RELATIONSHIP_TYPE_CHOICES } from '../../lib/constants'
+import { EditToolbar } from './EditToolbar'
 
 // Validation function for chapter range
 const validateChapterRange = (values: any) => {
@@ -150,6 +152,13 @@ const ListActions = () => (
   </TopToolbar>
 )
 
+// Custom bulk action buttons (pessimistic delete with confirmation)
+const RelationshipBulkActionButtons = () => (
+  <>
+    <BulkDeleteButton mutationMode="pessimistic" />
+  </>
+)
+
 const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
   const record = useRecordContext()
   const notify = useNotify()
@@ -195,7 +204,7 @@ export const CharacterRelationshipList = () => (
     filters={relationshipFilters}
     actions={<ListActions />}
   >
-    <Datagrid rowClick="show">
+    <Datagrid rowClick="show" bulkActionButtons={<RelationshipBulkActionButtons />}>
       <NumberField source="id" />
       <FunctionField
         label="Relationship"
@@ -372,6 +381,7 @@ export const CharacterRelationshipCreate = () => (
           <NumberInput
             source="startChapter"
             min={1}
+            required
             helperText="Chapter where this relationship begins"
             sx={{ flex: 1 }}
           />
@@ -396,7 +406,16 @@ export const CharacterRelationshipCreate = () => (
 // Edit component
 export const CharacterRelationshipEdit = () => (
   <Edit>
-    <SimpleForm validate={validateChapterRange}>
+    <SimpleForm
+      validate={validateChapterRange}
+      toolbar={
+        <EditToolbar
+          resource="character-relationships"
+          confirmTitle="Delete Relationship"
+          confirmMessage="Are you sure you want to delete this relationship? This action cannot be undone."
+        />
+      }
+    >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary' }}>
           Characters
@@ -481,6 +500,7 @@ export const CharacterRelationshipEdit = () => (
             source="startChapter"
             label="Start Chapter"
             min={1}
+            required
             sx={{ flex: 1 }}
             helperText="When this relationship begins"
           />
