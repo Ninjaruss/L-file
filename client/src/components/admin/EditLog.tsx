@@ -12,6 +12,7 @@ import {
 } from 'react-admin'
 import { Chip, Typography } from '@mui/material'
 
+// Must exactly match server/src/entities/edit-log.entity.ts EditLogEntityType
 const entityTypeChoices = [
   { id: 'character', name: 'Character' },
   { id: 'gamble', name: 'Gamble' },
@@ -19,10 +20,16 @@ const entityTypeChoices = [
   { id: 'organization', name: 'Organization' },
   { id: 'event', name: 'Event' },
   { id: 'guide', name: 'Guide' },
-  { id: 'volume', name: 'Volume' },
-  { id: 'chapter', name: 'Chapter' },
   { id: 'media', name: 'Media' },
+  { id: 'annotation', name: 'Annotation' },
+  { id: 'chapter', name: 'Chapter' },
+  { id: 'tag', name: 'Tag' },
+  { id: 'character_relationship', name: 'Character Relationship' },
+  { id: 'character_organization', name: 'Character Organization' },
   { id: 'quote', name: 'Quote' },
+  { id: 'user', name: 'User' },
+  { id: 'volume', name: 'Volume' },
+  { id: 'badge', name: 'Badge' },
 ]
 
 const editLogFilters = [
