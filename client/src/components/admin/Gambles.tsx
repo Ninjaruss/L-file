@@ -449,7 +449,19 @@ export const GambleShow = () => (
                 }}
               >
                 <TextField source="name" sx={{ fontWeight: 500, color: '#ffffff' }} />
-                <TextField source="nicknames" label="Also known as" emptyText="-" sx={{ color: '#ffffff' }} />
+                <FunctionField
+                  label="Also known as"
+                  render={(record: any) => {
+                    const names = Array.isArray(record?.alternateNames)
+                      ? record.alternateNames.filter(Boolean)
+                      : []
+                    return (
+                      <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                        {names.length > 0 ? names.join(', ') : '-'}
+                      </Typography>
+                    )
+                  }}
+                />
               </Datagrid>
             </ArrayField>
           </Box>
@@ -683,6 +695,14 @@ const GambleEditForm = () => {
   )
 }
 
+const validateGambleCreate = (values: any) => {
+  const errors: Record<string, string> = {}
+  if (!values.rules || !String(values.rules).trim()) {
+    errors.rules = 'Game rules are required'
+  }
+  return errors
+}
+
 const GambleEditToolbar = () => (
   <EditToolbar 
     resource="gambles"
@@ -719,7 +739,7 @@ export const GambleCreate = () => {
           backgroundColor: 'transparent'
         }
       }}>
-        <TabbedForm sx={{
+        <TabbedForm validate={validateGambleCreate} sx={{
           backgroundColor: '#0a0a0a',
           '& .RaTabbedForm-content': {
             backgroundColor: '#0a0a0a',
@@ -801,6 +821,7 @@ export const GambleCreate = () => {
                 <AutocompleteInput
                   optionText={(record: any) => `Chapter ${record.number}${record.title ? ` — ${record.title}` : ''}`}
                   label="Chapter"
+                  required
                   helperText="Select the chapter this gamble takes place in"
                 />
               </ReferenceInput>
@@ -809,7 +830,7 @@ export const GambleCreate = () => {
 
           <FormTab label="Game Rules">
             <Box sx={{ maxWidth: 800, p: 3, backgroundColor: '#0a0a0a' }}>
-              <Typography variant="h6" gutterBottom sx={{ color: '#16a34a', mb: 2, fontWeight: 'bold' }}>How the Game Works</Typography>
+              <Typography variant="h6" gutterBottom sx={{ color: '#16a34a', mb: 2, fontWeight: 'bold' }}>How the Game Works *</Typography>
               <RichMarkdownAdminInput source="rules" label="Game Rules" minHeight={200} />
 
               <Typography variant="subtitle1" gutterBottom sx={{ mt: 3, mb: 1, color: '#ffffff', fontWeight: 'bold' }}>Victory Conditions</Typography>

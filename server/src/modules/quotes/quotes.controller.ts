@@ -165,7 +165,7 @@ export class QuotesController {
     totalPages?: number;
   }> {
     const chapterRange =
-      chapterStart && chapterEnd
+      chapterStart !== undefined || chapterEnd !== undefined
         ? { start: chapterStart, end: chapterEnd }
         : undefined;
 

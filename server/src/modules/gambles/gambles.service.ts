@@ -94,17 +94,27 @@ export class GamblesService {
 
       const savedFaction = await this.factionRepository.save(faction);
 
-      // Create faction members
+      // Create faction members (drop any stale/nonexistent character ids
+      // instead of letting the DB FK constraint throw a raw 500)
       if (factionDto.memberIds && factionDto.memberIds.length > 0) {
-        const members = factionDto.memberIds.map((characterId, memberIndex) =>
-          this.factionMemberRepository.create({
-            factionId: savedFaction.id,
-            characterId,
-            role: factionDto.memberRoles?.[memberIndex] || null,
-            displayOrder: memberIndex,
-          }),
+        const validCharacters = await this.charactersRepository.findByIds(
+          factionDto.memberIds,
         );
-        await this.factionMemberRepository.save(members);
+        const validIds = new Set(validCharacters.map((c) => c.id));
+        const members = factionDto.memberIds
+          .map((characterId, memberIndex) => ({ characterId, memberIndex }))
+          .filter(({ characterId }) => validIds.has(characterId))
+          .map(({ characterId, memberIndex }) =>
+            this.factionMemberRepository.create({
+              factionId: savedFaction.id,
+              characterId,
+              role: factionDto.memberRoles?.[memberIndex] || null,
+              displayOrder: memberIndex,
+            }),
+          );
+        if (members.length > 0) {
+          await this.factionMemberRepository.save(members);
+        }
       }
 
       createdFactions.push(savedFaction);
