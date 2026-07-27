@@ -226,7 +226,9 @@ export class ArcsService {
 
   async remove(id: number, userId: number) {
     await this.editLogService.logDelete(EditLogEntityType.ARC, id, userId);
-    return this.repo.delete(id);
+    const result = await this.repo.delete(id);
+    await this.mediaService.deleteForOwner(MediaOwnerType.ARC, id);
+    return result;
   }
 
   async getChaptersInArc(arcId: number): Promise<Chapter[]> {

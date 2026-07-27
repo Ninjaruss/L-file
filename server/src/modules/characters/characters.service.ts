@@ -268,6 +268,7 @@ export class CharactersService {
     if (!result.affected || result.affected === 0) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
+    await this.mediaService.deleteForOwner(MediaOwnerType.CHARACTER, id);
     return { affected: result.affected };
   }
 

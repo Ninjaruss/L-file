@@ -303,7 +303,9 @@ export class GamblesService {
   async remove(id: number, userId: number): Promise<DeleteResult> {
     await this.findOne(id); // Validates existence
     await this.editLogService.logDelete(EditLogEntityType.GAMBLE, id, userId);
-    return await this.gamblesRepository.delete(id);
+    const result = await this.gamblesRepository.delete(id);
+    await this.mediaService.deleteForOwner(MediaOwnerType.GAMBLE, id);
+    return result;
   }
 
   async findGamblesByName(name: string): Promise<Gamble[]> {
