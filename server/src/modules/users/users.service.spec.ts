@@ -7,6 +7,7 @@ import { Gamble } from '../../entities/gamble.entity';
 import { Character } from '../../entities/character.entity';
 import { UserFavoriteCharacter } from '../../entities/user-favorite-character.entity';
 import { EmailService } from '../email/email.service';
+import { EditLogService } from '../edit-log/edit-log.service';
 
 const mockRepo = {
   find: jest.fn(),
@@ -48,6 +49,15 @@ describe('UsersService', () => {
         {
           provide: EmailService,
           useValue: { sendEmail: jest.fn(), sendPasswordReset: jest.fn() },
+        },
+        {
+          provide: EditLogService,
+          useValue: {
+            logCreate: jest.fn(),
+            logUpdate: jest.fn(),
+            logDelete: jest.fn(),
+            findLastMajorEdit: jest.fn(),
+          },
         },
       ],
     }).compile();
