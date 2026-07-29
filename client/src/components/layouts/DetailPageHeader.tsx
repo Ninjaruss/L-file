@@ -46,6 +46,10 @@ interface DetailPageHeaderProps {
   children?: React.ReactNode
   /** Optional pre-fetched media list; skips the internal API call if provided. */
   initialMedia?: MediaItem[]
+  /** Optional real subtitle/alias line (rendered only if provided). */
+  subtitle?: string
+  /** Show the FILE №<id> dossier tag in the eyebrow row. Default true. */
+  showFileTag?: boolean
 }
 
 export function DetailPageHeader({
@@ -59,6 +63,8 @@ export function DetailPageHeader({
   onSpoilerRevealed,
   children,
   initialMedia,
+  subtitle,
+  showFileTag = true,
 }: DetailPageHeaderProps) {
   const theme = useMantineTheme()
   const accentColor = getEntityThemeColor(theme, entityType)
@@ -488,6 +494,25 @@ export function DetailPageHeader({
         }}
       />
 
+      {/* Decorative suit watermark (aria-hidden) */}
+      <Box
+        aria-hidden
+        style={{
+          position: 'absolute',
+          right: -30,
+          bottom: -70,
+          fontFamily: 'var(--font-editorial-serif)',
+          fontSize: 260,
+          lineHeight: 1,
+          color: 'rgba(255,255,255,0.03)',
+          zIndex: 1,
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}
+      >
+        ♠
+      </Box>
+
       {/* Content column — left 65% desktop, full width mobile, bottom-anchored */}
       {/* pointerEvents: none so cycling arrows in the portrait beneath remain clickable */}
       <Box
@@ -507,18 +532,31 @@ export function DetailPageHeader({
         }}
       >
         <Box style={{ pointerEvents: 'none' }}>
-        {/* Eyebrow label */}
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <Box
-            aria-hidden
-            style={{ width: 18, height: 2, background: accentColor, flexShrink: 0 }}
-          />
+        {/* Eyebrow row: FILE tag + entity type */}
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          {showFileTag && (
+            <Box
+              style={{
+                fontFamily: 'var(--font-noto-sans)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.16em',
+                color: accentColor,
+                border: `1px solid ${accentColor}80`,
+                borderRadius: 4,
+                padding: '5px 8px',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              FILE №{String(entityId).padStart(3, '0')}
+            </Box>
+          )}
           <Text
             style={{
               fontSize: 10,
-              letterSpacing: '3px',
+              letterSpacing: '0.22em',
               textTransform: 'uppercase',
-              color: accentColor,
+              color: '#8a8a8a',
               fontWeight: 700,
             }}
           >
@@ -531,8 +569,8 @@ export function DetailPageHeader({
           order={1}
           style={{
             fontSize: 'clamp(28px, 4vw, 46px)',
-            fontFamily: 'var(--font-opti-goudy-text)',
-            fontWeight: 900,
+            fontFamily: 'var(--font-editorial-serif)',
+            fontWeight: 600,
             letterSpacing: -1,
             color: '#fff',
             lineHeight: 1,
@@ -542,6 +580,12 @@ export function DetailPageHeader({
         >
           {entityName}
         </Title>
+
+        {subtitle && (
+          <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.72)', marginTop: -6, marginBottom: 12 }}>
+            {subtitle}
+          </Text>
+        )}
 
         {/* Stats row */}
         {stats && stats.length > 0 && (

@@ -17,8 +17,6 @@ import {
 import { Users, Calendar, BookOpen, Image as ImageIcon, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import EnhancedSpoilerMarkdown from '../../../components/EnhancedSpoilerMarkdown'
-import { motion } from 'motion/react'
-import { pageEnter } from '../../../lib/motion-presets'
 import { usePageView } from '../../../hooks/usePageView'
 import TimelineSpoilerWrapper from '../../../components/TimelineSpoilerWrapper'
 import GambleTimeline from '../../../components/GambleTimeline'
@@ -37,9 +35,10 @@ import {
   setTabAccentColors,
   backgroundStyles,
 } from '../../../lib/mantine-theme'
-import { CinematicCard, CinematicSectionHeader } from '../../../components/layouts/CinematicCard'
+import { CinematicCard } from '../../../components/layouts/CinematicCard'
 import { DetailPageHeader } from '../../../components/layouts/DetailPageHeader'
-import { RelatedContentSection } from '../../../components/layouts/RelatedContentSection'
+import { DocSection } from '../../../components/layouts/DocSection'
+import { RecordSheet, RecordBlock, RecordLink } from '../../../components/layouts/RecordSheet'
 
 interface GambleFactionMember {
   id: number
@@ -133,6 +132,15 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
     a.startChapter <= initialGamble.chapter.number &&
     (a.endChapter === null || a.endChapter >= initialGamble.chapter.number)
   )
+
+  // Sequential §NN numbering for the DocSection main column, accounting for
+  // sections that only render conditionally (Win Condition, Explanation, Participants).
+  let sectionCounter = 2 // 01 = Description, 02 = Rules (always rendered)
+  const winConditionSectionNo = initialGamble.winCondition ? String(++sectionCounter).padStart(2, '0') : undefined
+  const explanationSectionNo = initialGamble.explanation ? String(++sectionCounter).padStart(2, '0') : undefined
+  const participantsSectionNo = (initialGamble.factions && initialGamble.factions.length > 0)
+    ? String(++sectionCounter).padStart(2, '0')
+    : undefined
 
   const [activeTab, setActiveTab] = useState<string>('overview')
 
@@ -252,7 +260,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
         spoilerChapter={initialGamble.chapter?.number ?? initialGamble.chapterId}
       />
 
-      <motion.div {...pageEnter}>
+      <div>
         <Card withBorder radius="lg" className="gambling-card" shadow="xl" style={{
           background: backgroundStyles.card,
           border: `1px solid ${getAlphaColor(gambleColor, 0.4)}`
@@ -283,42 +291,36 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
             <Box
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 260px',
-                gap: 12,
+                gridTemplateColumns: 'minmax(0, 1fr) 320px',
+                gap: 44,
                 alignItems: 'start',
               }}
               className="detail-editorial-grid"
             >
-              {/* Main column */}
-              <Stack gap={theme.spacing.md}>
-                {/* Gamble Description */}
-                <CinematicCard entityColor={gambleColor}>
-                  <CinematicSectionHeader label="About This Gamble" entityColor={gambleColor} />
+              {/* ── Main column: document ── */}
+              <Box>
+                <DocSection no="01" title="About This Gamble" accent={gambleColor}>
                   {initialGamble.description ? (
                     <TimelineSpoilerWrapper chapterNumber={initialGamble.chapter?.number ?? initialGamble.chapterId}>
-                      <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                      <Box style={{ fontSize: 16, lineHeight: 1.7 }}>
                         <EnhancedSpoilerMarkdown content={initialGamble.description} className="gamble-description" enableEntityEmbeds compactEntityCards={false} />
                       </Box>
                     </TimelineSpoilerWrapper>
                   ) : (
-                    <Text size="sm" style={{ fontStyle: 'italic', textAlign: 'center', padding: '24px 0', color: `${gambleColor}55` }}>
+                    <Text size="sm" style={{ fontStyle: 'italic', color: `${gambleColor}55` }}>
                       No description available for this gamble yet.
                     </Text>
                   )}
-                </CinematicCard>
+                </DocSection>
 
-                {/* Rules */}
-                <CinematicCard entityColor={gambleColor}>
-                  <CinematicSectionHeader label="Rules" entityColor={gambleColor} />
-                  <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                <DocSection no="02" title="Rules" accent={gambleColor}>
+                  <Box style={{ fontSize: 16, lineHeight: 1.7 }}>
                     <EnhancedSpoilerMarkdown content={initialGamble.rules} className="gamble-rules" enableEntityEmbeds compactEntityCards={false} />
                   </Box>
-                </CinematicCard>
+                </DocSection>
 
-                {/* Win Condition */}
                 {initialGamble.winCondition && (
-                  <CinematicCard entityColor={gambleColor}>
-                    <CinematicSectionHeader label="Win Condition" entityColor={gambleColor} />
+                  <DocSection no={winConditionSectionNo!} title="Win Condition" accent={gambleColor}>
                     <Box
                       className="manga-panel-border"
                       style={{
@@ -327,30 +329,25 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                         background: `${gambleColor}08`,
                         border: `1px solid ${gambleColor}30`,
                         borderRadius: '0.5rem',
-                        marginTop: 12,
                         fontSize: 14,
                         lineHeight: 1.6,
                       }}
                     >
                       <EnhancedSpoilerMarkdown content={initialGamble.winCondition} className="gamble-win-condition" enableEntityEmbeds compactEntityCards={false} />
                     </Box>
-                  </CinematicCard>
+                  </DocSection>
                 )}
 
-                {/* Explanation & Analysis */}
                 {initialGamble.explanation && (
-                  <CinematicCard entityColor={gambleColor}>
-                    <CinematicSectionHeader label="Explanation & Analysis" entityColor={gambleColor} />
-                    <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                  <DocSection no={explanationSectionNo!} title="Explanation & Analysis" accent={gambleColor}>
+                    <Box style={{ fontSize: 16, lineHeight: 1.7 }}>
                       <EnhancedSpoilerMarkdown content={initialGamble.explanation} className="gamble-explanation" enableEntityEmbeds compactEntityCards={false} />
                     </Box>
-                  </CinematicCard>
+                  </DocSection>
                 )}
 
-                {/* Participants - Factions (full detail view stays in main column) */}
                 {initialGamble.factions && initialGamble.factions.length > 0 && (
-                  <CinematicCard entityColor={gambleColor}>
-                    <CinematicSectionHeader label="Participants" entityColor={gambleColor} />
+                  <DocSection no={participantsSectionNo!} title="Participants" accent={gambleColor}>
                     {(() => {
                       const sorted = [...initialGamble.factions!].sort((a, b) => a.displayOrder - b.displayOrder)
                       const mainSides = sorted.filter(f => f.supportedGambler != null)
@@ -455,66 +452,48 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
                         </Box>
                       )
                     })()}
-                  </CinematicCard>
+                  </DocSection>
                 )}
-              </Stack>
+              </Box>
 
-              {/* Aside column */}
-              <Stack gap={theme.spacing.sm}>
-                {/* Details card */}
-                <CinematicCard entityColor={gambleColor} padding="md">
-                  <CinematicSectionHeader label="Details" entityColor={gambleColor} />
-                  {(initialGamble.chapter != null || initialGamble.chapterId != null) && (
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${gambleColor}14` }}>
-                      <Box style={{ width: 5, height: 5, borderRadius: '50%', background: gambleColor, flexShrink: 0 }} />
-                      <Text style={{ fontSize: 11, color: `${gambleColor}66`, flex: 1 }}>Start</Text>
-                      <Text style={{ fontSize: 12, fontWeight: 700, color: gambleColor }}>Ch. {initialGamble.chapter?.number ?? initialGamble.chapterId}</Text>
-                    </Box>
-                  )}
-                  {gambleArc != null && (
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${gambleColor}14` }}>
-                      <Box style={{ width: 5, height: 5, borderRadius: '50%', background: gambleColor, flexShrink: 0 }} />
-                      <Text style={{ fontSize: 11, color: `${gambleColor}66`, flex: 1 }}>Arc</Text>
-                      <Text component={Link} href={`/arcs/${gambleArc.id}`} style={{ fontSize: 12, fontWeight: 700, color: arcColor, textDecoration: 'none' }}>{gambleArc.name}</Text>
-                    </Box>
-                  )}
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                    <Box style={{ width: 5, height: 5, borderRadius: '50%', background: gambleColor, flexShrink: 0 }} />
-                    <Text style={{ fontSize: 11, color: `${gambleColor}66`, flex: 1 }}>Players</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 700, color: gambleColor }}>{initialGamble.participants?.length ?? 0}</Text>
-                  </Box>
-                </CinematicCard>
-
-                {/* Participants compact list (when no factions) */}
+              {/* ── Aside: record sheet ── */}
+              <RecordSheet
+                accent={gambleColor}
+                details={[
+                  ...(initialGamble.chapter != null || initialGamble.chapterId != null
+                    ? [{ key: 'START', value: `Ch. ${initialGamble.chapter?.number ?? initialGamble.chapterId}` }]
+                    : []),
+                  ...(gambleArc != null
+                    ? [{
+                        key: 'ARC',
+                        value: gambleArc.name,
+                        href: `/arcs/${gambleArc.id}`,
+                        valueColor: arcColor,
+                      }]
+                    : []),
+                  { key: 'PLAYERS', value: initialGamble.participants?.length ?? 0 },
+                ]}
+              >
                 {(!initialGamble.factions || initialGamble.factions.length === 0) && initialGamble.participants && initialGamble.participants.length > 0 && (
-                  <RelatedContentSection
-                    entityType="character"
-                    title="Participants"
-                    items={initialGamble.participants ?? []}
-                    previewCount={4}
-                    getKey={(p) => p.id}
-                    variant="compact"
-                    getLabel={(p) => p.name}
-                    getHref={(p) => `/characters/${p.id}`}
-                    itemDotColor={characterColor}
-                  />
+                  <RecordBlock title="Participants">
+                    {initialGamble.participants.slice(0, 4).map((p) => (
+                      <RecordLink key={p.id} label={p.name} href={`/characters/${p.id}`} dotColor={characterColor} />
+                    ))}
+                  </RecordBlock>
                 )}
-
-                {/* Factions compact list (when factions exist) */}
                 {initialGamble.factions && initialGamble.factions.length > 0 && (
-                  <RelatedContentSection
-                    entityType="character"
-                    title="Factions"
-                    items={initialGamble.factions}
-                    previewCount={4}
-                    getKey={(f) => f.id}
-                    variant="compact"
-                    getLabel={(f) => f.name || (f.supportedGambler ? `${f.supportedGambler.name}'s Side` : 'Faction')}
-                    getHref={() => `#`}
-                    itemDotColor={gambleColor}
-                  />
+                  <RecordBlock title="Factions">
+                    {initialGamble.factions.slice(0, 4).map((f) => (
+                      <RecordLink
+                        key={f.id}
+                        label={f.name || (f.supportedGambler ? `${f.supportedGambler.name}'s Side` : 'Faction')}
+                        href="#"
+                        dotColor={gambleColor}
+                      />
+                    ))}
+                  </RecordBlock>
                 )}
-              </Stack>
+              </RecordSheet>
             </Box>
           </Tabs.Panel>
 
@@ -571,7 +550,7 @@ export default function GamblePageClient({ initialGamble }: GamblePageClientProp
           </Tabs.Panel>
         </Tabs>
       </Card>
-      </motion.div>
+      </div>
     </Stack>
 
     </Container>
