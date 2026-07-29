@@ -26,10 +26,12 @@ import {
   Button as RAButton,
   BooleanField,
   EditButton,
+  BulkDeleteButton,
 } from 'react-admin'
 import { Box, Chip, Typography, Divider } from '@mui/material'
 import { Building2, ArrowRight, CheckCircle, Clock } from 'lucide-react'
 import { api } from '../../lib/api'
+import { EditToolbar } from './EditToolbar'
 
 // Validation function for chapter range
 const validateChapterRange = (values: any) => {
@@ -122,6 +124,13 @@ const ListActions = () => (
   </TopToolbar>
 )
 
+// Custom bulk action buttons (pessimistic delete with confirmation)
+const MembershipBulkActionButtons = () => (
+  <>
+    <BulkDeleteButton mutationMode="pessimistic" />
+  </>
+)
+
 const VerifyButton = ({ apiMethod }: { apiMethod: (id: number) => Promise<any> }) => {
   const record = useRecordContext()
   const notify = useNotify()
@@ -167,7 +176,7 @@ export const CharacterOrganizationList = () => (
     filters={membershipFilters}
     actions={<ListActions />}
   >
-    <Datagrid rowClick="show">
+    <Datagrid rowClick="show" bulkActionButtons={<MembershipBulkActionButtons />}>
       <NumberField source="id" />
       <FunctionField
         label="Membership"
@@ -296,6 +305,7 @@ export const CharacterOrganizationCreate = () => (
         <TextInput
           source="role"
           label="Role"
+          required
           fullWidth
           helperText="e.g., Leader, Member, Referee, etc."
         />
@@ -319,6 +329,7 @@ export const CharacterOrganizationCreate = () => (
           <NumberInput
             source="startChapter"
             min={1}
+            required
             helperText="Chapter where this role begins"
             sx={{ flex: 1 }}
           />
@@ -343,7 +354,16 @@ export const CharacterOrganizationCreate = () => (
 // Edit component
 export const CharacterOrganizationEdit = () => (
   <Edit>
-    <SimpleForm validate={validateChapterRange}>
+    <SimpleForm
+      validate={validateChapterRange}
+      toolbar={
+        <EditToolbar
+          resource="character-organizations"
+          confirmTitle="Delete Membership"
+          confirmMessage="Are you sure you want to delete this membership? This action cannot be undone."
+        />
+      }
+    >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary' }}>
           Character & Organization
@@ -376,6 +396,7 @@ export const CharacterOrganizationEdit = () => (
         <TextInput
           source="role"
           label="Role"
+          required
           fullWidth
           helperText="e.g., Leader, Member, Referee, etc."
         />
@@ -400,6 +421,7 @@ export const CharacterOrganizationEdit = () => (
             source="startChapter"
             label="Start Chapter"
             min={1}
+            required
             sx={{ flex: 1 }}
             helperText="When this role begins"
           />

@@ -164,6 +164,7 @@ export class OrganizationsService {
     const result = await this.repo.delete(id);
     if (result.affected === 0)
       throw new NotFoundException(`Organization with ID ${id} not found`);
+    await this.mediaService.deleteForOwner(MediaOwnerType.ORGANIZATION, id);
     return { deleted: true };
   }
 

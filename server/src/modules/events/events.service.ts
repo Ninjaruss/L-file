@@ -6,6 +6,8 @@ import { Character } from '../../entities/character.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
+import { MediaService } from '../media/media.service';
+import { MediaOwnerType } from '../../entities/media.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
 import { EditLogEntityType } from '../../entities/edit-log.entity';
 import { diffFields } from '../../common/utils/diff-fields';
@@ -15,6 +17,7 @@ export class EventsService {
   constructor(
     @InjectRepository(Event) private repo: Repository<Event>,
     @InjectRepository(Character) private characterRepo: Repository<Character>,
+    private readonly mediaService: MediaService,
     private readonly editLogService: EditLogService,
   ) {}
 
@@ -208,13 +211,15 @@ export class EventsService {
     return result;
   }
 
-  remove(id: number, userId?: number) {
+  async remove(id: number, userId?: number) {
     if (userId !== undefined) {
       this.editLogService
         .logDelete(EditLogEntityType.EVENT, id, userId)
         .catch(() => {});
     }
-    return this.repo.delete(id);
+    const result = await this.repo.delete(id);
+    await this.mediaService.deleteForOwner(MediaOwnerType.EVENT, id);
+    return result;
   }
 
   async findGroupedByArc(filters?: {

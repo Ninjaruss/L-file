@@ -792,6 +792,8 @@ export const ArcEdit = () => (
                     />
                     <NumberInput
                       source="order"
+                      required
+                      defaultValue={0}
                       fullWidth
                       label="Order"
                       helperText="Display order within the same parent arc (lower = first)"
@@ -980,6 +982,8 @@ export const ArcCreate = () => (
                       <Grid item xs={12}>
                         <NumberInput
                           source="order"
+                          required
+                          defaultValue={0}
                           fullWidth
                           label="Order"
                           helperText="Display order within the same parent arc (lower = first)"

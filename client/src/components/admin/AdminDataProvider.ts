@@ -21,10 +21,13 @@ const cleanUpdateData = (resource: string, data: Record<string, unknown>) => {
 
   // Resource-specific cleaning
   if (resource === 'events') {
-    // Keep only the fields that are allowed in the CreateEventDto/UpdateEventDto
+    // Keep only the fields that are allowed in the CreateEventDto/UpdateEventDto.
+    // 'status' and 'rejectionReason' don't exist on the Event DTOs/entity — they were
+    // dead entries here (L4); a future status UI sending them would 400 under
+    // forbidNonWhitelisted, so they're intentionally omitted.
     const allowedFields = [
-      'title', 'description', 'type', 'status', 'arcId', 'gambleId',
-      'chapterNumber', 'spoilerChapter', 'characterIds', 'rejectionReason'
+      'title', 'description', 'type', 'arcId', 'gambleId',
+      'chapterNumber', 'spoilerChapter', 'characterIds'
     ]
 
     const eventCleaned: Record<string, unknown> = {}
@@ -570,10 +573,13 @@ export const AdminDataProvider: DataProvider = {
     if (params.filter) {
       Object.keys(params.filter).forEach(key => {
         const value = params.filter[key]
-        // Skip undefined, null, empty strings, NaN, "NaN" values, and client-side only filters
+        // Skip undefined, null, empty strings, NaN, "NaN" values. 'guideType=all' means
+        // "no filter" client-side, so it's skipped too; any other guideType value is now
+        // forwarded to the backend (GuideQueryDto.guideType), which filters + counts it
+        // server-side — see guides.service.ts findAll (H1).
         if (value !== undefined && value !== null && value !== '' &&
             !Number.isNaN(value) && value !== 'NaN' &&
-            key !== 'guideType') { // Skip guideType as it's handled client-side
+            !(key === 'guideType' && value === 'all')) {
 
           // Map 'q' parameter to resource-specific search parameters
           let mappedKey = key
@@ -649,51 +655,14 @@ export const AdminDataProvider: DataProvider = {
         }
       }
 
-      // Apply client-side filtering for guides if guideType filter is present
-      if (resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all') {
-        const guideType = params.filter.guideType as string
-
-        items = (items as any[]).filter((guide: any) => {
-          const hasCharacters = guide.characters && guide.characters.length > 0
-          const hasArc = guide.arc && guide.arc.name
-          const hasGambles = guide.gambles && guide.gambles.length > 0
-
-          let shouldInclude = false
-          switch (guideType) {
-            case 'character':
-              // Character guides: primarily about characters (may have other entities)
-              shouldInclude = hasCharacters
-              break
-            case 'arc':
-              // Arc guides: have arcs (may or may not have characters/gambles)
-              shouldInclude = hasArc
-              break
-            case 'gamble':
-              // Gamble guides: have gambles (may or may not have characters/arcs)
-              shouldInclude = hasGambles
-              break
-            case 'comprehensive':
-              // Multi-entity guides: have at least 2 different types of entities
-              const entityCount = (hasCharacters ? 1 : 0) + (hasArc ? 1 : 0) + (hasGambles ? 1 : 0)
-              shouldInclude = entityCount >= 2
-              break
-            case 'general':
-              // General guides: have neither characters, arcs, nor gambles
-              shouldInclude = !hasCharacters && !hasArc && !hasGambles
-              break
-            default:
-              shouldInclude = true
-          }
-
-          return shouldInclude
-        })
-      }
-
+      // guideType filtering (character/arc/gamble/comprehensive/general) is now done
+      // server-side (guides.service.ts findAll) via the guideType query param sent above,
+      // so `items` here is already the correctly-filtered backend page and `originalTotal`
+      // is the backend's real filtered count — no more in-memory re-filtering of a single
+      // already-paginated page, and no more `total: items.length` (H1).
       return {
         data: (items as any[]).map((item: any) => ({ ...item, id: item.id })),
-        total: resource === 'guides' && params.filter?.guideType && params.filter.guideType !== 'all'
-          ? (items as any[]).length // Use filtered count for guides with type filter
-          : originalTotal as number, // Use original total for other cases
+        total: originalTotal as number,
       }
     } catch (error: unknown) {
       console.error(`Error in getList for ${resource}:`, error)

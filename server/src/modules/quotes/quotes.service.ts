@@ -48,7 +48,7 @@ export class QuotesService {
   async findAll(options?: {
     characterId?: number;
     chapterNumber?: number;
-    chapterRange?: { start: number; end: number };
+    chapterRange?: { start?: number; end?: number };
     search?: string;
     submittedById?: number;
     page?: number;
@@ -92,10 +92,17 @@ export class QuotesService {
     }
 
     if (options?.chapterRange) {
-      queryBuilder.andWhere('quote.chapterNumber BETWEEN :start AND :end', {
-        start: options.chapterRange.start,
-        end: options.chapterRange.end,
-      });
+      const { start, end } = options.chapterRange;
+      if (start !== undefined) {
+        queryBuilder.andWhere('quote.chapterNumber >= :chapterRangeStart', {
+          chapterRangeStart: start,
+        });
+      }
+      if (end !== undefined) {
+        queryBuilder.andWhere('quote.chapterNumber <= :chapterRangeEnd', {
+          chapterRangeEnd: end,
+        });
+      }
     }
 
     if (options?.search) {

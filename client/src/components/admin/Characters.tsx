@@ -86,6 +86,7 @@ const RelationshipModalTrigger = () => {
 
   const handleSubmit = async () => {
     if (!form.targetCharacter) return notify('Please select a target character', { type: 'warning' })
+    if (!form.startChapter) return notify('Please enter a start chapter', { type: 'warning' })
     setSaving(true)
     try {
       await api.post('/character-relationships', {
@@ -162,8 +163,8 @@ const RelationshipModalTrigger = () => {
           )}
           <Grid container spacing={2}>
             <Grid item xs={4}>
-              <MuiTextField label="Start Chapter" fullWidth type="number"
-                helperText="Chapter this began (1–539)"
+              <MuiTextField label="Start Chapter *" fullWidth type="number" required
+                helperText="Required — chapter this began (1–539)"
                 inputProps={{ min: 1, max: 539 }}
                 value={form.startChapter} onChange={(e) => setForm(f => ({ ...f, startChapter: e.target.value }))} />
             </Grid>
@@ -286,8 +287,8 @@ const OrgMembershipModalTrigger = () => {
             value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} />
           <Grid container spacing={2}>
             <Grid item xs={4}>
-              <MuiTextField label="Start Chapter" fullWidth type="number"
-                helperText="Chapter joined (1–539)"
+              <MuiTextField label="Start Chapter *" fullWidth type="number" required
+                helperText="Required — chapter joined (1–539)"
                 inputProps={{ min: 1, max: 539 }}
                 value={form.startChapter} onChange={(e) => setForm(f => ({ ...f, startChapter: e.target.value }))} />
             </Grid>
@@ -307,7 +308,7 @@ const OrgMembershipModalTrigger = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <MuiButton onClick={handleClose} disabled={saving} size="large">Cancel</MuiButton>
-          <MuiButton onClick={handleSubmit} variant="contained" size="large" disabled={saving || !form.organization || !form.role}
+          <MuiButton onClick={handleSubmit} variant="contained" size="large" disabled={saving || !form.organization || !form.role || !form.startChapter}
             sx={{ backgroundColor: '#10b981', '&:hover': { backgroundColor: '#059669' } }}>
             {saving ? 'Saving...' : 'Save Membership'}
           </MuiButton>

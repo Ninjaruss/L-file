@@ -67,6 +67,16 @@ export class ArcsController {
     description: 'Filter by parent arc ID (to get sub-arcs of a specific arc)',
   })
   @ApiQuery({
+    name: 'startChapter_gte',
+    required: false,
+    description: 'Filter by minimum start chapter',
+  })
+  @ApiQuery({
+    name: 'endChapter_lte',
+    required: false,
+    description: 'Filter by maximum end chapter',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     description: 'Page number (default: 1)',
@@ -124,6 +134,8 @@ export class ArcsController {
     @Query('name') name?: string,
     @Query('description') description?: string,
     @Query('parentId') parentId?: string,
+    @Query('startChapter_gte') startChapterGte?: string,
+    @Query('endChapter_lte') endChapterLte?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
     @Query('sort') sort?: string,
@@ -134,6 +146,8 @@ export class ArcsController {
       name,
       description,
       parentId: parentId ? parseInt(parentId) : undefined,
+      startChapterGte: startChapterGte ? parseInt(startChapterGte) : undefined,
+      endChapterLte: endChapterLte ? parseInt(endChapterLte) : undefined,
       page: parseInt(page),
       limit: parseInt(limit),
       sort,

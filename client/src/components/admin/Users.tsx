@@ -32,8 +32,10 @@ import {
   usePermissions,
   useGetIdentity,
   SearchInput,
-  BulkDeleteButton
+  BulkDeleteButton,
+  Toolbar
 } from 'react-admin'
+import { EditToolbar } from './EditToolbar'
 import { useQueryClient } from '@tanstack/react-query'
 import { useFormContext, useWatch } from 'react-hook-form'
 import {
@@ -1217,9 +1219,43 @@ const RoleSelectInput = () => {
   )
 }
 
+// Only admins may save or delete users — the backend gates PUT/DELETE /users/:id
+// to @Roles(ADMIN), so moderators/editors get a read-only toolbar instead of
+// filling out the form and hitting a raw 403 on submit.
+const UserEditToolbar = () => {
+  const { permissions } = usePermissions()
+  const record = useRecordContext()
+  const isAdmin = permissions === 'admin'
+
+  if (!isAdmin) {
+    return (
+      <Toolbar
+        sx={{
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '0 0 8px 8px',
+          p: 3,
+        }}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Only admins can save or delete users.
+        </Typography>
+      </Toolbar>
+    )
+  }
+
+  return (
+    <EditToolbar
+      resource="users"
+      confirmTitle="Delete User"
+      confirmMessage={`Are you sure you want to delete "${record?.username || 'this user'}"? This will permanently remove the user and all associated data. This action cannot be undone.`}
+    />
+  )
+}
+
 export const UserEdit = () => (
   <Edit>
-    <SimpleForm>
+    <SimpleForm toolbar={<UserEditToolbar />}>
       <TextInput source="username" required />
       <TextInput source="email" type="email" required />
       <RoleSelectInput />

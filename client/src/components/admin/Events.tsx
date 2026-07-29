@@ -27,6 +27,7 @@ import {
   TabbedForm,
   FormTab
 } from 'react-admin'
+import { EditToolbar } from './EditToolbar'
 import { useFormContext } from 'react-hook-form'
 import {
   Box,
@@ -1054,6 +1055,13 @@ export const EventEdit = () => {
           <CardContent sx={{ p: 4 }}>
             <SimpleForm
               validate={validateEventForm}
+              toolbar={
+                <EditToolbar
+                  resource="events"
+                  confirmTitle="Delete Event"
+                  confirmMessage="Are you sure you want to delete this event? This action cannot be undone."
+                />
+              }
               sx={{
               '& .MuiTextField-root': {
                 mb: 3,

@@ -89,6 +89,23 @@ export const EntityDisplayMediaSection: React.FC<EntityDisplayMediaSectionProps>
     }
   }, [ownerType, numericOwnerId, usageType])
 
+  // GET /media/entity-display/:ownerType/:ownerId is a public, unauthenticated
+  // endpoint that only ever returns approved media (see media.service.ts
+  // findForOwner default status filter). It intentionally has no
+  // "include pending" option, since that would leak other users' unapproved
+  // submissions to anyone browsing a public entity page. So instead of
+  // relying on a refetch to reveal an item this admin/editor just
+  // created/uploaded, we merge the actual server response (with its real
+  // status) into local state directly. This keeps pending items visible to
+  // the person who just added them without changing the public endpoint's
+  // behavior for everyone else.
+  const mergeLocalItem = useCallback((item: MediaItem) => {
+    setMediaItems((prev) => {
+      if (prev.some((existing) => existing.id === item.id)) return prev
+      return [item, ...prev]
+    })
+  }, [])
+
   useEffect(() => {
     if (numericOwnerId) {
       fetchMedia()
@@ -112,7 +129,7 @@ export const EntityDisplayMediaSection: React.FC<EntityDisplayMediaSectionProps>
 
     try {
       setSubmitting(true)
-      // Create media via URL
+      // Create media via URL - always starts out `pending`
       const created = await api.submitMediaPolymorphic({
         url: urlInput.trim(),
         type: mediaType,
@@ -123,19 +140,40 @@ export const EntityDisplayMediaSection: React.FC<EntityDisplayMediaSectionProps>
         purpose: 'entity_display'
       })
 
-      // Auto-approve since admin is creating it
-      if (created?.id) {
+      // Try to auto-approve. This succeeds for moderators/admins, but the
+      // approve endpoint is @Roles(MODERATOR, ADMIN)-gated, so editors get a
+      // 403 here. Previously that 403 was swallowed and the UI claimed
+      // success anyway, even though the item stayed pending and then vanished
+      // from view (fetchMedia only ever returns approved items). Now we keep
+      // whatever the server actually reports and tell the user the truth.
+      let finalItem: MediaItem | null = created?.id ? created : null
+      let staysPending = created?.status !== 'approved'
+
+      if (created?.id && staysPending) {
         try {
-          await api.put(`/media/${created.id}/approve`, {})
+          const approved = await api.put<MediaItem>(`/media/${created.id}/approve`, {})
+          finalItem = approved?.id ? approved : finalItem
+          staysPending = finalItem?.status !== 'approved'
         } catch {
-          // Approval may fail if already approved or other reason - still OK
+          // Lacking permission to approve (e.g. editor role) - the media item
+          // itself was still created successfully, it just needs a
+          // moderator/admin to approve it. Keep it visible as pending below
+          // instead of pretending it was approved.
         }
       }
 
-      notify('Media added successfully', { type: 'success' })
+      notify(
+        staysPending
+          ? 'Media added — pending moderator approval'
+          : 'Media added successfully',
+        { type: staysPending ? 'info' : 'success' }
+      )
       resetAddForm()
       setAddModalOpen(false)
-      fetchMedia()
+      await fetchMedia()
+      if (finalItem?.id) {
+        mergeLocalItem(finalItem)
+      }
     } catch (err: any) {
       notify(err?.message || 'Failed to add media', { type: 'error' })
     } finally {
@@ -151,7 +189,12 @@ export const EntityDisplayMediaSection: React.FC<EntityDisplayMediaSectionProps>
 
     try {
       setSubmitting(true)
-      await api.uploadMedia(selectedFile, {
+      // createUpload() auto-approves for moderator/admin, but editors always
+      // come back `pending` (server-side role check in media.service.ts).
+      // fetchMedia() only ever returns approved items, so without merging the
+      // real response in, an editor's upload would silently disappear after
+      // the "success" toast even though nothing went wrong.
+      const uploaded = await api.uploadMedia(selectedFile, {
         type: 'image',
         ownerType,
         ownerId: numericOwnerId,
@@ -161,10 +204,19 @@ export const EntityDisplayMediaSection: React.FC<EntityDisplayMediaSectionProps>
         usageType
       })
 
-      notify('Media uploaded successfully', { type: 'success' })
+      const staysPending = uploaded?.status !== 'approved'
+      notify(
+        staysPending
+          ? 'Media uploaded — pending moderator approval'
+          : 'Media uploaded successfully',
+        { type: staysPending ? 'info' : 'success' }
+      )
       resetAddForm()
       setAddModalOpen(false)
-      fetchMedia()
+      await fetchMedia()
+      if (uploaded?.id) {
+        mergeLocalItem(uploaded)
+      }
     } catch (err: any) {
       notify(err?.message || 'Failed to upload media', { type: 'error' })
     } finally {

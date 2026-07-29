@@ -121,6 +121,7 @@ export class MediaService {
     private readonly emailService: EmailService,
     private readonly fileValidationService: FileValidationService,
     private readonly editLogService: EditLogService,
+    private readonly r2Service: CloudflareR2Service,
   ) {}
 
   async create(data: CreateMediaDto, user: User): Promise<Media> {
@@ -767,6 +768,33 @@ export class MediaService {
     }
 
     return this.remove(id, b2Service);
+  }
+
+  /**
+   * Delete all media belonging to a given owner (e.g. when the owning
+   * character/arc/gamble/event/organization is deleted). Media has no FK
+   * cascade to its polymorphic owner, so callers must invoke this
+   * explicitly from their own remove()/delete() flow. Idempotent — a no-op
+   * when no media rows match.
+   */
+  async deleteForOwner(
+    ownerType: MediaOwnerType,
+    ownerId: number,
+  ): Promise<void> {
+    const orphanedMedia = await this.mediaRepo.find({
+      where: { ownerType, ownerId },
+      select: ['id'],
+    });
+
+    if (orphanedMedia.length === 0) {
+      return;
+    }
+
+    // Reuse remove() for each item so the matching R2 storage object (when
+    // uploaded) is cleaned up alongside the DB row, not just the DB row.
+    for (const media of orphanedMedia) {
+      await this.remove(media.id, this.r2Service);
+    }
   }
 
   async bulkApproveSubmissions(

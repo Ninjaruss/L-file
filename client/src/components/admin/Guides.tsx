@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useWatch } from 'react-hook-form'
 import {
   List,
   Datagrid,
@@ -700,10 +701,11 @@ const ApproveGuideButton = () => {
   const record = useRecordContext()
   const notify = useNotify()
   const refresh = useRefresh()
-  
+  const { permissions } = usePermissions()
+
   const handleApprove = async () => {
     if (!record) return
-    
+
     try {
       await api.approveGuide(Number(record.id))
       notify('Guide approved successfully')
@@ -714,12 +716,16 @@ const ApproveGuideButton = () => {
       notify(errorMessage, { type: 'error' })
     }
   }
-  
+
   if (record?.status === GuideStatus.APPROVED) return null
-  
+
+  // Backend POST /guides/:id/approve is @Roles(ADMIN, MODERATOR) — editors get a 403.
+  // Hide the control rather than let non-privileged admin-panel users hit a surprise error (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+
   return (
-    <Button 
-      label="Approve" 
+    <Button
+      label="Approve"
       onClick={handleApprove}
       color="primary"
       startIcon={<Check size={20} />}
@@ -828,8 +834,13 @@ const RejectGuideButton = () => {
   const record = useRecordContext()
   const refresh = useRefresh()
   const [modalOpen, setModalOpen] = useState(false)
+  const { permissions } = usePermissions()
 
   if (record?.status === GuideStatus.REJECTED) return null
+
+  // Backend POST /guides/:id/reject is @Roles(ADMIN, MODERATOR) — editors get a 403.
+  // Hide the control rather than let non-privileged admin-panel users hit a surprise error (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
 
   return (
     <>
@@ -860,6 +871,11 @@ const GuideApprovalToolbar = () => {
   const unselectAll = useUnselectAll('guides')
   const [approving, setApproving] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
+  const { permissions } = usePermissions()
+  // Backend POST /guides/:id/approve|reject is @Roles(ADMIN, MODERATOR) — editors get a
+  // 403. Hide the bulk approve/reject controls rather than let non-privileged admin-panel
+  // users hit a surprise error (M2).
+  const canModerate = permissions === 'admin' || permissions === 'moderator'
 
   // Get all pending items from current data
   const pendingItems = data ? data.filter((item: any) => item.status === GuideStatus.PENDING) : []
@@ -957,52 +973,56 @@ const GuideApprovalToolbar = () => {
         </Typography>
       )}
 
-      {/* Approve Button - Always visible */}
-      <MuiButton
-        variant="contained"
-        size="small"
-        onClick={handleBulkApprove}
-        disabled={approving || selectedIds.length === 0}
-        startIcon={<Check size={16} />}
-        sx={{
-          backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
-          color: 'white',
-          '&:hover': { backgroundColor: '#388e3c' },
-          '&:disabled': {
-            backgroundColor: 'rgba(76, 175, 80, 0.3)',
-            color: 'rgba(255, 255, 255, 0.5)'
-          }
-        }}
-      >
-        {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
-      </MuiButton>
+      {canModerate && (
+        <>
+          {/* Approve Button - Always visible to admins/moderators */}
+          <MuiButton
+            variant="contained"
+            size="small"
+            onClick={handleBulkApprove}
+            disabled={approving || selectedIds.length === 0}
+            startIcon={<Check size={16} />}
+            sx={{
+              backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
+              color: 'white',
+              '&:hover': { backgroundColor: '#388e3c' },
+              '&:disabled': {
+                backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
+            }}
+          >
+            {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+          </MuiButton>
 
-      {/* Reject Button - Always visible */}
-      <MuiButton
-        variant="contained"
-        size="small"
-        onClick={() => setRejectModalOpen(true)}
-        disabled={selectedIds.length === 0}
-        startIcon={<X size={16} />}
-        sx={{
-          backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
-          color: 'white',
-          '&:hover': { backgroundColor: '#d32f2f' },
-          '&:disabled': {
-            backgroundColor: 'rgba(244, 67, 54, 0.3)',
-            color: 'rgba(255, 255, 255, 0.5)'
-          }
-        }}
-      >
-        Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
-      </MuiButton>
+          {/* Reject Button - Always visible to admins/moderators */}
+          <MuiButton
+            variant="contained"
+            size="small"
+            onClick={() => setRejectModalOpen(true)}
+            disabled={selectedIds.length === 0}
+            startIcon={<X size={16} />}
+            sx={{
+              backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
+              color: 'white',
+              '&:hover': { backgroundColor: '#d32f2f' },
+              '&:disabled': {
+                backgroundColor: 'rgba(244, 67, 54, 0.3)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
+            }}
+          >
+            Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+          </MuiButton>
 
-      <BulkRejectModal
-        open={rejectModalOpen}
-        onClose={() => setRejectModalOpen(false)}
-        selectedIds={selectedIds}
-        onSuccess={handleRejectSuccess}
-      />
+          <BulkRejectModal
+            open={rejectModalOpen}
+            onClose={() => setRejectModalOpen(false)}
+            selectedIds={selectedIds}
+            onSuccess={handleRejectSuccess}
+          />
+        </>
+      )}
     </Box>
   )
 }
@@ -1014,6 +1034,7 @@ const BulkApproveButton = () => {
   const refresh = useRefresh()
   const unselectAll = useUnselectAll('guides')
   const [loading, setLoading] = useState(false)
+  const { permissions } = usePermissions()
 
   const handleBulkApprove = async () => {
     setLoading(true)
@@ -1040,6 +1061,9 @@ const BulkApproveButton = () => {
       notify(`Approved ${successCount} guide(s), ${errorCount} failed`, { type: 'warning' })
     }
   }
+
+  // Backend POST /guides/:id/approve is @Roles(ADMIN, MODERATOR) — editors get a 403 (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
 
   return (
     <Button
@@ -1159,11 +1183,15 @@ const BulkRejectButton = () => {
   const refresh = useRefresh()
   const unselectAll = useUnselectAll('guides')
   const [modalOpen, setModalOpen] = useState(false)
+  const { permissions } = usePermissions()
 
   const handleSuccess = () => {
     unselectAll()
     refresh()
   }
+
+  // Backend POST /guides/:id/reject is @Roles(ADMIN, MODERATOR) — editors get a 403 (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
 
   return (
     <>
@@ -2220,14 +2248,48 @@ export const GuideShow = () => {
   )
 }
 
+// Backend requires @MinLength(50) on guide content (create-guide.dto.ts). RichMarkdownAdminInput
+// binds directly to react-hook-form via useController rather than react-admin's useInput, so it
+// doesn't participate in react-admin's per-field `validate` prop / error display. To still catch
+// this inline instead of a late 400, watch the field's live value here and surface a hint (M8).
+const GuideContentLengthHint = () => {
+  const content = useWatch({ name: 'content' }) as string | undefined
+  const length = (content ?? '').trim().length
+  if (length >= 50) return null
+  return (
+    <Typography variant="caption" sx={{ color: '#f44336', display: 'block', mt: 0.5 }}>
+      Guide content must be at least 50 characters (currently {length}/50)
+    </Typography>
+  )
+}
+
+// Form-level validator (blocks submission before it reaches the backend) — required
+// since RichMarkdownAdminInput can't carry a per-field `validate` prop of its own (M8).
+const validateGuideContent = (values: Record<string, any>) => {
+  const errors: Record<string, string> = {}
+  const content = typeof values.content === 'string' ? values.content.trim() : ''
+  if (!content) {
+    errors.content = 'Guide content is required'
+  } else if (content.length < 50) {
+    errors.content = `Guide content must be at least 50 characters (currently ${content.length}/50)`
+  }
+  return errors
+}
+
 // Custom content input component with rich markdown editor (Edit)
 const ContentInputWithPreview = () => (
-  <RichMarkdownAdminInput source="content" label="Guide content" minHeight={400} />
+  <>
+    <RichMarkdownAdminInput source="content" label="Guide content" minHeight={400} />
+    <GuideContentLengthHint />
+  </>
 )
 
 // Content input component for create page with rich markdown editor
 const ContentInputWithPreviewCreate = () => (
-  <RichMarkdownAdminInput source="content" label="Guide content" minHeight={400} />
+  <>
+    <RichMarkdownAdminInput source="content" label="Guide content" minHeight={400} />
+    <GuideContentLengthHint />
+  </>
 )
 
 
@@ -2279,6 +2341,7 @@ export const GuideEdit = () => {
           <CardContent sx={{ p: 4 }}>
             <SimpleForm
               toolbar={<ApproveRejectToolbar resource="guides" showDelete={true} />}
+              validate={validateGuideContent}
               sx={{
               '& .MuiTextField-root': {
                 mb: 3,
@@ -2361,9 +2424,13 @@ export const GuideEdit = () => {
                       fullWidth
                       perPage={200}
                     >
-                      <AutocompleteInput 
-                        optionText="username" 
-                        disabled={permissions !== 'admin' && permissions !== 'moderator'}
+                      <AutocompleteInput
+                        optionText="username"
+                        // Backend only allows author reassignment for ADMIN
+                        // (guides.service.ts update(): "Only admins can change guide
+                        // ownership"). A moderator's edit used to send a changed authorId
+                        // that the backend would then reject, rolling back the whole save.
+                        disabled={permissions !== 'admin'}
                         sx={{
                           '& .MuiAutocomplete-root .MuiOutlinedInput-root': {
                             backgroundColor: '#0f0f0f'
@@ -2508,7 +2575,7 @@ export const GuideCreate = () => (
         </Box>
 
         <CardContent sx={{ p: 4 }}>
-          <SimpleForm sx={{
+          <SimpleForm validate={validateGuideContent} sx={{
             '& .MuiTextField-root': {
               mb: 3,
               '& .MuiOutlinedInput-root': {

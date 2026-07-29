@@ -15,7 +15,7 @@ import { Arc } from '../../entities/arc.entity';
 import { Gamble } from '../../entities/gamble.entity';
 import { CreateGuideDto } from './dto/create-guide.dto';
 import { UpdateGuideDto } from './dto/update-guide.dto';
-import { GuideQueryDto } from './dto/guide-query.dto';
+import { GuideQueryDto, GuideTypeFilter } from './dto/guide-query.dto';
 import { PageViewsService } from '../page-views/page-views.service';
 import { PageType } from '../../entities/page-view.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
@@ -148,6 +148,7 @@ export class GuidesService {
       characterIds,
       arcIds,
       gambleIds,
+      guideType,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
       page = 1,
@@ -265,6 +266,46 @@ export class GuidesService {
         queryBuilder.andWhere('gambles.id IN (:...gambleIdArray)', {
           gambleIdArray,
         });
+      }
+    }
+
+    // Filter by content-type category (H1 fix). Previously the admin panel fetched one
+    // unfiltered page and re-filtered it client-side over just those rows, reporting
+    // total = filtered.length — hiding matches on later pages and showing a bogus total.
+    // Now the presence checks run server-side via EXISTS subqueries against the guide's
+    // many-to-many join tables (guide_characters / guide_gambles) rather than the
+    // leftJoinAndSelect'd `characters`/`gambles`/`arc` aliases above, so a guide with
+    // multiple characters/gambles doesn't get double-counted by getManyAndCount().
+    if (guideType) {
+      const hasCharactersSql =
+        'EXISTS (SELECT 1 FROM guide_characters gt_char WHERE gt_char."guideId" = guide.id)';
+      const hasArcSql = 'guide."arcId" IS NOT NULL';
+      const hasGamblesSql =
+        'EXISTS (SELECT 1 FROM guide_gambles gt_gamble WHERE gt_gamble."guideId" = guide.id)';
+
+      switch (guideType) {
+        case GuideTypeFilter.CHARACTER:
+          queryBuilder.andWhere(hasCharactersSql);
+          break;
+        case GuideTypeFilter.ARC:
+          queryBuilder.andWhere(hasArcSql);
+          break;
+        case GuideTypeFilter.GAMBLE:
+          queryBuilder.andWhere(hasGamblesSql);
+          break;
+        case GuideTypeFilter.COMPREHENSIVE:
+          // At least 2 of the 3 entity types present
+          queryBuilder.andWhere(
+            `((CASE WHEN ${hasCharactersSql} THEN 1 ELSE 0 END) + ` +
+              `(CASE WHEN ${hasArcSql} THEN 1 ELSE 0 END) + ` +
+              `(CASE WHEN ${hasGamblesSql} THEN 1 ELSE 0 END)) >= 2`,
+          );
+          break;
+        case GuideTypeFilter.GENERAL:
+          queryBuilder.andWhere(
+            `NOT (${hasCharactersSql}) AND NOT (${hasArcSql}) AND NOT (${hasGamblesSql})`,
+          );
+          break;
       }
     }
 

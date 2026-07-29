@@ -93,4 +93,22 @@ export const AdminAuthProvider: AuthProvider = {
       return Promise.reject(error)
     }
   },
+
+  // Resources the backend restricts to admins only (e.g. PUT/DELETE /users/:id
+  // and all /badges CRUD are @Roles(ADMIN)). Everything else is left to each
+  // resource's own guards, so default to allowing access.
+  canAccess: async ({ resource }) => {
+    const ADMIN_ONLY_RESOURCES = ['users', 'badges']
+
+    if (!ADMIN_ONLY_RESOURCES.includes(resource)) {
+      return true
+    }
+
+    try {
+      const user = await api.getCurrentUser()
+      return user.role === 'admin'
+    } catch {
+      return false
+    }
+  },
 }

@@ -50,6 +50,11 @@ export class TagsController {
     enum: ['ASC', 'DESC'],
     description: 'Sort order (default: ASC)',
   })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'Filter tags by name (case-insensitive partial match)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Tags retrieved successfully',
@@ -70,6 +75,7 @@ export class TagsController {
     @Query('order') order: 'ASC' | 'DESC' = 'ASC',
     @Query('page') page = '1',
     @Query('limit') limit = '1000',
+    @Query('name') name?: string,
   ) {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 1000;
@@ -78,6 +84,7 @@ export class TagsController {
       order,
       page: pageNum,
       limit: limitNum,
+      name,
     });
 
     return {

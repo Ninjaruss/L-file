@@ -4,6 +4,7 @@ import { EventsService } from './events.service';
 import { Event, EventType } from '../../entities/event.entity';
 import { Character } from '../../entities/character.entity';
 import { EditLogService } from '../edit-log/edit-log.service';
+import { MediaService } from '../media/media.service';
 
 const mockQueryBuilder = {
   select: jest.fn().mockReturnThis(),
@@ -48,6 +49,10 @@ describe('EventsService', () => {
         { provide: getRepositoryToken(Event), useValue: mockRepo },
         { provide: getRepositoryToken(Character), useValue: mockRepo },
         { provide: EditLogService, useValue: mockEditLog },
+        {
+          provide: MediaService,
+          useValue: { deleteForOwner: jest.fn() },
+        },
       ],
     }).compile();
 

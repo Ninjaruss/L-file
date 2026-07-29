@@ -38,6 +38,9 @@ export class CharactersService {
     arc?: string;
     arcId?: number;
     organization?: string;
+    organizationId?: number;
+    firstAppearanceChapterGte?: number;
+    firstAppearanceChapterLte?: number;
     description?: string;
     page?: number;
     limit?: number;
@@ -49,6 +52,9 @@ export class CharactersService {
       arc,
       arcId,
       organization,
+      organizationId,
+      firstAppearanceChapterGte,
+      firstAppearanceChapterLte,
       description,
       page = 1,
       limit = 20,
@@ -95,6 +101,34 @@ export class CharactersService {
       qb.andWhere('LOWER(organizations.name) LIKE LOWER(:organization)', {
         organization: `%${organization}%`,
       });
+    }
+
+    if (organizationId) {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM character_organization co
+          WHERE co."characterId" = character.id AND co."organizationId" = :organizationId
+        )`,
+        { organizationId },
+      );
+    }
+
+    if (firstAppearanceChapterGte !== undefined) {
+      qb.andWhere(
+        'character.firstAppearanceChapter >= :firstAppearanceChapterGte',
+        {
+          firstAppearanceChapterGte,
+        },
+      );
+    }
+
+    if (firstAppearanceChapterLte !== undefined) {
+      qb.andWhere(
+        'character.firstAppearanceChapter <= :firstAppearanceChapterLte',
+        {
+          firstAppearanceChapterLte,
+        },
+      );
     }
 
     if (description) {
@@ -234,6 +268,7 @@ export class CharactersService {
     if (!result.affected || result.affected === 0) {
       throw new NotFoundException(`Character with id ${id} not found`);
     }
+    await this.mediaService.deleteForOwner(MediaOwnerType.CHARACTER, id);
     return { affected: result.affected };
   }
 

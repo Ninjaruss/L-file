@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
@@ -33,6 +34,8 @@ export class ArcsService {
     name?: string;
     description?: string;
     parentId?: number;
+    startChapterGte?: number;
+    endChapterLte?: number;
     page?: number;
     limit?: number;
     sort?: string;
@@ -74,8 +77,27 @@ export class ArcsService {
       });
     }
 
+    if (filters.startChapterGte !== undefined) {
+      query.andWhere('arc.startChapter >= :startChapterGte', {
+        startChapterGte: filters.startChapterGte,
+      });
+    }
+
+    if (filters.endChapterLte !== undefined) {
+      query.andWhere('arc.endChapter <= :endChapterLte', {
+        endChapterLte: filters.endChapterLte,
+      });
+    }
+
     // Sorting: only allow certain fields for safety
-    const allowedSort = ['id', 'name', 'description', 'order'];
+    const allowedSort = [
+      'id',
+      'name',
+      'description',
+      'order',
+      'startChapter',
+      'endChapter',
+    ];
     if (sort && allowedSort.includes(sort)) {
       query.orderBy(`arc.${sort}`, order);
     } else {
@@ -130,6 +152,11 @@ export class ArcsService {
   ) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException(`Arc with id ${id} not found`);
+
+    if (data.parentId !== undefined && data.parentId !== null) {
+      await this.assertNoParentCycle(id, data.parentId);
+    }
+
     const changedFields = diffFields(entity, data);
     Object.assign(entity, data);
     if (!isMinorEdit) {
@@ -146,6 +173,37 @@ export class ArcsService {
       isMinorEdit,
     );
     return saved;
+  }
+
+  /**
+   * Walks up the parent chain starting from `startParentId` and rejects if it
+   * ever reaches `arcId` (which would make the arc its own ancestor). Tracks
+   * visited ids to guard against pre-existing cycles causing an infinite loop.
+   */
+  private async assertNoParentCycle(
+    arcId: number,
+    startParentId: number,
+  ): Promise<void> {
+    const visited = new Set<number>();
+    let currentId: number | null = startParentId;
+
+    while (currentId !== null) {
+      if (currentId === arcId) {
+        throw new BadRequestException('An arc cannot be its own ancestor');
+      }
+      if (visited.has(currentId)) {
+        // Pre-existing cycle unrelated to this update; stop walking.
+        break;
+      }
+      visited.add(currentId);
+
+      const parent: Pick<Arc, 'id' | 'parentId'> | null =
+        await this.repo.findOne({
+          where: { id: currentId },
+          select: ['id', 'parentId'],
+        });
+      currentId = parent?.parentId ?? null;
+    }
   }
 
   async verify(id: number, verifierId: number, isAdmin: boolean): Promise<Arc> {
@@ -168,7 +226,9 @@ export class ArcsService {
 
   async remove(id: number, userId: number) {
     await this.editLogService.logDelete(EditLogEntityType.ARC, id, userId);
-    return this.repo.delete(id);
+    const result = await this.repo.delete(id);
+    await this.mediaService.deleteForOwner(MediaOwnerType.ARC, id);
+    return result;
   }
 
   async getChaptersInArc(arcId: number): Promise<Chapter[]> {

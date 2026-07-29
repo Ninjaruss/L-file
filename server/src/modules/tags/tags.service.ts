@@ -26,6 +26,7 @@ export class TagsService {
       order?: 'ASC' | 'DESC';
       page?: number;
       limit?: number;
+      name?: string;
     } = {},
   ): Promise<{
     data: Tag[];
@@ -34,10 +35,17 @@ export class TagsService {
     perPage: number;
     totalPages: number;
   }> {
-    const { sort, order = 'ASC', page = 1, limit = 1000 } = filters;
+    const { sort, order = 'ASC', page = 1, limit = 1000, name } = filters;
     const query = this.repo
       .createQueryBuilder('tag')
       .leftJoinAndSelect('tag.events', 'events');
+
+    if (name) {
+      query.andWhere('LOWER(tag.name) LIKE LOWER(:name)', {
+        name: `%${name}%`,
+      });
+    }
+
     const allowedSort = ['id', 'name'];
     if (sort && allowedSort.includes(sort)) {
       query.orderBy(`tag.${sort}`, order);

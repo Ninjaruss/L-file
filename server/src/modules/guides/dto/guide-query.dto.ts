@@ -10,6 +10,14 @@ import {
 import { Type } from 'class-transformer';
 import { GuideStatus } from '../../../entities/guide.entity';
 
+export enum GuideTypeFilter {
+  CHARACTER = 'character',
+  ARC = 'arc',
+  GAMBLE = 'gamble',
+  COMPREHENSIVE = 'comprehensive',
+  GENERAL = 'general',
+}
+
 export class GuideQueryDto {
   @ApiPropertyOptional({
     description: 'Search guides by title or description',
@@ -68,6 +76,19 @@ export class GuideQueryDto {
   @IsOptional()
   @IsString()
   gambleIds?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter guides by content-type category, computed server-side from the ' +
+      "guide's associated entities: 'character' (has ≥1 character), 'arc' (has an " +
+      "arc), 'gamble' (has ≥1 gamble), 'comprehensive' (≥2 of the above entity " +
+      "types), 'general' (none of the above).",
+    enum: GuideTypeFilter,
+    example: GuideTypeFilter.CHARACTER,
+  })
+  @IsOptional()
+  @IsEnum(GuideTypeFilter)
+  guideType?: GuideTypeFilter;
 
   @ApiPropertyOptional({
     description:

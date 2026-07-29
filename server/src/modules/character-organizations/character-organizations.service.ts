@@ -160,6 +160,29 @@ export class CharacterOrganizationsService {
       );
     }
 
+    // Validate: no overlapping membership for the same character+organization.
+    // A character re-joining an organization with a later, non-overlapping
+    // range is legitimate (e.g. rejoining after leaving) and must remain
+    // allowed — only exact/overlapping duplicates are rejected.
+    const existingMemberships = await this.repo.find({
+      where: {
+        characterId: dto.characterId,
+        organizationId: dto.organizationId,
+      },
+    });
+
+    if (
+      this.hasOverlap(
+        existingMemberships,
+        dto.startChapter,
+        dto.endChapter ?? null,
+      )
+    ) {
+      throw new BadRequestException(
+        `Character ${dto.characterId} already has an overlapping membership in organization ${dto.organizationId}`,
+      );
+    }
+
     // Default spoilerChapter to startChapter if not provided
     const spoilerChapter = dto.spoilerChapter ?? dto.startChapter;
 
@@ -218,6 +241,37 @@ export class CharacterOrganizationsService {
           `Organization with ID ${dto.organizationId} not found`,
         );
       }
+    }
+
+    // Validate: no overlapping membership for the same character+organization
+    // (excluding this record itself). Only exact/overlapping duplicates are
+    // rejected; a later, non-overlapping range remains allowed.
+    const effectiveCharacterId = dto.characterId ?? membership.characterId;
+    const effectiveOrganizationId =
+      dto.organizationId ?? membership.organizationId;
+    const effectiveStartChapter = dto.startChapter ?? membership.startChapter;
+    const effectiveEndChapter =
+      dto.endChapter !== undefined ? dto.endChapter : membership.endChapter;
+
+    const otherMemberships = (
+      await this.repo.find({
+        where: {
+          characterId: effectiveCharacterId,
+          organizationId: effectiveOrganizationId,
+        },
+      })
+    ).filter((m) => m.id !== id);
+
+    if (
+      this.hasOverlap(
+        otherMemberships,
+        effectiveStartChapter,
+        effectiveEndChapter ?? null,
+      )
+    ) {
+      throw new BadRequestException(
+        `Character ${effectiveCharacterId} already has an overlapping membership in organization ${effectiveOrganizationId}`,
+      );
     }
 
     const changedFields = diffFields(membership, dto);
@@ -339,5 +393,26 @@ export class CharacterOrganizationsService {
     }
 
     return Array.from(orgMap.values());
+  }
+
+  /**
+   * Check whether a candidate [startChapter, endChapter] range overlaps with
+   * any of the given memberships' ranges. A null endChapter is treated as
+   * "ongoing" (unbounded).
+   */
+  private hasOverlap(
+    memberships: CharacterOrganization[],
+    candidateStart: number,
+    candidateEnd: number | null,
+  ): boolean {
+    const candidateEndValue = candidateEnd ?? Infinity;
+
+    return memberships.some((m) => {
+      const existingEndValue = m.endChapter ?? Infinity;
+      return (
+        candidateStart <= existingEndValue &&
+        m.startChapter <= candidateEndValue
+      );
+    });
   }
 }

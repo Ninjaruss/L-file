@@ -23,7 +23,8 @@ import {
   useListContext,
   FunctionField,
   NumberField,
-  useUnselectAll
+  useUnselectAll,
+  usePermissions
 } from 'react-admin'
 import { useWatch } from 'react-hook-form'
 import {
@@ -868,10 +869,11 @@ const ApproveButton = () => {
   const record = useRecordContext()
   const notify = useNotify()
   const refresh = useRefresh()
-  
+  const { permissions } = usePermissions()
+
   const handleApprove = async () => {
     if (!record) return
-    
+
     try {
       await api.put(`/media/${record.id}/approve`, {})
       notify('Media approved successfully')
@@ -882,9 +884,13 @@ const ApproveButton = () => {
       notify(errorMessage, { type: 'error' })
     }
   }
-  
+
   if (record?.status === 'approved') return null
-  
+
+  // Backend PUT /media/:id/approve is @Roles(MODERATOR, ADMIN) — editors get a 403.
+  // Hide the control rather than let non-privileged admin-panel users hit a surprise error (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
+
   return (
     <Button 
       label="Approve" 
@@ -1004,8 +1010,13 @@ const RejectButton = () => {
   const record = useRecordContext()
   const refresh = useRefresh()
   const [modalOpen, setModalOpen] = useState(false)
+  const { permissions } = usePermissions()
 
   if (record?.status === 'rejected') return null
+
+  // Backend PUT /media/:id/reject is @Roles(MODERATOR, ADMIN) — editors get a 403.
+  // Hide the control rather than let non-privileged admin-panel users hit a surprise error (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
 
   return (
     <>
@@ -1028,44 +1039,6 @@ const RejectButton = () => {
   )
 }
 
-
-const PolymorphicInfoChip = ({ source }: { source: string }) => {
-  const record = useRecordContext()
-  if (!record) return null
-  
-  if (record.ownerType && record.ownerId) {
-    return (
-      <Chip 
-        label={`${record.ownerType}:${record.ownerId}${record.chapterNumber ? ` (Ch.${record.chapterNumber})` : ''}`}
-        color="success" 
-        size="small" 
-        sx={{
-          fontWeight: 'bold',
-          fontSize: '0.7rem',
-          height: '24px',
-          backgroundColor: 'rgba(76, 175, 80, 0.2)',
-          color: '#4caf50'
-        }}
-      />
-    )
-  }
-  
-  
-  return (
-    <Chip 
-      label="No relationship"
-      color="default" 
-      size="small" 
-      sx={{
-        fontWeight: 'bold',
-        fontSize: '0.7rem',
-        height: '24px',
-        backgroundColor: 'rgba(158, 158, 158, 0.2)',
-        color: '#9e9e9e'
-      }}
-    />
-  )
-}
 
 const EntityNameDisplay = () => {
   const record = useRecordContext()
@@ -1161,6 +1134,11 @@ const MediaApprovalToolbar = () => {
   const unselectAll = useUnselectAll('media')
   const [approving, setApproving] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
+  const { permissions } = usePermissions()
+  // Backend PUT /media/:id/approve|reject is @Roles(MODERATOR, ADMIN) — editors get a
+  // 403. Hide the bulk approve/reject controls rather than let non-privileged admin-panel
+  // users hit a surprise error (M2).
+  const canModerate = permissions === 'admin' || permissions === 'moderator'
 
   // Get all pending items from current data
   const pendingItems = data ? data.filter((item: any) => item.status === 'pending') : []
@@ -1258,52 +1236,56 @@ const MediaApprovalToolbar = () => {
         </Typography>
       )}
 
-      {/* Approve Button - Always visible */}
-      <MuiButton
-        variant="contained"
-        size="small"
-        onClick={handleBulkApprove}
-        disabled={approving || selectedIds.length === 0}
-        startIcon={<Check size={16} />}
-        sx={{
-          backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
-          color: 'white',
-          '&:hover': { backgroundColor: '#388e3c' },
-          '&:disabled': {
-            backgroundColor: 'rgba(76, 175, 80, 0.3)',
-            color: 'rgba(255, 255, 255, 0.5)'
-          }
-        }}
-      >
-        {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
-      </MuiButton>
+      {canModerate && (
+        <>
+          {/* Approve Button - Always visible to admins/moderators */}
+          <MuiButton
+            variant="contained"
+            size="small"
+            onClick={handleBulkApprove}
+            disabled={approving || selectedIds.length === 0}
+            startIcon={<Check size={16} />}
+            sx={{
+              backgroundColor: selectedIds.length > 0 ? '#4caf50' : 'rgba(76, 175, 80, 0.3)',
+              color: 'white',
+              '&:hover': { backgroundColor: '#388e3c' },
+              '&:disabled': {
+                backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
+            }}
+          >
+            {approving ? 'Approving...' : `Approve${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+          </MuiButton>
 
-      {/* Reject Button - Always visible */}
-      <MuiButton
-        variant="contained"
-        size="small"
-        onClick={() => setRejectModalOpen(true)}
-        disabled={selectedIds.length === 0}
-        startIcon={<X size={16} />}
-        sx={{
-          backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
-          color: 'white',
-          '&:hover': { backgroundColor: '#d32f2f' },
-          '&:disabled': {
-            backgroundColor: 'rgba(244, 67, 54, 0.3)',
-            color: 'rgba(255, 255, 255, 0.5)'
-          }
-        }}
-      >
-        Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
-      </MuiButton>
+          {/* Reject Button - Always visible to admins/moderators */}
+          <MuiButton
+            variant="contained"
+            size="small"
+            onClick={() => setRejectModalOpen(true)}
+            disabled={selectedIds.length === 0}
+            startIcon={<X size={16} />}
+            sx={{
+              backgroundColor: selectedIds.length > 0 ? '#f44336' : 'rgba(244, 67, 54, 0.3)',
+              color: 'white',
+              '&:hover': { backgroundColor: '#d32f2f' },
+              '&:disabled': {
+                backgroundColor: 'rgba(244, 67, 54, 0.3)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
+            }}
+          >
+            Reject{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+          </MuiButton>
 
-      <MediaBulkRejectModal
-        open={rejectModalOpen}
-        onClose={() => setRejectModalOpen(false)}
-        selectedIds={selectedIds}
-        onSuccess={handleRejectSuccess}
-      />
+          <MediaBulkRejectModal
+            open={rejectModalOpen}
+            onClose={() => setRejectModalOpen(false)}
+            selectedIds={selectedIds}
+            onSuccess={handleRejectSuccess}
+          />
+        </>
+      )}
     </Box>
   )
 }
@@ -1315,6 +1297,7 @@ const MediaBulkApproveButton = () => {
   const refresh = useRefresh()
   const unselectAll = useUnselectAll('media')
   const [loading, setLoading] = useState(false)
+  const { permissions } = usePermissions()
 
   const handleBulkApprove = async () => {
     setLoading(true)
@@ -1341,6 +1324,9 @@ const MediaBulkApproveButton = () => {
       notify(`Approved ${successCount} item(s), ${errorCount} failed`, { type: 'warning' })
     }
   }
+
+  // Backend PUT /media/:id/approve is @Roles(MODERATOR, ADMIN) — editors get a 403 (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
 
   return (
     <Button
@@ -1460,11 +1446,15 @@ const MediaBulkRejectButton = () => {
   const refresh = useRefresh()
   const unselectAll = useUnselectAll('media')
   const [modalOpen, setModalOpen] = useState(false)
+  const { permissions } = usePermissions()
 
   const handleSuccess = () => {
     unselectAll()
     refresh()
   }
+
+  // Backend PUT /media/:id/reject is @Roles(MODERATOR, ADMIN) — editors get a 403 (M2).
+  if (permissions !== 'admin' && permissions !== 'moderator') return null
 
   return (
     <>
@@ -1625,289 +1615,6 @@ export const MediaList = () => (
     <MediaApprovalToolbar />
     <MediaFilterToolbar />
     <MediaDatagrid />
-  </List>
-)
-
-export const MediaApprovalQueue = () => (
-  <List filter={{ status: 'pending' }} title="Media Approval Queue">
-    <Datagrid
-      rowClick="show"
-      bulkActionButtons={<MediaBulkActionButtons />}
-      sx={{
-        '& .RaDatagrid-headerCell': {
-          fontWeight: 'bold',
-          fontSize: '0.9rem',
-          backgroundColor: 'rgba(10, 10, 10, 0.95)',
-          color: '#ffffff',
-          borderBottom: '2px solid #f57c00'
-        },
-        '& .RaDatagrid-rowCell': {
-          padding: '12px 8px',
-          backgroundColor: 'rgba(10, 10, 10, 0.8)',
-          color: '#ffffff',
-          borderBottom: '1px solid rgba(245, 124, 0, 0.2)'
-        },
-        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
-          backgroundColor: 'rgba(245, 124, 0, 0.05)'
-        },
-        '& .RaDatagrid-tbody tr:hover': {
-          backgroundColor: 'rgba(245, 124, 0, 0.15) !important'
-        }
-      }}
-    >
-      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
-
-      {/* Priority Display */}
-      <Box sx={{ width: '120px', display: 'flex', justifyContent: 'center' }}>
-        <Chip
-          label="AWAITING REVIEW"
-          color="warning"
-          size="small"
-          sx={{
-            fontWeight: 'bold',
-            fontSize: '0.65rem',
-            backgroundColor: '#fff3e0',
-            color: '#f57c00'
-          }}
-        />
-      </Box>
-
-      {/* Entity Information - Condensed */}
-      <EntityInfoField />
-
-      {/* Media Preview */}
-      <MediaPreviewField source="url" />
-
-      {/* Media Details - Truncated URL */}
-      <TruncatedUrlField />
-
-      {/* Type & Purpose Combined */}
-      <MediaTypeField />
-
-      <TextField
-        source="description"
-        sortable
-        sx={{
-          maxWidth: '180px',
-          '& span': {
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            fontSize: '0.8rem',
-            color: 'text.secondary',
-            lineHeight: 1.2
-          }
-        }}
-      />
-
-      {/* Submission Details - User & Date */}
-      <FunctionField
-        label="Submitted By"
-        sortBy="user"
-        render={(record: any) => (
-          <Box sx={{
-            width: '140px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0.5
-          }}>
-            <Typography sx={{
-              fontSize: '0.75rem',
-              fontWeight: '500',
-              color: 'primary.main'
-            }}>
-              {record?.submittedBy?.username || 'Unknown'}
-            </Typography>
-            <Typography sx={{
-              fontSize: '0.7rem',
-              color: 'text.secondary'
-            }}>
-              {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : ''}
-            </Typography>
-          </Box>
-        )}
-      />
-
-      {/* Priority Actions */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1,
-          minWidth: '160px',
-          justifyContent: 'center',
-          '& .MuiButton-root': {
-            minWidth: '65px',
-            padding: '8px 14px',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            textTransform: 'uppercase'
-          }
-        }}
-      >
-        <ApproveButton />
-        <RejectButton />
-      </Box>
-    </Datagrid>
-  </List>
-)
-
-export const MediaDraftManager = () => (
-  <List
-    filter={{ status: 'pending' }}
-    title="Draft Media Submissions"
-    perPage={50}
-  >
-    <Datagrid
-      rowClick="edit"
-      sx={{
-        '& .RaDatagrid-headerCell': {
-          fontWeight: 'bold',
-          fontSize: '0.9rem',
-          backgroundColor: 'rgba(10, 10, 10, 0.95)',
-          color: '#ffffff',
-          borderBottom: '2px solid #2196f3'
-        },
-        '& .RaDatagrid-rowCell': {
-          padding: '10px 8px',
-          backgroundColor: 'rgba(10, 10, 10, 0.8)',
-          color: '#ffffff',
-          borderBottom: '1px solid rgba(33, 150, 243, 0.2)'
-        },
-        '& .RaDatagrid-tbody tr:nth-of-type(even)': {
-          backgroundColor: 'rgba(33, 150, 243, 0.05)'
-        },
-        '& .RaDatagrid-tbody tr:hover': {
-          backgroundColor: 'rgba(33, 150, 243, 0.15) !important'
-        }
-      }}
-    >
-      <TextField source="id" sortable sx={{ width: '50px', fontSize: '0.85rem' }} />
-
-      {/* Draft Status */}
-      <Box sx={{ width: '90px', display: 'flex', justifyContent: 'center' }}>
-        <Chip
-          label="DRAFT"
-          size="small"
-          sx={{
-            fontWeight: 'bold',
-            fontSize: '0.7rem',
-            backgroundColor: '#e3f2fd',
-            color: '#1976d2',
-            border: '1px solid #bbdefb'
-          }}
-        />
-      </Box>
-
-      {/* Entity Information - Compact for drafts */}
-      <EntityInfoField />
-
-      {/* Media Preview */}
-      <MediaPreviewField source="url" />
-
-      {/* Media Details - Truncated URL for drafts */}
-      <TruncatedUrlField />
-
-      {/* Type & Purpose */}
-      <MediaTypeField />
-
-      <TextField
-        source="description"
-        sortable
-        sx={{
-          maxWidth: '200px',
-          '& span': {
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            fontSize: '0.8rem',
-            color: 'text.secondary',
-            lineHeight: 1.3,
-            fontStyle: 'italic'
-          }
-        }}
-      />
-
-      {/* Author & Last Modified - Sortable by User */}
-      <FunctionField
-        label="Author"
-        sortBy="user"
-        render={(record: any) => (
-          <Box sx={{
-            width: '130px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0.5
-          }}>
-            <Typography sx={{
-              fontSize: '0.75rem',
-              fontWeight: '500',
-              color: 'primary.main'
-            }}>
-              {record?.submittedBy?.username || 'Unknown'}
-            </Typography>
-            <Typography sx={{
-              fontSize: '0.7rem',
-              color: 'text.secondary'
-            }}>
-              Created: {record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : ''}
-            </Typography>
-            <Typography sx={{
-              fontSize: '0.7rem',
-              color: 'text.secondary'
-            }}>
-              Modified: {record?.updatedAt ? new Date(record.updatedAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : ''}
-            </Typography>
-          </Box>
-        )}
-      />
-
-      {/* Edit Actions */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1,
-          minWidth: '120px',
-          justifyContent: 'center',
-          '& .MuiButton-root': {
-            minWidth: '60px',
-            padding: '6px 12px',
-            fontSize: '0.7rem',
-            fontWeight: 'bold',
-            textTransform: 'uppercase'
-          }
-        }}
-      >
-        <Button
-          label="Edit"
-          onClick={() => {/* Navigate to edit */}}
-          color="primary"
-          startIcon={<LinkIcon size={16} />}
-        />
-        <Button
-          label="Submit"
-          onClick={() => {/* Submit for review */}}
-          color="secondary"
-          startIcon={<Check size={16} />}
-        />
-      </Box>
-    </Datagrid>
   </List>
 )
 
