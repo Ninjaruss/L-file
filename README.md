@@ -1,6 +1,8 @@
-# L-File — from a fan resource to a live web application
+# L-File — from a fan resource to a deployed web application
 
 I built and publicly deployed a database for *Usogui*, my favorite manga. Readers can explore connected characters, story arcs, and gambles, track their reading progress, and use chapter-based spoiler controls. The application also supports community submissions and an administration interface for maintaining the content.
+
+> **Status — October 2, 2026:** The hosted application is offline. This repository preserves the source code, case study, and screenshots.
 
 ## My contribution
 

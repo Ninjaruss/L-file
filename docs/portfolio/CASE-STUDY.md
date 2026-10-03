@@ -4,7 +4,7 @@
 
 An AI-assisted project in product planning, data organization, and self-hosting, built around a community database for readers of *Usogui*.
 
-**Public deployment:** [l-file.com](https://l-file.com/) · **Source:** [GitHub](https://github.com/ninjaruss/L-file) · **Project journal:** [My original showcase](https://www.ninjaruss.net/showcase/l-file) · **Development history:** August 2025–July 2026 in the reviewed checkout
+**Public deployment:** offline as of October 2026 (formerly l-file.com) · **Source:** [GitHub](https://github.com/ninjaruss/L-file) · **Project journal:** [My original showcase](https://www.ninjaruss.net/showcase/l-file) · **Development history:** August 2025–July 2026 in the reviewed checkout
 
 My showcase post, published February 7, 2026, announced that the site was live. It was also accessible when these screenshots were captured on September 30, 2026. The captures preserve the public application ahead of its planned retirement; they remain available when the original domain is offline.
 
@@ -100,6 +100,6 @@ Two examples show the kinds of behavior behind the interface:
 
 L-File reached a public deployment, and its source history records continued development, redesign, and maintenance. This case study preserves the visible result alongside examples of the technical decisions behind it.
 
-The original domain may become unavailable after retirement. The screenshots are stored with this document, and the code and deployment records provide further material for discussing the project.
+The hosted application is now offline. The screenshots are stored with this document, and the code and deployment records provide further material for discussing the project.
 
 *L-File is an unofficial fan project. Usogui artwork and characters belong to their respective rights holders. The work presented here is the application and its implementation.*
